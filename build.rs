@@ -44,8 +44,7 @@ fn main() {
         }
 
         // Handle comment lines (may contain annotations)
-        if line.starts_with(";;;") {
-            let comment = &line[3..];
+        if let Some(comment) = line.strip_prefix(";;;") {
             for token in comment.split_whitespace() {
                 if let Some(val) = token.strip_prefix("@freq=") {
                     pending_freq = Some(val.parse::<f32>().unwrap_or_else(|_| {

@@ -20,12 +20,10 @@ use crate::ipa;
 /// Returns [`ShabdakoshError::DictParseError`] on malformed XML or unsupported alphabet.
 pub fn parse_pls(input: &str) -> Result<PronunciationDict> {
     // Validate alphabet
-    if let Some(alphabet) = extract_attr(input, "alphabet") {
-        if alphabet != "ipa" {
-            return Err(ShabdakoshError::DictParseError(alloc::format!(
-                "unsupported PLS alphabet: '{alphabet}' (only 'ipa' is supported)"
-            )));
-        }
+    if let Some(alphabet) = extract_attr(input, "alphabet").filter(|a| *a != "ipa") {
+        return Err(ShabdakoshError::DictParseError(alloc::format!(
+            "unsupported PLS alphabet: '{alphabet}' (only 'ipa' is supported)"
+        )));
     }
 
     let mut dict = PronunciationDict::new();
@@ -82,9 +80,9 @@ pub fn to_pls(dict: &PronunciationDict, lang: &str) -> String {
 
     let mut out = String::new();
     out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    let _ = write!(
+    let _ = writeln!(
         out,
-        "<lexicon version=\"1.0\" xmlns=\"http://www.w3.org/2005/01/pronunciation-lexicon\" alphabet=\"ipa\" xml:lang=\"{lang}\">\n"
+        "<lexicon version=\"1.0\" xmlns=\"http://www.w3.org/2005/01/pronunciation-lexicon\" alphabet=\"ipa\" xml:lang=\"{lang}\">"
     );
 
     let mut words: alloc::vec::Vec<&str> = dict.entries().keys().map(|s| s.as_str()).collect();
@@ -95,10 +93,10 @@ pub fn to_pls(dict: &PronunciationDict, lang: &str) -> String {
             continue;
         };
         out.push_str("  <lexeme>\n");
-        let _ = write!(out, "    <grapheme>{}</grapheme>\n", xml_escape(word));
+        let _ = writeln!(out, "    <grapheme>{}</grapheme>", xml_escape(word));
         for pron in entry.all() {
             let ipa_str = ipa::phonemes_to_ipa(pron.phonemes());
-            let _ = write!(out, "    <phoneme>{ipa_str}</phoneme>\n");
+            let _ = writeln!(out, "    <phoneme>{ipa_str}</phoneme>");
         }
         out.push_str("  </lexeme>\n");
     }
@@ -114,9 +112,9 @@ pub fn to_pls_with_user(dict: &PronunciationDict, lang: &str) -> String {
 
     let mut out = String::new();
     out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    let _ = write!(
+    let _ = writeln!(
         out,
-        "<lexicon version=\"1.0\" xmlns=\"http://www.w3.org/2005/01/pronunciation-lexicon\" alphabet=\"ipa\" xml:lang=\"{lang}\">\n"
+        "<lexicon version=\"1.0\" xmlns=\"http://www.w3.org/2005/01/pronunciation-lexicon\" alphabet=\"ipa\" xml:lang=\"{lang}\">"
     );
 
     // Collect all effective entries (user overrides base)
@@ -133,10 +131,10 @@ pub fn to_pls_with_user(dict: &PronunciationDict, lang: &str) -> String {
             continue;
         };
         out.push_str("  <lexeme>\n");
-        let _ = write!(out, "    <grapheme>{}</grapheme>\n", xml_escape(word));
+        let _ = writeln!(out, "    <grapheme>{}</grapheme>", xml_escape(word));
         for pron in entry.all() {
             let ipa_str = ipa::phonemes_to_ipa(pron.phonemes());
-            let _ = write!(out, "    <phoneme>{ipa_str}</phoneme>\n");
+            let _ = writeln!(out, "    <phoneme>{ipa_str}</phoneme>");
         }
         out.push_str("  </lexeme>\n");
     }
