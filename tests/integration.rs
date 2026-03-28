@@ -1,6 +1,7 @@
 //! Integration tests for shabdakosh.
 
 use shabdakosh::dictionary::format;
+use shabdakosh::dictionary::{self, DictDiff};
 use shabdakosh::PronunciationDict;
 
 // --- Dictionary size and coverage ---
@@ -230,6 +231,39 @@ fn test_cmudict_export_with_variants() {
     assert!(output.contains("@freq="), "should have frequency annotation");
 }
 
+// --- IPA format ---
+
+#[test]
+fn test_ipa_parse_roundtrip() {
+    let input = "hello /hɛloʊ/\nworld /wɜld/\n";
+    let dict = format::parse_ipa(input).unwrap();
+    assert_eq!(dict.len(), 2);
+    assert!(dict.lookup("hello").is_some());
+    assert!(dict.lookup("world").is_some());
+}
+
+#[test]
+fn test_ipa_export() {
+    let mut dict = PronunciationDict::new();
+    dict.insert(
+        "cat",
+        &[
+            svara::phoneme::Phoneme::PlosiveK,
+            svara::phoneme::Phoneme::VowelAsh,
+            svara::phoneme::Phoneme::PlosiveT,
+        ],
+    );
+    let output = format::to_ipa(&dict);
+    assert!(output.contains("cat /kæt/"));
+}
+
+#[test]
+fn test_ipa_parse_error_empty_transcription() {
+    let input = "word\n";
+    let result = format::parse_ipa(input);
+    assert!(result.is_err());
+}
+
 // --- Serde roundtrip ---
 
 #[test]
@@ -257,4 +291,119 @@ fn test_serde_roundtrip_dict_with_variants() {
 
     let all = dict2.lookup_all("test").unwrap();
     assert_eq!(all.len(), 2);
+}
+
+// --- Merge ---
+
+#[test]
+fn test_merge_override() {
+    let mut base = PronunciationDict::new();
+    base.insert("cat", &[svara::phoneme::Phoneme::PlosiveK]);
+
+    let mut other = PronunciationDict::new();
+    other.insert("cat", &[svara::phoneme::Phoneme::PlosiveT]);
+    other.insert("dog", &[svara::phoneme::Phoneme::PlosiveD]);
+
+    base.merge(&other);
+    // "cat" overridden, "dog" added
+    assert_eq!(base.lookup("cat").unwrap(), &[svara::phoneme::Phoneme::PlosiveT]);
+    assert!(base.lookup("dog").is_some());
+}
+
+#[test]
+fn test_merge_conservative() {
+    let mut base = PronunciationDict::new();
+    base.insert("cat", &[svara::phoneme::Phoneme::PlosiveK]);
+
+    let mut other = PronunciationDict::new();
+    other.insert("cat", &[svara::phoneme::Phoneme::PlosiveT]);
+    other.insert("dog", &[svara::phoneme::Phoneme::PlosiveD]);
+
+    base.merge_conservative(&other);
+    // "cat" kept, "dog" added
+    assert_eq!(base.lookup("cat").unwrap(), &[svara::phoneme::Phoneme::PlosiveK]);
+    assert!(base.lookup("dog").is_some());
+}
+
+// --- Diff ---
+
+#[test]
+fn test_diff_identical() {
+    let dict = PronunciationDict::english_minimal();
+    let d = dictionary::diff(&dict, &dict);
+    assert!(d.is_empty());
+    assert_eq!(d.len(), 0);
+}
+
+#[test]
+fn test_diff_changes() {
+    let mut left = PronunciationDict::new();
+    left.insert("cat", &[svara::phoneme::Phoneme::PlosiveK]);
+    left.insert("dog", &[svara::phoneme::Phoneme::PlosiveD]);
+
+    let mut right = PronunciationDict::new();
+    right.insert("cat", &[svara::phoneme::Phoneme::PlosiveT]); // changed
+    right.insert("fish", &[svara::phoneme::Phoneme::FricativeF]); // added
+
+    let d = dictionary::diff(&left, &right);
+    assert_eq!(d.added, vec!["fish"]);
+    assert_eq!(d.removed, vec!["dog"]);
+    assert_eq!(d.changed, vec!["cat"]);
+    assert_eq!(d.len(), 3);
+}
+
+#[test]
+fn test_serde_roundtrip_dict_diff() {
+    let d = DictDiff {
+        added: vec!["new".into()],
+        removed: vec!["old".into()],
+        changed: vec!["mod".into()],
+    };
+    let json = serde_json::to_string(&d).unwrap();
+    let d2: DictDiff = serde_json::from_str(&json).unwrap();
+    assert_eq!(d, d2);
+}
+
+// --- PLS ---
+
+#[test]
+fn test_pls_integration_roundtrip() {
+    use format::pls;
+
+    let mut dict = PronunciationDict::new();
+    dict.insert(
+        "hello",
+        &[
+            svara::phoneme::Phoneme::FricativeH,
+            svara::phoneme::Phoneme::VowelOpenE,
+            svara::phoneme::Phoneme::LateralL,
+            svara::phoneme::Phoneme::DiphthongOU,
+        ],
+    );
+    let xml = pls::to_pls(&dict, "en-US");
+    assert!(xml.contains("<lexicon"));
+    assert!(xml.contains("<grapheme>hello</grapheme>"));
+
+    let dict2 = pls::parse_pls(&xml).unwrap();
+    assert!(dict2.lookup("hello").is_some());
+}
+
+// --- SSML ---
+
+#[test]
+fn test_ssml_integration_roundtrip() {
+    use format::ssml;
+
+    let phonemes = [
+        svara::phoneme::Phoneme::PlosiveK,
+        svara::phoneme::Phoneme::VowelAsh,
+        svara::phoneme::Phoneme::PlosiveT,
+    ];
+    let tag = ssml::to_ssml_phoneme("cat", &phonemes);
+    assert!(tag.contains("ph="));
+    assert!(tag.contains(">cat</phoneme>"));
+
+    let (word, parsed) = ssml::parse_ssml_phoneme(&tag).unwrap();
+    assert_eq!(word, "cat");
+    assert_eq!(parsed, phonemes);
 }

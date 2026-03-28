@@ -22,6 +22,7 @@ pub mod entry;
 pub mod format;
 
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use svara::phoneme::Phoneme;
 
@@ -41,11 +42,11 @@ include!(concat!(env!("OUT_DIR"), "/generated_dict.rs"));
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PronunciationDict {
     #[serde(deserialize_with = "deserialize_entries_compat")]
-    entries: BTreeMap<String, DictEntry>,
+    entries: HashMap<String, DictEntry>,
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",
-        deserialize_with = "deserialize_entries_compat_default"
+        deserialize_with = "deserialize_user_entries_compat"
     )]
     user_entries: BTreeMap<String, DictEntry>,
 }
@@ -55,12 +56,12 @@ impl PronunciationDict {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            entries: BTreeMap::new(),
+            entries: HashMap::new(),
             user_entries: BTreeMap::new(),
         }
     }
 
-    /// Creates the built-in English pronunciation dictionary (5,000+ entries).
+    /// Creates the built-in English pronunciation dictionary (10,000+ entries).
     ///
     /// Generated at compile time from `data/cmudict-5k.txt`.
     #[must_use]
@@ -182,7 +183,7 @@ impl PronunciationDict {
 
     /// Creates a dictionary from a pre-built entries map.
     #[must_use]
-    pub fn from_entries(entries: BTreeMap<String, DictEntry>) -> Self {
+    pub fn from_entries(entries: HashMap<String, DictEntry>) -> Self {
         Self {
             entries,
             user_entries: BTreeMap::new(),
@@ -193,7 +194,7 @@ impl PronunciationDict {
     ///
     /// Each entry is wrapped into a single-pronunciation [`DictEntry`].
     #[must_use]
-    pub fn from_simple_entries(entries: BTreeMap<String, Vec<Phoneme>>) -> Self {
+    pub fn from_simple_entries(entries: HashMap<String, Vec<Phoneme>>) -> Self {
         let entries = entries
             .into_iter()
             .map(|(word, phonemes)| (word, DictEntry::from_phonemes(&phonemes)))
@@ -303,9 +304,102 @@ impl PronunciationDict {
 
     /// Returns a reference to the base entries.
     #[must_use]
-    pub fn entries(&self) -> &BTreeMap<String, DictEntry> {
+    pub fn entries(&self) -> &HashMap<String, DictEntry> {
         &self.entries
     }
+
+    /// Merges another dictionary into this one.
+    ///
+    /// For words present in both, entries from `other` replace entries in `self`.
+    /// Base and user entries are merged into their respective layers.
+    pub fn merge(&mut self, other: &PronunciationDict) {
+        for (word, entry) in other.entries() {
+            self.entries.insert(word.clone(), entry.clone());
+        }
+        for (word, entry) in other.user_entries() {
+            self.user_entries.insert(word.clone(), entry.clone());
+        }
+    }
+
+    /// Merges another dictionary, keeping self's entries on conflict.
+    ///
+    /// Only entries for words not already in `self` are added.
+    pub fn merge_conservative(&mut self, other: &PronunciationDict) {
+        for (word, entry) in other.entries() {
+            if !self.entries.contains_key(word) {
+                self.entries.insert(word.clone(), entry.clone());
+            }
+        }
+        for (word, entry) in other.user_entries() {
+            if !self.user_entries.contains_key(word) {
+                self.user_entries.insert(word.clone(), entry.clone());
+            }
+        }
+    }
+}
+
+/// Differences between two pronunciation dictionaries.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DictDiff {
+    /// Words present in `right` but not `left`.
+    pub added: Vec<String>,
+    /// Words present in `left` but not `right`.
+    pub removed: Vec<String>,
+    /// Words in both but with different primary pronunciations.
+    pub changed: Vec<String>,
+}
+
+impl DictDiff {
+    /// Returns true if the dictionaries are identical.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.added.is_empty() && self.removed.is_empty() && self.changed.is_empty()
+    }
+
+    /// Total number of differences.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.added.len() + self.removed.len() + self.changed.len()
+    }
+}
+
+/// Computes the differences between two dictionaries.
+///
+/// Compares the effective lookup result for each word (user overlay takes
+/// precedence over base, mirroring [`PronunciationDict::lookup_entry`] behavior).
+/// Results are sorted alphabetically.
+#[must_use]
+pub fn diff(left: &PronunciationDict, right: &PronunciationDict) -> DictDiff {
+    let mut all_words = alloc::collections::BTreeSet::new();
+    for word in left.entries().keys() {
+        all_words.insert(word.as_str());
+    }
+    for word in left.user_entries().keys() {
+        all_words.insert(word.as_str());
+    }
+    for word in right.entries().keys() {
+        all_words.insert(word.as_str());
+    }
+    for word in right.user_entries().keys() {
+        all_words.insert(word.as_str());
+    }
+
+    let mut result = DictDiff::default();
+
+    for word in all_words {
+        let l = left.lookup_entry(word);
+        let r = right.lookup_entry(word);
+        match (l, r) {
+            (None, Some(_)) => result.added.push(alloc::string::ToString::to_string(word)),
+            (Some(_), None) => result.removed.push(alloc::string::ToString::to_string(word)),
+            (Some(le), Some(re)) if le != re => {
+                result.changed.push(alloc::string::ToString::to_string(word));
+            }
+            _ => {}
+        }
+    }
+
+    result
 }
 
 impl Default for PronunciationDict {
@@ -338,19 +432,21 @@ impl EntryCompat {
 
 fn deserialize_entries_compat<'de, D>(
     deserializer: D,
+) -> core::result::Result<HashMap<String, DictEntry>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    // Deserialize as BTreeMap first (handles both JSON object key ordering variants)
+    let raw: BTreeMap<String, EntryCompat> = BTreeMap::deserialize(deserializer)?;
+    Ok(raw.into_iter().map(|(k, v)| (k, v.into_entry())).collect())
+}
+
+fn deserialize_user_entries_compat<'de, D>(
+    deserializer: D,
 ) -> core::result::Result<BTreeMap<String, DictEntry>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     let raw: BTreeMap<String, EntryCompat> = BTreeMap::deserialize(deserializer)?;
     Ok(raw.into_iter().map(|(k, v)| (k, v.into_entry())).collect())
-}
-
-fn deserialize_entries_compat_default<'de, D>(
-    deserializer: D,
-) -> core::result::Result<BTreeMap<String, DictEntry>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    deserialize_entries_compat(deserializer)
 }

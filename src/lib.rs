@@ -34,9 +34,10 @@ extern crate alloc;
 pub mod arpabet;
 pub mod dictionary;
 pub mod error;
+pub mod ipa;
 
 pub use dictionary::entry::{DictEntry, Pronunciation, Region};
-pub use dictionary::PronunciationDict;
+pub use dictionary::{DictDiff, PronunciationDict};
 pub use error::{Result, ShabdakoshError};
 
 // Compile-time trait assertions.

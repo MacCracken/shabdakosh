@@ -1,6 +1,6 @@
 [package]
 name = "shabdakosh"
-version = "0.2.0"
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.89"
 license = "GPL-3.0-only"
@@ -15,6 +15,7 @@ exclude = [".claude/", ".github/", "docs/", "scripts/"]
 build = "build.rs"
 
 [dependencies]
+hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "serde"] }
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 svara = { version = "1", default-features = false }
 thiserror = { version = "2", default-features = false }

@@ -111,7 +111,7 @@ fn main() {
     writeln!(out).unwrap();
     writeln!(
         out,
-        "fn generated_english_entries() -> alloc::collections::BTreeMap<alloc::string::String, crate::dictionary::entry::DictEntry> {{"
+        "fn generated_english_entries() -> hashbrown::HashMap<alloc::string::String, crate::dictionary::entry::DictEntry> {{"
     )
     .unwrap();
     writeln!(out, "    use alloc::string::String;").unwrap();
@@ -128,7 +128,12 @@ fn main() {
     )
     .unwrap();
     writeln!(out).unwrap();
-    writeln!(out, "    let mut m = alloc::collections::BTreeMap::new();").unwrap();
+    writeln!(
+        out,
+        "    let mut m = hashbrown::HashMap::with_capacity({});",
+        entries.len()
+    )
+    .unwrap();
 
     for (word, entry) in &entries {
         if entry.pronunciations.len() == 1 {
