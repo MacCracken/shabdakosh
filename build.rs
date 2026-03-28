@@ -94,7 +94,12 @@ fn main() {
             .push(pronunciation);
     }
 
-    // Generate Rust source
+    // Generate Rust source.
+    //
+    // Split inserts across batched helper functions to keep LLVM memory usage
+    // manageable on CI runners with limited RAM (GitHub ubuntu = 7 GB).
+    const BATCH_SIZE: usize = 500;
+
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest = Path::new(&out_dir).join("generated_dict.rs");
     let mut out = fs::File::create(&dest).expect("failed to create generated_dict.rs");
@@ -112,80 +117,102 @@ fn main() {
     writeln!(out, "//").unwrap();
     writeln!(out, "// {} entries", entries.len()).unwrap();
     writeln!(out).unwrap();
+
+    // Common imports used by every batch function.
+    let imports = "\
+    use alloc::string::String;\n\
+    use alloc::vec;\n\
+    use svara::phoneme::Phoneme;\n\
+    #[allow(unused_imports)]\n\
+    use crate::dictionary::entry::{DictEntry, Pronunciation, Region};";
+
+    // Collect entries into a Vec so we can chunk them.
+    let entry_vec: Vec<_> = entries.iter().collect();
+    let num_batches = entry_vec.chunks(BATCH_SIZE).len();
+
+    // Write each batch function.
+    for (batch_idx, chunk) in entry_vec.chunks(BATCH_SIZE).enumerate() {
+        writeln!(
+            out,
+            "fn generated_batch_{batch_idx}(m: &mut hashbrown::HashMap<alloc::string::String, crate::dictionary::entry::DictEntry>) {{"
+        )
+        .unwrap();
+        writeln!(out, "{imports}").unwrap();
+
+        for (word, entry) in chunk {
+            write_entry(&mut out, word, entry);
+        }
+
+        writeln!(out, "}}").unwrap();
+        writeln!(out).unwrap();
+    }
+
+    // Write the top-level function that calls all batches.
     writeln!(
         out,
         "fn generated_english_entries() -> hashbrown::HashMap<alloc::string::String, crate::dictionary::entry::DictEntry> {{"
     )
     .unwrap();
-    writeln!(out, "    use alloc::string::String;").unwrap();
-    writeln!(out, "    use alloc::vec;").unwrap();
-    writeln!(out, "    use svara::phoneme::Phoneme;").unwrap();
-    writeln!(out, "    #[allow(unused_imports)]").unwrap();
-    writeln!(
-        out,
-        "    use crate::dictionary::entry::{{DictEntry, Pronunciation, Region}};"
-    )
-    .unwrap();
-    writeln!(out).unwrap();
     writeln!(
         out,
         "    let mut m = hashbrown::HashMap::with_capacity({});",
         entries.len()
     )
     .unwrap();
-
-    for (word, entry) in &entries {
-        if entry.pronunciations.len() == 1 {
-            // Single pronunciation — use DictEntry::new() for simplicity
-            let pron = &entry.pronunciations[0];
-            let phonemes = pron.phoneme_exprs.join(", ");
-            let mut expr = format!("Pronunciation::new(vec![{phonemes}])");
-            if let Some(freq) = pron.frequency {
-                expr = format!("{expr}.with_frequency({freq}_f32)");
-            }
-            if let Some(ref region) = pron.region {
-                let region_expr = region_to_expr(region);
-                expr = format!("{expr}.with_region({region_expr})");
-            }
-            writeln!(
-                out,
-                "    m.insert(String::from({word:?}), DictEntry::new({expr}));"
-            )
-            .unwrap();
-        } else {
-            // Multiple pronunciations — use DictEntry::from_pronunciations()
-            write!(
-                out,
-                "    m.insert(String::from({word:?}), DictEntry::from_pronunciations(vec!["
-            )
-            .unwrap();
-            for (i, pron) in entry.pronunciations.iter().enumerate() {
-                if i > 0 {
-                    write!(out, ", ").unwrap();
-                }
-                let phonemes = pron.phoneme_exprs.join(", ");
-                write!(out, "Pronunciation::new(vec![{phonemes}])").unwrap();
-                if let Some(freq) = pron.frequency {
-                    write!(out, ".with_frequency({freq}_f32)").unwrap();
-                }
-                if let Some(ref region) = pron.region {
-                    let region_expr = region_to_expr(region);
-                    write!(out, ".with_region({region_expr})").unwrap();
-                }
-            }
-            writeln!(out, "]).expect(\"non-empty\"));").unwrap();
-        }
+    for batch_idx in 0..num_batches {
+        writeln!(out, "    generated_batch_{batch_idx}(&mut m);").unwrap();
     }
-
     writeln!(out, "    m").unwrap();
     writeln!(out, "}}").unwrap();
 
     let total_prons: usize = entries.values().map(|e| e.pronunciations.len()).sum();
     eprintln!(
-        "shabdakosh build: generated {} entries ({} pronunciations)",
+        "shabdakosh build: generated {} entries ({} pronunciations, {} batches)",
         entries.len(),
-        total_prons
+        total_prons,
+        num_batches,
     );
+}
+
+fn write_entry(out: &mut fs::File, word: &str, entry: &BuildEntry) {
+    if entry.pronunciations.len() == 1 {
+        let pron = &entry.pronunciations[0];
+        let phonemes = pron.phoneme_exprs.join(", ");
+        let mut expr = format!("Pronunciation::new(vec![{phonemes}])");
+        if let Some(freq) = pron.frequency {
+            expr = format!("{expr}.with_frequency({freq}_f32)");
+        }
+        if let Some(ref region) = pron.region {
+            let region_expr = region_to_expr(region);
+            expr = format!("{expr}.with_region({region_expr})");
+        }
+        writeln!(
+            out,
+            "    m.insert(String::from({word:?}), DictEntry::new({expr}));"
+        )
+        .unwrap();
+    } else {
+        write!(
+            out,
+            "    m.insert(String::from({word:?}), DictEntry::from_pronunciations(vec!["
+        )
+        .unwrap();
+        for (i, pron) in entry.pronunciations.iter().enumerate() {
+            if i > 0 {
+                write!(out, ", ").unwrap();
+            }
+            let phonemes = pron.phoneme_exprs.join(", ");
+            write!(out, "Pronunciation::new(vec![{phonemes}])").unwrap();
+            if let Some(freq) = pron.frequency {
+                write!(out, ".with_frequency({freq}_f32)").unwrap();
+            }
+            if let Some(ref region) = pron.region {
+                let region_expr = region_to_expr(region);
+                write!(out, ".with_region({region_expr})").unwrap();
+            }
+        }
+        writeln!(out, "]).expect(\"non-empty\"));").unwrap();
+    }
 }
 
 fn region_to_expr(code: &str) -> &'static str {
