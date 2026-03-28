@@ -470,6 +470,10 @@ basically  B EY1 S IH0 K L IY0
 basin  B EY1 S AH0 N
 basis  B EY1 S AH0 S
 basket  B AE1 S K AH0 T
+;;; @freq=0.5
+bass  B EY1 S
+;;; @freq=0.5
+bass(2)  B AE1 S
 batch  B AE1 CH
 bath  B AE1 TH
 battalion  B AH0 T AE1 L Y AH0 N
@@ -627,7 +631,10 @@ boundary  B AW1 N D ER0 IY0
 bouquet  B UW0 K EY1
 bout  B AW1 T
 boutique  B UW0 T IY1 K
+;;; @freq=0.5
 bow  B AW1
+;;; @freq=0.5
+bow(2)  B OW1
 bowl  B OW1 L
 bowling  B OW1 L IH0 NG
 box  B AA1 K S
@@ -930,7 +937,10 @@ cloak  K L OW1 K
 clock  K L AA1 K
 clockwise  K L AA1 K W AY2 Z
 clone  K L OW1 N
+;;; @freq=0.5
 close  K L OW1 Z
+;;; @freq=0.5
+close(2)  K L OW1 S
 closely  K L OW1 S L IY0
 closet  K L AA1 Z AH0 T
 closure  K L OW1 ZH ER0
@@ -1126,7 +1136,10 @@ contemplate  K AA1 N T AH0 M P L EY2 T
 contemporary  K AH0 N T EH1 M P ER0 EH2 R IY0
 contempt  K AH0 N T EH1 M P T
 contend  K AH0 N T EH1 N D
+;;; @freq=0.5
 content  K AA1 N T EH0 N T
+;;; @freq=0.5
+content(2)  K AH0 N T EH1 N T
 contest  K AA1 N T EH0 S T
 context  K AA1 N T EH0 K S T
 continent  K AA1 N T AH0 N AH0 N T
@@ -1395,7 +1408,10 @@ descendant  D IH0 S EH1 N D AH0 N T
 descent  D IH0 S EH1 N T
 describe  D IH0 S K R AY1 B
 description  D IH0 S K R IH1 P SH AH0 N
+;;; @freq=0.6
 desert  D EH1 Z ER0 T
+;;; @freq=0.4
+desert(2)  D IH0 Z ER1 T
 deserve  D IH0 Z ER1 V
 design  D IH0 Z AY1 N
 designate  D EH1 Z AH0 G N EY2 T
@@ -1555,6 +1571,10 @@ dot  D AA1 T
 double  D AH1 B AH0 L
 doubt  D AW1 T
 dough  D OW1
+;;; @freq=0.6
+dove  D AH1 V
+;;; @freq=0.4
+dove(2)  D OW1 V
 down  D AW1 N
 downtown  D AW1 N T AW2 N
 doze  D OW1 Z
@@ -2440,6 +2460,7 @@ hostile  HH AA1 S T AH0 L
 hot  HH AA1 T
 hotel  HH OW0 T EH1 L
 hour  AW1 ER0
+house  HH AW1 S
 household  HH AW1 S HH OW2 L D
 housekeeper  HH AW1 S K IY2 P ER0
 housewife  HH AW1 S W AY2 F
@@ -2822,7 +2843,10 @@ lay  L EY1
 layer  L EY1 ER0
 layout  L EY1 AW2 T
 lazy  L EY1 Z IY0
+;;; @freq=0.6
 lead  L IY1 D
+;;; @freq=0.4
+lead(2)  L EH1 D
 leader  L IY1 D ER0
 leadership  L IY1 D ER0 SH IH2 P
 leaf  L IY1 F
@@ -2895,7 +2919,10 @@ literary  L IH1 T ER0 EH2 R IY0
 literature  L IH1 T ER0 AH0 CH ER0
 litter  L IH1 T ER0
 little  L IH1 T AH0 L
+;;; @freq=0.6
 live  L IH1 V
+;;; @freq=0.4
+live(2)  L AY1 V
 liver  L IH1 V ER0
 livestock  L AY1 V S T AA2 K
 load  L OW1 D
@@ -3077,7 +3104,10 @@ minister  M IH1 N AH0 S T ER0
 ministry  M IH1 N AH0 S T R IY0
 minor  M AY1 N ER0
 minority  M AY0 N AO1 R AH0 T IY0
+;;; @freq=0.8
 minute  M IH1 N AH0 T
+;;; @freq=0.2
+minute(2)  M AY0 N UW1 T
 miracle  M IH1 R AH0 K AH0 L
 mirror  M IH1 R ER0
 mischief  M IH1 S CH AH0 F
@@ -3248,7 +3278,10 @@ nutrition  N UW0 T R IH1 SH AH0 N
 oak  OW1 K
 oath  OW1 TH
 obey  OW0 B EY1
+;;; @freq=0.5
 object  AA1 B JH EH0 K T
+;;; @freq=0.5
+object(2)  AH0 B JH EH1 K T
 objection  AH0 B JH EH1 K SH AH0 N
 objective  AH0 B JH EH1 K T IH0 V
 obligation  AA2 B L AH0 G EY1 SH AH0 N
@@ -3609,7 +3642,10 @@ premium  P R IY1 M IY0 AH0 M
 prepare  P R IH0 P EH1 R
 prescription  P R IH0 S K R IH1 P SH AH0 N
 presence  P R EH1 Z AH0 N S
+;;; @freq=0.6
 present  P R EH1 Z AH0 N T
+;;; @freq=0.4
+present(2)  P R IH0 Z EH1 N T
 presentation  P R EH2 Z AH0 N T EY1 SH AH0 N
 preserve  P R IH0 Z ER1 V
 president  P R EH1 Z AH0 D AH0 N T
@@ -3658,7 +3694,10 @@ process  P R AA1 S EH0 S
 processor  P R AA1 S EH0 S ER0
 proclaim  P R OW0 K L EY1 M
 procure  P R OW0 K Y UH1 R
+;;; @freq=0.6
 produce  P R AH0 D UW1 S
+;;; @freq=0.4
+produce(2)  P R AA1 D UW0 S
 production  P R AH0 D AH1 K SH AH0 N
 productive  P R AH0 D AH1 K T IH0 V
 productivity  P R OW2 D AH0 K T IH1 V AH0 T IY0
@@ -3672,7 +3711,10 @@ profound  P R AH0 F AW1 N D
 program  P R OW1 G R AE2 M
 progress  P R AA1 G R EH0 S
 progressive  P R AH0 G R EH1 S IH0 V
+;;; @freq=0.5
 project  P R AA1 JH EH0 K T
+;;; @freq=0.5
+project(2)  P R AH0 JH EH1 K T
 prominent  P R AA1 M AH0 N AH0 N T
 promise  P R AA1 M AH0 S
 promote  P R AH0 M OW1 T
@@ -3778,7 +3820,10 @@ razor  R EY1 Z ER0
 reach  R IY1 CH
 react  R IY0 AE1 K T
 reaction  R IY0 AE1 K SH AH0 N
+;;; @freq=0.7
 read  R IY1 D
+;;; @freq=0.3
+read(2)  R EH1 D
 readily  R EH1 D AH0 L IY0
 reading  R IY1 D IH0 NG
 ready  R EH1 D IY0
@@ -3805,7 +3850,10 @@ recognize  R EH1 K AH0 G N AY2 Z
 recommend  R EH2 K AH0 M EH1 N D
 recommendation  R EH2 K AH0 M AH0 N D EY1 SH AH0 N
 reconstruction  R IY2 K AH0 N S T R AH1 K SH AH0 N
+;;; @freq=0.5
 record  R IH0 K AO1 R D
+;;; @freq=0.5
+record(2)  R EH1 K ER0 D
 recover  R IH0 K AH1 V ER0
 recreation  R EH2 K R IY0 EY1 SH AH0 N
 recruit  R IH0 K R UW1 T
@@ -3819,7 +3867,10 @@ reflect  R IH0 F L EH1 K T
 reflection  R IH0 F L EH1 K SH AH0 N
 reform  R IH0 F AO1 R M
 refugee  R EH1 F Y UW0 JH IY2
+;;; @freq=0.7
 refuse  R IH0 F Y UW1 Z
+;;; @freq=0.3
+refuse(2)  R EH1 F Y UW0 Z
 regard  R IH0 G AA1 R D
 regime  R AH0 ZH IY1 M
 region  R IY1 JH AH0 N
@@ -3971,7 +4022,10 @@ roughly  R AH1 F L IY0
 round  R AW1 N D
 route  R UW1 T
 routine  R UW0 T IY1 N
+;;; @freq=0.7
 row  R OW1
+;;; @freq=0.3
+row(2)  R AW1
 royal  R OY1 AH0 L
 rub  R AH1 B
 rubber  R AH1 B ER0
@@ -4092,7 +4146,10 @@ sense  S EH1 N S
 sensitive  S EH1 N S AH0 T IH0 V
 sentence  S EH1 N T AH0 N S
 sentiment  S EH1 N T AH0 M AH0 N T
+;;; @freq=0.5
 separate  S EH1 P ER0 AH0 T
+;;; @freq=0.5
+separate(2)  S EH1 P ER0 EY2 T
 sequence  S IY1 K W AH0 N S
 series  S IH1 R IY0 Z
 serious  S IH1 R IY0 AH0 S
@@ -4415,7 +4472,10 @@ stun  S T AH1 N
 stupid  S T UW1 P AH0 D
 sturdy  S T ER1 D IY0
 style  S T AY1 L
+;;; @freq=0.5
 subject  S AH1 B JH IH0 K T
+;;; @freq=0.5
+subject(2)  S AH0 B JH EH1 K T
 submission  S AH0 B M IH1 SH AH0 N
 submit  S AH0 B M IH1 T
 subscribe  S AH0 B S K R AY1 B
@@ -4531,7 +4591,10 @@ tea  T IY1
 teach  T IY1 CH
 teacher  T IY1 CH ER0
 team  T IY1 M
+;;; @freq=0.5
 tear  T EH1 R
+;;; @freq=0.5
+tear(2)  T IH1 R
 technical  T EH1 K N IH0 K AH0 L
 technique  T EH0 K N IY1 K
 technology  T EH0 K N AA1 L AH0 JH IY0
@@ -4785,7 +4848,10 @@ urban  ER1 B AH0 N
 urge  ER1 JH
 urgent  ER1 JH AH0 N T
 us  AH1 Z
+;;; @freq=0.5
 use  Y UW1 Z
+;;; @freq=0.5
+use(2)  Y UW1 S
 used  Y UW1 Z D
 useful  Y UW1 S F AH0 L
 usual  Y UW1 ZH UW0 AH0 L
@@ -4947,7 +5013,10 @@ will  W IH1 L
 willing  W IH1 L IH0 NG
 willingly  W IH1 L IH0 NG L IY0
 win  W IH1 N
+;;; @freq=0.6
 wind  W IH1 N D
+;;; @freq=0.4
+wind(2)  W AY1 N D
 window  W IH1 N D OW0
 wine  W AY1 N
 wing  W IH1 NG
@@ -4985,7 +5054,10 @@ worst  W ER1 S T
 worth  W ER1 TH
 worthy  W ER1 DH IY0
 would  W UH1 D
+;;; @freq=0.6
 wound  W UW1 N D
+;;; @freq=0.4
+wound(2)  W AW1 N D
 wrap  R AE1 P
 wreath  R IY1 TH
 wreck  R EH1 K
@@ -5018,3 +5090,5603 @@ zero  Z IH1 R OW0
 zinc  Z IH1 NG K
 zipper  Z IH1 P ER0
 zone  Z OW1 N
+abacus  AE1 B AH0 K AH0 S
+abalone  AE2 B AH0 L OW1 N IY0
+abash  AH0 B AE1 SH
+abate  AH0 B EY1 T
+abatement  AH0 B EY1 T M AH0 N T
+abbreviated  AH0 B R IY1 V IY0 EY2 T IH0 D
+abdicate  AE1 B D IH0 K EY2 T
+abdication  AE2 B D IH0 K EY1 SH AH0 N
+abdominal  AE0 B D AA1 M AH0 N AH0 L
+abduct  AE0 B D AH1 K T
+abduction  AE0 B D AH1 K SH AH0 N
+aberrant  AH0 B EH1 R AH0 N T
+aberration  AE2 B ER0 EY1 SH AH0 N
+abet  AH0 B EH1 T
+abeyance  AH0 B EY1 AH0 N S
+abhor  AE0 B HH AO1 R
+abhorrent  AH0 B HH AO1 R AH0 N T
+abiding  AH0 B AY1 D IH0 NG
+ablaze  AH0 B L EY1 Z
+abnormality  AE2 B N AO0 R M AE1 L AH0 T IY0
+aboard  AH0 B AO1 R D
+abolishment  AH0 B AA1 L IH0 SH M AH0 N T
+abominable  AH0 B AA1 M AH0 N AH0 B AH0 L
+abomination  AH0 B AA2 M AH0 N EY1 SH AH0 N
+aborigine  AE2 B ER0 IH1 JH AH0 N IY0
+aboveboard  AH0 B AH1 V B AO2 R D
+abrasion  AH0 B R EY1 ZH AH0 N
+abrasive  AH0 B R EY1 S IH0 V
+abreast  AH0 B R EH1 S T
+abridge  AH0 B R IH1 JH
+abridgment  AH0 B R IH1 JH M AH0 N T
+abruptly  AH0 B R AH1 P T L IY0
+absently  AE1 B S AH0 N T L IY0
+absolutism  AE1 B S AH0 L UW2 T IH0 Z AH0 M
+absolution  AE2 B S AH0 L UW1 SH AH0 N
+absolve  AH0 B Z AA1 L V
+absorbed  AH0 B Z AO1 R B D
+absorbent  AH0 B Z AO1 R B AH0 N T
+absorbing  AH0 B Z AO1 R B IH0 NG
+abstainer  AH0 B S T EY1 N ER0
+abstinence  AE1 B S T AH0 N AH0 N S
+abstinent  AE1 B S T AH0 N AH0 N T
+abstractly  AE0 B S T R AE1 K T L IY0
+absurdity  AH0 B S ER1 D AH0 T IY0
+abundantly  AH0 B AH1 N D AH0 N T L IY0
+abuser  AH0 B Y UW1 Z ER0
+abusive  AH0 B Y UW1 S IH0 V
+abysmal  AH0 B IH1 Z M AH0 L
+acacia  AH0 K EY1 SH AH0
+academician  AH0 K AE2 D AH0 M IH1 SH AH0 N
+accentuate  AE0 K S EH1 N CH UW0 EY2 T
+acceptance  AE0 K S EH1 P T AH0 N S
+accessibility  AE0 K S EH2 S AH0 B IH1 L AH0 T IY0
+accession  AE0 K S EH1 SH AH0 N
+acclaimed  AH0 K L EY1 M D
+acclimate  AH0 K L AY1 M AH0 T
+accolade  AE1 K AH0 L EY2 D
+accommodating  AH0 K AA1 M AH0 D EY2 T IH0 NG
+accompaniment  AH0 K AH1 M P AH0 N IY0 M AH0 N T
+accompanist  AH0 K AH1 M P AH0 N IH0 S T
+accountancy  AH0 K AW1 N T AH0 N S IY0
+accountable  AH0 K AW1 N T AH0 B AH0 L
+accredited  AH0 K R EH1 D AH0 T IH0 D
+accreditation  AH0 K R EH2 D AH0 T EY1 SH AH0 N
+accrue  AH0 K R UW1
+accurately  AE1 K Y ER0 AH0 T L IY0
+accuser  AH0 K Y UW1 Z ER0
+accustom  AH0 K AH1 S T AH0 M
+accustomed  AH0 K AH1 S T AH0 M D
+achievable  AH0 CH IY1 V AH0 B AH0 L
+achiever  AH0 CH IY1 V ER0
+acidic  AH0 S IH1 D IH0 K
+acidity  AH0 S IH1 D AH0 T IY0
+acknowledgement  AE0 K N AA1 L IH0 JH M AH0 N T
+acme  AE1 K M IY0
+acne  AE1 K N IY0
+acoustic  AH0 K UW1 S T IH0 K
+acoustics  AH0 K UW1 S T IH0 K S
+acquiescence  AE2 K W IY0 EH1 S AH0 N S
+acquisitive  AH0 K W IH1 Z AH0 T IH0 V
+acquittal  AH0 K W IH1 T AH0 L
+acreage  EY1 K ER0 IH0 JH
+acrimonious  AE2 K R AH0 M OW1 N IY0 AH0 S
+acrimony  AE1 K R AH0 M OW2 N IY0
+acrobatic  AE2 K R AH0 B AE1 T IH0 K
+activism  AE1 K T IH0 V IH2 Z AH0 M
+actuality  AE2 K CH UW0 AE1 L AH0 T IY0
+acumen  AH0 K Y UW1 M AH0 N
+acupuncture  AE1 K Y UW0 P AH2 NG K CH ER0
+adaptable  AH0 D AE1 P T AH0 B AH0 L
+adaptation  AE2 D AH0 P T EY1 SH AH0 N
+addicted  AH0 D IH1 K T IH0 D
+addictive  AH0 D IH1 K T IH0 V
+additionally  AH0 D IH1 SH AH0 N AH0 L IY0
+adept  AH0 D EH1 P T
+adequacy  AE1 D AH0 K W AH0 S IY0
+adequately  AE1 D AH0 K W AH0 T L IY0
+adherence  AE0 D HH IH1 R AH0 N S
+adherent  AE0 D HH IH1 R AH0 N T
+adhesion  AE0 D HH IY1 ZH AH0 N
+adjacency  AH0 JH EY1 S AH0 N S IY0
+adjectival  AE2 JH IH0 K T AY1 V AH0 L
+adjoin  AH0 JH OY1 N
+adjoining  AH0 JH OY1 N IH0 NG
+adjourn  AH0 JH ER1 N
+adjournment  AH0 JH ER1 N M AH0 N T
+adjudicate  AH0 JH UW1 D IH0 K EY2 T
+adjunct  AE1 JH AH0 NG K T
+adjustable  AH0 JH AH1 S T AH0 B AH0 L
+administer  AE0 D M IH1 N AH0 S T ER0
+admirably  AE1 D M ER0 AH0 B L IY0
+admiralty  AE1 D M ER0 AH0 L T IY0
+admittance  AE0 D M IH1 T AH0 N S
+admittedly  AE0 D M IH1 T AH0 D L IY0
+admonish  AE0 D M AA1 N IH0 SH
+admonition  AE2 D M AH0 N IH1 SH AH0 N
+adoptive  AH0 D AA1 P T IH0 V
+adorable  AH0 D AO1 R AH0 B AH0 L
+adoration  AE2 D ER0 EY1 SH AH0 N
+adornment  AH0 D AO1 R N M AH0 N T
+adrenaline  AH0 D R EH1 N AH0 L IH0 N
+adrift  AH0 D R IH1 F T
+adroit  AH0 D R OY1 T
+adsorb  AE0 D Z AO1 R B
+adulation  AE2 JH AH0 L EY1 SH AH0 N
+adulthood  AH0 D AH1 L T HH UH2 D
+advancement  AH0 D V AE1 N S M AH0 N T
+advantageous  AE2 D V AH0 N T EY1 JH AH0 S
+adventurer  AE0 D V EH1 N CH ER0 ER0
+adventurous  AE0 D V EH1 N CH ER0 AH0 S
+adverb  AE1 D V ER0 B
+adverbial  AE0 D V ER1 B IY0 AH0 L
+adversarial  AE2 D V ER0 S EH1 R IY0 AH0 L
+adversely  AE0 D V ER1 S L IY0
+adversity  AE0 D V ER1 S AH0 T IY0
+advertiser  AE1 D V ER0 T AY2 Z ER0
+advisable  AE0 D V AY1 Z AH0 B AH0 L
+advocacy  AE1 D V AH0 K AH0 S IY0
+aerobic  EH0 R OW1 B IH0 K
+aerobics  EH0 R OW1 B IH0 K S
+aerodynamic  EH2 R OW0 D AY0 N AE1 M IH0 K
+aeronautics  EH2 R AH0 N AO1 T IH0 K S
+aerosol  EH1 R AH0 S AO2 L
+aesthete  EH1 S TH IY0 T
+aesthetics  EH0 S TH EH1 T IH0 K S
+affable  AE1 F AH0 B AH0 L
+affably  AE1 F AH0 B L IY0
+affectionate  AH0 F EH1 K SH AH0 N AH0 T
+affidavit  AE2 F AH0 D EY1 V AH0 T
+affinity  AH0 F IH1 N AH0 T IY0
+affirmation  AE2 F ER0 M EY1 SH AH0 N
+affluence  AE1 F L UW0 AH0 N S
+affluent  AE1 F L UW0 AH0 N T
+affordability  AH0 F AO2 R D AH0 B IH1 L AH0 T IY0
+affordable  AH0 F AO1 R D AH0 B AH0 L
+affront  AH0 F R AH1 N T
+afterlife  AE1 F T ER0 L AY2 F
+aftermath  AE1 F T ER0 M AE2 TH
+afterthought  AE1 F T ER0 TH AO2 T
+agape  AH0 G EY1 P
+aged  EY1 JH D
+ageing  EY1 JH IH0 NG
+ageism  EY1 JH IH0 Z AH0 M
+agglomerate  AH0 G L AA1 M ER0 AH0 T
+aggrandize  AH0 G R AE1 N D AY0 Z
+aggravate  AE1 G R AH0 V EY2 T
+aggravation  AE2 G R AH0 V EY1 SH AH0 N
+aggregation  AE2 G R AH0 G EY1 SH AH0 N
+aggressor  AH0 G R EH1 S ER0
+aggrieved  AH0 G R IY1 V D
+aghast  AH0 G AE1 S T
+agility  AH0 JH IH1 L AH0 T IY0
+agitation  AE2 JH AH0 T EY1 SH AH0 N
+agitator  AE1 JH AH0 T EY2 T ER0
+agnostic  AE0 G N AA1 S T IH0 K
+agnosticism  AE0 G N AA1 S T IH0 S IH2 Z AH0 M
+agonize  AE1 G AH0 N AY2 Z
+agonizing  AE1 G AH0 N AY2 Z IH0 NG
+agrarian  AH0 G R EH1 R IY0 AH0 N
+agreeable  AH0 G R IY1 AH0 B AH0 L
+agreeably  AH0 G R IY1 AH0 B L IY0
+agribusiness  AE1 G R IH0 B IH2 Z N AH0 S
+agricultural  AE2 G R IH0 K AH1 L CH ER0 AH0 L
+agriculturalist  AE2 G R IH0 K AH1 L CH ER0 AH0 L IH0 S T
+airborne  EH1 R B AO2 R N
+airfield  EH1 R F IY2 L D
+airflow  EH1 R F L OW2
+airlift  EH1 R L IH2 F T
+airstrip  EH1 R S T R IH2 P
+airtight  EH1 R T AY2 T
+airway  EH1 R W EY2
+airy  EH1 R IY0
+ajar  AH0 JH AA1 R
+akin  AH0 K IH1 N
+alabaster  AE1 L AH0 B AE2 S T ER0
+alacrity  AH0 L AE1 K R AH0 T IY0
+albino  AE0 L B AY1 N OW0
+alcoholism  AE1 L K AH0 HH AO2 L IH0 Z AH0 M
+alder  AO1 L D ER0
+alderman  AO1 L D ER0 M AH0 N
+alertness  AH0 L ER1 T N AH0 S
+alfalfa  AE0 L F AE1 L F AH0
+algae  AE1 L JH IY0
+algebraic  AE2 L JH AH0 B R EY1 IH0 K
+algorithmic  AE2 L G ER0 IH1 DH M IH0 K
+alias  EY1 L IY0 AH0 S
+alibi  AE1 L AH0 B AY2
+alienate  EY1 L IY0 AH0 N EY2 T
+alienation  EY2 L IY0 AH0 N EY1 SH AH0 N
+alight  AH0 L AY1 T
+alimony  AE1 L AH0 M OW2 N IY0
+alkali  AE1 L K AH0 L AY2
+alkaline  AE1 L K AH0 L AY2 N
+allegedly  AH0 L EH1 JH AH0 D L IY0
+allegiance  AH0 L IY1 JH AH0 N S
+allegorical  AE2 L AH0 G AO1 R IH0 K AH0 L
+allegory  AE1 L AH0 G AO2 R IY0
+allergen  AE1 L ER0 JH AH0 N
+alleviate  AH0 L IY1 V IY0 EY2 T
+alleviation  AH0 L IY2 V IY0 EY1 SH AH0 N
+alleyway  AE1 L IY0 W EY2
+allied  AH0 L AY1 D
+allotment  AH0 L AA1 T M AH0 N T
+allowable  AH0 L AW1 AH0 B AH0 L
+alloy  AE1 L OY0
+allure  AH0 L UH1 R
+alluring  AH0 L UH1 R IH0 NG
+allusion  AH0 L UW1 ZH AH0 N
+alluvial  AH0 L UW1 V IY0 AH0 L
+almanac  AO1 L M AH0 N AE2 K
+almighty  AO0 L M AY1 T IY0
+alongside  AH0 L AO2 NG S AY1 D
+aloof  AH0 L UW1 F
+alpine  AE1 L P AY0 N
+alteration  AO2 L T ER0 EY1 SH AH0 N
+altercation  AO2 L T ER0 K EY1 SH AH0 N
+alternation  AO2 L T ER0 N EY1 SH AH0 N
+alternatively  AO0 L T ER1 N AH0 T IH0 V L IY0
+alternator  AO1 L T ER0 N EY2 T ER0
+alto  AE1 L T OW0
+altruism  AE1 L T R UW0 IH2 Z AH0 M
+altruistic  AE2 L T R UW0 IH1 S T IH0 K
+aluminium  AE2 L Y AH0 M IH1 N IY0 AH0 M
+alumni  AH0 L AH1 M N AY0
+amalgamate  AH0 M AE1 L G AH0 M EY2 T
+amass  AH0 M AE1 S
+amateurish  AE1 M AH0 T ER0 IH0 SH
+amazement  AH0 M EY1 Z M AH0 N T
+amazingly  AH0 M EY1 Z IH0 NG L IY0
+amber  AE1 M B ER0
+ambiance  AE1 M B IY0 AH0 N S
+ambidextrous  AE2 M B IH0 D EH1 K S T R AH0 S
+ambitiously  AE0 M B IH1 SH AH0 S L IY0
+ambivalence  AE0 M B IH1 V AH0 L AH0 N S
+ambivalent  AE0 M B IH1 V AH0 L AH0 N T
+amble  AE1 M B AH0 L
+ambulatory  AE1 M B Y AH0 L AH0 T AO2 R IY0
+ambush  AE1 M B UH0 SH
+ameliorate  AH0 M IY1 L Y ER0 EY2 T
+amenable  AH0 M IY1 N AH0 B AH0 L
+amenity  AH0 M EH1 N AH0 T IY0
+amiable  EY1 M IY0 AH0 B AH0 L
+amicable  AE1 M IH0 K AH0 B AH0 L
+amidst  AH0 M IH1 D S T
+amino  AH0 M IY1 N OW0
+amiss  AH0 M IH1 S
+ammonia  AH0 M OW1 N Y AH0
+amnesia  AE0 M N IY1 ZH AH0
+amnesty  AE1 M N AH0 S T IY0
+amok  AH0 M AH1 K
+amoeba  AH0 M IY1 B AH0
+amoral  EY0 M AO1 R AH0 L
+amorphous  AH0 M AO1 R F AH0 S
+amortize  AE1 M ER0 T AY2 Z
+ampere  AE1 M P IH0 R
+amphibian  AE0 M F IH1 B IY0 AH0 N
+amphibious  AE0 M F IH1 B IY0 AH0 S
+amphitheater  AE1 M F AH0 TH IY2 AH0 T ER0
+amplification  AE2 M P L AH0 F AH0 K EY1 SH AH0 N
+amplifier  AE1 M P L AH0 F AY2 ER0
+amplitude  AE1 M P L AH0 T UW2 D
+amputate  AE1 M P Y AH0 T EY2 T
+amputation  AE2 M P Y AH0 T EY1 SH AH0 N
+amulet  AE1 M Y AH0 L AH0 T
+amusement  AH0 M Y UW1 Z M AH0 N T
+anachronism  AH0 N AE1 K R AH0 N IH2 Z AH0 M
+anachronistic  AH0 N AE2 K R AH0 N IH1 S T IH0 K
+anagram  AE1 N AH0 G R AE2 M
+anal  EY1 N AH0 L
+analgesic  AE2 N AH0 L JH IY1 S IH0 K
+analogous  AH0 N AE1 L AH0 G AH0 S
+analogue  AE1 N AH0 L AO2 G
+analytic  AE2 N AH0 L IH1 T IH0 K
+analytical  AE2 N AH0 L IH1 T IH0 K AH0 L
+anarchist  AE1 N ER0 K IH0 S T
+anatomical  AE2 N AH0 T AA1 M IH0 K AH0 L
+ancestry  AE1 N S EH0 S T R IY0
+anchorage  AE1 NG K ER0 IH0 JH
+anecdotal  AE2 N IH0 K D OW1 T AH0 L
+anemia  AH0 N IY1 M IY0 AH0
+anemic  AH0 N IY1 M IH0 K
+anesthesia  AE2 N AH0 S TH IY1 ZH AH0
+anesthetic  AE2 N AH0 S TH EH1 T IH0 K
+anew  AH0 N UW1
+angelic  AE0 N JH EH1 L IH0 K
+angler  AE1 NG G L ER0
+angular  AE1 NG G Y AH0 L ER0
+animated  AE1 N AH0 M EY2 T IH0 D
+animation  AE2 N AH0 M EY1 SH AH0 N
+animosity  AE2 N AH0 M AA1 S AH0 T IY0
+annals  AE1 N AH0 L Z
+annexation  AE2 N EH0 K S EY1 SH AH0 N
+annihilate  AH0 N AY1 AH0 L EY2 T
+annihilation  AH0 N AY2 AH0 L EY1 SH AH0 N
+annotate  AE1 N AH0 T EY2 T
+annotation  AE2 N AH0 T EY1 SH AH0 N
+announcer  AH0 N AW1 N S ER0
+annoyance  AH0 N OY1 AH0 N S
+annuity  AH0 N UW1 AH0 T IY0
+annul  AH0 N AH1 L
+anomalous  AH0 N AA1 M AH0 L AH0 S
+anomaly  AH0 N AA1 M AH0 L IY0
+anonymity  AE2 N AH0 N IH1 M AH0 T IY0
+anonymously  AH0 N AA1 N AH0 M AH0 S L IY0
+anorexia  AE2 N ER0 EH1 K S IY0 AH0
+antagonism  AE0 N T AE1 G AH0 N IH2 Z AH0 M
+antagonist  AE0 N T AE1 G AH0 N IH0 S T
+antagonistic  AE0 N T AE2 G AH0 N IH1 S T IH0 K
+antagonize  AE0 N T AE1 G AH0 N AY2 Z
+antecedent  AE2 N T AH0 S IY1 D AH0 N T
+antelope  AE1 N T AH0 L OW2 P
+anthology  AE0 N TH AA1 L AH0 JH IY0
+anthropologist  AE2 N TH R AH0 P AA1 L AH0 JH IH0 S T
+antibody  AE1 N T IH0 B AA2 D IY0
+anticipation  AE0 N T IH2 S AH0 P EY1 SH AH0 N
+antiseptic  AE2 N T AH0 S EH1 P T IH0 K
+antithesis  AE0 N T IH1 TH AH0 S AH0 S
+antler  AE1 N T L ER0
+antonym  AE1 N T AH0 N IH2 M
+anvil  AE1 N V AH0 L
+anxiously  AE1 NG K SH AH0 S L IY0
+apartheid  AH0 P AA1 R T AY2 D
+apathy  AE1 P AH0 TH IY0
+aperture  AE1 P ER0 CH ER0
+apex  EY1 P EH0 K S
+aphorism  AE1 F ER0 IH2 Z AH0 M
+apiece  AH0 P IY1 S
+aplenty  AH0 P L EH1 N T IY0
+aplomb  AH0 P L AA1 M
+apocalypse  AH0 P AA1 K AH0 L IH2 P S
+apocalyptic  AH0 P AA2 K AH0 L IH1 P T IH0 K
+apocryphal  AH0 P AA1 K R AH0 F AH0 L
+apologetic  AH0 P AA2 L AH0 JH EH1 T IH0 K
+apologize  AH0 P AA1 L AH0 JH AY2 Z
+apostle  AH0 P AA1 S AH0 L
+apostrophe  AH0 P AA1 S T R AH0 F IY0
+appalling  AH0 P AO1 L IH0 NG
+apparition  AE2 P ER0 IH1 SH AH0 N
+appealing  AH0 P IY1 L IH0 NG
+appendage  AH0 P EH1 N D IH0 JH
+appetizer  AE1 P AH0 T AY2 Z ER0
+appetizing  AE1 P AH0 T AY2 Z IH0 NG
+applicant  AE1 P L IH0 K AH0 N T
+applicator  AE1 P L IH0 K EY2 T ER0
+apportion  AH0 P AO1 R SH AH0 N
+apprehend  AE2 P R IH0 HH EH1 N D
+apprehension  AE2 P R IH0 HH EH1 N SH AH0 N
+apprehensive  AE2 P R IH0 HH EH1 N S IH0 V
+apprenticeship  AH0 P R EH1 N T AH0 S SH IH2 P
+appropriately  AH0 P R OW1 P R IY0 AH0 T L IY0
+appropriation  AH0 P R OW2 P R IY0 EY1 SH AH0 N
+aptitude  AE1 P T AH0 T UW2 D
+aptly  AE1 P T L IY0
+aquaculture  AE1 K W AH0 K AH2 L CH ER0
+aquamarine  AE2 K W AH0 M ER0 IY1 N
+aqueduct  AE1 K W AH0 D AH2 K T
+aquifer  AE1 K W AH0 F ER0
+arable  EH1 R AH0 B AH0 L
+arachnid  ER0 AE1 K N IH0 D
+arbiter  AA1 R B AH0 T ER0
+arbitrarily  AA2 R B AH0 T R EH1 R AH0 L IY0
+arbitrariness  AA1 R B AH0 T R EH2 R IY0 N AH0 S
+arbitration  AA2 R B AH0 T R EY1 SH AH0 N
+arbitrator  AA1 R B AH0 T R EY2 T ER0
+arboretum  AA2 R B ER0 IY1 T AH0 M
+arcane  AA0 R K EY1 N
+archaeological  AA2 R K IY0 AH0 L AA1 JH IH0 K AH0 L
+archaeologist  AA2 R K IY0 AA1 L AH0 JH IH0 S T
+archaic  AA0 R K EY1 IH0 K
+archbishop  AA1 R CH B IH2 SH AH0 P
+archer  AA1 R CH ER0
+archery  AA1 R CH ER0 IY0
+archipelago  AA2 R K AH0 P EH1 L AH0 G OW2
+architecturally  AA2 R K AH0 T EH1 K CH ER0 AH0 L IY0
+archway  AA1 R CH W EY2
+ardent  AA1 R D AH0 N T
+ardently  AA1 R D AH0 N T L IY0
+ardor  AA1 R D ER0
+arduous  AA1 R JH UW0 AH0 S
+arguably  AA1 R G Y UW0 AH0 B L IY0
+aria  AA1 R IY0 AH0
+aridity  ER0 IH1 D AH0 T IY0
+aristocracy  AE2 R AH0 S T AA1 K R AH0 S IY0
+aristocratic  ER0 IH2 S T AH0 K R AE1 T IH0 K
+armada  AA0 R M AA1 D AH0
+armadillo  AA2 R M AH0 D IH1 L OW0
+armament  AA1 R M AH0 M AH0 N T
+armchair  AA1 R M CH EH2 R
+armistice  AA1 R M AH0 S T AH0 S
+armoire  AA0 R M W AA1 R
+armored  AA1 R M ER0 D
+armory  AA1 R M ER0 IY0
+aromatic  AE2 R AH0 M AE1 T IH0 K
+arraign  ER0 EY1 N
+arraignment  ER0 EY1 N M AH0 N T
+arrears  ER0 IH1 R Z
+arrowhead  AE1 R OW0 HH EH2 D
+arsonist  AA1 R S AH0 N IH0 S T
+arterial  AA0 R T IH1 R IY0 AH0 L
+artful  AA1 R T F AH0 L
+arthritis  AA0 R TH R AY1 T AH0 S
+artichoke  AA1 R T AH0 CH OW2 K
+articulation  AA0 R T IH2 K Y AH0 L EY1 SH AH0 N
+artifice  AA1 R T AH0 F AH0 S
+artisan  AA1 R T AH0 Z AH0 N
+artistry  AA1 R T AH0 S T R IY0
+artwork  AA1 R T W ER2 K
+asbestos  AE0 Z B EH1 S T AH0 S
+ascendancy  AH0 S EH1 N D AH0 N S IY0
+ascension  AH0 S EH1 N SH AH0 N
+ascent  AH0 S EH1 N T
+ascertain  AE2 S ER0 T EY1 N
+ascetic  AH0 S EH1 T IH0 K
+ascribe  AH0 S K R AY1 B
+ashen  AE1 SH AH0 N
+ashore  AH0 SH AO1 R
+asparagus  AH0 S P EH1 R AH0 G AH0 S
+aspen  AE1 S P AH0 N
+asphalt  AE1 S F AO2 L T
+aspirant  AH0 S P AY1 R AH0 N T
+assailant  AH0 S EY1 L AH0 N T
+assassinate  AH0 S AE1 S AH0 N EY2 T
+assertive  AH0 S ER1 T IH0 V
+assessor  AH0 S EH1 S ER0
+assiduous  AH0 S IH1 JH UW0 AH0 S
+assignee  AH0 S AY2 N IY1
+assimilate  AH0 S IH1 M AH0 L EY2 T
+assimilation  AH0 S IH2 M AH0 L EY1 SH AH0 N
+assortment  AH0 S AO1 R T M AH0 N T
+assuage  AH0 S W EY1 JH
+asteroid  AE1 S T ER0 OY2 D
+asthmatic  AE0 Z M AE1 T IH0 K
+astonishing  AH0 S T AA1 N IH0 SH IH0 NG
+astonishment  AH0 S T AA1 N IH0 SH M AH0 N T
+astound  AH0 S T AW1 N D
+astounding  AH0 S T AW1 N D IH0 NG
+astray  AH0 S T R EY1
+astride  AH0 S T R AY1 D
+astringent  AH0 S T R IH1 N JH AH0 N T
+astrologer  AH0 S T R AA1 L AH0 JH ER0
+astronomical  AE2 S T R AH0 N AA1 M IH0 K AH0 L
+astute  AH0 S T UW1 T
+asymmetric  EY2 S IH0 M EH1 T R IH0 K
+asymmetry  EY0 S IH1 M AH0 T R IY0
+atavism  AE1 T AH0 V IH2 Z AH0 M
+atheism  EY1 TH IY0 IH2 Z AH0 M
+atheist  EY1 TH IY0 AH0 S T
+atmospheric  AE2 T M AH0 S F EH1 R IH0 K
+atoll  AE1 T AO0 L
+atone  AH0 T OW1 N
+atonement  AH0 T OW1 N M AH0 N T
+atrocious  AH0 T R OW1 SH AH0 S
+atrophy  AE1 T R AH0 F IY0
+attachable  AH0 T AE1 CH AH0 B AH0 L
+attainable  AH0 T EY1 N AH0 B AH0 L
+attainment  AH0 T EY1 N M AH0 N T
+attendant  AH0 T EH1 N D AH0 N T
+attentive  AH0 T EH1 N T IH0 V
+attest  AH0 T EH1 S T
+attestation  AE2 T AH0 S T EY1 SH AH0 N
+attire  AH0 T AY1 R
+attitudinal  AE2 T AH0 T UW1 D AH0 N AH0 L
+attorney  AH0 T ER1 N IY0
+attributable  AH0 T R IH1 B Y UW0 T AH0 B AH0 L
+attribution  AE2 T R AH0 B Y UW1 SH AH0 N
+attrition  AH0 T R IH1 SH AH0 N
+attune  AH0 T UW1 N
+atypical  EY0 T IH1 P AH0 K AH0 L
+auburn  AO1 B ER0 N
+auctioneer  AO2 K SH AH0 N IH1 R
+audacious  AO0 D EY1 SH AH0 S
+audacity  AO0 D AE1 S AH0 T IY0
+audible  AO1 D AH0 B AH0 L
+audibly  AO1 D AH0 B L IY0
+auditor  AO1 D AH0 T ER0
+auditorium  AO2 D AH0 T AO1 R IY0 AH0 M
+auditory  AO1 D AH0 T AO2 R IY0
+augment  AO0 G M EH1 N T
+augmentation  AO2 G M AH0 N T EY1 SH AH0 N
+aura  AO1 R AH0
+aurora  AO0 R AO1 R AH0
+auspicious  AO0 S P IH1 SH AH0 S
+austerity  AO0 S T EH1 R AH0 T IY0
+authentically  AO0 TH EH1 N T IH0 K L IY0
+authentication  AO0 TH EH2 N T AH0 K EY1 SH AH0 N
+authenticity  AO2 TH AH0 N T IH1 S AH0 T IY0
+authoritarian  AH0 TH AO2 R AH0 T EH1 R IY0 AH0 N
+authoritative  AH0 TH AO1 R AH0 T EY2 T IH0 V
+autocracy  AO0 T AA1 K R AH0 S IY0
+autocrat  AO1 T AH0 K R AE2 T
+autocratic  AO2 T AH0 K R AE1 T IH0 K
+autograph  AO1 T AH0 G R AE2 F
+automate  AO1 T AH0 M EY2 T
+automation  AO2 T AH0 M EY1 SH AH0 N
+automotive  AO2 T AH0 M OW1 T IH0 V
+autonomous  AO0 T AA1 N AH0 M AH0 S
+autopsy  AO1 T AA0 P S IY0
+avarice  AE1 V ER0 AH0 S
+avenger  AH0 V EH1 N JH ER0
+averse  AH0 V ER1 S
+aversion  AH0 V ER1 ZH AH0 N
+avert  AH0 V ER1 T
+aviary  EY1 V IY0 EH2 R IY0
+aviator  EY1 V IY0 EY2 T ER0
+avid  AE1 V IH0 D
+avidly  AE1 V AH0 D L IY0
+avocation  AE2 V AH0 K EY1 SH AH0 N
+avoidable  AH0 V OY1 D AH0 B AH0 L
+avoidance  AH0 V OY1 D AH0 N S
+avowal  AH0 V AW1 AH0 L
+awash  AH0 W AA1 SH
+awestruck  AO1 S T R AH2 K
+awfully  AO1 F AH0 L IY0
+awhile  AH0 W AY1 L
+awkwardly  AO1 K W ER0 D L IY0
+awkwardness  AO1 K W ER0 D N AH0 S
+awning  AO1 N IH0 NG
+axiom  AE1 K S IY0 AH0 M
+axiomatic  AE2 K S IY0 AH0 M AE1 T IH0 K
+azalea  AH0 Z EY1 L Y AH0
+azure  AE1 ZH ER0
+babble  B AE1 B AH0 L
+baboon  B AE0 B UW1 N
+backache  B AE1 K EY2 K
+backlog  B AE1 K L AO2 G
+backside  B AE1 K S AY2 D
+backstage  B AE1 K S T EY2 JH
+backstroke  B AE1 K S T R OW2 K
+backtrack  B AE1 K T R AE2 K
+backup  B AE1 K AH2 P
+badger  B AE1 JH ER0
+badminton  B AE1 D M IH0 N T AH0 N
+baffle  B AE1 F AH0 L
+bagpipe  B AE1 G P AY2 P
+bailiff  B EY1 L AH0 F
+bait  B EY1 T
+baker  B EY1 K ER0
+bakery  B EY1 K ER0 IY0
+ballad  B AE1 L AH0 D
+ballast  B AE1 L AH0 S T
+ballot  B AE1 L AH0 T
+ballroom  B AO1 L R UW2 M
+balm  B AA1 M
+banal  B AH0 N AA1 L
+bandit  B AE1 N D AH0 T
+bane  B EY1 N
+banishment  B AE1 N IH0 SH M AH0 N T
+banister  B AE1 N IH0 S T ER0
+banjo  B AE1 N JH OW0
+banter  B AE1 N T ER0
+baptism  B AE1 P T IH0 Z AH0 M
+baptize  B AE0 P T AY1 Z
+barb  B AA1 R B
+barbaric  B AA0 R B AE1 R IH0 K
+barbarism  B AA1 R B ER0 IH2 Z AH0 M
+bard  B AA1 R D
+barefaced  B EH1 R F EY2 S T
+barge  B AA1 R JH
+baritone  B AE1 R AH0 T OW2 N
+baroness  B AE1 R AH0 N AH0 S
+baroque  B ER0 OW1 K
+barracks  B AE1 R AH0 K S
+barrage  B ER0 AA1 ZH
+basal  B EY1 S AH0 L
+basalt  B AH0 S AO1 L T
+bashful  B AE1 SH F AH0 L
+bask  B AE1 S K
+bassoon  B AH0 S UW1 N
+bastard  B AE1 S T ER0 D
+bastion  B AE1 S CH AH0 N
+battlefield  B AE1 T AH0 L F IY2 L D
+battleground  B AE1 T AH0 L G R AW2 N D
+battleship  B AE1 T AH0 L SH IH2 P
+bauble  B AO1 B AH0 L
+bayonet  B EY2 AH0 N EH1 T
+beaker  B IY1 K ER0
+bearer  B EH1 R ER0
+bearing  B EH1 R IH0 NG
+beck  B EH1 K
+bedlam  B EH1 D L AH0 M
+bedrock  B EH1 D R AA2 K
+bedside  B EH1 D S AY2 D
+bedspread  B EH1 D S P R EH2 D
+bedtime  B EH1 D T AY2 M
+beech  B IY1 CH
+befit  B IH0 F IH1 T
+befriend  B IH0 F R EH1 N D
+beginner  B IH0 G IH1 N ER0
+beguile  B IH0 G AY1 L
+beholder  B IH0 HH OW1 L D ER0
+beige  B EY1 ZH
+belated  B IH0 L EY1 T IH0 D
+belfry  B EH1 L F R IY0
+believable  B IH0 L IY1 V AH0 B AH0 L
+believer  B IH0 L IY1 V ER0
+belittle  B IH0 L IH1 T AH0 L
+bellboy  B EH1 L B OY2
+belligerent  B AH0 L IH1 JH ER0 AH0 N T
+bellow  B EH1 L OW0
+bellows  B EH1 L OW0 Z
+belongings  B IH0 L AO1 NG IH0 NG Z
+benefactor  B EH1 N AH0 F AE2 K T ER0
+benevolence  B AH0 N EH1 V AH0 L AH0 N S
+benevolent  B AH0 N EH1 V AH0 L AH0 N T
+bequeath  B IH0 K W IY1 DH
+bequest  B IH0 K W EH1 S T
+bereave  B ER0 IY1 V
+bereavement  B ER0 IY1 V M AH0 N T
+beret  B ER0 EY1
+berserk  B ER0 Z ER1 K
+berth  B ER1 TH
+beseech  B IH0 S IY1 CH
+beset  B IH0 S EH1 T
+bestseller  B EH1 S T S EH1 L ER0
+betrayal  B IH0 T R EY1 AH0 L
+betrothal  B IH0 T R OW1 DH AH0 L
+bewilder  B IH0 W IH1 L D ER0
+bewilderment  B IH0 W IH1 L D ER0 M AH0 N T
+bicep  B AY1 S EH0 P
+biceps  B AY1 S EH0 P S
+bicker  B IH1 K ER0
+bicultural  B AY0 K AH1 L CH ER0 AH0 L
+bidder  B IH1 D ER0
+biennial  B AY0 EH1 N IY0 AH0 L
+bigot  B IH1 G AH0 T
+bigotry  B IH1 G AH0 T R IY0
+bilateral  B AY0 L AE1 T ER0 AH0 L
+bilingual  B AY0 L IH1 NG G W AH0 L
+binder  B AY1 N D ER0
+binding  B AY1 N D IH0 NG
+binge  B IH1 N JH
+binoculars  B AH0 N AA1 K Y AH0 L ER0 Z
+biodegradable  B AY2 OW0 D IH0 G R EY1 D AH0 B AH0 L
+biodiversity  B AY2 OW0 D AH0 V ER1 S AH0 T IY0
+biographer  B AY0 AA1 G R AH0 F ER0
+biographical  B AY2 AH0 G R AE1 F IH0 K AH0 L
+biologist  B AY0 AA1 L AH0 JH IH0 S T
+biome  B AY1 OW0 M
+biomedical  B AY2 OW0 M EH1 D IH0 K AH0 L
+biopsy  B AY1 AA0 P S IY0
+biosphere  B AY1 AH0 S F IH2 R
+biotechnology  B AY2 OW0 T EH0 K N AA1 L AH0 JH IY0
+bipartisan  B AY0 P AA1 R T AH0 Z AH0 N
+birch  B ER1 CH
+birthplace  B ER1 TH P L EY2 S
+birthrate  B ER1 TH R EY2 T
+bisect  B AY0 S EH1 K T
+bistro  B IY1 S T R OW0
+bitmap  B IH1 T M AE2 P
+biweekly  B AY0 W IY1 K L IY0
+blackbird  B L AE1 K B ER2 D
+blackboard  B L AE1 K B AO2 R D
+blackmail  B L AE1 K M EY2 L
+blackout  B L AE1 K AW2 T
+blacksmith  B L AE1 K S M IH2 TH
+bladder  B L AE1 D ER0
+bland  B L AE1 N D
+blare  B L EH1 R
+blasphemy  B L AE1 S F AH0 M IY0
+blatant  B L EY1 T AH0 N T
+blatantly  B L EY1 T AH0 N T L IY0
+blazer  B L EY1 Z ER0
+bleach  B L IY1 CH
+bleak  B L IY1 K
+bleakness  B L IY1 K N AH0 S
+blemish  B L EH1 M IH0 SH
+blender  B L EH1 N D ER0
+blight  B L AY1 T
+blindfold  B L AY1 N D F OW2 L D
+blindness  B L AY1 N D N AH0 S
+blissful  B L IH1 S F AH0 L
+blitz  B L IH1 T S
+bloat  B L OW1 T
+blockade  B L AA0 K EY1 D
+blockage  B L AA1 K IH0 JH
+blockbuster  B L AA1 K B AH2 S T ER0
+blogger  B L AO1 G ER0
+bloodshed  B L AH1 D SH EH2 D
+bloodstream  B L AH1 D S T R IY2 M
+bloodthirsty  B L AH1 D TH ER2 S T IY0
+blot  B L AA1 T
+blotch  B L AA1 CH
+blouse  B L AW1 Z
+bluff  B L AH1 F
+blunt  B L AH1 N T
+bluntly  B L AH1 N T L IY0
+blurt  B L ER1 T
+boar  B AO1 R
+boardroom  B AO1 R D R UW2 M
+boastful  B OW1 S T F AH0 L
+bobbin  B AA1 B IH0 N
+bodily  B AA1 D AH0 L IY0
+bog  B AA1 G
+bogus  B OW1 G AH0 S
+boiler  B OY1 L ER0
+boisterous  B OY1 S T ER0 AH0 S
+boldly  B OW1 L D L IY0
+boldness  B OW1 L D N AH0 S
+bombardment  B AA0 M B AA1 R D M AH0 N T
+bonanza  B AH0 N AE1 N Z AH0
+boomerang  B UW1 M ER0 AE2 NG
+booster  B UW1 S T ER0
+bootleg  B UW1 T L EH2 G
+borderline  B AO1 R D ER0 L AY2 N
+boredom  B AO1 R D AH0 M
+botanist  B AA1 T AH0 N IH0 S T
+botany  B AA1 T AH0 N IY0
+botch  B AA1 CH
+bottleneck  B AA1 T AH0 L N EH2 K
+bouncer  B AW1 N S ER0
+bountiful  B AW1 N T IH0 F AH0 L
+bounty  B AW1 N T IY0
+bourbon  B ER1 B AH0 N
+bowel  B AW1 AH0 L
+brace  B R EY1 S
+brag  B R AE1 G
+braille  B R EY1 L
+brainchild  B R EY1 N CH AY2 L D
+brainstorm  B R EY1 N S T AO2 R M
+brainwash  B R EY1 N W AA2 SH
+bramble  B R AE1 M B AH0 L
+brandish  B R AE1 N D IH0 SH
+brash  B R AE1 SH
+bravado  B R AH0 V AA1 D OW0
+bravely  B R EY1 V L IY0
+bravery  B R EY1 V ER0 IY0
+brawl  B R AO1 L
+brazen  B R EY1 Z AH0 N
+breadth  B R EH1 D TH
+breakaway  B R EY1 K AH0 W EY2
+breakneck  B R EY1 K N EH2 K
+breakup  B R EY1 K AH2 P
+breastplate  B R EH1 S T P L EY2 T
+breathless  B R EH1 TH L AH0 S
+breathtaking  B R EH1 TH T EY2 K IH0 NG
+breeder  B R IY1 D ER0
+breezy  B R IY1 Z IY0
+brevity  B R EH1 V AH0 T IY0
+bribery  B R AY1 B ER0 IY0
+brickwork  B R IH1 K W ER2 K
+briefly  B R IY1 F L IY0
+brigand  B R IH1 G AH0 N D
+brighten  B R AY1 T AH0 N
+brilliance  B R IH1 L Y AH0 N S
+brilliantly  B R IH1 L Y AH0 N T L IY0
+brim  B R IH1 M
+brine  B R AY1 N
+briskly  B R IH1 S K L IY0
+bristle  B R IH1 S AH0 L
+brittle  B R IH1 T AH0 L
+broach  B R OW1 CH
+broadband  B R AO1 D B AE2 N D
+broadcaster  B R AO1 D K AE2 S T ER0
+broadly  B R AO1 D L IY0
+broker  B R OW1 K ER0
+brokerage  B R OW1 K ER0 IH0 JH
+bronchitis  B R AA0 NG K AY1 T AH0 S
+brooch  B R OW1 CH
+brood  B R UW1 D
+browser  B R AW1 Z ER0
+brunette  B R UW0 N EH1 T
+brunt  B R AH1 N T
+brushstroke  B R AH1 SH S T R OW2 K
+brusque  B R AH1 S K
+brutality  B R UW0 T AE1 L AH0 T IY0
+brutally  B R UW1 T AH0 L IY0
+brute  B R UW1 T
+buckle  B AH1 K AH0 L
+budge  B AH1 JH
+budgetary  B AH1 JH AH0 T EH2 R IY0
+buff  B AH1 F
+buggy  B AH1 G IY0
+bugle  B Y UW1 G AH0 L
+builder  B IH1 L D ER0
+buildup  B IH1 L D AH2 P
+bulge  B AH1 L JH
+bulimia  B UW0 L IY1 M IY0 AH0
+bulky  B AH1 L K IY0
+bulldog  B UH1 L D AO2 G
+bulldozer  B UH1 L D OW2 Z ER0
+bullfight  B UH1 L F AY2 T
+bullion  B UH1 L Y AH0 N
+bump  B AH1 M P
+bumper  B AH1 M P ER0
+bumpy  B AH1 M P IY0
+bungle  B AH1 NG G AH0 L
+bunker  B AH1 NG K ER0
+buoy  B UW1 IY0
+buoyancy  B OY1 AH0 N S IY0
+buoyant  B OY1 AH0 N T
+burdensome  B ER1 D AH0 N S AH0 M
+bureaucrat  B Y UH1 R AH0 K R AE2 T
+burgeon  B ER1 JH AH0 N
+burglar  B ER1 G L ER0
+burlap  B ER1 L AE0 P
+burly  B ER1 L IY0
+burnout  B ER1 N AW2 T
+burrow  B ER1 OW0
+bursar  B ER1 S ER0
+bushy  B UH1 SH IY0
+bustling  B AH1 S AH0 L IH0 NG
+butcher  B UH1 CH ER0
+butler  B AH1 T L ER0
+butterscotch  B AH1 T ER0 S K AA2 CH
+buttress  B AH1 T R AH0 S
+buyout  B AY1 AW2 T
+buzzer  B AH1 Z ER0
+bygone  B AY1 G AO2 N
+bystander  B AY1 S T AE2 N D ER0
+byte  B AY1 T
+cab  K AE1 B
+cabana  K AH0 B AE1 N AH0
+cabbage  K AE1 B IH0 JH
+cabal  K AH0 B AA1 L
+cabernet  K AE2 B ER0 N EY1
+cabinetry  K AE1 B AH0 N AH0 T R IY0
+cache  K AE1 SH
+cackle  K AE1 K AH0 L
+cactus  K AE1 K T AH0 S
+cadaver  K AH0 D AE1 V ER0
+cadence  K EY1 D AH0 N S
+cadet  K AH0 D EH1 T
+cafeteria  K AE2 F AH0 T IH1 R IY0 AH0
+cajole  K AH0 JH OW1 L
+calculus  K AE1 L K Y AH0 L AH0 S
+caliber  K AE1 L AH0 B ER0
+calibrate  K AE1 L AH0 B R EY2 T
+calibration  K AE2 L AH0 B R EY1 SH AH0 N
+calligraphy  K AH0 L IH1 G R AH0 F IY0
+callous  K AE1 L AH0 S
+callously  K AE1 L AH0 S L IY0
+cameo  K AE1 M IY0 OW0
+camouflage  K AE1 M AH0 F L AA2 ZH
+campfire  K AE1 M P F AY2 ER0
+campground  K AE1 M P G R AW2 N D
+canary  K AH0 N EH1 R IY0
+cancellation  K AE2 N S AH0 L EY1 SH AH0 N
+candid  K AE1 N D AH0 D
+candidacy  K AE1 N D AH0 D AH0 S IY0
+candidly  K AE1 N D AH0 D L IY0
+candlelight  K AE1 N D AH0 L L AY2 T
+candor  K AE1 N D ER0
+canine  K EY1 N AY2 N
+canister  K AE1 N AH0 S T ER0
+cannabis  K AE1 N AH0 B AH0 S
+cannibal  K AE1 N AH0 B AH0 L
+cannibalism  K AE1 N AH0 B AH0 L IH2 Z AH0 M
+canoe  K AH0 N UW1
+canteen  K AE0 N T IY1 N
+canter  K AE1 N T ER0
+canvass  K AE1 N V AH0 S
+capacitor  K AH0 P AE1 S AH0 T ER0
+capillary  K AE1 P AH0 L EH2 R IY0
+capitalize  K AE1 P AH0 T AH0 L AY2 Z
+capitulation  K AH0 P IH2 CH AH0 L EY1 SH AH0 N
+caprice  K AH0 P R IY1 S
+capricious  K AH0 P R IH1 SH AH0 S
+capsize  K AE1 P S AY2 Z
+captivate  K AE1 P T AH0 V EY2 T
+captivating  K AE1 P T AH0 V EY2 T IH0 NG
+captivity  K AE0 P T IH1 V AH0 T IY0
+captor  K AE1 P T ER0
+carafe  K ER0 AE1 F
+caramel  K AE1 R AH0 M EH2 L
+carat  K AE1 R AH0 T
+carbonate  K AA1 R B AH0 N EY2 T
+carburetor  K AA1 R B ER0 EY2 T ER0
+carcass  K AA1 R K AH0 S
+carcinogen  K AA0 R S IH1 N AH0 JH AH0 N
+cardboard  K AA1 R D B AO2 R D
+cardiac  K AA1 R D IY0 AE2 K
+cardiologist  K AA2 R D IY0 AA1 L AH0 JH IH0 S T
+cardiology  K AA2 R D IY0 AA1 L AH0 JH IY0
+cardiovascular  K AA2 R D IY0 OW0 V AE1 S K Y AH0 L ER0
+careen  K ER0 IY1 N
+carefree  K EH1 R F R IY2
+caregiver  K EH1 R G IH2 V ER0
+careless  K EH1 R L AH0 S
+carelessly  K EH1 R L AH0 S L IY0
+carelessness  K EH1 R L AH0 S N AH0 S
+caress  K ER0 EH1 S
+caretaker  K EH1 R T EY2 K ER0
+caribou  K AE1 R AH0 B UW2
+caricature  K AE1 R AH0 K AH0 CH ER0
+carnage  K AA1 R N AH0 JH
+carnation  K AA0 R N EY1 SH AH0 N
+carnival  K AA1 R N AH0 V AH0 L
+carnivore  K AA1 R N AH0 V AO2 R
+carousel  K AE2 R AH0 S EH1 L
+carpentry  K AA1 R P AH0 N T R IY0
+carpool  K AA1 R P UW2 L
+carrier  K AE1 R IY0 ER0
+cartilage  K AA1 R T AH0 L IH0 JH
+cartographer  K AA0 R T AA1 G R AH0 F ER0
+cartography  K AA0 R T AA1 G R AH0 F IY0
+carton  K AA1 R T AH0 N
+caseload  K EY1 S L OW2 D
+cashmere  K AE1 ZH M IH0 R
+casing  K EY1 S IH0 NG
+casino  K AH0 S IY1 N OW0
+casket  K AE1 S K AH0 T
+cassette  K AH0 S EH1 T
+castaway  K AE1 S T AH0 W EY2
+caste  K AE1 S T
+castigate  K AE1 S T AH0 G EY2 T
+casting  K AE1 S T IH0 NG
+casualty  K AE1 ZH AH0 L T IY0
+cataclysm  K AE1 T AH0 K L IH2 Z AH0 M
+catalyst  K AE1 T AH0 L AH0 S T
+catalytic  K AE2 T AH0 L IH1 T IH0 K
+catamaran  K AE2 T AH0 M ER0 AE1 N
+catapult  K AE1 T AH0 P AH2 L T
+cataract  K AE1 T ER0 AE2 K T
+cater  K EY1 T ER0
+caterer  K EY1 T ER0 ER0
+catheter  K AE1 TH AH0 T ER0
+cathode  K AE1 TH OW0 D
+caucus  K AO1 K AH0 S
+cauldron  K AO1 L D R AH0 N
+causation  K AO0 Z EY1 SH AH0 N
+caustic  K AO1 S T IH0 K
+cauterize  K AO1 T ER0 AY2 Z
+cavalier  K AE2 V AH0 L IH1 R
+cavalry  K AE1 V AH0 L R IY0
+caveat  K AE1 V IY0 AE2 T
+cavern  K AE1 V ER0 N
+cavernous  K AE1 V ER0 N AH0 S
+caviar  K AE1 V IY0 AA2 R
+cayenne  K AY0 EH1 N
+ceasefire  S IY1 S F AY2 ER0
+ceaseless  S IY1 S L AH0 S
+celibacy  S EH1 L AH0 B AH0 S IY0
+cello  CH EH1 L OW0
+cellular  S EH1 L Y AH0 L ER0
+censor  S EH1 N S ER0
+censorship  S EH1 N S ER0 SH IH2 P
+censure  S EH1 N SH ER0
+centennial  S EH0 N T EH1 N IY0 AH0 L
+centigrade  S EH1 N T AH0 G R EY2 D
+centrist  S EH1 N T R IH0 S T
+ceramic  S ER0 AE1 M IH0 K
+cerebral  S ER0 IY1 B R AH0 L
+ceremonial  S EH2 R AH0 M OW1 N IY0 AH0 L
+ceremonious  S EH2 R AH0 M OW1 N IY0 AH0 S
+certainty  S ER1 T AH0 N T IY0
+certification  S ER2 T AH0 F AH0 K EY1 SH AH0 N
+certify  S ER1 T AH0 F AY2
+cessation  S EH0 S EY1 SH AH0 N
+chafe  CH EY1 F
+chagrin  SH AH0 G R IH1 N
+chainsaw  CH EY1 N S AO2
+chalet  SH AH0 L EY1
+chalice  CH AE1 L AH0 S
+chalkboard  CH AO1 K B AO2 R D
+challenger  CH AE1 L AH0 N JH ER0
+chameleon  K AH0 M IY1 L IY0 AH0 N
+chamomile  K AE1 M AH0 M AY2 L
+changeover  CH EY1 N JH OW2 V ER0
+chant  CH AE1 N T
+chaotic  K EY0 AA1 T IH0 K
+chaplain  CH AE1 P L AH0 N
+char  CH AA1 R
+charade  SH ER0 EY1 D
+charismatic  K AE2 R IH0 Z M AE1 T IH0 K
+charitable  CH AE1 R AH0 T AH0 B AH0 L
+charlatan  SH AA1 R L AH0 T AH0 N
+chasm  K AE1 Z AH0 M
+chassis  CH AE1 S IY0
+chaste  CH EY1 S T
+chasten  CH EY1 S AH0 N
+chastise  CH AE0 S T AY1 Z
+chatter  CH AE1 T ER0
+chauffeur  SH OW0 F ER1
+checkbook  CH EH1 K B UH2 K
+checklist  CH EH1 K L IH2 S T
+checkout  CH EH1 K AW2 T
+checkup  CH EH1 K AH2 P
+cheddar  CH EH1 D ER0
+cheekbone  CH IY1 K B OW2 N
+cheerful  CH IH1 R F AH0 L
+cheerfully  CH IH1 R F AH0 L IY0
+cheerleader  CH IH1 R L IY2 D ER0
+chestnut  CH EH1 S N AH2 T
+chic  SH IY1 K
+chick  CH IH1 K
+chickpea  CH IH1 K P IY2
+chide  CH AY1 D
+chieftain  CH IY1 F T AH0 N
+chiffon  SH IH0 F AA1 N
+childcare  CH AY1 L D K EH2 R
+childproof  CH AY1 L D P R UW2 F
+chili  CH IH1 L IY0
+chilled  CH IH1 L D
+chilly  CH IH1 L IY0
+chime  CH AY1 M
+chimpanzee  CH IH2 M P AE0 N Z IY1
+chinchilla  CH IH0 N CH IH1 L AH0
+chipmunk  CH IH1 P M AH2 NG K
+chirp  CH ER1 P
+chisel  CH IH1 Z AH0 L
+chivalry  SH IH1 V AH0 L R IY0
+chloride  K L AO1 R AY2 D
+chlorine  K L AO1 R IY2 N
+chlorophyll  K L AO1 R AH0 F IH2 L
+cholesterol  K AH0 L EH1 S T ER0 AO2 L
+choreograph  K AO1 R IY0 AH0 G R AE2 F
+choreographer  K AO2 R IY0 AA1 G R AH0 F ER0
+christen  K R IH1 S AH0 N
+chromatic  K R OW0 M AE1 T IH0 K
+chromosome  K R OW1 M AH0 S OW2 M
+chronological  K R AA2 N AH0 L AA1 JH IH0 K AH0 L
+chronology  K R AH0 N AA1 L AH0 JH IY0
+chrysalis  K R IH1 S AH0 L AH0 S
+chubby  CH AH1 B IY0
+chuckle  CH AH1 K AH0 L
+chunky  CH AH1 NG K IY0
+churn  CH ER1 N
+cigar  S IH0 G AA1 R
+cilantro  S IH0 L AE1 N T R OW0
+cinder  S IH1 N D ER0
+cipher  S AY1 F ER0
+circa  S ER1 K AH0
+circuitry  S ER1 K AH0 T R IY0
+circumference  S ER0 K AH1 M F ER0 AH0 N S
+circumscribe  S ER2 K AH0 M S K R AY1 B
+circumspect  S ER1 K AH0 M S P EH2 K T
+circumvent  S ER2 K AH0 M V EH1 N T
+cistern  S IH1 S T ER0 N
+citadel  S IH1 T AH0 D EH2 L
+citizenry  S IH1 T AH0 Z AH0 N R IY0
+citizenship  S IH1 T AH0 Z AH0 N SH IH2 P
+citrus  S IH1 T R AH0 S
+civility  S AH0 V IH1 L AH0 T IY0
+clad  K L AE1 D
+clam  K L AE1 M
+clamber  K L AE1 M B ER0
+clamor  K L AE1 M ER0
+clandestine  K L AE0 N D EH1 S T AH0 N
+clang  K L AE1 NG
+clank  K L AE1 NG K
+clap  K L AE1 P
+clarification  K L AE2 R AH0 F AH0 K EY1 SH AH0 N
+clarinet  K L AE2 R AH0 N EH1 T
+clasps  K L AE1 S P S
+classmate  K L AE1 S M EY2 T
+claustrophobia  K L AO2 S T R AH0 F OW1 B IY0 AH0
+claw  K L AO1
+cleanser  K L EH1 N Z ER0
+clearance  K L IH1 R AH0 N S
+clearing  K L IH1 R IH0 NG
+cleft  K L EH1 F T
+clemency  K L EH1 M AH0 N S IY0
+clergyman  K L ER1 JH IY0 M AH0 N
+clerical  K L EH1 R IH0 K AH0 L
+clerkship  K L ER1 K SH IH0 P
+clientele  K L AY2 AH0 N T EH1 L
+cliffhanger  K L IH1 F HH AE2 NG ER0
+climatic  K L AY0 M AE1 T IH0 K
+clinch  K L IH1 N CH
+clipboard  K L IH1 P B AO2 R D
+clique  K L IY1 K
+clot  K L AA1 T
+clothe  K L OW1 DH
+cloudless  K L AW1 D L AH0 S
+clout  K L AW1 T
+clown  K L AW1 N
+clubhouse  K L AH1 B HH AW2 S
+clump  K L AH1 M P
+clumsy  K L AH1 M Z IY0
+clutter  K L AH1 T ER0
+coagulate  K OW0 AE1 G Y AH0 L EY2 T
+coalesce  K OW2 AH0 L EH1 S
+coarse  K AO1 R S
+coarsen  K AO1 R S AH0 N
+coastal  K OW1 S T AH0 L
+cobalt  K OW1 B AO2 L T
+cobble  K AA1 B AH0 L
+cobblestone  K AA1 B AH0 L S T OW2 N
+cobra  K OW1 B R AH0
+cobweb  K AA1 B W EH2 B
+cocoa  K OW1 K OW0
+cocoon  K AH0 K UW1 N
+coddle  K AA1 D AH0 L
+codify  K OW1 D AH0 F AY2
+coerce  K OW0 ER1 S
+coercion  K OW0 ER1 SH AH0 N
+coexist  K OW2 IH0 G Z IH1 S T
+coexistence  K OW2 IH0 G Z IH1 S T AH0 N S
+coffeehouse  K AO1 F IY0 HH AW2 S
+cog  K AA1 G
+cogent  K OW1 JH AH0 N T
+cognition  K AA0 G N IH1 SH AH0 N
+cognizance  K AA1 G N AH0 Z AH0 N S
+cognizant  K AA1 G N AH0 Z AH0 N T
+cohabit  K OW0 HH AE1 B AH0 T
+coherence  K OW0 HH IH1 R AH0 N S
+cohesion  K OW0 HH IY1 ZH AH0 N
+cohesive  K OW0 HH IY1 S IH0 V
+cohort  K OW1 HH AO0 R T
+coincide  K OW2 IH0 N S AY1 D
+coincidental  K OW0 IH2 N S AH0 D EH1 N T AH0 L
+collaboration  K AH0 L AE2 B ER0 EY1 SH AH0 N
+collaborative  K AH0 L AE1 B ER0 AH0 T IH0 V
+collaborator  K AH0 L AE1 B ER0 EY2 T ER0
+collage  K AH0 L AA1 ZH
+collarbone  K AA1 L ER0 B OW2 N
+collectible  K AH0 L EH1 K T AH0 B AH0 L
+collective  K AH0 L EH1 K T IH0 V
+collectively  K AH0 L EH1 K T IH0 V L IY0
+collector  K AH0 L EH1 K T ER0
+collegiate  K AH0 L IY1 JH AH0 T
+collide  K AH0 L AY1 D
+collision  K AH0 L IH1 ZH AH0 N
+colloquial  K AH0 L OW1 K W IY0 AH0 L
+colloquium  K AH0 L OW1 K W IY0 AH0 M
+collusion  K AH0 L UW1 ZH AH0 N
+colonialism  K AH0 L OW1 N IY0 AH0 L IH2 Z AH0 M
+colonist  K AA1 L AH0 N IH0 S T
+colonize  K AA1 L AH0 N AY2 Z
+colonnade  K AA2 L AH0 N EY1 D
+coloring  K AH1 L ER0 IH0 NG
+colosseum  K AA2 L AH0 S IY1 AH0 M
+colt  K OW1 L T
+columnist  K AA1 L AH0 M N IH0 S T
+coma  K OW1 M AH0
+combatant  K AH0 M B AE1 T AH0 N T
+combative  K AH0 M B AE1 T IH0 V
+combustible  K AH0 M B AH1 S T AH0 B AH0 L
+combustion  K AH0 M B AH1 S CH AH0 N
+comeback  K AH1 M B AE2 K
+comely  K AH1 M L IY0
+commandant  K AA2 M AH0 N D AE1 N T
+commandeer  K AA2 M AH0 N D IH1 R
+commemoration  K AH0 M EH2 M ER0 EY1 SH AH0 N
+commendable  K AH0 M EH1 N D AH0 B AH0 L
+commendation  K AA2 M AH0 N D EY1 SH AH0 N
+commentator  K AA1 M AH0 N T EY2 T ER0
+commercialize  K AH0 M ER1 SH AH0 L AY2 Z
+commingle  K AH0 M IH1 NG G AH0 L
+commissar  K AA1 M AH0 S AA2 R
+commissioner  K AH0 M IH1 SH AH0 N ER0
+commodious  K AH0 M OW1 D IY0 AH0 S
+commonality  K AA2 M AH0 N AE1 L AH0 T IY0
+commonwealth  K AA1 M AH0 N W EH2 L TH
+commotion  K AH0 M OW1 SH AH0 N
+communicable  K AH0 M Y UW1 N AH0 K AH0 B AH0 L
+communicative  K AH0 M Y UW1 N AH0 K AH0 T IH0 V
+communique  K AH0 M Y UW2 N AH0 K EY1
+communism  K AA1 M Y AH0 N IH2 Z AH0 M
+communist  K AA1 M Y AH0 N AH0 S T
+commuter  K AH0 M Y UW1 T ER0
+companionship  K AH0 M P AE1 N Y AH0 N SH IH2 P
+comparable  K AA1 M P ER0 AH0 B AH0 L
+comparably  K AA1 M P ER0 AH0 B L IY0
+comparative  K AH0 M P AE1 R AH0 T IH0 V
+comparatively  K AH0 M P AE1 R AH0 T IH0 V L IY0
+compartment  K AH0 M P AA1 R T M AH0 N T
+compartmentalize  K AA2 M P AA0 R T M EH1 N T AH0 L AY2 Z
+compassionate  K AH0 M P AE1 SH AH0 N AH0 T
+compatibility  K AH0 M P AE2 T AH0 B IH1 L AH0 T IY0
+compendium  K AH0 M P EH1 N D IY0 AH0 M
+compensatory  K AH0 M P EH1 N S AH0 T AO2 R IY0
+competently  K AA1 M P AH0 T AH0 N T L IY0
+competitive  K AH0 M P EH1 T AH0 T IH0 V
+competitively  K AH0 M P EH1 T AH0 T IH0 V L IY0
+competitor  K AH0 M P EH1 T AH0 T ER0
+compilation  K AA2 M P AH0 L EY1 SH AH0 N
+compiler  K AH0 M P AY1 L ER0
+complacency  K AH0 M P L EY1 S AH0 N S IY0
+complacent  K AH0 M P L EY1 S AH0 N T
+complementary  K AA2 M P L AH0 M EH1 N T ER0 IY0
+completion  K AH0 M P L IY1 SH AH0 N
+complexion  K AH0 M P L EH1 K SH AH0 N
+compliant  K AH0 M P L AY1 AH0 N T
+complicit  K AH0 M P L IH1 S AH0 T
+complimentary  K AA2 M P L AH0 M EH1 N T ER0 IY0
+composure  K AH0 M P OW1 ZH ER0
+compounding  K AH0 M P AW1 N D IH0 NG
+comprehensible  K AA2 M P R IH0 HH EH1 N S AH0 B AH0 L
+compression  K AH0 M P R EH1 SH AH0 N
+compressor  K AH0 M P R EH1 S ER0
+comptroller  K AH0 N T R OW1 L ER0
+compulsion  K AH0 M P AH1 L SH AH0 N
+compulsive  K AH0 M P AH1 L S IH0 V
+compunction  K AH0 M P AH1 NG K SH AH0 N
+computation  K AA2 M P Y UW0 T EY1 SH AH0 N
+computational  K AA2 M P Y UW0 T EY1 SH AH0 N AH0 L
+comradeship  K AA1 M R AE0 D SH IH2 P
+concave  K AA0 N K EY1 V
+concealment  K AH0 N S IY1 L M AH0 N T
+conceit  K AH0 N S IY1 T
+conceited  K AH0 N S IY1 T IH0 D
+conceivable  K AH0 N S IY1 V AH0 B AH0 L
+conceivably  K AH0 N S IY1 V AH0 B L IY0
+concentrated  K AA1 N S AH0 N T R EY2 T IH0 D
+concentric  K AH0 N S EH1 N T R IH0 K
+conceptual  K AH0 N S EH1 P CH UW0 AH0 L
+conceptualize  K AH0 N S EH1 P CH UW0 AH0 L AY2 Z
+concierge  K AA2 N S IY0 EH1 R ZH
+conciliate  K AH0 N S IH1 L IY0 EY2 T
+conciliation  K AH0 N S IH2 L IY0 EY1 SH AH0 N
+concise  K AH0 N S AY1 S
+concisely  K AH0 N S AY1 S L IY0
+conclave  K AA1 N K L EY2 V
+conclusive  K AH0 N K L UW1 S IH0 V
+conclusively  K AH0 N K L UW1 S IH0 V L IY0
+concoct  K AH0 N K AA1 K T
+concoction  K AH0 N K AA1 K SH AH0 N
+concordance  K AH0 N K AO1 R D AH0 N S
+concourse  K AA1 N K AO2 R S
+concur  K AH0 N K ER1
+concurrence  K AH0 N K ER1 AH0 N S
+concurrent  K AH0 N K ER1 AH0 N T
+concurrently  K AH0 N K ER1 AH0 N T L IY0
+concussion  K AH0 N K AH1 SH AH0 N
+condensation  K AA2 N D EH0 N S EY1 SH AH0 N
+condescend  K AA2 N D IH0 S EH1 N D
+condescending  K AA2 N D IH0 S EH1 N D IH0 NG
+conditional  K AH0 N D IH1 SH AH0 N AH0 L
+conditionally  K AH0 N D IH1 SH AH0 N AH0 L IY0
+condolence  K AH0 N D OW1 L AH0 N S
+condominium  K AA2 N D AH0 M IH1 N IY0 AH0 M
+condone  K AH0 N D OW1 N
+conducive  K AH0 N D UW1 S IH0 V
+conductor  K AH0 N D AH1 K T ER0
+conduit  K AA1 N D UW0 AH0 T
+cone  K OW1 N
+confection  K AH0 N F EH1 K SH AH0 N
+confectioner  K AH0 N F EH1 K SH AH0 N ER0
+confederacy  K AH0 N F EH1 D ER0 AH0 S IY0
+confederate  K AH0 N F EH1 D ER0 AH0 T
+confederation  K AH0 N F EH2 D ER0 EY1 SH AH0 N
+conferee  K AA2 N F ER0 IY1
+confessor  K AH0 N F EH1 S ER0
+confetti  K AH0 N F EH1 T IY0
+confidant  K AA1 N F AH0 D AE2 N T
+confidentiality  K AA2 N F AH0 D EH2 N SH IY0 AE1 L AH0 T IY0
+confidently  K AA1 N F AH0 D AH0 N T L IY0
+confinement  K AH0 N F AY1 N M AH0 N T
+confiscation  K AA2 N F AH0 S K EY1 SH AH0 N
+conflagration  K AA2 N F L AH0 G R EY1 SH AH0 N
+conflicting  K AH0 N F L IH1 K T IH0 NG
+confluence  K AA1 N F L UW0 AH0 N S
+conformist  K AH0 N F AO1 R M IH0 S T
+conformity  K AH0 N F AO1 R M AH0 T IY0
+confound  K AH0 N F AW1 N D
+confrontation  K AA2 N F R AH0 N T EY1 SH AH0 N
+congeal  K AH0 N JH IY1 L
+congenital  K AH0 N JH EH1 N AH0 T AH0 L
+congest  K AH0 N JH EH1 S T
+congestion  K AH0 N JH EH1 S CH AH0 N
+conglomerate  K AH0 N G L AA1 M ER0 AH0 T
+congregate  K AA1 NG G R AH0 G EY2 T
+congregation  K AA2 NG G R AH0 G EY1 SH AH0 N
+congressional  K AH0 N G R EH1 SH AH0 N AH0 L
+congruence  K AA1 NG G R UW0 AH0 N S
+congruent  K AA1 NG G R UW0 AH0 N T
+conifer  K AA1 N AH0 F ER0
+conjecture  K AH0 N JH EH1 K CH ER0
+conjure  K AA1 N JH ER0
+connective  K AH0 N EH1 K T IH0 V
+connectivity  K AA2 N EH0 K T IH1 V AH0 T IY0
+connoisseur  K AA2 N AH0 S ER1
+connotation  K AA2 N AH0 T EY1 SH AH0 N
+conqueror  K AA1 NG K ER0 ER0
+conscientiously  K AA2 N SH IY0 EH1 N SH AH0 S L IY0
+consciously  K AA1 N SH AH0 S L IY0
+conscript  K AA1 N S K R IH0 P T
+conscription  K AH0 N S K R IH1 P SH AH0 N
+consecrate  K AA1 N S AH0 K R EY2 T
+consecration  K AA2 N S AH0 K R EY1 SH AH0 N
+consecutive  K AH0 N S EH1 K Y AH0 T IH0 V
+consecutively  K AH0 N S EH1 K Y AH0 T IH0 V L IY0
+consensual  K AH0 N S EH1 N SH UW0 AH0 L
+conservancy  K AH0 N S ER1 V AH0 N S IY0
+conservatism  K AH0 N S ER1 V AH0 T IH2 Z AH0 M
+conservatory  K AH0 N S ER1 V AH0 T AO2 R IY0
+considerably  K AH0 N S IH1 D ER0 AH0 B L IY0
+considerate  K AH0 N S IH1 D ER0 AH0 T
+consignment  K AH0 N S AY1 N M AH0 N T
+consistency  K AH0 N S IH1 S T AH0 N S IY0
+consistently  K AH0 N S IH1 S T AH0 N T L IY0
+consolation  K AA2 N S AH0 L EY1 SH AH0 N
+consolidation  K AH0 N S AA2 L AH0 D EY1 SH AH0 N
+consonant  K AA1 N S AH0 N AH0 N T
+consortium  K AH0 N S AO1 R SH IY0 AH0 M
+conspicuous  K AH0 N S P IH1 K Y UW0 AH0 S
+conspicuously  K AH0 N S P IH1 K Y UW0 AH0 S L IY0
+conspirator  K AH0 N S P IH1 R AH0 T ER0
+conspire  K AH0 N S P AY1 R
+constabulary  K AH0 N S T AE1 B Y AH0 L EH2 R IY0
+constituency  K AH0 N S T IH1 CH UW0 AH0 N S IY0
+constituent  K AH0 N S T IH1 CH UW0 AH0 N T
+constitutionally  K AA2 N S T AH0 T UW1 SH AH0 N AH0 L IY0
+constrict  K AH0 N S T R IH1 K T
+constriction  K AH0 N S T R IH1 K SH AH0 N
+constructive  K AH0 N S T R AH1 K T IH0 V
+constructively  K AH0 N S T R AH1 K T IH0 V L IY0
+construe  K AH0 N S T R UW1
+consulate  K AA1 N S AH0 L AH0 T
+consultancy  K AH0 N S AH1 L T AH0 N S IY0
+consultation  K AA2 N S AH0 L T EY1 SH AH0 N
+consummate  K AA1 N S AH0 M AH0 T
+consummation  K AA2 N S AH0 M EY1 SH AH0 N
+contagion  K AH0 N T EY1 JH AH0 N
+containerize  K AH0 N T EY1 N ER0 AY2 Z
+containment  K AH0 N T EY1 N M AH0 N T
+contaminant  K AH0 N T AE1 M AH0 N AH0 N T
+contamination  K AH0 N T AE2 M AH0 N EY1 SH AH0 N
+contemplation  K AA2 N T AH0 M P L EY1 SH AH0 N
+contemplative  K AH0 N T EH1 M P L AH0 T IH0 V
+contemptible  K AH0 N T EH1 M P T AH0 B AH0 L
+contemptuous  K AH0 N T EH1 M P CH UW0 AH0 S
+contender  K AH0 N T EH1 N D ER0
+contentious  K AH0 N T EH1 N SH AH0 S
+contentment  K AH0 N T EH1 N T M AH0 N T
+contestant  K AH0 N T EH1 S T AH0 N T
+contextual  K AH0 N T EH1 K S CH UW0 AH0 L
+contiguous  K AH0 N T IH1 G Y UW0 AH0 S
+continence  K AA1 N T AH0 N AH0 N S
+continental  K AA2 N T AH0 N EH1 N T AH0 L
+contingency  K AH0 N T IH1 N JH AH0 N S IY0
+contingent  K AH0 N T IH1 N JH AH0 N T
+continually  K AH0 N T IH1 N Y UW0 AH0 L IY0
+continuity  K AA2 N T AH0 N UW1 AH0 T IY0
+continuous  K AH0 N T IH1 N Y UW0 AH0 S
+continuously  K AH0 N T IH1 N Y UW0 AH0 S L IY0
+contort  K AH0 N T AO1 R T
+contortion  K AH0 N T AO1 R SH AH0 N
+contour  K AA1 N T UH0 R
+contraband  K AA1 N T R AH0 B AE2 N D
+contraception  K AA2 N T R AH0 S EH1 P SH AH0 N
+contraceptive  K AA2 N T R AH0 S EH1 P T IH0 V
+contractor  K AA1 N T R AE0 K T ER0
+contractual  K AH0 N T R AE1 K CH UW0 AH0 L
+contradictory  K AA2 N T R AH0 D IH1 K T ER0 IY0
+contraption  K AH0 N T R AE1 P SH AH0 N
+contrary  K AA1 N T R EH2 R IY0
+contravene  K AA2 N T R AH0 V IY1 N
+contributory  K AH0 N T R IH1 B Y AH0 T AO2 R IY0
+contrite  K AH0 N T R AY1 T
+contrition  K AH0 N T R IH1 SH AH0 N
+contrivance  K AH0 N T R AY1 V AH0 N S
+contrive  K AH0 N T R AY1 V
+controller  K AH0 N T R OW1 L ER0
+controversial  K AA2 N T R AH0 V ER1 SH AH0 L
+conundrum  K AH0 N AH1 N D R AH0 M
+convalesce  K AA2 N V AH0 L EH1 S
+convalescence  K AA2 N V AH0 L EH1 S AH0 N S
+convection  K AH0 N V EH1 K SH AH0 N
+convene  K AH0 N V IY1 N
+convenience  K AH0 N V IY1 N Y AH0 N S
+conveniently  K AH0 N V IY1 N Y AH0 N T L IY0
+convent  K AA1 N V EH0 N T
+conventionally  K AH0 N V EH1 N SH AH0 N AH0 L IY0
+convergence  K AH0 N V ER1 JH AH0 N S
+convergent  K AH0 N V ER1 JH AH0 N T
+conversant  K AH0 N V ER1 S AH0 N T
+conversational  K AA2 N V ER0 S EY1 SH AH0 N AH0 L
+converse  K AH0 N V ER1 S
+conversely  K AA1 N V ER0 S L IY0
+converter  K AH0 N V ER1 T ER0
+convertible  K AH0 N V ER1 T AH0 B AH0 L
+convex  K AA1 N V EH0 K S
+conveyor  K AH0 N V EY1 ER0
+convict  K AH0 N V IH1 K T
+convincingly  K AH0 N V IH1 N S IH0 NG L IY0
+convivial  K AH0 N V IH1 V IY0 AH0 L
+convocation  K AA2 N V AH0 K EY1 SH AH0 N
+convoy  K AA1 N V OY0
+convulse  K AH0 N V AH1 L S
+convulsion  K AH0 N V AH1 L SH AH0 N
+cookbook  K UH1 K B UH2 K
+cooker  K UH1 K ER0
+coolant  K UW1 L AH0 N T
+cooper  K UW1 P ER0
+cooperative  K OW0 AA1 P ER0 AH0 T IH0 V
+coordination  K OW0 AO2 R D AH0 N EY1 SH AH0 N
+coordinator  K OW0 AO1 R D AH0 N EY2 T ER0
+copious  K OW1 P IY0 AH0 S
+copse  K AA1 P S
+copycat  K AA1 P IY0 K AE2 T
+cordon  K AO1 R D AH0 N
+cordiality  K AO2 R JH IY0 AE1 L AH0 T IY0
+cordially  K AO1 R JH AH0 L IY0
+corduroy  K AO1 R D ER0 OY2
+coriander  K AO2 R IY0 AE1 N D ER0
+cork  K AO1 R K
+cornerstone  K AO1 R N ER0 S T OW2 N
+cornet  K AO0 R N EH1 T
+cornfield  K AO1 R N F IY2 L D
+cornice  K AO1 R N AH0 S
+corollary  K AO1 R AH0 L EH2 R IY0
+coronary  K AO1 R AH0 N EH2 R IY0
+coronation  K AO2 R AH0 N EY1 SH AH0 N
+coroner  K AO1 R AH0 N ER0
+corporal  K AO1 R P ER0 AH0 L
+corpus  K AO1 R P AH0 S
+corral  K ER0 AE1 L
+correction  K ER0 EH1 K SH AH0 N
+corrective  K ER0 EH1 K T IH0 V
+correlate  K AO1 R AH0 L EY2 T
+correlation  K AO2 R AH0 L EY1 SH AH0 N
+correspondence  K AO2 R AH0 S P AA1 N D AH0 N S
+correspondent  K AO2 R AH0 S P AA1 N D AH0 N T
+corresponding  K AO2 R AH0 S P AA1 N D IH0 NG
+corroborate  K ER0 AA1 B ER0 EY2 T
+corroboration  K ER0 AA2 B ER0 EY1 SH AH0 N
+corrode  K ER0 OW1 D
+corrosion  K ER0 OW1 ZH AH0 N
+corrosive  K ER0 OW1 S IH0 V
+corrugated  K AO1 R AH0 G EY2 T IH0 D
+cortex  K AO1 R T EH0 K S
+cortisol  K AO1 R T AH0 S AO2 L
+cosmic  K AA1 Z M IH0 K
+cosmopolitan  K AA2 Z M AH0 P AA1 L AH0 T AH0 N
+cosmos  K AA1 Z M OW0 S
+cottonseed  K AA1 T AH0 N S IY2 D
+cougar  K UW1 G ER0
+councillor  K AW1 N S AH0 L ER0
+counselor  K AW1 N S AH0 L ER0
+countdown  K AW1 N T D AW2 N
+counteract  K AW2 N T ER0 AE1 K T
+counterattack  K AW1 N T ER0 AH0 T AE2 K
+counterbalance  K AW2 N T ER0 B AE1 L AH0 N S
+counterclockwise  K AW2 N T ER0 K L AA1 K W AY2 Z
+counterfeit  K AW1 N T ER0 F IH2 T
+counterpoint  K AW1 N T ER0 P OY2 N T
+counterproductive  K AW2 N T ER0 P R AH0 D AH1 K T IH0 V
+countless  K AW1 N T L AH0 S
+coupe  K UW1 P
+courier  K ER1 IY0 ER0
+courthouse  K AO1 R T HH AW2 S
+courtier  K AO1 R T IY0 ER0
+courtroom  K AO1 R T R UW2 M
+courtship  K AO1 R T SH IH0 P
+courtyard  K AO1 R T Y AA2 R D
+covert  K OW1 V ER0 T
+covet  K AH1 V AH0 T
+covetous  K AH1 V AH0 T AH0 S
+cowardice  K AW1 ER0 D AH0 S
+cowardly  K AW1 ER0 D L IY0
+coyote  K AY0 OW1 T IY0
+crab  K R AE1 B
+crackdown  K R AE1 K D AW2 N
+cracker  K R AE1 K ER0
+crackle  K R AE1 K AH0 L
+craftsmanship  K R AE1 F T S M AH0 N SH IH2 P
+crafty  K R AE1 F T IY0
+crag  K R AE1 G
+cram  K R AE1 M
+cramp  K R AE1 M P
+cranberry  K R AE1 N B EH2 R IY0
+cranium  K R EY1 N IY0 AH0 M
+crank  K R AE1 NG K
+cranky  K R AE1 NG K IY0
+cranny  K R AE1 N IY0
+crave  K R EY1 V
+craving  K R EY1 V IH0 NG
+craze  K R EY1 Z
+creak  K R IY1 K
+creamy  K R IY1 M IY0
+crease  K R IY1 S
+creator  K R IY0 EY1 T ER0
+credibly  K R EH1 D AH0 B L IY0
+creditor  K R EH1 D AH0 T ER0
+creed  K R IY1 D
+creep  K R IY1 P
+creepy  K R IY1 P IY0
+cremation  K R IH0 M EY1 SH AH0 N
+crest  K R EH1 S T
+crestfallen  K R EH1 S T F AO2 L AH0 N
+crevice  K R EH1 V AH0 S
+crimp  K R IH1 M P
+crimson  K R IH1 M Z AH0 N
+cringe  K R IH1 N JH
+crinkle  K R IH1 NG K AH0 L
+crisscross  K R IH1 S K R AO2 S
+criteria  K R AY0 T IH1 R IY0 AH0
+critter  K R IH1 T ER0
+crock  K R AA1 K
+crockery  K R AA1 K ER0 IY0
+croissant  K R AH0 S AA1 N T
+crook  K R UH1 K
+crooked  K R UH1 K AH0 D
+crossbow  K R AO1 S B OW2
+crossfire  K R AO1 S F AY2 ER0
+crossover  K R AO1 S OW2 V ER0
+crossroads  K R AO1 S R OW2 D Z
+crosswalk  K R AO1 S W AO2 K
+crossword  K R AO1 S W ER2 D
+crotch  K R AA1 CH
+crouch  K R AW1 CH
+crow  K R OW1
+crowbar  K R OW1 B AA2 R
+crucible  K R UW1 S AH0 B AH0 L
+crucify  K R UW1 S AH0 F AY2
+crud  K R AH1 D
+cruiser  K R UW1 Z ER0
+crumple  K R AH1 M P AH0 L
+crunch  K R AH1 N CH
+crusader  K R UW0 S EY1 D ER0
+crusher  K R AH1 SH ER0
+crutch  K R AH1 CH
+crux  K R AH1 K S
+crypt  K R IH1 P T
+cryptic  K R IH1 P T IH0 K
+cryptography  K R IH0 P T AA1 G R AH0 F IY0
+crystalline  K R IH1 S T AH0 L AY2 N
+crystallize  K R IH1 S T AH0 L AY2 Z
+cubicle  K Y UW1 B IH0 K AH0 L
+cuckoo  K UW1 K UW0
+cuddle  K AH1 D AH0 L
+cue  K Y UW1
+cuisine  K W IH0 Z IY1 N
+culinary  K AH1 L AH0 N EH2 R IY0
+culminate  K AH1 L M AH0 N EY2 T
+culmination  K AH2 L M AH0 N EY1 SH AH0 N
+culpable  K AH1 L P AH0 B AH0 L
+culprit  K AH1 L P R IH0 T
+cultivation  K AH2 L T AH0 V EY1 SH AH0 N
+cultivator  K AH1 L T AH0 V EY2 T ER0
+cumbersome  K AH1 M B ER0 S AH0 M
+cunning  K AH1 N IH0 NG
+cur  K ER1
+curator  K Y UH0 R EY1 T ER0
+curb  K ER1 B
+curd  K ER1 D
+curdle  K ER1 D AH0 L
+curio  K Y UH1 R IY0 OW0
+curiously  K Y UH1 R IY0 AH0 S L IY0
+currant  K ER1 AH0 N T
+curry  K ER1 IY0
+cursor  K ER1 S ER0
+cursory  K ER1 S ER0 IY0
+curt  K ER1 T
+curtail  K ER0 T EY1 L
+curtailment  K ER0 T EY1 L M AH0 N T
+curtly  K ER1 T L IY0
+curvature  K ER1 V AH0 CH ER0
+custard  K AH1 S T ER0 D
+custodian  K AH0 S T OW1 D IY0 AH0 N
+customary  K AH1 S T AH0 M EH2 R IY0
+customize  K AH1 S T AH0 M AY2 Z
+cutback  K AH1 T B AE2 K
+cutlery  K AH1 T L ER0 IY0
+cutoff  K AH1 T AO2 F
+cutter  K AH1 T ER0
+cutting  K AH1 T IH0 NG
+cyanide  S AY1 AH0 N AY2 D
+cybernetics  S AY2 B ER0 N EH1 T IH0 K S
+cyclist  S AY1 K L IH0 S T
+cyclone  S AY1 K L OW2 N
+cylindrical  S AH0 L IH1 N D R AH0 K AH0 L
+cymbal  S IH1 M B AH0 L
+cynic  S IH1 N IH0 K
+cynicism  S IH1 N AH0 S IH2 Z AH0 M
+cypress  S AY1 P R AH0 S
+cyst  S IH1 S T
+dabble  D AE1 B AH0 L
+daffodil  D AE1 F AH0 D IH2 L
+dahlia  D AE1 L Y AH0
+dainty  D EY1 N T IY0
+daisy  D EY1 Z IY0
+dale  D EY1 L
+dalliance  D AE1 L IY0 AH0 N S
+damask  D AE1 M AH0 S K
+dame  D EY1 M
+dampen  D AE1 M P AH0 N
+dampness  D AE1 M P N AH0 S
+dandruff  D AE1 N D R AH0 F
+dangle  D AE1 NG G AH0 L
+dapper  D AE1 P ER0
+daredevil  D EH1 R D EH2 V AH0 L
+darken  D AA1 R K AH0 N
+darkroom  D AA1 R K R UW2 M
+darling  D AA1 R L IH0 NG
+darn  D AA1 R N
+dart  D AA1 R T
+dashboard  D AE1 SH B AO2 R D
+dashing  D AE1 SH IH0 NG
+daunt  D AO1 N T
+daunting  D AO1 N T IH0 NG
+dawdle  D AO1 D AH0 L
+daybreak  D EY1 B R EY2 K
+daytime  D EY1 T AY2 M
+daze  D EY1 Z
+dazzle  D AE1 Z AH0 L
+dazzling  D AE1 Z L IH0 NG
+deacon  D IY1 K AH0 N
+deactivate  D IY0 AE1 K T AH0 V EY2 T
+deadlock  D EH1 D L AA2 K
+deafen  D EH1 F AH0 N
+dealership  D IY1 L ER0 SH IH2 P
+dealings  D IY1 L IH0 NG Z
+dean  D IY1 N
+dearth  D ER1 TH
+debatable  D IH0 B EY1 T AH0 B AH0 L
+debater  D IH0 B EY1 T ER0
+debauchery  D IH0 B AO1 CH ER0 IY0
+debilitate  D IH0 B IH1 L AH0 T EY2 T
+debilitating  D IH0 B IH1 L AH0 T EY2 T IH0 NG
+debit  D EH1 B AH0 T
+debonair  D EH2 B AH0 N EH1 R
+debtor  D EH1 T ER0
+debug  D IY0 B AH1 G
+debugger  D IY0 B AH1 G ER0
+debunk  D IH0 B AH1 NG K
+decadence  D EH1 K AH0 D AH0 N S
+decal  D IY1 K AE0 L
+decapitate  D IH0 K AE1 P AH0 T EY2 T
+decathlon  D IH0 K AE1 TH L AA0 N
+deceit  D IH0 S IY1 T
+deceitful  D IH0 S IY1 T F AH0 L
+deceiver  D IH0 S IY1 V ER0
+decency  D IY1 S AH0 N S IY0
+decently  D IY1 S AH0 N T L IY0
+decentralize  D IY0 S EH1 N T R AH0 L AY2 Z
+deception  D IH0 S EH1 P SH AH0 N
+deceptive  D IH0 S EH1 P T IH0 V
+deceptively  D IH0 S EH1 P T IH0 V L IY0
+decibel  D EH1 S AH0 B EH2 L
+decidedly  D IH0 S AY1 D AH0 D L IY0
+deciduous  D IH0 S IH1 JH UW0 AH0 S
+decisively  D IH0 S AY1 S IH0 V L IY0
+decking  D EH1 K IH0 NG
+declarative  D IH0 K L AE1 R AH0 T IH0 V
+declassify  D IY0 K L AE1 S AH0 F AY2
+declination  D EH2 K L AH0 N EY1 SH AH0 N
+decoder  D IY0 K OW1 D ER0
+decomposition  D IY2 K AA0 M P AH0 Z IH1 SH AH0 N
+decontaminate  D IY2 K AH0 N T AE1 M AH0 N EY2 T
+decor  D IH0 K AO1 R
+decorative  D EH1 K ER0 AH0 T IH0 V
+decorator  D EH1 K ER0 EY2 T ER0
+decorum  D IH0 K AO1 R AH0 M
+decoy  D IY1 K OY0
+decrepit  D IH0 K R EH1 P AH0 T
+decriminalize  D IY0 K R IH1 M AH0 N AH0 L AY2 Z
+dedication  D EH2 D AH0 K EY1 SH AH0 N
+deduct  D IH0 D AH1 K T
+deductible  D IH0 D AH1 K T AH0 B AH0 L
+deduction  D IH0 D AH1 K SH AH0 N
+deductive  D IH0 D AH1 K T IH0 V
+deface  D IH0 F EY1 S
+defamation  D EH2 F AH0 M EY1 SH AH0 N
+defame  D IH0 F EY1 M
+defaulter  D IH0 F AO1 L T ER0
+defection  D IH0 F EH1 K SH AH0 N
+defective  D IH0 F EH1 K T IH0 V
+defector  D IH0 F EH1 K T ER0
+defender  D IH0 F EH1 N D ER0
+defensible  D IH0 F EH1 N S AH0 B AH0 L
+defensive  D IH0 F EH1 N S IH0 V
+defensively  D IH0 F EH1 N S IH0 V L IY0
+deference  D EH1 F ER0 AH0 N S
+deferential  D EH2 F ER0 EH1 N SH AH0 L
+deferment  D IH0 F ER1 M AH0 N T
+defiance  D IH0 F AY1 AH0 N S
+defiant  D IH0 F AY1 AH0 N T
+defiantly  D IH0 F AY1 AH0 N T L IY0
+deficiency  D IH0 F IH1 SH AH0 N S IY0
+defile  D IH0 F AY1 L
+definable  D IH0 F AY1 N AH0 B AH0 L
+definitive  D IH0 F IH1 N AH0 T IH0 V
+definitively  D IH0 F IH1 N AH0 T IH0 V L IY0
+deflate  D IH0 F L EY1 T
+deflation  D IH0 F L EY1 SH AH0 N
+deflect  D IH0 F L EH1 K T
+deflection  D IH0 F L EH1 K SH AH0 N
+deforestation  D IY0 F AO2 R AH0 S T EY1 SH AH0 N
+deform  D IH0 F AO1 R M
+deformity  D IH0 F AO1 R M AH0 T IY0
+defray  D IH0 F R EY1
+deft  D EH1 F T
+deftly  D EH1 F T L IY0
+defunct  D IH0 F AH1 NG K T
+defuse  D IY0 F Y UW1 Z
+degenerate  D IH0 JH EH1 N ER0 AH0 T
+degeneration  D IH0 JH EH2 N ER0 EY1 SH AH0 N
+degradation  D EH2 G R AH0 D EY1 SH AH0 N
+degrade  D IH0 G R EY1 D
+degrading  D IH0 G R EY1 D IH0 NG
+dehydrate  D IY0 HH AY1 D R EY2 T
+dehydration  D IY2 HH AY0 D R EY1 SH AH0 N
+deity  D IY1 AH0 T IY0
+dejection  D IH0 JH EH1 K SH AH0 N
+delegation  D EH2 L AH0 G EY1 SH AH0 N
+delete  D IH0 L IY1 T
+deletion  D IH0 L IY1 SH AH0 N
+deliberation  D IH0 L IH2 B ER0 EY1 SH AH0 N
+delicacy  D EH1 L AH0 K AH0 S IY0
+delicately  D EH1 L AH0 K AH0 T L IY0
+delicatessen  D EH2 L AH0 K AH0 T EH1 S AH0 N
+delicious  D IH0 L IH1 SH AH0 S
+delightful  D IH0 L AY1 T F AH0 L
+delinquency  D IH0 L IH1 NG K W AH0 N S IY0
+delinquent  D IH0 L IH1 NG K W AH0 N T
+delirious  D IH0 L IH1 R IY0 AH0 S
+delirium  D IH0 L IH1 R IY0 AH0 M
+deliverer  D IH0 L IH1 V ER0 ER0
+deliverance  D IH0 L IH1 V ER0 AH0 N S
+delta  D EH1 L T AH0
+deluge  D EH1 L Y UW0 JH
+deluxe  D IH0 L AH1 K S
+delve  D EH1 L V
+demagogue  D EH1 M AH0 G AA2 G
+demeanor  D IH0 M IY1 N ER0
+demented  D IH0 M EH1 N T IH0 D
+dementia  D IH0 M EH1 N SH AH0
+demerit  D IH0 M EH1 R AH0 T
+demise  D IH0 M AY1 Z
+demo  D EH1 M OW0
+demographer  D IH0 M AA1 G R AH0 F ER0
+demographic  D EH2 M AH0 G R AE1 F IH0 K
+demography  D IH0 M AA1 G R AH0 F IY0
+demolition  D EH2 M AH0 L IH1 SH AH0 N
+demonic  D IH0 M AA1 N IH0 K
+demonstrable  D IH0 M AA1 N S T R AH0 B AH0 L
+demonstrator  D EH1 M AH0 N S T R EY2 T ER0
+demoralize  D IH0 M AO1 R AH0 L AY2 Z
+demotion  D IH0 M OW1 SH AH0 N
+demure  D IH0 M Y UH1 R
+den  D EH1 N
+deniable  D IH0 N AY1 AH0 B AH0 L
+denial  D IH0 N AY1 AH0 L
+denigrate  D EH1 N AH0 G R EY2 T
+denomination  D IH0 N AA2 M AH0 N EY1 SH AH0 N
+denominator  D IH0 N AA1 M AH0 N EY2 T ER0
+denote  D IH0 N OW1 T
+densely  D EH1 N S L IY0
+density  D EH1 N S AH0 T IY0
+dentistry  D EH1 N T AH0 S T R IY0
+denture  D EH1 N CH ER0
+denunciation  D IH0 N AH2 N S IY0 EY1 SH AH0 N
+depart  D IH0 P AA1 R T
+dependability  D IH0 P EH2 N D AH0 B IH1 L AH0 T IY0
+dependable  D IH0 P EH1 N D AH0 B AH0 L
+dependence  D IH0 P EH1 N D AH0 N S
+dependency  D IH0 P EH1 N D AH0 N S IY0
+depict  D IH0 P IH1 K T
+depiction  D IH0 P IH1 K SH AH0 N
+depletion  D IH0 P L IY1 SH AH0 N
+deplorable  D IH0 P L AO1 R AH0 B AH0 L
+deployment  D IH0 P L OY1 M AH0 N T
+deportation  D IY2 P AO0 R T EY1 SH AH0 N
+depose  D IH0 P OW1 Z
+depositor  D IH0 P AA1 Z AH0 T ER0
+deprecate  D EH1 P R AH0 K EY2 T
+deprecation  D EH2 P R AH0 K EY1 SH AH0 N
+depreciate  D IH0 P R IY1 SH IY0 EY2 T
+depreciation  D IH0 P R IY2 SH IY0 EY1 SH AH0 N
+depress  D IH0 P R EH1 S
+derail  D IH0 R EY1 L
+derailment  D IH0 R EY1 L M AH0 N T
+deranged  D IH0 R EY1 N JH D
+deregulate  D IY0 R EH1 G Y AH0 L EY2 T
+deregulation  D IY0 R EH2 G Y AH0 L EY1 SH AH0 N
+derelict  D EH1 R AH0 L IH2 K T
+derision  D ER0 IH1 ZH AH0 N
+derisive  D ER0 AY1 S IH0 V
+derivation  D EH2 R AH0 V EY1 SH AH0 N
+derivative  D ER0 IH1 V AH0 T IH0 V
+dermatologist  D ER2 M AH0 T AA1 L AH0 JH IH0 S T
+dermatology  D ER2 M AH0 T AA1 L AH0 JH IY0
+derogatory  D ER0 AA1 G AH0 T AO2 R IY0
+descriptive  D IH0 S K R IH1 P T IH0 V
+desecrate  D EH1 S AH0 K R EY2 T
+desecration  D EH2 S AH0 K R EY1 SH AH0 N
+desensitize  D IY0 S EH1 N S AH0 T AY2 Z
+deserter  D IH0 Z ER1 T ER0
+desertion  D IH0 Z ER1 SH AH0 N
+designation  D EH2 Z IH0 G N EY1 SH AH0 N
+desirability  D IH0 Z AY2 R AH0 B IH1 L AH0 T IY0
+desirable  D IH0 Z AY1 R AH0 B AH0 L
+desolation  D EH2 S AH0 L EY1 SH AH0 N
+desperado  D EH2 S P ER0 AA1 D OW0
+despicable  D IH0 S P IH1 K AH0 B AH0 L
+despot  D EH1 S P AH0 T
+despotism  D EH1 S P AH0 T IH2 Z AH0 M
+dessert  D IH0 Z ER1 T
+destabilize  D IY0 S T EY1 B AH0 L AY2 Z
+destine  D EH1 S T AH0 N
+destitute  D EH1 S T AH0 T UW2 T
+destitution  D EH2 S T AH0 T UW1 SH AH0 N
+destroyer  D IH0 S T R OY1 ER0
+destructive  D IH0 S T R AH1 K T IH0 V
+detachment  D IH0 T AE1 CH M AH0 N T
+detainee  D IY2 T EY0 N IY1
+detectable  D IH0 T EH1 K T AH0 B AH0 L
+detector  D IH0 T EH1 K T ER0
+deterioration  D IH0 T IH2 R IY0 ER0 EY1 SH AH0 N
+determinant  D IH0 T ER1 M AH0 N AH0 N T
+determination  D IH0 T ER2 M AH0 N EY1 SH AH0 N
+deterrence  D IH0 T ER1 AH0 N S
+deterrent  D IH0 T ER1 AH0 N T
+detest  D IH0 T EH1 S T
+detestable  D IH0 T EH1 S T AH0 B AH0 L
+detonate  D EH1 T AH0 N EY2 T
+detonation  D EH2 T AH0 N EY1 SH AH0 N
+detonator  D EH1 T AH0 N EY2 T ER0
+detour  D IY1 T UH0 R
+detox  D IY1 T AA0 K S
+detoxify  D IY0 T AA1 K S AH0 F AY2
+detract  D IH0 T R AE1 K T
+detractor  D IH0 T R AE1 K T ER0
+detrimental  D EH2 T R AH0 M EH1 N T AH0 L
+deuce  D UW1 S
+devalue  D IY0 V AE1 L Y UW0
+devastation  D EH2 V AH0 S T EY1 SH AH0 N
+developer  D IH0 V EH1 L AH0 P ER0
+developmental  D IH0 V EH2 L AH0 P M EH1 N T AH0 L
+deviance  D IY1 V IY0 AH0 N S
+deviant  D IY1 V IY0 AH0 N T
+deviate  D IY1 V IY0 EY2 T
+deviation  D IY2 V IY0 EY1 SH AH0 N
+devoid  D IH0 V OY1 D
+devolution  D EH2 V AH0 L UW1 SH AH0 N
+devotee  D EH2 V AH0 T IY1
+devout  D IH0 V AW1 T
+devoutly  D IH0 V AW1 T L IY0
+dewdrop  D UW1 D R AA2 P
+dewy  D UW1 IY0
+dexterity  D EH0 K S T EH1 R AH0 T IY0
+dexterous  D EH1 K S T ER0 AH0 S
+diabetes  D AY2 AH0 B IY1 T IY0 Z
+diabetic  D AY2 AH0 B EH1 T IH0 K
+diabolic  D AY2 AH0 B AA1 L IH0 K
+diabolical  D AY2 AH0 B AA1 L IH0 K AH0 L
+diagnostic  D AY2 AH0 G N AA1 S T IH0 K
+diagonal  D AY0 AE1 G AH0 N AH0 L
+diagrammatic  D AY2 AH0 G R AH0 M AE1 T IH0 K
+dialectic  D AY2 AH0 L EH1 K T IH0 K
+dialog  D AY1 AH0 L AO2 G
+diametrically  D AY2 AH0 M EH1 T R IH0 K AH0 L IY0
+diaper  D AY1 AH0 P ER0
+diarist  D AY1 ER0 AH0 S T
+diatribe  D AY1 AH0 T R AY2 B
+dice  D AY1 S
+dichotomy  D AY0 K AA1 T AH0 M IY0
+dictation  D IH0 K T EY1 SH AH0 N
+dictatorial  D IH2 K T AH0 T AO1 R IY0 AH0 L
+diction  D IH1 K SH AH0 N
+didactic  D AY0 D AE1 K T IH0 K
+diesel  D IY1 Z AH0 L
+dietary  D AY1 AH0 T EH2 R IY0
+dietician  D AY2 AH0 T IH1 SH AH0 N
+differentiate  D IH2 F ER0 EH1 N SH IY0 EY2 T
+differentiation  D IH2 F ER0 EH2 N SH IY0 EY1 SH AH0 N
+diffuse  D IH0 F Y UW1 Z
+diffusion  D IH0 F Y UW1 ZH AH0 N
+digestion  D AY0 JH EH1 S CH AH0 N
+digestive  D AY0 JH EH1 S T IH0 V
+dignified  D IH1 G N AH0 F AY2 D
+dignify  D IH1 G N AH0 F AY2
+dignitary  D IH1 G N AH0 T EH2 R IY0
+digress  D AY0 G R EH1 S
+digression  D AY0 G R EH1 SH AH0 N
+dilapidated  D AH0 L AE1 P AH0 D EY2 T IH0 D
+dilate  D AY0 L EY1 T
+dilation  D AY0 L EY1 SH AH0 N
+diligence  D IH1 L AH0 JH AH0 N S
+diligent  D IH1 L AH0 JH AH0 N T
+diligently  D IH1 L AH0 JH AH0 N T L IY0
+dilution  D AY0 L UW1 SH AH0 N
+dim  D IH1 M
+diminution  D IH2 M AH0 N UW1 SH AH0 N
+diminutive  D AH0 M IH1 N Y AH0 T IH0 V
+dimly  D IH1 M L IY0
+dimple  D IH1 M P AH0 L
+din  D IH1 N
+dine  D AY1 N
+diner  D AY1 N ER0
+dingy  D IH1 N JH IY0
+diocese  D AY1 AH0 S AH0 S
+diphtheria  D IH0 F TH IH1 R IY0 AH0
+diplomacy  D IH0 P L OW1 M AH0 S IY0
+diplomatic  D IH2 P L AH0 M AE1 T IH0 K
+diplomatically  D IH2 P L AH0 M AE1 T IH0 K AH0 L IY0
+dire  D AY1 R
+directive  D ER0 EH1 K T IH0 V
+directorate  D ER0 EH1 K T ER0 AH0 T
+dirge  D ER1 JH
+disable  D IH0 S EY1 B AH0 L
+disadvantaged  D IH2 S AH0 D V AE1 N T IH0 JH D
+disaffected  D IH2 S AH0 F EH1 K T IH0 D
+disambiguate  D IH2 S AE0 M B IH1 G Y UW0 EY2 T
+disappearance  D IH2 S AH0 P IH1 R AH0 N S
+disapproval  D IH2 S AH0 P R UW1 V AH0 L
+disapprove  D IH2 S AH0 P R UW1 V
+disarm  D IH0 S AA1 R M
+disarmament  D IH0 S AA1 R M AH0 M AH0 N T
+disarray  D IH2 S ER0 EY1
+disassemble  D IH2 S AH0 S EH1 M B AH0 L
+disbelief  D IH2 S B IH0 L IY1 F
+disburse  D IH0 S B ER1 S
+disbursement  D IH0 S B ER1 S M AH0 N T
+discernible  D IH0 S ER1 N AH0 B AH0 L
+discerning  D IH0 S ER1 N IH0 NG
+discernment  D IH0 S ER1 N M AH0 N T
+disciple  D IH0 S AY1 P AH0 L
+disciplinary  D IH1 S AH0 P L AH0 N EH2 R IY0
+disclaimer  D IH0 S K L EY1 M ER0
+disclosure  D IH0 S K L OW1 ZH ER0
+disco  D IH1 S K OW0
+discolor  D IH0 S K AH1 L ER0
+discomfort  D IH0 S K AH1 M F ER0 T
+disconcert  D IH2 S K AH0 N S ER1 T
+disconnect  D IH2 S K AH0 N EH1 K T
+discontent  D IH2 S K AH0 N T EH1 N T
+discontinue  D IH2 S K AH0 N T IH1 N Y UW0
+discord  D IH1 S K AO0 R D
+discordant  D IH0 S K AO1 R D AH0 N T
+discountenance  D IH0 S K AW1 N T AH0 N AH0 N S
+discourage  D IH0 S K ER1 IH0 JH
+discouragement  D IH0 S K ER1 IH0 JH M AH0 N T
+discourteous  D IH0 S K ER1 T IY0 AH0 S
+discoverer  D IH0 S K AH1 V ER0 ER0
+discreet  D IH0 S K R IY1 T
+discreetly  D IH0 S K R IY1 T L IY0
+discrepancy  D IH0 S K R EH1 P AH0 N S IY0
+discretion  D IH0 S K R EH1 SH AH0 N
+discretionary  D IH0 S K R EH1 SH AH0 N EH2 R IY0
+discriminate  D IH0 S K R IH1 M AH0 N EY2 T
+discriminatory  D IH0 S K R IH1 M AH0 N AH0 T AO2 R IY0
+discursive  D IH0 S K ER1 S IH0 V
+disdainful  D IH0 S D EY1 N F AH0 L
+disembark  D IH2 S IH0 M B AA1 R K
+disenchant  D IH2 S IH0 N CH AE1 N T
+disenchantment  D IH2 S IH0 N CH AE1 N T M AH0 N T
+disengage  D IH2 S IH0 N G EY1 JH
+disfigure  D IH0 S F IH1 G Y ER0
+disgraceful  D IH0 S G R EY1 S F AH0 L
+disgruntled  D IH0 S G R AH1 N T AH0 L D
+dishonest  D IH0 S AA1 N AH0 S T
+dishonesty  D IH0 S AA1 N AH0 S T IY0
+dishonor  D IH0 S AA1 N ER0
+disillusion  D IH2 S IH0 L UW1 ZH AH0 N
+disillusioned  D IH2 S IH0 L UW1 ZH AH0 N D
+disillusionment  D IH2 S IH0 L UW1 ZH AH0 N M AH0 N T
+disincentive  D IH2 S IH0 N S EH1 N T IH0 V
+disincline  D IH2 S IH0 N K L AY1 N
+disinfect  D IH2 S IH0 N F EH1 K T
+disinfectant  D IH2 S IH0 N F EH1 K T AH0 N T
+disinformation  D IH2 S IH0 N F ER0 M EY1 SH AH0 N
+disingenuous  D IH2 S IH0 N JH EH1 N Y UW0 AH0 S
+disinherit  D IH2 S IH0 N HH EH1 R AH0 T
+disintegrate  D IH0 S IH1 N T AH0 G R EY2 T
+disintegration  D IH0 S IH2 N T AH0 G R EY1 SH AH0 N
+disinterest  D IH0 S IH1 N T ER0 AH0 S T
+disjointed  D IH0 S JH OY1 N T IH0 D
+diskette  D IH0 S K EH1 T
+dislike  D IH0 S L AY1 K
+dislocate  D IH1 S L OW0 K EY2 T
+dislocation  D IH2 S L OW0 K EY1 SH AH0 N
+dislodge  D IH0 S L AA1 JH
+disloyal  D IH0 S L OY1 AH0 L
+disloyalty  D IH0 S L OY1 AH0 L T IY0
+dismal  D IH1 Z M AH0 L
+dismally  D IH1 Z M AH0 L IY0
+dismay  D IH0 S M EY1
+dismissal  D IH0 S M IH1 S AH0 L
+dismissive  D IH0 S M IH1 S IH0 V
+disobedience  D IH2 S AH0 B IY1 D IY0 AH0 N S
+disobedient  D IH2 S AH0 B IY1 D IY0 AH0 N T
+disobey  D IH2 S AH0 B EY1
+disorderly  D IH0 S AO1 R D ER0 L IY0
+disorganize  D IH0 S AO1 R G AH0 N AY2 Z
+disorient  D IH0 S AO1 R IY0 AH0 N T
+disorientation  D IH0 S AO2 R IY0 AH0 N T EY1 SH AH0 N
+disown  D IH0 S OW1 N
+disparage  D IH0 S P AE1 R IH0 JH
+disparate  D IH1 S P ER0 AH0 T
+disparity  D IH0 S P AE1 R AH0 T IY0
+dispassionate  D IH0 S P AE1 SH AH0 N AH0 T
+dispatcher  D IH0 S P AE1 CH ER0
+dispel  D IH0 S P EH1 L
+dispensary  D IH0 S P EH1 N S ER0 IY0
+dispensation  D IH2 S P EH0 N S EY1 SH AH0 N
+dispenser  D IH0 S P EH1 N S ER0
+dispersal  D IH0 S P ER1 S AH0 L
+dispersion  D IH0 S P ER1 ZH AH0 N
+displacement  D IH0 S P L EY1 S M AH0 N T
+disposition  D IH2 S P AH0 Z IH1 SH AH0 N
+dispossess  D IH2 S P AH0 Z EH1 S
+disproportionate  D IH2 S P R AH0 P AO1 R SH AH0 N AH0 T
+disprove  D IH0 S P R UW1 V
+disputable  D IH0 S P Y UW1 T AH0 B AH0 L
+disputant  D IH0 S P Y UW1 T AH0 N T
+disputation  D IH2 S P Y UW0 T EY1 SH AH0 N
+disqualify  D IH0 S K W AA1 L AH0 F AY2
+disquiet  D IH0 S K W AY1 AH0 T
+disregard  D IH2 S R IH0 G AA1 R D
+disrepair  D IH2 S R IH0 P EH1 R
+disreputable  D IH0 S R EH1 P Y AH0 T AH0 B AH0 L
+disrepute  D IH2 S R IH0 P Y UW1 T
+disrespect  D IH2 S R IH0 S P EH1 K T
+disrespectful  D IH2 S R IH0 S P EH1 K T F AH0 L
+disruption  D IH0 S R AH1 P SH AH0 N
+disruptive  D IH0 S R AH1 P T IH0 V
+dissatisfaction  D IH0 S AE2 T IH0 S F AE1 K SH AH0 N
+dissatisfied  D IH0 S AE1 T IH0 S F AY2 D
+dissect  D AY0 S EH1 K T
+dissection  D AY0 S EH1 K SH AH0 N
+disseminate  D IH0 S EH1 M AH0 N EY2 T
+dissemination  D IH0 S EH2 M AH0 N EY1 SH AH0 N
+dissenter  D IH0 S EH1 N T ER0
+dissertation  D IH2 S ER0 T EY1 SH AH0 N
+disservice  D IH0 S ER1 V AH0 S
+dissident  D IH1 S AH0 D AH0 N T
+dissimilar  D IH0 S IH1 M AH0 L ER0
+dissipate  D IH1 S AH0 P EY2 T
+dissipation  D IH2 S AH0 P EY1 SH AH0 N
+dissociate  D IH0 S OW1 SH IY0 EY2 T
+dissolution  D IH2 S AH0 L UW1 SH AH0 N
+dissonance  D IH1 S AH0 N AH0 N S
+dissonant  D IH1 S AH0 N AH0 N T
+dissuade  D IH0 S W EY1 D
+distantly  D IH1 S T AH0 N T L IY0
+distaste  D IH0 S T EY1 S T
+distasteful  D IH0 S T EY1 S T F AH0 L
+distillation  D IH2 S T AH0 L EY1 SH AH0 N
+distillery  D IH0 S T IH1 L ER0 IY0
+distinctly  D IH0 S T IH1 NG K T L IY0
+distinction  D IH0 S T IH1 NG K SH AH0 N
+distortion  D IH0 S T AO1 R SH AH0 N
+distraction  D IH0 S T R AE1 K SH AH0 N
+distraught  D IH0 S T R AO1 T
+distributor  D IH0 S T R IH1 B Y AH0 T ER0
+disturbance  D IH0 S T ER1 B AH0 N S
+dither  D IH1 DH ER0
+ditty  D IH1 T IY0
+divan  D IH0 V AE1 N
+diver  D AY1 V ER0
+diverge  D AY0 V ER1 JH
+divergence  D AY0 V ER1 JH AH0 N S
+divergent  D AY0 V ER1 JH AH0 N T
+diversify  D AY0 V ER1 S AH0 F AY2
+diversion  D AY0 V ER1 ZH AH0 N
+divert  D AY0 V ER1 T
+divest  D AY0 V EH1 S T
+divestiture  D AY0 V EH1 S T AH0 CH ER0
+dividend  D IH1 V AH0 D EH2 N D
+divinity  D AH0 V IH1 N AH0 T IY0
+divisible  D AH0 V IH1 Z AH0 B AH0 L
+divisive  D AH0 V AY1 S IH0 V
+divorcee  D AH0 V AO2 R S IY1
+divulge  D AH0 V AH1 L JH
+dizziness  D IH1 Z IY0 N AH0 S
+docile  D AA1 S AH0 L
+docket  D AA1 K AH0 T
+documentation  D AA2 K Y AH0 M EH0 N T EY1 SH AH0 N
+doer  D UW1 ER0
+dole  D OW1 L
+doleful  D OW1 L F AH0 L
+domesticate  D AH0 M EH1 S T AH0 K EY2 T
+domesticity  D OW2 M EH0 S T IH1 S AH0 T IY0
+dominance  D AA1 M AH0 N AH0 N S
+domination  D AA2 M AH0 N EY1 SH AH0 N
+domineer  D AA2 M AH0 N IH1 R
+domineering  D AA2 M AH0 N IH1 R IH0 NG
+dominion  D AH0 M IH1 N Y AH0 N
+domino  D AA1 M AH0 N OW2
+donor  D OW1 N ER0
+doomsday  D UW1 M Z D EY2
+doorbell  D AO1 R B EH2 L
+doorknob  D AO1 R N AA2 B
+dormitory  D AO1 R M AH0 T AO2 R IY0
+dorsal  D AO1 R S AH0 L
+dosage  D OW1 S AH0 JH
+dossier  D AO1 S IY0 EY2
+dote  D OW1 T
+doting  D OW1 T IH0 NG
+dotted  D AA1 T AH0 D
+doubtful  D AW1 T F AH0 L
+doughnut  D OW1 N AH2 T
+dour  D AW1 ER0
+dovetail  D AH1 V T EY2 L
+dowdy  D AW1 D IY0
+downcast  D AW1 N K AE2 S T
+downfall  D AW1 N F AO2 L
+downgrade  D AW1 N G R EY2 D
+downhill  D AW1 N HH IH2 L
+download  D AW1 N L OW2 D
+downplay  D AW1 N P L EY2
+downpour  D AW1 N P AO2 R
+downright  D AW1 N R AY2 T
+downside  D AW1 N S AY2 D
+downsize  D AW1 N S AY2 Z
+downstream  D AW1 N S T R IY2 M
+downturn  D AW1 N T ER2 N
+downward  D AW1 N W ER0 D
+dowry  D AW1 R IY0
+drab  D R AE1 B
+draftsman  D R AE1 F T S M AH0 N
+drainage  D R EY1 N IH0 JH
+drake  D R EY1 K
+drapery  D R EY1 P ER0 IY0
+drastic  D R AE1 S T IH0 K
+drastically  D R AE1 S T IH0 K AH0 L IY0
+drawback  D R AO1 B AE2 K
+dreadful  D R EH1 D F AH0 L
+dreamer  D R IY1 M ER0
+dreamy  D R IY1 M IY0
+dreary  D R IH1 R IY0
+drench  D R EH1 N CH
+dressing  D R EH1 S IH0 NG
+dribble  D R IH1 B AH0 L
+drier  D R AY1 ER0
+driftwood  D R IH1 F T W UH2 D
+drizzle  D R IH1 Z AH0 L
+droll  D R OW1 L
+drone  D R OW1 N
+drool  D R UW1 L
+droop  D R UW1 P
+droplet  D R AA1 P L AH0 T
+dropout  D R AA1 P AW2 T
+drowning  D R AW1 N IH0 NG
+drowsy  D R AW1 Z IY0
+drudge  D R AH1 JH
+drudgery  D R AH1 JH ER0 IY0
+drugstore  D R AH1 G S T AO2 R
+drummer  D R AH1 M ER0
+drunkard  D R AH1 NG K ER0 D
+drunken  D R AH1 NG K AH0 N
+dryness  D R AY1 N AH0 S
+dual  D UW1 AH0 L
+duality  D UW0 AE1 L AH0 T IY0
+dub  D AH1 B
+dubious  D UW1 B IY0 AH0 S
+dubiously  D UW1 B IY0 AH0 S L IY0
+duchess  D AH1 CH AH0 S
+duchy  D AH1 CH IY0
+duckling  D AH1 K L IH0 NG
+duct  D AH1 K T
+dud  D AH1 D
+duel  D UW1 AH0 L
+duet  D UW0 EH1 T
+duffel  D AH1 F AH0 L
+dugout  D AH1 G AW2 T
+duke  D UW1 K
+dullness  D AH1 L N AH0 S
+dumbfound  D AH1 M F AW2 N D
+dumpling  D AH1 M P L IH0 NG
+dunce  D AH1 N S
+dune  D UW1 N
+dungeon  D AH1 N JH AH0 N
+dunk  D AH1 NG K
+duo  D UW1 OW0
+dupe  D UW1 P
+duplex  D UW1 P L EH0 K S
+duplication  D UW2 P L AH0 K EY1 SH AH0 N
+durability  D UH2 R AH0 B IH1 L AH0 T IY0
+duress  D UH0 R EH1 S
+dusty  D AH1 S T IY0
+dutiful  D UW1 T AH0 F AH0 L
+dwarf  D W AO1 R F
+dwell  D W EH1 L
+dweller  D W EH1 L ER0
+dwelling  D W EH1 L IH0 NG
+dwindle  D W IH1 N D AH0 L
+dye  D AY1
+dyer  D AY1 ER0
+dyke  D AY1 K
+dynamism  D AY1 N AH0 M IH2 Z AH0 M
+dynamo  D AY1 N AH0 M OW2
+dysfunction  D IH0 S F AH1 NG K SH AH0 N
+dysfunctional  D IH0 S F AH1 NG K SH AH0 N AH0 L
+dyslexia  D IH0 S L EH1 K S IY0 AH0
+dystopia  D IH0 S T OW1 P IY0 AH0
+eaglet  IY1 G L AH0 T
+eardrum  IH1 R D R AH2 M
+earlobe  IH1 R L OW2 B
+earmark  IH1 R M AA2 R K
+earnest  ER1 N AH0 S T
+earnestly  ER1 N AH0 S T L IY0
+earphone  IH1 R F OW2 N
+earring  IH1 R IH0 NG
+earthen  ER1 TH AH0 N
+earthenware  ER1 TH AH0 N W EH2 R
+earthly  ER1 TH L IY0
+earthworm  ER1 TH W ER2 M
+earthy  ER1 TH IY0
+easel  IY1 Z AH0 L
+eastbound  IY1 S T B AW2 N D
+easterly  IY1 S T ER0 L IY0
+easygoing  IY1 Z IY0 G OW2 IH0 NG
+eater  IY1 T ER0
+eaves  IY1 V Z
+eavesdrop  IY1 V Z D R AA2 P
+ebb  EH1 B
+ebony  EH1 B AH0 N IY0
+ebullient  IH0 B AH1 L Y AH0 N T
+eccentric  IH0 K S EH1 N T R IH0 K
+eccentricity  EH2 K S AH0 N T R IH1 S AH0 T IY0
+ecclesiastical  IH0 K L IY2 Z IY0 AE1 S T IH0 K AH0 L
+echelon  EH1 SH AH0 L AA2 N
+ecologist  IH0 K AA1 L AH0 JH IH0 S T
+ecommerce  IY1 K AA2 M ER0 S
+ecstasy  EH1 K S T AH0 S IY0
+ecstatic  IH0 K S T AE1 T IH0 K
+ecumenical  EH2 K Y AH0 M EH1 N IH0 K AH0 L
+eddy  EH1 D IY0
+edgewise  EH1 JH W AY2 Z
+edgy  EH1 JH IY0
+edible  EH1 D AH0 B AH0 L
+edict  IY1 D IH0 K T
+edification  EH2 D AH0 F AH0 K EY1 SH AH0 N
+edifice  EH1 D AH0 F AH0 S
+edify  EH1 D AH0 F AY2
+editorialize  EH2 D AH0 T AO1 R IY0 AH0 L AY2 Z
+educator  EH1 JH AH0 K EY2 T ER0
+eel  IY1 L
+eerie  IH1 R IY0
+eerily  IH1 R AH0 L IY0
+effectiveness  IH0 F EH1 K T IH0 V N AH0 S
+effervescent  EH2 F ER0 V EH1 S AH0 N T
+efficacy  EH1 F AH0 K AH0 S IY0
+efficiently  IH0 F IH1 SH AH0 N T L IY0
+effigy  EH1 F AH0 JH IY0
+effluent  EH1 F L UW0 AH0 N T
+effortless  EH1 F ER0 T L AH0 S
+effortlessly  EH1 F ER0 T L AH0 S L IY0
+effusion  IH0 F Y UW1 ZH AH0 N
+egalitarian  IH0 G AE2 L AH0 T EH1 R IY0 AH0 N
+eggplant  EH1 G P L AE2 N T
+egocentric  IY2 G OW0 S EH1 N T R IH0 K
+egoism  IY1 G OW0 IH2 Z AH0 M
+egoist  IY1 G OW0 IH0 S T
+egotism  IY1 G AH0 T IH2 Z AH0 M
+egotist  IY1 G AH0 T IH0 S T
+egregious  IH0 G R IY1 JH AH0 S
+ejection  IH0 JH EH1 K SH AH0 N
+elaboration  IH0 L AE2 B ER0 EY1 SH AH0 N
+elapsed  IH0 L AE1 P S T
+elastic  IH0 L AE1 S T IH0 K
+elasticity  IY2 L AE0 S T IH1 S AH0 T IY0
+elated  IH0 L EY1 T IH0 D
+elation  IH0 L EY1 SH AH0 N
+elderberry  EH1 L D ER0 B EH2 R IY0
+elderly  EH1 L D ER0 L IY0
+electorate  IH0 L EH1 K T ER0 AH0 T
+electrician  IH0 L EH2 K T R IH1 SH AH0 N
+electrode  IH0 L EH1 K T R OW2 D
+electromagnetic  IH0 L EH2 K T R OW0 M AE0 G N EH1 T IH0 K
+electron  IH0 L EH1 K T R AA0 N
+elegance  EH1 L AH0 G AH0 N S
+elegantly  EH1 L AH0 G AH0 N T L IY0
+elegy  EH1 L AH0 JH IY0
+elemental  EH2 L AH0 M EH1 N T AH0 L
+elevation  EH2 L AH0 V EY1 SH AH0 N
+elevator  EH1 L AH0 V EY2 T ER0
+elf  EH1 L F
+elicit  IH0 L IH1 S AH0 T
+eligibility  EH2 L AH0 JH AH0 B IH1 L AH0 T IY0
+eligible  EH1 L AH0 JH AH0 B AH0 L
+elimination  IH0 L IH2 M AH0 N EY1 SH AH0 N
+elitism  IH0 L IY1 T IH0 Z AH0 M
+elitist  IH0 L IY1 T IH0 S T
+elk  EH1 L K
+ellipse  IH0 L IH1 P S
+elliptical  IH0 L IH1 P T IH0 K AH0 L
+elm  EH1 L M
+elocution  EH2 L AH0 K Y UW1 SH AH0 N
+elongate  IH0 L AO1 NG G EY2 T
+elongation  IY2 L AO0 NG G EY1 SH AH0 N
+eloquently  EH1 L AH0 K W AH0 N T L IY0
+elucidate  IH0 L UW1 S AH0 D EY2 T
+elude  IH0 L UW1 D
+elusive  IH0 L UW1 S IH0 V
+emaciated  IH0 M EY1 SH IY0 EY2 T IH0 D
+email  IY1 M EY2 L
+emancipate  IH0 M AE1 N S AH0 P EY2 T
+emancipation  IH0 M AE2 N S AH0 P EY1 SH AH0 N
+embalm  IH0 M B AA1 M
+embankment  IH0 M B AE1 NG K M AH0 N T
+embargo  EH0 M B AA1 R G OW0
+embark  IH0 M B AA1 R K
+embarrassingly  IH0 M B AE1 R AH0 S IH0 NG L IY0
+embed  IH0 M B EH1 D
+embellish  IH0 M B EH1 L IH0 SH
+embellishment  IH0 M B EH1 L IH0 SH M AH0 N T
+ember  EH1 M B ER0
+embezzle  IH0 M B EH1 Z AH0 L
+embezzlement  IH0 M B EH1 Z AH0 L M AH0 N T
+embitter  IH0 M B IH1 T ER0
+emblematic  EH2 M B L AH0 M AE1 T IH0 K
+embodiment  IH0 M B AA1 D IY0 M AH0 N T
+embody  IH0 M B AA1 D IY0
+embolden  IH0 M B OW1 L D AH0 N
+emboss  IH0 M B AO1 S
+embroidery  IH0 M B R OY1 D ER0 IY0
+embroil  IH0 M B R OY1 L
+embryo  EH1 M B R IY0 OW0
+embryonic  EH2 M B R IY0 AA1 N IH0 K
+emergence  IH0 M ER1 JH AH0 N S
+emergent  IH0 M ER1 JH AH0 N T
+emigrant  EH1 M AH0 G R AH0 N T
+emigration  EH2 M AH0 G R EY1 SH AH0 N
+eminence  EH1 M AH0 N AH0 N S
+eminent  EH1 M AH0 N AH0 N T
+eminently  EH1 M AH0 N AH0 N T L IY0
+emissary  EH1 M AH0 S EH2 R IY0
+emitter  IH0 M IH1 T ER0
+emoji  IH0 M OW1 JH IY0
+emotionally  IH0 M OW1 SH AH0 N AH0 L IY0
+empathetic  EH2 M P AH0 TH EH1 T IH0 K
+empathy  EH1 M P AH0 TH IY0
+emperor  EH1 M P ER0 ER0
+emphatic  EH0 M F AE1 T IH0 K
+emphatically  EH0 M F AE1 T IH0 K AH0 L IY0
+empiricism  EH0 M P IH1 R AH0 S IH2 Z AH0 M
+employable  IH0 M P L OY1 AH0 B AH0 L
+emporium  EH0 M P AO1 R IY0 AH0 M
+empowerment  IH0 M P AW1 ER0 M AH0 N T
+empress  EH1 M P R AH0 S
+emptiness  EH1 M P T IY0 N AH0 S
+emulate  EH1 M Y AH0 L EY2 T
+emulation  EH2 M Y AH0 L EY1 SH AH0 N
+emulsify  IH0 M AH1 L S AH0 F AY2
+emulsion  IH0 M AH1 L SH AH0 N
+enabler  IH0 N EY1 B AH0 L ER0
+enactment  IH0 N AE1 K T M AH0 N T
+enamel  IH0 N AE1 M AH0 L
+enamor  IH0 N AE1 M ER0
+enchantment  IH0 N CH AE1 N T M AH0 N T
+encircle  IH0 N S ER1 K AH0 L
+enclave  EH1 N K L EY2 V
+enclose  IH0 N K L OW1 Z
+enclosure  IH0 N K L OW1 ZH ER0
+encode  IH0 N K OW1 D
+encoder  IH0 N K OW1 D ER0
+encore  AA1 N K AO0 R
+encountering  IH0 N K AW1 N T ER0 IH0 NG
+encouragement  IH0 N K ER1 IH0 JH M AH0 N T
+encouraging  IH0 N K ER1 IH0 JH IH0 NG
+encroach  IH0 N K R OW1 CH
+encroachment  IH0 N K R OW1 CH M AH0 N T
+encrypt  IH0 N K R IH1 P T
+encryption  IH0 N K R IH1 P SH AH0 N
+encyclopedic  IH0 N S AY2 K L AH0 P IY1 D IH0 K
+endangerment  IH0 N D EY1 N JH ER0 M AH0 N T
+endear  IH0 N D IH1 R
+endearing  IH0 N D IH1 R IH0 NG
+endearment  IH0 N D IH1 R M AH0 N T
+endemic  EH0 N D EH1 M IH0 K
+ending  EH1 N D IH0 NG
+endlessly  EH1 N D L AH0 S L IY0
+endocrine  EH1 N D AH0 K R AY2 N
+endorsement  IH0 N D AO1 R S M AH0 N T
+endowment  IH0 N D AW1 M AH0 N T
+endpoint  EH1 N D P OY2 N T
+endurance  IH0 N D UH1 R AH0 N S
+enduring  IH0 N D UH1 R IH0 NG
+energetic  EH2 N ER0 JH EH1 T IH0 K
+energize  EH1 N ER0 JH AY2 Z
+enforcement  IH0 N F AO1 R S M AH0 N T
+enforcer  IH0 N F AO1 R S ER0
+enfranchise  IH0 N F R AE1 N CH AY2 Z
+engender  IH0 N JH EH1 N D ER0
+enigmatic  EH2 N IH0 G M AE1 T IH0 K
+enjoin  IH0 N JH OY1 N
+enjoyable  IH0 N JH OY1 AH0 B AH0 L
+enjoyment  IH0 N JH OY1 M AH0 N T
+enlist  IH0 N L IH1 S T
+enlistment  IH0 N L IH1 S T M AH0 N T
+enliven  IH0 N L AY1 V AH0 N
+enmity  EH1 N M AH0 T IY0
+enormity  IH0 N AO1 R M AH0 T IY0
+enormously  IH0 N AO1 R M AH0 S L IY0
+enrichment  IH0 N R IH1 CH M AH0 N T
+enrollment  IH0 N R OW1 L M AH0 N T
+enshrine  IH0 N SH R AY1 N
+ensign  EH1 N S AH0 N
+enslave  IH0 N S L EY1 V
+enslavement  IH0 N S L EY1 V M AH0 N T
+ensnare  IH0 N S N EH1 R
+ensue  IH0 N S UW1
+ensuing  IH0 N S UW1 IH0 NG
+entanglement  IH0 N T AE1 NG G AH0 L M AH0 N T
+enterprising  EH1 N T ER0 P R AY2 Z IH0 NG
+entertainer  EH2 N T ER0 T EY1 N ER0
+enthrall  IH0 N TH R AO1 L
+enthralling  IH0 N TH R AO1 L IH0 NG
+enthuse  IH0 N TH UW1 Z
+enthusiast  IH0 N TH UW1 Z IY0 AE2 S T
+enthusiastically  IH0 N TH UW2 Z IY0 AE1 S T IH0 K AH0 L IY0
+enticement  IH0 N T AY1 S M AH0 N T
+entirety  IH0 N T AY1 R T IY0
+entomology  EH2 N T AH0 M AA1 L AH0 JH IY0
+entourage  AA2 N T UH0 R AA1 ZH
+entrails  EH1 N T R EY2 L Z
+entreat  IH0 N T R IY1 T
+entreaty  IH0 N T R IY1 T IY0
+entree  AA1 N T R EY2
+entrench  IH0 N T R EH1 N CH
+entrenchment  IH0 N T R EH1 N CH M AH0 N T
+entrepreneurial  AA2 N T R AH0 P R AH0 N ER1 IY0 AH0 L
+entrepreneurship  AA2 N T R AH0 P R AH0 N ER1 SH IH0 P
+entropy  EH1 N T R AH0 P IY0
+enumeration  IH0 N UW2 M ER0 EY1 SH AH0 N
+enunciate  IH0 N AH1 N S IY0 EY2 T
+enunciation  IH0 N AH2 N S IY0 EY1 SH AH0 N
+envision  IH0 N V IH1 ZH AH0 N
+envoy  EH1 N V OY0
+enzymatic  EH2 N Z AH0 M AE1 T IH0 K
+ephemeral  IH0 F EH1 M ER0 AH0 L
+epic  EH1 P IH0 K
+epicenter  EH1 P IH0 S EH2 N T ER0
+epidemiologist  EH2 P AH0 D IY2 M IY0 AA1 L AH0 JH IH0 S T
+epidemiology  EH2 P AH0 D IY2 M IY0 AA1 L AH0 JH IY0
+epigram  EH1 P AH0 G R AE2 M
+epileptic  EH2 P AH0 L EH1 P T IH0 K
+epilogue  EH1 P AH0 L AO2 G
+episcopal  IH0 P IH1 S K AH0 P AH0 L
+episodic  EH2 P AH0 S AA1 D IH0 K
+epistemology  IH0 P IH2 S T AH0 M AA1 L AH0 JH IY0
+epistle  IH0 P IH1 S AH0 L
+epitaph  EH1 P AH0 T AE2 F
+epithet  EH1 P AH0 TH EH2 T
+epitome  IH0 P IH1 T AH0 M IY0
+epitomize  IH0 P IH1 T AH0 M AY2 Z
+epoch  EH1 P AH0 K
+equable  EH1 K W AH0 B AH0 L
+equanimity  IY2 K W AH0 N IH1 M AH0 T IY0
+equate  IH0 K W EY1 T
+equatorial  IY2 K W AH0 T AO1 R IY0 AH0 L
+equestrian  IH0 K W EH1 S T R IY0 AH0 N
+equilibrium  IY2 K W AH0 L IH1 B R IY0 AH0 M
+equine  IY1 K W AY2 N
+equinox  IY1 K W AH0 N AA2 K S
+equitably  EH1 K W AH0 T AH0 B L IY0
+equity  EH1 K W AH0 T IY0
+equivalence  IH0 K W IH1 V AH0 L AH0 N S
+equivocal  IH0 K W IH1 V AH0 K AH0 L
+equivocate  IH0 K W IH1 V AH0 K EY2 T
+eradicate  IH0 R AE1 D AH0 K EY2 T
+eradication  IH0 R AE2 D AH0 K EY1 SH AH0 N
+erasable  IH0 R EY1 S AH0 B AH0 L
+eraser  IH0 R EY1 S ER0
+erasure  IH0 R EY1 SH ER0
+erection  IH0 R EH1 K SH AH0 N
+erode  IH0 R OW1 D
+errand  EH1 R AH0 N D
+errant  EH1 R AH0 N T
+erratic  ER0 AE1 T IH0 K
+erratically  ER0 AE1 T IH0 K AH0 L IY0
+erroneously  ER0 OW1 N IY0 AH0 S L IY0
+erudite  EH1 R AH0 D AY2 T
+erudition  EH2 R AH0 D IH1 SH AH0 N
+eruption  IH0 R AH1 P SH AH0 N
+escalation  EH2 S K AH0 L EY1 SH AH0 N
+escalator  EH1 S K AH0 L EY2 T ER0
+escapade  EH1 S K AH0 P EY2 D
+escapee  IH0 S K EY2 P IY1
+escapism  IH0 S K EY1 P IH0 Z AH0 M
+espresso  EH0 S P R EH1 S OW0
+essayist  EH1 S EY0 IH0 S T
+establishment  IH0 S T AE1 B L IH0 SH M AH0 N T
+esthete  EH1 S TH IY0 T
+estimator  EH1 S T AH0 M EY2 T ER0
+estrange  IH0 S T R EY1 N JH
+estrangement  IH0 S T R EY1 N JH M AH0 N T
+estuary  EH1 S CH UW0 EH2 R IY0
+etching  EH1 CH IH0 NG
+eternally  IH0 T ER1 N AH0 L IY0
+eternity  IH0 T ER1 N AH0 T IY0
+ether  IY1 TH ER0
+ethereal  IH0 TH IH1 R IY0 AH0 L
+ethernet  IY1 TH ER0 N EH2 T
+ethical  EH1 TH IH0 K AH0 L
+ethically  EH1 TH IH0 K AH0 L IY0
+ethnicity  EH0 TH N IH1 S AH0 T IY0
+ethnography  EH0 TH N AA1 G R AH0 F IY0
+ethos  IY1 TH AA0 S
+etiquette  EH1 T AH0 K AH0 T
+etymology  EH2 T AH0 M AA1 L AH0 JH IY0
+eulogize  Y UW1 L AH0 JH AY2 Z
+eulogy  Y UW1 L AH0 JH IY0
+euphemism  Y UW1 F AH0 M IH2 Z AH0 M
+euphemistic  Y UW2 F AH0 M IH1 S T IH0 K
+euphoria  Y UW0 F AO1 R IY0 AH0
+euphoric  Y UW0 F AO1 R IH0 K
+eureka  Y UH0 R IY1 K AH0
+evacuation  IH0 V AE2 K Y UW0 EY1 SH AH0 N
+evade  IH0 V EY1 D
+evaluator  IH0 V AE1 L Y UW0 EY2 T ER0
+evangelical  IY2 V AE0 N JH EH1 L IH0 K AH0 L
+evangelist  IH0 V AE1 N JH AH0 L IH0 S T
+evaporation  IH0 V AE2 P ER0 EY1 SH AH0 N
+evasion  IH0 V EY1 ZH AH0 N
+evasive  IH0 V EY1 S IH0 V
+evenly  IY1 V AH0 N L IY0
+eventful  IH0 V EH1 N T F AH0 L
+eventual  IH0 V EH1 N CH UW0 AH0 L
+eventuality  IH0 V EH2 N CH UW0 AE1 L AH0 T IY0
+evergreen  EH1 V ER0 G R IY2 N
+everlasting  EH2 V ER0 L AE1 S T IH0 NG
+evermore  EH2 V ER0 M AO1 R
+eviction  IH0 V IH1 K SH AH0 N
+evidently  EH1 V AH0 D AH0 N T L IY0
+evildoer  IY1 V AH0 L D UW2 ER0
+evocative  IH0 V AA1 K AH0 T IH0 V
+evoke  IH0 V OW1 K
+evolutionary  EH2 V AH0 L UW1 SH AH0 N EH2 R IY0
+exacerbate  IH0 G Z AE1 S ER0 B EY2 T
+exacerbation  IH0 G Z AE2 S ER0 B EY1 SH AH0 N
+exacting  IH0 G Z AE1 K T IH0 NG
+exactitude  IH0 G Z AE1 K T AH0 T UW2 D
+exaggeration  IH0 G Z AE2 JH ER0 EY1 SH AH0 N
+exaltation  EH2 G Z AO0 L T EY1 SH AH0 N
+examiner  IH0 G Z AE1 M AH0 N ER0
+exasperate  IH0 G Z AE1 S P ER0 EY2 T
+exasperation  IH0 G Z AE2 S P ER0 EY1 SH AH0 N
+excavation  EH2 K S K AH0 V EY1 SH AH0 N
+exceedingly  IH0 K S IY1 D IH0 NG L IY0
+excellence  EH1 K S AH0 L AH0 N S
+excellently  EH1 K S AH0 L AH0 N T L IY0
+excentric  IH0 K S EH1 N T R IH0 K
+excerpt  EH1 K S ER0 P T
+excise  EH1 K S AY0 Z
+excision  IH0 K S IH1 ZH AH0 N
+excitable  IH0 K S AY1 T AH0 B AH0 L
+exclamation  EH2 K S K L AH0 M EY1 SH AH0 N
+exclusion  IH0 K S K L UW1 ZH AH0 N
+exclusively  IH0 K S K L UW1 S IH0 V L IY0
+excommunicate  EH2 K S K AH0 M Y UW1 N AH0 K EY2 T
+excrement  EH1 K S K R AH0 M AH0 N T
+excrete  IH0 K S K R IY1 T
+excruciating  IH0 K S K R UW1 SH IY0 EY2 T IH0 NG
+excursion  IH0 K S K ER1 ZH AH0 N
+excusable  IH0 K S K Y UW1 Z AH0 B AH0 L
+executable  EH1 K S AH0 K Y UW2 T AH0 B AH0 L
+executor  IH0 G Z EH1 K Y AH0 T ER0
+exemplary  IH0 G Z EH1 M P L ER0 IY0
+exemption  IH0 G Z EH1 M P SH AH0 N
+exertion  IH0 G Z ER1 SH AH0 N
+exhaustion  IH0 G Z AO1 S CH AH0 N
+exhaustive  IH0 G Z AO1 S T IH0 V
+exhibitor  IH0 G Z IH1 B AH0 T ER0
+exhilarate  IH0 G Z IH1 L ER0 EY2 T
+exhilarating  IH0 G Z IH1 L ER0 EY2 T IH0 NG
+exhilaration  IH0 G Z IH2 L ER0 EY1 SH AH0 N
+exhort  IH0 G Z AO1 R T
+exhortation  EH2 K S AO0 R T EY1 SH AH0 N
+exhume  IH0 G Z UW1 M
+existential  EH2 G Z IH0 S T EH1 N SH AH0 L
+existentialism  EH2 G Z IH0 S T EH1 N SH AH0 L IH2 Z AH0 M
+exodus  EH1 K S AH0 D AH0 S
+exonerate  IH0 G Z AA1 N ER0 EY2 T
+exoneration  IH0 G Z AA2 N ER0 EY1 SH AH0 N
+exorbitant  IH0 G Z AO1 R B AH0 T AH0 N T
+exorcism  EH1 K S AO0 R S IH2 Z AH0 M
+exotically  IH0 G Z AA1 T IH0 K AH0 L IY0
+expansionist  IH0 K S P AE1 N SH AH0 N IH0 S T
+expansive  IH0 K S P AE1 N S IH0 V
+expatriate  EH0 K S P EY1 T R IY0 AH0 T
+expectant  IH0 K S P EH1 K T AH0 N T
+expediency  IH0 K S P IY1 D IY0 AH0 N S IY0
+expedient  IH0 K S P IY1 D IY0 AH0 N T
+expedite  EH1 K S P AH0 D AY2 T
+expeditionary  EH2 K S P AH0 D IH1 SH AH0 N EH2 R IY0
+expeditious  EH2 K S P AH0 D IH1 SH AH0 S
+expel  IH0 K S P EH1 L
+expendable  IH0 K S P EH1 N D AH0 B AH0 L
+expiate  EH1 K S P IY0 EY2 T
+expiration  EH2 K S P AH0 R EY1 SH AH0 N
+expire  IH0 K S P AY1 R
+explanatory  IH0 K S P L AE1 N AH0 T AO2 R IY0
+expletive  EH1 K S P L AH0 T IH0 V
+explicable  IH0 K S P L IH1 K AH0 B AH0 L
+explicitly  IH0 K S P L IH1 S AH0 T L IY0
+exploiter  IH0 K S P L OY1 T ER0
+exploration  EH2 K S P L ER0 EY1 SH AH0 N
+exploratory  IH0 K S P L AO1 R AH0 T AO2 R IY0
+explorer  IH0 K S P L AO1 R ER0
+exponent  IH0 K S P OW1 N AH0 N T
+exponential  EH2 K S P AH0 N EH1 N SH AH0 L
+exponentially  EH2 K S P AH0 N EH1 N SH AH0 L IY0
+exporter  IH0 K S P AO1 R T ER0
+expositor  IH0 K S P AA1 Z AH0 T ER0
+expository  IH0 K S P AA1 Z AH0 T AO2 R IY0
+expostulate  IH0 K S P AA1 S CH AH0 L EY2 T
+expound  IH0 K S P AW1 N D
+expressly  IH0 K S P R EH1 S L IY0
+expropriate  EH0 K S P R OW1 P R IY0 EY2 T
+expropriation  EH0 K S P R OW2 P R IY0 EY1 SH AH0 N
+expulsion  IH0 K S P AH1 L SH AH0 N
+expunge  IH0 K S P AH1 N JH
+expurgate  EH1 K S P ER0 G EY2 T
+exquisite  EH1 K S K W AH0 Z AH0 T
+exquisitely  EH1 K S K W AH0 Z AH0 T L IY0
+extant  EH1 K S T AH0 N T
+extemporaneous  IH0 K S T EH2 M P ER0 EY1 N IY0 AH0 S
+extendable  IH0 K S T EH1 N D AH0 B AH0 L
+extensive  IH0 K S T EH1 N S IH0 V
+extensively  IH0 K S T EH1 N S IH0 V L IY0
+extenuating  IH0 K S T EH1 N Y UW0 EY2 T IH0 NG
+exterminate  IH0 K S T ER1 M AH0 N EY2 T
+extermination  IH0 K S T ER2 M AH0 N EY1 SH AH0 N
+external  IH0 K S T ER1 N AH0 L
+externally  IH0 K S T ER1 N AH0 L IY0
+extinction  IH0 K S T IH1 NG K SH AH0 N
+extol  IH0 K S T OW1 L
+extort  IH0 K S T AO1 R T
+extortion  IH0 K S T AO1 R SH AH0 N
+extraction  IH0 K S T R AE1 K SH AH0 N
+extracurricular  EH2 K S T R AH0 K ER0 IH1 K Y AH0 L ER0
+extradite  EH1 K S T R AH0 D AY2 T
+extradition  EH2 K S T R AH0 D IH1 SH AH0 N
+extraneous  IH0 K S T R EY1 N IY0 AH0 S
+extraordinarily  IH0 K S T R AO2 R D AH0 N EH1 R AH0 L IY0
+extrapolate  IH0 K S T R AE1 P AH0 L EY2 T
+extrapolation  IH0 K S T R AE2 P AH0 L EY1 SH AH0 N
+extravagance  IH0 K S T R AE1 V AH0 G AH0 N S
+extravaganza  IH0 K S T R AE2 V AH0 G AE1 N Z AH0
+extremism  IH0 K S T R IY1 M IH0 Z AH0 M
+extremist  IH0 K S T R IY1 M AH0 S T
+extremity  IH0 K S T R EH1 M AH0 T IY0
+extricate  EH1 K S T R AH0 K EY2 T
+extrovert  EH1 K S T R AH0 V ER2 T
+exuberance  IH0 G Z UW1 B ER0 AH0 N S
+exuberant  IH0 G Z UW1 B ER0 AH0 N T
+exude  IH0 G Z UW1 D
+exult  IH0 G Z AH1 L T
+exultation  EH2 G Z AH0 L T EY1 SH AH0 N
+eyeball  AY1 B AO2 L
+eyesight  AY1 S AY2 T
+fabrication  F AE2 B R AH0 K EY1 SH AH0 N
+facetious  F AH0 S IY1 SH AH0 S
+facile  F AE1 S AH0 L
+facilitator  F AH0 S IH1 L AH0 T EY2 T ER0
+facsimile  F AE0 K S IH1 M AH0 L IY0
+factual  F AE1 K CH UW0 AH0 L
+factually  F AE1 K CH UW0 AH0 L IY0
+faculty  F AE1 K AH0 L T IY0
+faddish  F AE1 D IH0 SH
+fading  F EY1 D IH0 NG
+failing  F EY1 L IH0 NG
+failsafe  F EY1 L S EY2 F
+fairground  F EH1 R G R AW2 N D
+fairway  F EH1 R W EY2
+fallback  F AO1 L B AE2 K
+fallible  F AE1 L AH0 B AH0 L
+fallout  F AO1 L AW2 T
+fallow  F AE1 L OW0
+falsely  F AO1 L S L IY0
+falsehood  F AO1 L S HH UH2 D
+falsification  F AO2 L S AH0 F AH0 K EY1 SH AH0 N
+falsify  F AO1 L S AH0 F AY2
+falter  F AO1 L T ER0
+familiarity  F AH0 M IH2 L IY0 AE1 R AH0 T IY0
+familiarize  F AH0 M IH1 L Y ER0 AY2 Z
+famished  F AE1 M IH0 SH T
+fanatical  F AH0 N AE1 T IH0 K AH0 L
+fanaticism  F AH0 N AE1 T AH0 S IH2 Z AH0 M
+fanciful  F AE1 N S IH0 F AH0 L
+fanfare  F AE1 N F EH2 R
+fang  F AE1 NG
+fanzine  F AE1 N Z IY2 N
+farce  F AA1 R S
+farcical  F AA1 R S IH0 K AH0 L
+farmhouse  F AA1 R M HH AW2 S
+farmland  F AA1 R M L AE2 N D
+farmyard  F AA1 R M Y AA2 R D
+farsighted  F AA1 R S AY2 T IH0 D
+fascination  F AE2 S AH0 N EY1 SH AH0 N
+fascism  F AE1 SH IH0 Z AH0 M
+fascist  F AE1 SH IH0 S T
+fastidious  F AE0 S T IH1 D IY0 AH0 S
+fatalism  F EY1 T AH0 L IH2 Z AH0 M
+fatality  F AH0 T AE1 L AH0 T IY0
+fateful  F EY1 T F AH0 L
+fatten  F AE1 T AH0 N
+fatty  F AE1 T IY0
+favorable  F EY1 V ER0 AH0 B AH0 L
+favorably  F EY1 V ER0 AH0 B L IY0
+fawn  F AO1 N
+faze  F EY1 Z
+fearful  F IH1 R F AH0 L
+fearfully  F IH1 R F AH0 L IY0
+fearless  F IH1 R L AH0 S
+fearsome  F IH1 R S AH0 M
+feasibility  F IY2 Z AH0 B IH1 L AH0 T IY0
+featherweight  F EH1 DH ER0 W EY2 T
+feedback  F IY1 D B AE2 K
+feeder  F IY1 D ER0
+feign  F EY1 N
+feint  F EY1 N T
+feisty  F AY1 S T IY0
+feline  F IY1 L AY2 N
+fell  F EH1 L
+felon  F EH1 L AH0 N
+felony  F EH1 L AH0 N IY0
+femininity  F EH2 M AH0 N IH1 N AH0 T IY0
+feminism  F EH1 M AH0 N IH2 Z AH0 M
+fender  F EH1 N D ER0
+ferment  F ER0 M EH1 N T
+fermentation  F ER2 M AH0 N T EY1 SH AH0 N
+fern  F ER1 N
+ferocious  F ER0 OW1 SH AH0 S
+ferocity  F ER0 AA1 S AH0 T IY0
+ferret  F EH1 R AH0 T
+ferris  F EH1 R IH0 S
+fertilize  F ER1 T AH0 L AY2 Z
+fertilizer  F ER1 T AH0 L AY2 Z ER0
+fervent  F ER1 V AH0 N T
+fervently  F ER1 V AH0 N T L IY0
+fervor  F ER1 V ER0
+festive  F EH1 S T IH0 V
+festivity  F EH0 S T IH1 V AH0 T IY0
+festoon  F EH0 S T UW1 N
+fetal  F IY1 T AH0 L
+fetter  F EH1 T ER0
+feud  F Y UW1 D
+feudal  F Y UW1 D AH0 L
+feudalism  F Y UW1 D AH0 L IH2 Z AH0 M
+feverish  F IY1 V ER0 IH0 SH
+fiance  F IY0 AA0 N S EY1
+fiancee  F IY0 AA0 N S EY1
+fiasco  F IY0 AE1 S K OW0
+fib  F IH1 B
+fickle  F IH1 K AH0 L
+fictional  F IH1 K SH AH0 N AH0 L
+fictitious  F IH0 K T IH1 SH AH0 S
+fiddler  F IH1 D L ER0
+fidget  F IH1 JH AH0 T
+fidgety  F IH1 JH AH0 T IY0
+fiefdom  F IY1 F D AH0 M
+fieldwork  F IY1 L D W ER2 K
+fiend  F IY1 N D
+fiendish  F IY1 N D IH0 SH
+fiery  F AY1 ER0 IY0
+figuratively  F IH1 G Y ER0 AH0 T IH0 V L IY0
+figurehead  F IH1 G Y ER0 HH EH2 D
+filibuster  F IH1 L AH0 B AH2 S T ER0
+filigree  F IH1 L AH0 G R IY2
+filing  F AY1 L IH0 NG
+filler  F IH1 L ER0
+fillet  F IH0 L EY1
+filmmaker  F IH1 L M M EY2 K ER0
+filth  F IH1 L TH
+filthy  F IH1 L TH IY0
+fin  F IH1 N
+finalize  F AY1 N AH0 L AY2 Z
+financier  F IH2 N AH0 N S IH1 R
+finch  F IH1 N CH
+finery  F AY1 N ER0 IY0
+finesse  F AH0 N EH1 S
+fingernail  F IH1 NG G ER0 N EY2 L
+finicky  F IH1 N AH0 K IY0
+finishing  F IH1 N IH0 SH IH0 NG
+finite  F AY1 N AY2 T
+firearm  F AY1 R AA2 R M
+firefighter  F AY1 R F AY2 T ER0
+firefly  F AY1 R F L AY2
+firehouse  F AY1 R HH AW2 S
+fireman  F AY1 R M AH0 N
+firepower  F AY1 R P AW2 ER0
+fireproof  F AY1 R P R UW2 F
+fireside  F AY1 R S AY2 D
+firestorm  F AY1 R S T AO2 R M
+firewood  F AY1 R W UH2 D
+firework  F AY1 R W ER2 K
+firmament  F ER1 M AH0 M AH0 N T
+firmness  F ER1 M N AH0 S
+firstborn  F ER1 S T B AO2 R N
+firsthand  F ER1 S T HH AE2 N D
+fisherman  F IH1 SH ER0 M AH0 N
+fishery  F IH1 SH ER0 IY0
+fission  F IH1 SH AH0 N
+fissure  F IH1 SH ER0
+fitness  F IH1 T N AH0 S
+fitter  F IH1 T ER0
+fizzle  F IH1 Z AH0 L
+fjord  F Y AO1 R D
+flabbergasted  F L AE1 B ER0 G AE2 S T IH0 D
+flabby  F L AE1 B IY0
+flagrant  F L EY1 G R AH0 N T
+flagship  F L AE1 G SH IH2 P
+flair  F L EH1 R
+flaky  F L EY1 K IY0
+flamboyant  F L AE0 M B OY1 AH0 N T
+flammable  F L AE1 M AH0 B AH0 L
+flange  F L AE1 N JH
+flapjack  F L AE1 P JH AE2 K
+flare  F L EH1 R
+flashback  F L AE1 SH B AE2 K
+flashlight  F L AE1 SH L AY2 T
+flashy  F L AE1 SH IY0
+flatbed  F L AE1 T B EH2 D
+flatly  F L AE1 T L IY0
+flatten  F L AE1 T AH0 N
+flatter  F L AE1 T ER0
+flaunt  F L AO1 N T
+flawless  F L AO1 L AH0 S
+flea  F L IY1
+fledgling  F L EH1 JH L IH0 NG
+fleece  F L IY1 S
+fleecy  F L IY1 S IY0
+fleeting  F L IY1 T IH0 NG
+flexibility  F L EH2 K S AH0 B IH1 L AH0 T IY0
+flier  F L AY1 ER0
+flimsy  F L IH1 M Z IY0
+flinch  F L IH1 N CH
+flint  F L IH1 N T
+flippant  F L IH1 P AH0 N T
+flipper  F L IH1 P ER0
+flirt  F L ER1 T
+flirtation  F L ER0 T EY1 SH AH0 N
+flit  F L IH1 T
+flog  F L AO1 G
+flooding  F L AH1 D IH0 NG
+floodlight  F L AH1 D L AY2 T
+floorboard  F L AO1 R B AO2 R D
+flop  F L AA1 P
+flora  F L AO1 R AH0
+floral  F L AO1 R AH0 L
+florid  F L AO1 R IH0 D
+florist  F L AO1 R IH0 S T
+floss  F L AO1 S
+flotilla  F L OW0 T IH1 L AH0
+flotsam  F L AA1 T S AH0 M
+flounder  F L AW1 N D ER0
+flout  F L AW1 T
+flu  F L UW1
+fluctuation  F L AH2 K CH UW0 EY1 SH AH0 N
+fluency  F L UW1 AH0 N S IY0
+fluently  F L UW1 AH0 N T L IY0
+fluff  F L AH1 F
+fluffy  F L AH1 F IY0
+fluidity  F L UW0 IH1 D AH0 T IY0
+fluke  F L UW1 K
+fluorescent  F L UH0 R EH1 S AH0 N T
+fluoride  F L UH1 R AY2 D
+flurry  F L ER1 IY0
+fluster  F L AH1 S T ER0
+flute  F L UW1 T
+flutter  F L AH1 T ER0
+flyover  F L AY1 OW2 V ER0
+flywheel  F L AY1 W IY2 L
+foamy  F OW1 M IY0
+fob  F AA1 B
+focal  F OW1 K AH0 L
+fodder  F AA1 D ER0
+foe  F OW1
+foggy  F AO1 G IY0
+foible  F OY1 B AH0 L
+foil  F OY1 L
+foist  F OY1 S T
+folder  F OW1 L D ER0
+foliage  F OW1 L IY0 IH0 JH
+follower  F AA1 L OW0 ER0
+following  F AA1 L OW0 IH0 NG
+folly  F AA1 L IY0
+fondly  F AA1 N D L IY0
+fondness  F AA1 N D N AH0 S
+fondue  F AA0 N D UW1
+font  F AA1 N T
+foodstuff  F UW1 D S T AH2 F
+foolhardy  F UW1 L HH AA2 R D IY0
+foolishness  F UW1 L IH0 SH N AH0 S
+foolproof  F UW1 L P R UW2 F
+foothill  F UH1 T HH IH2 L
+foothold  F UH1 T HH OW2 L D
+footing  F UH1 T IH0 NG
+footnote  F UH1 T N OW2 T
+footpath  F UH1 T P AE2 TH
+footwear  F UH1 T W EH2 R
+forage  F AO1 R IH0 JH
+forbearance  F AO0 R B EH1 R AH0 N S
+forbidden  F ER0 B IH1 D AH0 N
+forbidding  F ER0 B IH1 D IH0 NG
+forcefully  F AO1 R S F AH0 L IY0
+ford  F AO1 R D
+forecaster  F AO1 R K AE2 S T ER0
+foreclose  F AO0 R K L OW1 Z
+foreclosure  F AO0 R K L OW1 ZH ER0
+forefinger  F AO1 R F IH2 NG G ER0
+forefront  F AO1 R F R AH2 N T
+foreground  F AO1 R G R AW2 N D
+foreigner  F AO1 R AH0 N ER0
+foreman  F AO1 R M AH0 N
+forensic  F ER0 EH1 N S IH0 K
+forerunner  F AO1 R R AH2 N ER0
+foreseeable  F AO0 R S IY1 AH0 B AH0 L
+foreshadow  F AO0 R SH AE1 D OW0
+foresight  F AO1 R S AY2 T
+foretell  F AO0 R T EH1 L
+forethought  F AO1 R TH AO2 T
+forever  F ER0 EH1 V ER0
+forewarn  F AO0 R W AO1 R N
+foreword  F AO1 R W ER2 D
+forfeiture  F AO1 R F AH0 CH ER0
+forger  F AO1 R JH ER0
+forgery  F AO1 R JH ER0 IY0
+formaldehyde  F AO0 R M AE1 L D AH0 HH AY2 D
+formality  F AO0 R M AE1 L AH0 T IY0
+formalize  F AO1 R M AH0 L AY2 Z
+formatting  F AO1 R M AE0 T IH0 NG
+formative  F AO1 R M AH0 T IH0 V
+formulate  F AO1 R M Y AH0 L EY2 T
+formulation  F AO2 R M Y AH0 L EY1 SH AH0 N
+forsake  F AO0 R S EY1 K
+forte  F AO1 R T EY0
+forthright  F AO1 R TH R AY2 T
+fortification  F AO2 R T AH0 F AH0 K EY1 SH AH0 N
+fortify  F AO1 R T AH0 F AY2
+fortitude  F AO1 R T AH0 T UW2 D
+fortunate  F AO1 R CH AH0 N AH0 T
+forum  F AO1 R AH0 M
+foul  F AW1 L
+foundry  F AW1 N D R IY0
+fountain  F AW1 N T AH0 N
+foxhound  F AA1 K S HH AW2 N D
+foyer  F OY1 ER0
+fracas  F R EY1 K AH0 S
+fractional  F R AE1 K SH AH0 N AH0 L
+fracture  F R AE1 K CH ER0
+fragility  F R AH0 JH IH1 L AH0 T IY0
+fragmentary  F R AE1 G M AH0 N T EH2 R IY0
+fragmentation  F R AE2 G M AH0 N T EY1 SH AH0 N
+fragrance  F R EY1 G R AH0 N S
+frail  F R EY1 L
+frailty  F R EY1 L T IY0
+franchisee  F R AE2 N CH AY0 Z IY1
+frantically  F R AE1 N T IH0 K AH0 L IY0
+fraternal  F R AH0 T ER1 N AH0 L
+fraternity  F R AH0 T ER1 N AH0 T IY0
+fraternize  F R AE1 T ER0 N AY2 Z
+fraudulent  F R AO1 JH AH0 L AH0 N T
+fraught  F R AO1 T
+fray  F R EY1
+freak  F R IY1 K
+freakish  F R IY1 K IH0 SH
+freckle  F R EH1 K AH0 L
+freebie  F R IY1 B IY0
+freelance  F R IY1 L AE2 N S
+freelancer  F R IY1 L AE2 N S ER0
+freeway  F R IY1 W EY2
+frenetic  F R AH0 N EH1 T IH0 K
+frequency  F R IY1 K W AH0 N S IY0
+fresco  F R EH1 S K OW0
+freshen  F R EH1 SH AH0 N
+freshman  F R EH1 SH M AH0 N
+freshness  F R EH1 SH N AH0 S
+freshwater  F R EH1 SH W AO2 T ER0
+fret  F R EH1 T
+fretful  F R EH1 T F AH0 L
+friendliness  F R EH1 N D L IY0 N AH0 S
+friendship  F R EH1 N D SH IH0 P
+frigate  F R IH1 G AH0 T
+frightful  F R AY1 T F AH0 L
+frigid  F R IH1 JH AH0 D
+frill  F R IH1 L
+fringe  F R IH1 N JH
+frisk  F R IH1 S K
+frisky  F R IH1 S K IY0
+fritter  F R IH1 T ER0
+frivolity  F R AH0 V AA1 L AH0 T IY0
+frivolous  F R IH1 V AH0 L AH0 S
+frolic  F R AA1 L IH0 K
+frontage  F R AH1 N T IH0 JH
+frontal  F R AH1 N T AH0 L
+frostbite  F R AO1 S T B AY2 T
+frosty  F R AO1 S T IY0
+froth  F R AO1 TH
+frothy  F R AO1 TH IY0
+frugal  F R UW1 G AH0 L
+frugality  F R UW0 G AE1 L AH0 T IY0
+fruitful  F R UW1 T F AH0 L
+fruition  F R UW0 IH1 SH AH0 N
+fruitless  F R UW1 T L AH0 S
+frustrating  F R AH1 S T R EY2 T IH0 NG
+fry  F R AY1
+fryer  F R AY1 ER0
+fugitive  F Y UW1 JH AH0 T IH0 V
+fugue  F Y UW1 G
+fulcrum  F UH1 L K R AH0 M
+fulfill  F UH0 L F IH1 L
+fulfillment  F UH0 L F IH1 L M AH0 N T
+fullback  F UH1 L B AE2 K
+fume  F Y UW1 M
+fumigate  F Y UW1 M AH0 G EY2 T
+fumigation  F Y UW2 M AH0 G EY1 SH AH0 N
+functional  F AH1 NG K SH AH0 N AH0 L
+functionality  F AH2 NG K SH AH0 N AE1 L AH0 T IY0
+functionally  F AH1 NG K SH AH0 N AH0 L IY0
+fundraiser  F AH1 N D R EY2 Z ER0
+fundraising  F AH1 N D R EY2 Z IH0 NG
+fungal  F AH1 NG G AH0 L
+fungicide  F AH1 N JH AH0 S AY2 D
+fungus  F AH1 NG G AH0 S
+furiously  F Y UH1 R IY0 AH0 S L IY0
+furl  F ER1 L
+furlong  F ER1 L AO0 NG
+furnace  F ER1 N AH0 S
+furnishings  F ER1 N IH0 SH IH0 NG Z
+furnishing  F ER1 N IH0 SH IH0 NG
+furor  F Y UH1 R AO0 R
+furrow  F ER1 OW0
+furry  F ER1 IY0
+furthest  F ER1 DH AH0 S T
+furtive  F ER1 T IH0 V
+furtively  F ER1 T IH0 V L IY0
+fuselage  F Y UW1 Z AH0 L AA2 ZH
+fusion  F Y UW1 ZH AH0 N
+fuss  F AH1 S
+fussy  F AH1 S IY0
+futility  F Y UW0 T IH1 L AH0 T IY0
+futon  F UW1 T AA0 N
+futurism  F Y UW1 CH ER0 IH2 Z AH0 M
+futuristic  F Y UW2 CH ER0 IH1 S T IH0 K
+fuzz  F AH1 Z
+fuzzy  F AH1 Z IY0
+gab  G AE1 B
+gadgetry  G AE1 JH AH0 T R IY0
+gaffe  G AE1 F
+gag  G AE1 G
+gaily  G EY1 L IY0
+gait  G EY1 T
+gala  G AE1 L AH0
+gale  G EY1 L
+gallant  G AE1 L AH0 N T
+gallantry  G AE1 L AH0 N T R IY0
+gallbladder  G AO1 L B L AE2 D ER0
+galleon  G AE1 L IY0 AH0 N
+gallows  G AE1 L OW0 Z
+galore  G AH0 L AO1 R
+galvanize  G AE1 L V AH0 N AY2 Z
+gambit  G AE1 M B AH0 T
+gambler  G AE1 M B L ER0
+gamekeeper  G EY1 M K IY2 P ER0
+gamer  G EY1 M ER0
+gaming  G EY1 M IH0 NG
+gamut  G AE1 M AH0 T
+gander  G AE1 N D ER0
+gangster  G AE1 NG S T ER0
+gangway  G AE1 NG W EY2
+gantry  G AE1 N T R IY0
+gape  G EY1 P
+garb  G AA1 R B
+garbage  G AA1 R B IH0 JH
+garble  G AA1 R B AH0 L
+gardener  G AA1 R D AH0 N ER0
+gardening  G AA1 R D AH0 N IH0 NG
+gargoyle  G AA1 R G OY2 L
+garish  G EH1 R IH0 SH
+garland  G AA1 R L AH0 N D
+garner  G AA1 R N ER0
+garnish  G AA1 R N IH0 SH
+garret  G AE1 R AH0 T
+garrulous  G AE1 R AH0 L AH0 S
+garter  G AA1 R T ER0
+gaseous  G AE1 S IY0 AH0 S
+gash  G AE1 SH
+gasket  G AE1 S K AH0 T
+gastric  G AE1 S T R IH0 K
+gastronomy  G AE0 S T R AA1 N AH0 M IY0
+gateway  G EY1 T W EY2
+gathering  G AE1 DH ER0 IH0 NG
+gaudy  G AO1 D IY0
+gauge  G EY1 JH
+gaunt  G AO1 N T
+gauze  G AO1 Z
+gavel  G AE1 V AH0 L
+gawk  G AO1 K
+gazelle  G AH0 Z EH1 L
+geek  G IY1 K
+gelatin  JH EH1 L AH0 T AH0 N
+gemstone  JH EH1 M S T OW2 N
+genealogy  JH IY2 N IY0 AA1 L AH0 JH IY0
+generalist  JH EH1 N ER0 AH0 L AH0 S T
+generality  JH EH2 N ER0 AE1 L AH0 T IY0
+generalization  JH EH2 N ER0 AH0 L AH0 Z EY1 SH AH0 N
+generalize  JH EH1 N ER0 AH0 L AY2 Z
+generative  JH EH1 N ER0 AH0 T IH0 V
+generator  JH EH1 N ER0 EY2 T ER0
+generic  JH AH0 N EH1 R IH0 K
+generously  JH EH1 N ER0 AH0 S L IY0
+genesis  JH EH1 N AH0 S AH0 S
+genetically  JH AH0 N EH1 T IH0 K AH0 L IY0
+geneticist  JH AH0 N EH1 T AH0 S IH0 S T
+genetics  JH AH0 N EH1 T IH0 K S
+genial  JH IY1 N Y AH0 L
+genie  JH IY1 N IY0
+genital  JH EH1 N AH0 T AH0 L
+genocide  JH EH1 N AH0 S AY2 D
+genome  JH IY1 N OW2 M
+genomic  JH IH0 N OW1 M IH0 K
+genteel  JH EH0 N T IY1 L
+gentile  JH EH1 N T AY2 L
+gentility  JH EH0 N T IH1 L AH0 T IY0
+gentleness  JH EH1 N T AH0 L N AH0 S
+gentry  JH EH1 N T R IY0
+genuflect  JH EH1 N Y AH0 F L EH2 K T
+geographer  JH IY0 AA1 G R AH0 F ER0
+geographic  JH IY2 AH0 G R AE1 F IH0 K
+geologic  JH IY2 AH0 L AA1 JH IH0 K
+geological  JH IY2 AH0 L AA1 JH IH0 K AH0 L
+geologist  JH IY0 AA1 L AH0 JH IH0 S T
+geometric  JH IY2 AH0 M EH1 T R IH0 K
+geopolitical  JH IY2 OW0 P AH0 L IH1 T IH0 K AH0 L
+geothermal  JH IY2 OW0 TH ER1 M AH0 L
+geriatric  JH EH2 R IY0 AE1 T R IH0 K
+germ  JH ER1 M
+germane  JH ER0 M EY1 N
+germinate  JH ER1 M AH0 N EY2 T
+germination  JH ER2 M AH0 N EY1 SH AH0 N
+gestation  JH EH0 S T EY1 SH AH0 N
+gesticulate  JH EH0 S T IH1 K Y AH0 L EY2 T
+gestural  JH EH1 S CH ER0 AH0 L
+getaway  G EH1 T AH0 W EY2
+geyser  G AY1 Z ER0
+ghastly  G AE1 S T L IY0
+ghetto  G EH1 T OW0
+ghostly  G OW1 S T L IY0
+gibberish  JH IH1 B ER0 IH0 SH
+giddy  G IH1 D IY0
+gifted  G IH1 F T IH0 D
+giggle  G IH1 G AH0 L
+gild  G IH1 L D
+gill  G IH1 L
+gimmick  G IH1 M IH0 K
+gingerly  JH IH1 N JH ER0 L IY0
+girder  G ER1 D ER0
+girdle  G ER1 D AH0 L
+girlhood  G ER1 L HH UH2 D
+girth  G ER1 TH
+gist  JH IH1 S T
+gladden  G L AE1 D AH0 N
+glade  G L EY1 D
+gladiator  G L AE1 D IY0 EY2 T ER0
+gladly  G L AE1 D L IY0
+glamor  G L AE1 M ER0
+glamorous  G L AE1 M ER0 AH0 S
+glamour  G L AE1 M ER0
+gland  G L AE1 N D
+glandular  G L AE1 N JH AH0 L ER0
+glaring  G L EH1 R IH0 NG
+glassware  G L AE1 S W EH2 R
+glassy  G L AE1 S IY0
+glaze  G L EY1 Z
+gleam  G L IY1 M
+glee  G L IY1
+gleeful  G L IY1 F AH0 L
+glen  G L EH1 N
+glib  G L IH1 B
+glide  G L AY1 D
+glider  G L AY1 D ER0
+glimmer  G L IH1 M ER0
+glint  G L IH1 N T
+glisten  G L IH1 S AH0 N
+glitch  G L IH1 CH
+glitter  G L IH1 T ER0
+gloat  G L OW1 T
+glob  G L AA1 B
+globalization  G L OW2 B AH0 L AH0 Z EY1 SH AH0 N
+gloomy  G L UW1 M IY0
+glorify  G L AO1 R AH0 F AY2
+glorious  G L AO1 R IY0 AH0 S
+gloriously  G L AO1 R IY0 AH0 S L IY0
+glossy  G L AO1 S IY0
+glowing  G L OW1 IH0 NG
+glucose  G L UW1 K OW2 S
+glum  G L AH1 M
+glut  G L AH1 T
+glutton  G L AH1 T AH0 N
+gluttony  G L AH1 T AH0 N IY0
+glyph  G L IH1 F
+gnarl  N AA1 R L
+gnarly  N AA1 R L IY0
+gnash  N AE1 SH
+goading  G OW1 D IH0 NG
+goalkeeper  G OW1 L K IY2 P ER0
+goblet  G AA1 B L AH0 T
+goblin  G AA1 B L AH0 N
+godly  G AA1 D L IY0
+godsend  G AA1 D S EH2 N D
+goggle  G AA1 G AH0 L
+goldfish  G OW1 L D F IH2 SH
+golfer  G AA1 L F ER0
+gondola  G AA1 N D AH0 L AH0
+gong  G AO1 NG
+goodwill  G UH1 D W IH2 L
+goose  G UW1 S
+gorge  G AO1 R JH
+gory  G AO1 R IY0
+gossamer  G AA1 S AH0 M ER0
+governess  G AH1 V ER0 N AH0 S
+graceful  G R EY1 S F AH0 L
+gracefully  G R EY1 S F AH0 L IY0
+gracious  G R EY1 SH AH0 S
+graciously  G R EY1 SH AH0 S L IY0
+gradation  G R AH0 D EY1 SH AH0 N
+gradient  G R EY1 D IY0 AH0 N T
+graduation  G R AE2 JH UW0 EY1 SH AH0 N
+grail  G R EY1 L
+grammatical  G R AH0 M AE1 T IH0 K AH0 L
+grandeur  G R AE1 N JH ER0
+grandiose  G R AE1 N D IY0 OW2 S
+grandparent  G R AE1 N D P EH2 R AH0 N T
+grandstand  G R AE1 N D S T AE2 N D
+granola  G R AH0 N OW1 L AH0
+granular  G R AE1 N Y AH0 L ER0
+granularity  G R AE2 N Y AH0 L AE1 R AH0 T IY0
+granule  G R AE1 N Y UW0 L
+grape  G R EY1 P
+grapefruit  G R EY1 P F R UW2 T
+grapevine  G R EY1 P V AY2 N
+graphical  G R AE1 F IH0 K AH0 L
+graphically  G R AE1 F IH0 K AH0 L IY0
+graphite  G R AE1 F AY2 T
+grapple  G R AE1 P AH0 L
+grassland  G R AE1 S L AE2 N D
+grassroots  G R AE1 S R UW2 T S
+grassy  G R AE1 S IY0
+grate  G R EY1 T
+gratefully  G R EY1 T F AH0 L IY0
+gratification  G R AE2 T AH0 F AH0 K EY1 SH AH0 N
+gratify  G R AE1 T AH0 F AY2
+grating  G R EY1 T IH0 NG
+gratis  G R AE1 T AH0 S
+gratuitous  G R AH0 T UW1 AH0 T AH0 S
+gratuity  G R AH0 T UW1 AH0 T IY0
+gravelly  G R AE1 V AH0 L IY0
+graven  G R EY1 V AH0 N
+gravestone  G R EY1 V S T OW2 N
+graveyard  G R EY1 V Y AA2 R D
+gravitate  G R AE1 V AH0 T EY2 T
+gravitation  G R AE2 V AH0 T EY1 SH AH0 N
+greasy  G R IY1 S IY0
+greatness  G R EY1 T N AH0 S
+greedy  G R IY1 D IY0
+greenery  G R IY1 N ER0 IY0
+greeting  G R IY1 T IH0 NG
+gregarious  G R AH0 G EH1 R IY0 AH0 S
+griddle  G R IH1 D AH0 L
+gridlock  G R IH1 D L AA2 K
+grievance  G R IY1 V AH0 N S
+grievous  G R IY1 V AH0 S
+grimace  G R IH0 M EY1 S
+grime  G R AY1 M
+grimy  G R AY1 M IY0
+grinder  G R AY1 N D ER0
+gripe  G R AY1 P
+grisly  G R IH1 Z L IY0
+grit  G R IH1 T
+gritty  G R IH1 T IY0
+grocer  G R OW1 S ER0
+groggy  G R AA1 G IY0
+grope  G R OW1 P
+grossly  G R OW1 S L IY0
+grotto  G R AA1 T OW0
+grouch  G R AW1 CH
+grouchy  G R AW1 CH IY0
+groundbreaking  G R AW1 N D B R EY2 K IH0 NG
+grounding  G R AW1 N D IH0 NG
+groundless  G R AW1 N D L AH0 S
+groundswell  G R AW1 N D S W EH2 L
+groundwater  G R AW1 N D W AO2 T ER0
+groundwork  G R AW1 N D W ER2 K
+grove  G R OW1 V
+grovel  G R AA1 V AH0 L
+grower  G R OW1 ER0
+grub  G R AH1 B
+grubby  G R AH1 B IY0
+grudge  G R AH1 JH
+grudging  G R AH1 JH IH0 NG
+grudgingly  G R AH1 JH IH0 NG L IY0
+grueling  G R UW1 AH0 L IH0 NG
+gruesome  G R UW1 S AH0 M
+gruff  G R AH1 F
+grumpy  G R AH1 M P IY0
+grunt  G R AH1 N T
+guacamole  G W AA2 K AH0 M OW1 L IY0
+guarantor  G AE2 R AH0 N T AO1 R
+guardhouse  G AA1 R D HH AW2 S
+guardianship  G AA1 R D IY0 AH0 N SH IH2 P
+guidebook  G AY1 D B UH2 K
+guile  G AY1 L
+guillotine  G IH1 L AH0 T IY2 N
+gulp  G AH1 L P
+gum  G AH1 M
+gunfire  G AH1 N F AY2 ER0
+gunman  G AH1 N M AH0 N
+gunner  G AH1 N ER0
+gunnery  G AH1 N ER0 IY0
+gunpowder  G AH1 N P AW2 D ER0
+gunshot  G AH1 N SH AA2 T
+gurgle  G ER1 G AH0 L
+guru  G UH1 R UW0
+gush  G AH1 SH
+gust  G AH1 S T
+gusto  G AH1 S T OW0
+gusty  G AH1 S T IY0
+gutter  G AH1 T ER0
+guzzle  G AH1 Z AH0 L
+gymnast  JH IH1 M N AE0 S T
+gymnastics  JH IH0 M N AE1 S T IH0 K S
+gynecologist  G AY2 N AH0 K AA1 L AH0 JH IH0 S T
+gynecology  G AY2 N AH0 K AA1 L AH0 JH IY0
+gypsum  JH IH1 P S AH0 M
+gypsy  JH IH1 P S IY0
+gyrate  JH AY1 R EY2 T
+gyration  JH AY0 R EY1 SH AH0 N
+gyroscope  JH AY1 R AH0 S K OW2 P
+habitation  HH AE2 B AH0 T EY1 SH AH0 N
+habitually  HH AH0 B IH1 CH UW0 AH0 L IY0
+hack  HH AE1 K
+hacker  HH AE1 K ER0
+haggard  HH AE1 G ER0 D
+haggle  HH AE1 G AH0 L
+hail  HH EY1 L
+hailstone  HH EY1 L S T OW2 N
+hailstorm  HH EY1 L S T AO2 R M
+haircut  HH EH1 R K AH2 T
+hairdo  HH EH1 R D UW2
+hairdresser  HH EH1 R D R EH2 S ER0
+hairline  HH EH1 R L AY2 N
+hairpin  HH EH1 R P IH2 N
+hairstyle  HH EH1 R S T AY2 L
+hairy  HH EH1 R IY0
+hale  HH EY1 L
+halfhearted  HH AE2 F HH AA1 R T IH0 D
+halfway  HH AE1 F W EY2
+hallmark  HH AO1 L M AA2 R K
+hallowed  HH AE1 L OW0 D
+hallucinate  HH AH0 L UW1 S AH0 N EY2 T
+hallucination  HH AH0 L UW2 S AH0 N EY1 SH AH0 N
+halo  HH EY1 L OW0
+halter  HH AO1 L T ER0
+halve  HH AE1 V
+hammock  HH AE1 M AH0 K
+hamper  HH AE1 M P ER0
+hamstring  HH AE1 M S T R IH2 NG
+handbook  HH AE1 N D B UH2 K
+handcraft  HH AE1 N D K R AE2 F T
+handicraft  HH AE1 N D IY0 K R AE2 F T
+handiwork  HH AE1 N D IY0 W ER2 K
+handlebar  HH AE1 N D AH0 L B AA2 R
+handmade  HH AE1 N D M EY2 D
+handout  HH AE1 N D AW2 T
+handrail  HH AE1 N D R EY2 L
+handshake  HH AE1 N D SH EY2 K
+handsomely  HH AE1 N S AH0 M L IY0
+handstand  HH AE1 N D S T AE2 N D
+handwritten  HH AE1 N D R IH2 T AH0 N
+hanger  HH AE1 NG ER0
+hanker  HH AE1 NG K ER0
+hankering  HH AE1 NG K ER0 IH0 NG
+hapless  HH AE1 P L AH0 S
+happening  HH AE1 P AH0 N IH0 NG
+happily  HH AE1 P AH0 L IY0
+harassment  HH ER0 AE1 S M AH0 N T
+harbinger  HH AA1 R B AH0 N JH ER0
+hardback  HH AA1 R D B AE2 K
+hardcore  HH AA1 R D K AO2 R
+hardened  HH AA1 R D AH0 N D
+hardheaded  HH AA1 R D HH EH2 D IH0 D
+hardhearted  HH AA2 R D HH AA1 R T IH0 D
+hardiness  HH AA1 R D IY0 N AH0 S
+hardline  HH AA1 R D L AY2 N
+hardwood  HH AA1 R D W UH2 D
+hardy  HH AA1 R D IY0
+harem  HH EH1 R AH0 M
+harmonious  HH AA0 R M OW1 N IY0 AH0 S
+harmonize  HH AA1 R M AH0 N AY2 Z
+harp  HH AA1 R P
+harpist  HH AA1 R P AH0 S T
+harpsichord  HH AA1 R P S AH0 K AO2 R D
+harrowing  HH AE1 R OW0 IH0 NG
+harry  HH AE1 R IY0
+harshly  HH AA1 R SH L IY0
+harshness  HH AA1 R SH N AH0 S
+hasten  HH EY1 S AH0 N
+hastily  HH EY1 S T AH0 L IY0
+hasty  HH EY1 S T IY0
+hatch  HH AE1 CH
+hatchet  HH AE1 CH AH0 T
+hateful  HH EY1 T F AH0 L
+haughty  HH AO1 T IY0
+haul  HH AO1 L
+haulage  HH AO1 L IH0 JH
+haunting  HH AO1 N T IH0 NG
+haven  HH EY1 V AH0 N
+havoc  HH AE1 V AH0 K
+hawk  HH AO1 K
+hazardous  HH AE1 Z ER0 D AH0 S
+haze  HH EY1 Z
+hazel  HH EY1 Z AH0 L
+hazelnut  HH EY1 Z AH0 L N AH2 T
+hazy  HH EY1 Z IY0
+headband  HH EH1 D B AE2 N D
+headcount  HH EH1 D K AW2 N T
+header  HH EH1 D ER0
+headfirst  HH EH1 D F ER2 S T
+heading  HH EH1 D IH0 NG
+headlamp  HH EH1 D L AE2 M P
+headland  HH EH1 D L AH0 N D
+headlong  HH EH1 D L AO2 NG
+headmaster  HH EH1 D M AE2 S T ER0
+headphone  HH EH1 D F OW2 N
+headroom  HH EH1 D R UW2 M
+headset  HH EH1 D S EH2 T
+headstone  HH EH1 D S T OW2 N
+headstrong  HH EH1 D S T R AO2 NG
+headway  HH EH1 D W EY2
+healer  HH IY1 L ER0
+healing  HH IY1 L IH0 NG
+healthful  HH EH1 L TH F AH0 L
+hearken  HH AA1 R K AH0 N
+hearsay  HH IH1 R S EY2
+heartbreak  HH AA1 R T B R EY2 K
+heartbreaking  HH AA1 R T B R EY2 K IH0 NG
+heartbroken  HH AA1 R T B R OW2 K AH0 N
+hearten  HH AA1 R T AH0 N
+heartfelt  HH AA1 R T F EH2 L T
+hearth  HH AA1 R TH
+heartily  HH AA1 R T AH0 L IY0
+heartland  HH AA1 R T L AE2 N D
+heartrending  HH AA1 R T R EH2 N D IH0 NG
+heartthrob  HH AA1 R T TH R AA2 B
+heartwarming  HH AA1 R T W AO2 R M IH0 NG
+hearty  HH AA1 R T IY0
+heathen  HH IY1 DH AH0 N
+heather  HH EH1 DH ER0
+heatstroke  HH IY1 T S T R OW2 K
+heatwave  HH IY1 T W EY2 V
+heave  HH IY1 V
+heavenly  HH EH1 V AH0 N L IY0
+heaviness  HH EH1 V IY0 N AH0 S
+heavyweight  HH EH1 V IY0 W EY2 T
+heckle  HH EH1 K AH0 L
+heckler  HH EH1 K L ER0
+hectic  HH EH1 K T IH0 K
+hedgehog  HH EH1 JH HH AA2 G
+hedgerow  HH EH1 JH R OW2
+heed  HH IY1 D
+heedless  HH IY1 D L AH0 S
+hefty  HH EH1 F T IY0
+hegemony  HH IH0 JH EH1 M AH0 N IY0
+heifer  HH EH1 F ER0
+heighten  HH AY1 T AH0 N
+heinous  HH EY1 N AH0 S
+heist  HH AY1 S T
+helix  HH IY1 L IH0 K S
+hellish  HH EH1 L IH0 SH
+helm  HH EH1 L M
+helper  HH EH1 L P ER0
+helpfully  HH EH1 L P F AH0 L IY0
+helpless  HH EH1 L P L AH0 S
+helplessly  HH EH1 L P L AH0 S L IY0
+helplessness  HH EH1 L P L AH0 S N AH0 S
+hem  HH EH1 M
+hemlock  HH EH1 M L AA2 K
+hemp  HH EH1 M P
+hen  HH EH1 N
+henceforth  HH EH1 N S F AO1 R TH
+henchman  HH EH1 N CH M AH0 N
+hepatitis  HH EH2 P AH0 T AY1 T AH0 S
+herald  HH EH1 R AH0 L D
+herbal  ER1 B AH0 L
+herbicide  ER1 B AH0 S AY2 D
+hereafter  HH IH0 R AE1 F T ER0
+hereditary  HH ER0 EH1 D AH0 T EH2 R IY0
+heredity  HH ER0 EH1 D AH0 T IY0
+heretic  HH EH1 R AH0 T IH0 K
+heretical  HH ER0 EH1 T IH0 K AH0 L
+hermetic  HH ER0 M EH1 T IH0 K
+hermit  HH ER1 M AH0 T
+hernia  HH ER1 N IY0 AH0
+heroics  HH IH0 R OW1 IH0 K S
+heroism  HH EH1 R OW0 IH2 Z AH0 M
+heron  HH EH1 R AH0 N
+herring  HH EH1 R IH0 NG
+hesitancy  HH EH1 Z AH0 T AH0 N S IY0
+hesitant  HH EH1 Z AH0 T AH0 N T
+hesitantly  HH EH1 Z AH0 T AH0 N T L IY0
+hesitation  HH EH2 Z AH0 T EY1 SH AH0 N
+heterogeneous  HH EH2 T ER0 AH0 JH IY1 N IY0 AH0 S
+heuristic  HH Y UH0 R IH1 S T IH0 K
+hew  HH Y UW1
+hexagon  HH EH1 K S AH0 G AA2 N
+hexagonal  HH EH0 K S AE1 G AH0 N AH0 L
+heyday  HH EY1 D EY2
+hibernation  HH AY2 B ER0 N EY1 SH AH0 N
+hiccup  HH IH1 K AH0 P
+hideaway  HH AY1 D AH0 W EY2
+hideout  HH AY1 D AW2 T
+hideous  HH IH1 D IY0 AH0 S
+hierarchical  HH AY2 ER0 AA1 R K IH0 K AH0 L
+hieroglyph  HH AY1 ER0 AH0 G L IH2 F
+highbrow  HH AY1 B R AW2
+highlander  HH AY1 L AH0 N D ER0
+highlighting  HH AY1 L AY2 T IH0 NG
+highrise  HH AY1 R AY2 Z
+hijacker  HH AY1 JH AE2 K ER0
+hiker  HH AY1 K ER0
+hilarious  HH IH0 L EH1 R IY0 AH0 S
+hilarity  HH IH0 L AE1 R AH0 T IY0
+hillside  HH IH1 L S AY2 D
+hilltop  HH IH1 L T AA2 P
+hilly  HH IH1 L IY0
+hilt  HH IH1 L T
+hinder  HH IH1 N D ER0
+hindsight  HH AY1 N D S AY2 T
+hinge  HH IH1 N JH
+hinterland  HH IH1 N T ER0 L AE2 N D
+hippo  HH IH1 P OW0
+hiring  HH AY1 R IH0 NG
+historically  HH IH0 S T AO1 R IH0 K AH0 L IY0
+hitchhike  HH IH1 CH HH AY2 K
+hive  HH AY1 V
+hoard  HH AO1 R D
+hoarse  HH AO1 R S
+hoax  HH OW1 K S
+hobble  HH AA1 B AH0 L
+hobbyist  HH AA1 B IY0 IH0 S T
+hobnob  HH AA1 B N AA2 B
+hoe  HH OW1
+hoist  HH OY1 S T
+holdup  HH OW1 L D AH2 P
+holistic  HH OW0 L IH1 S T IH0 K
+holly  HH AA1 L IY0
+hologram  HH AA1 L AH0 G R AE2 M
+holster  HH OW1 L S T ER0
+homage  HH AA1 M IH0 JH
+homebound  HH OW1 M B AW2 N D
+homecoming  HH OW1 M K AH2 M IH0 NG
+homegrown  HH OW1 M G R OW2 N
+homemaker  HH OW1 M M EY2 K ER0
+homeowner  HH OW1 M OW2 N ER0
+homepage  HH OW1 M P EY2 JH
+homesick  HH OW1 M S IH2 K
+homestead  HH OW1 M S T EH2 D
+hometown  HH OW1 M T AW2 N
+homicidal  HH AA2 M AH0 S AY1 D AH0 L
+homicide  HH AA1 M AH0 S AY2 D
+homogeneous  HH OW2 M AH0 JH IY1 N IY0 AH0 S
+homogenize  HH AH0 M AA1 JH AH0 N AY2 Z
+honeybee  HH AH1 N IY0 B IY2
+honeycomb  HH AH1 N IY0 K OW2 M
+honeydew  HH AH1 N IY0 D UW2
+honeymoon  HH AH1 N IY0 M UW2 N
+honeysuckle  HH AH1 N IY0 S AH2 K AH0 L
+honorary  AA1 N ER0 EH2 R IY0
+hood  HH UH1 D
+hoodlum  HH UW1 D L AH0 M
+hoof  HH UH1 F
+hooligan  HH UW1 L IH0 G AH0 N
+hoop  HH UW1 P
+hooray  HH UH0 R EY1
+hopeful  HH OW1 P F AH0 L
+hopeless  HH OW1 P L AH0 S
+hopelessly  HH OW1 P L AH0 S L IY0
+hopelessness  HH OW1 P L AH0 S N AH0 S
+hopper  HH AA1 P ER0
+horde  HH AO1 R D
+horizontal  HH AO2 R AH0 Z AA1 N T AH0 L
+horizontally  HH AO2 R AH0 Z AA1 N T AH0 L IY0
+hormonal  HH AO0 R M OW1 N AH0 L
+hornet  HH AO1 R N AH0 T
+horrendous  HH AO0 R EH1 N D AH0 S
+horribly  HH AO1 R AH0 B L IY0
+horrid  HH AO1 R AH0 D
+horrific  HH AO0 R IH1 F IH0 K
+horrify  HH AO1 R AH0 F AY2
+horrifying  HH AO1 R AH0 F AY2 IH0 NG
+horseback  HH AO1 R S B AE2 K
+horsemanship  HH AO1 R S M AH0 N SH IH2 P
+horsepower  HH AO1 R S P AW2 ER0
+horseshoe  HH AO1 R S SH UW2
+horticultural  HH AO2 R T AH0 K AH1 L CH ER0 AH0 L
+horticulture  HH AO1 R T AH0 K AH2 L CH ER0
+hosiery  HH OW1 ZH ER0 IY0
+hospice  HH AA1 S P AH0 S
+hospitable  HH AA1 S P AH0 T AH0 B AH0 L
+hospitality  HH AA2 S P AH0 T AE1 L AH0 T IY0
+hospitalization  HH AA2 S P AH0 T AH0 L AH0 Z EY1 SH AH0 N
+hospitalize  HH AA1 S P AH0 T AH0 L AY2 Z
+hostel  HH AA1 S T AH0 L
+hostess  HH OW1 S T AH0 S
+hostility  HH AA0 S T IH1 L AH0 T IY0
+hotbed  HH AA1 T B EH2 D
+hotdog  HH AA1 T D AO2 G
+hotline  HH AA1 T L AY2 N
+hotly  HH AA1 T L IY0
+hotspot  HH AA1 T S P AA2 T
+hourglass  AW1 ER0 G L AE2 S
+houseboat  HH AW1 S B OW2 T
+housebound  HH AW1 S B AW2 N D
+householder  HH AW1 S HH OW2 L D ER0
+housekeeping  HH AW1 S K IY2 P IH0 NG
+housework  HH AW1 S W ER2 K
+hovel  HH AH1 V AH0 L
+hovercraft  HH AH1 V ER0 K R AE2 F T
+howl  HH AW1 L
+hub  HH AH1 B
+hubbub  HH AH1 B AH2 B
+hubris  HH Y UW1 B R IH0 S
+huddle  HH AH1 D AH0 L
+hue  HH Y UW1
+huff  HH AH1 F
+hull  HH AH1 L
+hullabaloo  HH AH2 L AH0 B AH0 L UW1
+hum  HH AH1 M
+humane  HH Y UW0 M EY1 N
+humanely  HH Y UW0 M EY1 N L IY0
+humanitarian  HH Y UW0 M AE2 N AH0 T EH1 R IY0 AH0 N
+humanize  HH Y UW1 M AH0 N AY2 Z
+humankind  HH Y UW1 M AH0 N K AY2 N D
+humbly  HH AH1 M B L IY0
+humid  HH Y UW1 M AH0 D
+humidifier  HH Y UW0 M IH1 D AH0 F AY2 ER0
+humiliation  HH Y UW0 M IH2 L IY0 EY1 SH AH0 N
+humility  HH Y UW0 M IH1 L AH0 T IY0
+humongous  HH Y UW0 M AH1 NG G AH0 S
+humorist  HH Y UW1 M ER0 AH0 S T
+humorous  HH Y UW1 M ER0 AH0 S
+hump  HH AH1 M P
+hunch  HH AH1 N CH
+hundredth  HH AH1 N D R AH0 D TH
+hungrily  HH AH1 NG G R AH0 L IY0
+hunk  HH AH1 NG K
+hunter  HH AH1 N T ER0
+hunting  HH AH1 N T IH0 NG
+hurdle  HH ER1 D AH0 L
+hurl  HH ER1 L
+hurriedly  HH ER1 IY0 D L IY0
+hurtful  HH ER1 T F AH0 L
+hurtle  HH ER1 T AH0 L
+husk  HH AH1 S K
+husky  HH AH1 S K IY0
+hustler  HH AH1 S L ER0
+hutch  HH AH1 CH
+hybrid  HH AY1 B R AH0 D
+hydrant  HH AY1 D R AH0 N T
+hydraulic  HH AY0 D R AO1 L IH0 K
+hydroelectric  HH AY2 D R OW0 IH0 L EH1 K T R IH0 K
+hygienic  HH AY0 JH IY1 N IH0 K
+hymnal  HH IH1 M N AH0 L
+hype  HH AY1 P
+hyperactive  HH AY2 P ER0 AE1 K T IH0 V
+hyperbole  HH AY0 P ER1 B AH0 L IY0
+hyperlink  HH AY1 P ER0 L IH2 NG K
+hypersensitive  HH AY2 P ER0 S EH1 N S AH0 T IH0 V
+hypertension  HH AY2 P ER0 T EH1 N SH AH0 N
+hypertext  HH AY1 P ER0 T EH2 K S T
+hyphen  HH AY1 F AH0 N
+hyphenate  HH AY1 F AH0 N EY2 T
+hypnosis  HH IH0 P N OW1 S AH0 S
+hypnotic  HH IH0 P N AA1 T IH0 K
+hypnotize  HH IH1 P N AH0 T AY2 Z
+hypochondriac  HH AY2 P AH0 K AA1 N D R IY0 AE2 K
+hypocritical  HH IH2 P AH0 K R IH1 T IH0 K AH0 L
+hypodermic  HH AY2 P AH0 D ER1 M IH0 K
+hypothermia  HH AY2 P AH0 TH ER1 M IY0 AH0
+hypothesize  HH AY0 P AA1 TH AH0 S AY2 Z
+hypothetical  HH AY2 P AH0 TH EH1 T IH0 K AH0 L
+hypothetically  HH AY2 P AH0 TH EH1 T IH0 K AH0 L IY0
+hysteria  HH IH0 S T EH1 R IY0 AH0
+hysterical  HH IH0 S T EH1 R IH0 K AH0 L
+hysterically  HH IH0 S T EH1 R IH0 K AH0 L IY0
+icebreaker  AY1 S B R EY2 K ER0
+icing  AY1 S IH0 NG
+iconic  AY0 K AA1 N IH0 K
+idealism  AY0 D IY1 AH0 L IH2 Z AH0 M
+idealist  AY0 D IY1 AH0 L IH0 S T
+idealistic  AY0 D IY2 AH0 L IH1 S T IH0 K
+idealize  AY0 D IY1 AH0 L AY2 Z
+ideally  AY0 D IY1 L IY0
+identifier  AY0 D EH1 N T AH0 F AY2 ER0
+idiom  IH1 D IY0 AH0 M
+idiomatic  IH2 D IY0 AH0 M AE1 T IH0 K
+idiosyncrasy  IH2 D IY0 AH0 S IH1 NG K R AH0 S IY0
+idiosyncratic  IH2 D IY0 OW0 S IH0 N K R AE1 T IH0 K
+idiotic  IH2 D IY0 AA1 T IH0 K
+idler  AY1 D L ER0
+idol  AY1 D AH0 L
+idolize  AY1 D AH0 L AY2 Z
+idyllic  AY0 D IH1 L IH0 K
+igloo  IH1 G L UW0
+ignite  IH0 G N AY1 T
+ignition  IH0 G N IH1 SH AH0 N
+ignoble  IH0 G N OW1 B AH0 L
+ignominy  IH1 G N AH0 M IH2 N IY0
+ignoramus  IH2 G N ER0 EY1 M AH0 S
+illicit  IH0 L IH1 S AH0 T
+illiteracy  IH0 L IH1 T ER0 AH0 S IY0
+illiterate  IH0 L IH1 T ER0 AH0 T
+illuminating  IH0 L UW1 M AH0 N EY2 T IH0 NG
+illumination  IH0 L UW2 M AH0 N EY1 SH AH0 N
+illusory  IH0 L UW1 S ER0 IY0
+illustrative  IH0 L AH1 S T R AH0 T IH0 V
+illustrator  IH1 L AH0 S T R EY2 T ER0
+illustrious  IH0 L AH1 S T R IY0 AH0 S
+imagery  IH1 M AH0 JH R IY0
+imaginable  IH0 M AE1 JH AH0 N AH0 B AH0 L
+imaginary  IH0 M AE1 JH AH0 N EH2 R IY0
+imaginative  IH0 M AE1 JH AH0 N AH0 T IH0 V
+imbalance  IH0 M B AE1 L AH0 N S
+imbue  IH0 M B Y UW1
+imitate  IH1 M AH0 T EY2 T
+imitation  IH2 M AH0 T EY1 SH AH0 N
+immaculate  IH0 M AE1 K Y AH0 L AH0 T
+immanent  IH1 M AH0 N AH0 N T
+immaterial  IH2 M AH0 T IH1 R IY0 AH0 L
+immature  IH2 M AH0 CH UH1 R
+immaturity  IH2 M AH0 CH UH1 R AH0 T IY0
+immeasurable  IH0 M EH1 ZH ER0 AH0 B AH0 L
+immediacy  IH0 M IY1 D IY0 AH0 S IY0
+immemorial  IH2 M AH0 M AO1 R IY0 AH0 L
+immensely  IH0 M EH1 N S L IY0
+immensity  IH0 M EH1 N S AH0 T IY0
+immerse  IH0 M ER1 S
+immersion  IH0 M ER1 ZH AH0 N
+immigrate  IH1 M AH0 G R EY2 T
+imminent  IH1 M AH0 N AH0 N T
+imminently  IH1 M AH0 N AH0 N T L IY0
+immobile  IH0 M OW1 B AH0 L
+immobilize  IH0 M OW1 B AH0 L AY2 Z
+immodest  IH0 M AA1 D AH0 S T
+immoral  IH0 M AO1 R AH0 L
+immorality  IH2 M ER0 AE1 L AH0 T IY0
+immortal  IH0 M AO1 R T AH0 L
+immortality  IH2 M AO0 R T AE1 L AH0 T IY0
+immortalize  IH0 M AO1 R T AH0 L AY2 Z
+immovable  IH0 M UW1 V AH0 B AH0 L
+immunize  IH1 M Y AH0 N AY2 Z
+immutable  IH0 M Y UW1 T AH0 B AH0 L
+impasse  IH0 M P AE1 S
+impassioned  IH0 M P AE1 SH AH0 N D
+impassive  IH0 M P AE1 S IH0 V
+impatience  IH0 M P EY1 SH AH0 N S
+impatient  IH0 M P EY1 SH AH0 N T
+impatiently  IH0 M P EY1 SH AH0 N T L IY0
+impeachment  IH0 M P IY1 CH M AH0 N T
+impeccably  IH0 M P EH1 K AH0 B L IY0
+impend  IH0 M P EH1 N D
+impending  IH0 M P EH1 N D IH0 NG
+impenetrable  IH0 M P EH1 N AH0 T R AH0 B AH0 L
+imperator  IH2 M P ER0 AH0 T AO1 R
+imperceptible  IH2 M P ER0 S EH1 P T AH0 B AH0 L
+imperfect  IH0 M P ER1 F IH0 K T
+imperfection  IH2 M P ER0 F EH1 K SH AH0 N
+imperialism  IH0 M P IH1 R IY0 AH0 L IH2 Z AH0 M
+imperialist  IH0 M P IH1 R IY0 AH0 L IH0 S T
+imperil  IH0 M P EH1 R AH0 L
+imperious  IH0 M P IH1 R IY0 AH0 S
+impermanent  IH0 M P ER1 M AH0 N AH0 N T
+impermeable  IH0 M P ER1 M IY0 AH0 B AH0 L
+impersonal  IH0 M P ER1 S AH0 N AH0 L
+impersonation  IH0 M P ER2 S AH0 N EY1 SH AH0 N
+impertinent  IH0 M P ER1 T AH0 N AH0 N T
+impervious  IH0 M P ER1 V IY0 AH0 S
+impetuosity  IH0 M P EH2 CH UW0 AA1 S AH0 T IY0
+impetus  IH1 M P AH0 T AH0 S
+impinge  IH0 M P IH1 N JH
+implacable  IH0 M P L AE1 K AH0 B AH0 L
+implantation  IH2 M P L AE0 N T EY1 SH AH0 N
+implausible  IH0 M P L AO1 Z AH0 B AH0 L
+implementer  IH1 M P L AH0 M EH2 N T ER0
+implementation  IH2 M P L AH0 M EH0 N T EY1 SH AH0 N
+implicate  IH1 M P L AH0 K EY2 T
+implicit  IH0 M P L IH1 S AH0 T
+implicitly  IH0 M P L IH1 S AH0 T L IY0
+implosion  IH0 M P L OW1 ZH AH0 N
+imposing  IH0 M P OW1 Z IH0 NG
+imposition  IH2 M P AH0 Z IH1 SH AH0 N
+impossibility  IH0 M P AA2 S AH0 B IH1 L AH0 T IY0
+impostor  IH0 M P AA1 S T ER0
+impotence  IH1 M P AH0 T AH0 N S
+impotent  IH1 M P AH0 T AH0 N T
+impound  IH0 M P AW1 N D
+impoverished  IH0 M P AA1 V ER0 IH0 SH T
+impracticable  IH0 M P R AE1 K T IH0 K AH0 B AH0 L
+impractical  IH0 M P R AE1 K T IH0 K AH0 L
+imprecise  IH2 M P R IH0 S AY1 S
+impregnable  IH0 M P R EH1 G N AH0 B AH0 L
+impregnate  IH0 M P R EH1 G N EY2 T
+impressionable  IH0 M P R EH1 SH AH0 N AH0 B AH0 L
+impressionism  IH0 M P R EH1 SH AH0 N IH2 Z AH0 M
+impressionist  IH0 M P R EH1 SH AH0 N AH0 S T
+impressively  IH0 M P R EH1 S IH0 V L IY0
+imprint  IH1 M P R IH0 N T
+imprisonment  IH0 M P R IH1 Z AH0 N M AH0 N T
+improbable  IH0 M P R AA1 B AH0 B AH0 L
+improper  IH0 M P R AA1 P ER0
+improperly  IH0 M P R AA1 P ER0 L IY0
+impropriety  IH2 M P R AH0 P R AY1 AH0 T IY0
+improvisation  IH2 M P R AA0 V AH0 Z EY1 SH AH0 N
+imprudent  IH0 M P R UW1 D AH0 N T
+impudence  IH1 M P Y AH0 D AH0 N S
+impudent  IH1 M P Y AH0 D AH0 N T
+impulsive  IH0 M P AH1 L S IH0 V
+impulsively  IH0 M P AH1 L S IH0 V L IY0
+impunity  IH0 M P Y UW1 N AH0 T IY0
+impure  IH0 M P Y UH1 R
+impurity  IH0 M P Y UH1 R AH0 T IY0
+inability  IH2 N AH0 B IH1 L AH0 T IY0
+inaccessible  IH2 N AE0 K S EH1 S AH0 B AH0 L
+inaccuracy  IH0 N AE1 K Y ER0 AH0 S IY0
+inaccurate  IH0 N AE1 K Y ER0 AH0 T
+inaction  IH0 N AE1 K SH AH0 N
+inactive  IH0 N AE1 K T IH0 V
+inactivity  IH2 N AE0 K T IH1 V AH0 T IY0
+inadequacy  IH0 N AE1 D AH0 K W AH0 S IY0
+inadvertent  IH2 N AH0 D V ER1 T AH0 N T
+inadvertently  IH2 N AH0 D V ER1 T AH0 N T L IY0
+inalienable  IH0 N EY1 L IY0 AH0 N AH0 B AH0 L
+inane  IH0 N EY1 N
+inanimate  IH0 N AE1 N AH0 M AH0 T
+inappropriate  IH2 N AH0 P R OW1 P R IY0 AH0 T
+inappropriately  IH2 N AH0 P R OW1 P R IY0 AH0 T L IY0
+inapt  IH0 N AE1 P T
+inarticulate  IH2 N AA0 R T IH1 K Y AH0 L AH0 T
+inattentive  IH2 N AH0 T EH1 N T IH0 V
+inaugural  IH0 N AO1 G Y ER0 AH0 L
+inauguration  IH0 N AO2 G Y ER0 EY1 SH AH0 N
+inborn  IH1 N B AO2 R N
+incalculable  IH0 N K AE1 L K Y AH0 L AH0 B AH0 L
+incandescent  IH2 N K AH0 N D EH1 S AH0 N T
+incantation  IH2 N K AE0 N T EY1 SH AH0 N
+incapacitate  IH2 N K AH0 P AE1 S AH0 T EY2 T
+incarceration  IH0 N K AA2 R S ER0 EY1 SH AH0 N
+incarnate  IH0 N K AA1 R N AH0 T
+incarnation  IH2 N K AA0 R N EY1 SH AH0 N
+incense  IH1 N S EH0 N S
+incentivize  IH0 N S EH1 N T IH0 V AY2 Z
+inception  IH0 N S EH1 P SH AH0 N
+incessant  IH0 N S EH1 S AH0 N T
+incessantly  IH0 N S EH1 S AH0 N T L IY0
+incidental  IH2 N S AH0 D EH1 N T AH0 L
+incidentally  IH2 N S AH0 D EH1 N T AH0 L IY0
+incinerate  IH0 N S IH1 N ER0 EY2 T
+incinerator  IH0 N S IH1 N ER0 EY2 T ER0
+incision  IH0 N S IH1 ZH AH0 N
+incisive  IH0 N S AY1 S IH0 V
+inclusive  IH0 N K L UW1 S IH0 V
+inclusively  IH0 N K L UW1 S IH0 V L IY0
+inclusivity  IH2 N K L UW0 S IH1 V AH0 T IY0
+incoherent  IH2 N K OW0 HH IH1 R AH0 N T
+incomparable  IH0 N K AA1 M P ER0 AH0 B AH0 L
+incompatible  IH2 N K AH0 M P AE1 T AH0 B AH0 L
+incompetence  IH0 N K AA1 M P AH0 T AH0 N S
+incompetent  IH0 N K AA1 M P AH0 T AH0 N T
+incomplete  IH2 N K AH0 M P L IY1 T
+incomprehensible  IH2 N K AA0 M P R IH0 HH EH1 N S AH0 B AH0 L
+inconceivable  IH2 N K AH0 N S IY1 V AH0 B AH0 L
+inconclusive  IH2 N K AH0 N K L UW1 S IH0 V
+incongruity  IH2 N K AA0 N G R UW1 AH0 T IY0
+incongruous  IH0 N K AA1 NG G R UW0 AH0 S
+inconsequential  IH2 N K AA0 N S AH0 K W EH1 N SH AH0 L
+inconsistency  IH2 N K AH0 N S IH1 S T AH0 N S IY0
+inconsistent  IH2 N K AH0 N S IH1 S T AH0 N T
+inconspicuous  IH2 N K AH0 N S P IH1 K Y UW0 AH0 S
+incontrovertible  IH2 N K AA0 N T R AH0 V ER1 T AH0 B AH0 L
+inconvenience  IH2 N K AH0 N V IY1 N Y AH0 N S
+incorporation  IH0 N K AO2 R P ER0 EY1 SH AH0 N
+incorrect  IH2 N K ER0 EH1 K T
+incorrectly  IH2 N K ER0 EH1 K T L IY0
+incorrigible  IH0 N K AO1 R AH0 JH AH0 B AH0 L
+incredibly  IH0 N K R EH1 D AH0 B L IY0
+incredulity  IH2 N K R AH0 D UW1 L AH0 T IY0
+incredulous  IH0 N K R EH1 JH AH0 L AH0 S
+incremental  IH2 N K R AH0 M EH1 N T AH0 L
+incrementally  IH2 N K R AH0 M EH1 N T AH0 L IY0
+incubation  IH2 N K Y AH0 B EY1 SH AH0 N
+incubator  IH1 N K Y AH0 B EY2 T ER0
+inculcate  IH1 N K AH0 L K EY2 T
+incumbency  IH0 N K AH1 M B AH0 N S IY0
+incumbent  IH0 N K AH1 M B AH0 N T
+incurable  IH0 N K Y UH1 R AH0 B AH0 L
+incursion  IH0 N K ER1 ZH AH0 N
+indebted  IH0 N D EH1 T AH0 D
+indebtedness  IH0 N D EH1 T AH0 D N AH0 S
+indecency  IH0 N D IY1 S AH0 N S IY0
+indecent  IH0 N D IY1 S AH0 N T
+indecisive  IH2 N D IH0 S AY1 S IH0 V
+indefatigable  IH2 N D IH0 F AE1 T IH0 G AH0 B AH0 L
+indefensible  IH2 N D IH0 F EH1 N S AH0 B AH0 L
+indefinable  IH2 N D IH0 F AY1 N AH0 B AH0 L
+indefinitely  IH0 N D EH1 F AH0 N AH0 T L IY0
+indemnify  IH0 N D EH1 M N AH0 F AY2
+indemnity  IH0 N D EH1 M N AH0 T IY0
+indent  IH0 N D EH1 N T
+indentation  IH2 N D EH0 N T EY1 SH AH0 N
+indenture  IH0 N D EH1 N CH ER0
+indescribable  IH2 N D IH0 S K R AY1 B AH0 B AH0 L
+indestructible  IH2 N D IH0 S T R AH1 K T AH0 B AH0 L
+indexer  IH1 N D EH0 K S ER0
+indict  IH0 N D AY1 T
+indictment  IH0 N D AY1 T M AH0 N T
+indifference  IH0 N D IH1 F ER0 AH0 N S
+indifferent  IH0 N D IH1 F ER0 AH0 N T
+indigestible  IH2 N D AY0 JH EH1 S T AH0 B AH0 L
+indigestion  IH2 N D AH0 JH EH1 S CH AH0 N
+indignant  IH0 N D IH1 G N AH0 N T
+indignation  IH2 N D IH0 G N EY1 SH AH0 N
+indignity  IH0 N D IH1 G N AH0 T IY0
+indirectly  IH2 N D ER0 EH1 K T L IY0
+indiscreet  IH2 N D IH0 S K R IY1 T
+indiscretion  IH2 N D IH0 S K R EH1 SH AH0 N
+indiscriminate  IH2 N D IH0 S K R IH1 M AH0 N AH0 T
+indisposed  IH2 N D IH0 S P OW1 Z D
+indisputable  IH2 N D IH0 S P Y UW1 T AH0 B AH0 L
+indistinguishable  IH2 N D IH0 S T IH1 NG G W IH0 SH AH0 B AH0 L
+individualism  IH2 N D AH0 V IH1 JH UW0 AH0 L IH2 Z AH0 M
+individualistic  IH2 N D AH0 V IH2 JH UW0 AH0 L IH1 S T IH0 K
+individuality  IH2 N D AH0 V IH2 JH UW0 AE1 L AH0 T IY0
+individually  IH2 N D AH0 V IH1 JH UW0 AH0 L IY0
+indoctrinate  IH0 N D AA1 K T R AH0 N EY2 T
+indoctrination  IH0 N D AA2 K T R AH0 N EY1 SH AH0 N
+indolent  IH1 N D AH0 L AH0 N T
+indomitable  IH0 N D AA1 M AH0 T AH0 B AH0 L
+indoors  IH0 N D AO1 R Z
+inducement  IH0 N D UW1 S M AH0 N T
+inductive  IH0 N D AH1 K T IH0 V
+indulgence  IH0 N D AH1 L JH AH0 N S
+indulgent  IH0 N D AH1 L JH AH0 N T
+industrialist  IH0 N D AH1 S T R IY0 AH0 L IH0 S T
+industrialization  IH0 N D AH2 S T R IY0 AH0 L AH0 Z EY1 SH AH0 N
+industrialize  IH0 N D AH1 S T R IY0 AH0 L AY2 Z
+industrious  IH0 N D AH1 S T R IY0 AH0 S
+industriously  IH0 N D AH1 S T R IY0 AH0 S L IY0
+inebriated  IH0 N IY1 B R IY0 EY2 T IH0 D
+ineffective  IH2 N IH0 F EH1 K T IH0 V
+inefficiency  IH2 N IH0 F IH1 SH AH0 N S IY0
+inefficient  IH2 N IH0 F IH1 SH AH0 N T
+inelegant  IH0 N EH1 L AH0 G AH0 N T
+ineligible  IH0 N EH1 L AH0 JH AH0 B AH0 L
+inept  IH0 N EH1 P T
+ineptitude  IH0 N EH1 P T AH0 T UW2 D
+inequality  IH2 N IH0 K W AA1 L AH0 T IY0
+inequity  IH0 N EH1 K W AH0 T IY0
+inert  IH0 N ER1 T
+inescapable  IH2 N IH0 S K EY1 P AH0 B AH0 L
+inevitability  IH0 N EH2 V AH0 T AH0 B IH1 L AH0 T IY0
+inexcusable  IH2 N IH0 K S K Y UW1 Z AH0 B AH0 L
+inexhaustible  IH2 N IH0 G Z AO1 S T AH0 B AH0 L
+inexorable  IH0 N EH1 K S ER0 AH0 B AH0 L
+inexorably  IH0 N EH1 K S ER0 AH0 B L IY0
+inexpensive  IH2 N IH0 K S P EH1 N S IH0 V
+inexperience  IH2 N IH0 K S P IH1 R IY0 AH0 N S
+inexperienced  IH2 N IH0 K S P IH1 R IY0 AH0 N S T
+inexplicable  IH2 N IH0 K S P L IH1 K AH0 B AH0 L
+infallible  IH0 N F AE1 L AH0 B AH0 L
+infamous  IH1 N F AH0 M AH0 S
+infancy  IH1 N F AH0 N S IY0
+infantile  IH1 N F AH0 N T AY2 L
+infantry  IH1 N F AH0 N T R IY0
+infatuate  IH0 N F AE1 CH UW0 EY2 T
+infatuation  IH0 N F AE2 CH UW0 EY1 SH AH0 N
+infectious  IH0 N F EH1 K SH AH0 S
+inference  IH1 N F ER0 AH0 N S
+inferiority  IH0 N F IH2 R IY0 AO1 R AH0 T IY0
+inferno  IH0 N F ER1 N OW0
+infertile  IH0 N F ER1 T AH0 L
+infertility  IH2 N F ER0 T IH1 L AH0 T IY0
+infestation  IH2 N F EH0 S T EY1 SH AH0 N
+infidel  IH1 N F AH0 D EH2 L
+infidelity  IH2 N F AH0 D EH1 L AH0 T IY0
+infiltration  IH2 N F IH0 L T R EY1 SH AH0 N
+infinitely  IH1 N F AH0 N AH0 T L IY0
+infinitesimal  IH2 N F IH0 N AH0 T EH1 S AH0 M AH0 L
+infinitive  IH0 N F IH1 N AH0 T IH0 V
+infinity  IH0 N F IH1 N AH0 T IY0
+infirmary  IH0 N F ER1 M ER0 IY0
+infirmity  IH0 N F ER1 M AH0 T IY0
+inflammation  IH2 N F L AH0 M EY1 SH AH0 N
+inflammatory  IH0 N F L AE1 M AH0 T AO2 R IY0
+inflatable  IH0 N F L EY1 T AH0 B AH0 L
+inflationary  IH0 N F L EY1 SH AH0 N EH2 R IY0
+inflect  IH0 N F L EH1 K T
+inflection  IH0 N F L EH1 K SH AH0 N
+inflexible  IH0 N F L EH1 K S AH0 B AH0 L
+infliction  IH0 N F L IH1 K SH AH0 N
+influencer  IH1 N F L UW0 AH0 N S ER0
+influential  IH2 N F L UW0 EH1 N SH AH0 L
+influx  IH1 N F L AH0 K S
+informant  IH0 N F AO1 R M AH0 N T
+informatics  IH2 N F ER0 M AE1 T IH0 K S
+informative  IH0 N F AO1 R M AH0 T IH0 V
+informer  IH0 N F AO1 R M ER0
+infraction  IH0 N F R AE1 K SH AH0 N
+infrared  IH2 N F R AH0 R EH1 D
+infrequent  IH0 N F R IY1 K W AH0 N T
+infringement  IH0 N F R IH1 N JH M AH0 N T
+infuriating  IH0 N F Y UH1 R IY0 EY2 T IH0 NG
+infuse  IH0 N F Y UW1 Z
+infusion  IH0 N F Y UW1 ZH AH0 N
+ingenuity  IH2 N JH AH0 N UW1 AH0 T IY0
+ingest  IH0 N JH EH1 S T
+ingestion  IH0 N JH EH1 S CH AH0 N
+ingrained  IH0 N G R EY1 N D
+ingratiate  IH0 N G R EY1 SH IY0 EY2 T
+ingratitude  IH0 N G R AE1 T AH0 T UW2 D
+inhabitant  IH0 N HH AE1 B AH0 T AH0 N T
+inhalation  IH2 N HH AH0 L EY1 SH AH0 N
+inhale  IH0 N HH EY1 L
+inhaler  IH0 N HH EY1 L ER0
+inherently  IH0 N HH EH1 R AH0 N T L IY0
+inheritance  IH0 N HH EH1 R AH0 T AH0 N S
+inheritor  IH0 N HH EH1 R AH0 T ER0
+inhibition  IH2 N HH AH0 B IH1 SH AH0 N
+inhibitor  IH0 N HH IH1 B AH0 T ER0
+inhospitable  IH0 N HH AA1 S P AH0 T AH0 B AH0 L
+inhumane  IH2 N HH Y UW0 M EY1 N
+inhumanity  IH2 N HH Y UW0 M AE1 N AH0 T IY0
+inimitable  IH0 N IH1 M AH0 T AH0 B AH0 L
+iniquity  IH0 N IH1 K W AH0 T IY0
+initialization  IH0 N IH2 SH AH0 L AH0 Z EY1 SH AH0 N
+initialize  IH0 N IH1 SH AH0 L AY2 Z
+initiation  IH0 N IH2 SH IY0 EY1 SH AH0 N
+initiator  IH0 N IH1 SH IY0 EY2 T ER0
+injunction  IH0 N JH AH1 NG K SH AH0 N
+injustice  IH0 N JH AH1 S T AH0 S
+inkwell  IH1 NG K W EH2 L
+inkling  IH1 NG K L IH0 NG
+inlaid  IH1 N L EY2 D
+inland  IH1 N L AH0 N D
+inlay  IH1 N L EY2
+inlet  IH1 N L EH2 T
+innately  IH0 N EY1 T L IY0
+innermost  IH1 N ER0 M OW2 S T
+inning  IH1 N IH0 NG
+innkeeper  IH1 N K IY2 P ER0
+innocence  IH1 N AH0 S AH0 N S
+innocently  IH1 N AH0 S AH0 N T L IY0
+innocuous  IH0 N AA1 K Y UW0 AH0 S
+innovate  IH1 N AH0 V EY2 T
+innovator  IH1 N AH0 V EY2 T ER0
+innuendo  IH2 N Y UW0 EH1 N D OW0
+innumerable  IH0 N UW1 M ER0 AH0 B AH0 L
+inoculation  IH0 N AA2 K Y AH0 L EY1 SH AH0 N
+inoffensive  IH2 N AH0 F EH1 N S IH0 V
+inoperable  IH0 N AA1 P ER0 AH0 B AH0 L
+inordinate  IH0 N AO1 R D AH0 N AH0 T
+inordinately  IH0 N AO1 R D AH0 N AH0 T L IY0
+inorganic  IH2 N AO0 R G AE1 N IH0 K
+inpatient  IH1 N P EY2 SH AH0 N T
+inquest  IH1 N K W EH2 S T
+inquirer  IH0 N K W AY1 R ER0
+inquisition  IH2 N K W AH0 Z IH1 SH AH0 N
+insanity  IH0 N S AE1 N AH0 T IY0
+insatiable  IH0 N S EY1 SH AH0 B AH0 L
+inscription  IH0 N S K R IH1 P SH AH0 N
+inscrutable  IH0 N S K R UW1 T AH0 B AH0 L
+insecticide  IH0 N S EH1 K T AH0 S AY2 D
+insecurity  IH2 N S IH0 K Y UH1 R AH0 T IY0
+insensitive  IH0 N S EH1 N S AH0 T IH0 V
+insensitivity  IH0 N S EH2 N S AH0 T IH1 V AH0 T IY0
+inseparable  IH0 N S EH1 P ER0 AH0 B AH0 L
+insider  IH0 N S AY1 D ER0
+insidious  IH0 N S IH1 D IY0 AH0 S
+insightful  IH1 N S AY2 T F AH0 L
+insignia  IH0 N S IH1 G N IY0 AH0
+insignificance  IH2 N S IH0 G N IH1 F AH0 K AH0 N S
+insignificant  IH2 N S IH0 G N IH1 F AH0 K AH0 N T
+insincere  IH2 N S IH0 N S IH1 R
+insinuate  IH0 N S IH1 N Y UW0 EY2 T
+insinuation  IH0 N S IH2 N Y UW0 EY1 SH AH0 N
+insipid  IH0 N S IH1 P AH0 D
+insistence  IH0 N S IH1 S T AH0 N S
+insistent  IH0 N S IH1 S T AH0 N T
+insistently  IH0 N S IH1 S T AH0 N T L IY0
+insolence  IH1 N S AH0 L AH0 N S
+insolent  IH1 N S AH0 L AH0 N T
+insolvency  IH0 N S AA1 L V AH0 N S IY0
+insolvent  IH0 N S AA1 L V AH0 N T
+insomnia  IH0 N S AA1 M N IY0 AH0
+insomniac  IH0 N S AA1 M N IY0 AE2 K
+inspector  IH0 N S P EH1 K T ER0
+inspirational  IH2 N S P ER0 EY1 SH AH0 N AH0 L
+instability  IH2 N S T AH0 B IH1 L AH0 T IY0
+installer  IH0 N S T AO1 L ER0
+installment  IH0 N S T AO1 L M AH0 N T
+instantaneous  IH2 N S T AH0 N T EY1 N IY0 AH0 S
+instantaneously  IH2 N S T AH0 N T EY1 N IY0 AH0 S L IY0
+instigate  IH1 N S T AH0 G EY2 T
+instigation  IH2 N S T AH0 G EY1 SH AH0 N
+instigator  IH1 N S T AH0 G EY2 T ER0
+instill  IH0 N S T IH1 L
+instinctive  IH0 N S T IH1 NG K T IH0 V
+instinctively  IH0 N S T IH1 NG K T IH0 V L IY0
+institutionalize  IH2 N S T AH0 T UW1 SH AH0 N AH0 L AY2 Z
+instructional  IH0 N S T R AH1 K SH AH0 N AH0 L
+instructor  IH0 N S T R AH1 K T ER0
+instrumental  IH2 N S T R AH0 M EH1 N T AH0 L
+instrumentalist  IH2 N S T R AH0 M EH1 N T AH0 L AH0 S T
+instrumentation  IH2 N S T R AH0 M EH0 N T EY1 SH AH0 N
+insubordinate  IH2 N S AH0 B AO1 R D AH0 N AH0 T
+insubordination  IH2 N S AH0 B AO2 R D AH0 N EY1 SH AH0 N
+insubstantial  IH2 N S AH0 B S T AE1 N SH AH0 L
+insufficiency  IH2 N S AH0 F IH1 SH AH0 N S IY0
+insufficient  IH2 N S AH0 F IH1 SH AH0 N T
+insular  IH1 N S AH0 L ER0
+insularity  IH2 N S AH0 L AE1 R AH0 T IY0
+insulate  IH1 N S AH0 L EY2 T
+insulation  IH2 N S AH0 L EY1 SH AH0 N
+insulator  IH1 N S AH0 L EY2 T ER0
+insulin  IH1 N S AH0 L AH0 N
+insult  IH0 N S AH1 L T
+insuperable  IH0 N S UW1 P ER0 AH0 B AH0 L
+insupportable  IH2 N S AH0 P AO1 R T AH0 B AH0 L
+insurable  IH0 N SH UH1 R AH0 B AH0 L
+insurmountable  IH2 N S ER0 M AW1 N T AH0 B AH0 L
+insurrection  IH2 N S ER0 EH1 K SH AH0 N
+intact  IH0 N T AE1 K T
+intake  IH1 N T EY2 K
+intangible  IH0 N T AE1 N JH AH0 B AH0 L
+integer  IH1 N T AH0 JH ER0
+intellect  IH1 N T AH0 L EH2 K T
+intellectually  IH2 N T AH0 L EH1 K CH UW0 AH0 L IY0
+intelligently  IH0 N T EH1 L AH0 JH AH0 N T L IY0
+intelligentsia  IH0 N T EH2 L AH0 JH EH1 N T S IY0 AH0
+intelligible  IH0 N T EH1 L AH0 JH AH0 B AH0 L
+intensely  IH0 N T EH1 N S L IY0
+intensification  IH0 N T EH2 N S AH0 F AH0 K EY1 SH AH0 N
+intensively  IH0 N T EH1 N S IH0 V L IY0
+intent  IH0 N T EH1 N T
+intentional  IH0 N T EH1 N SH AH0 N AH0 L
+intentionally  IH0 N T EH1 N SH AH0 N AH0 L IY0
+intently  IH0 N T EH1 N T L IY0
+interactive  IH2 N T ER0 AE1 K T IH0 V
+intercede  IH2 N T ER0 S IY1 D
+intercept  IH2 N T ER0 S EH1 P T
+interception  IH2 N T ER0 S EH1 P SH AH0 N
+interchange  IH2 N T ER0 CH EY1 N JH
+interchangeable  IH2 N T ER0 CH EY1 N JH AH0 B AH0 L
+interconnect  IH2 N T ER0 K AH0 N EH1 K T
+intercontinental  IH2 N T ER0 K AA2 N T AH0 N EH1 N T AH0 L
+interdependence  IH2 N T ER0 D IH0 P EH1 N D AH0 N S
+interdependent  IH2 N T ER0 D IH0 P EH1 N D AH0 N T
+interdisciplinary  IH2 N T ER0 D IH1 S AH0 P L AH0 N EH2 R IY0
+interface  IH1 N T ER0 F EY2 S
+interim  IH1 N T ER0 AH0 M
+interject  IH2 N T ER0 JH EH1 K T
+interjection  IH2 N T ER0 JH EH1 K SH AH0 N
+interlude  IH1 N T ER0 L UW2 D
+intermediary  IH2 N T ER0 M IY1 D IY0 EH2 R IY0
+interment  IH0 N T ER1 M AH0 N T
+interminable  IH0 N T ER1 M AH0 N AH0 B AH0 L
+intermingle  IH2 N T ER0 M IH1 NG G AH0 L
+intermission  IH2 N T ER0 M IH1 SH AH0 N
+intermittent  IH2 N T ER0 M IH1 T AH0 N T
+intermittently  IH2 N T ER0 M IH1 T AH0 N T L IY0
+intern  IH1 N T ER0 N
+internalize  IH0 N T ER1 N AH0 L AY2 Z
+internationally  IH2 N T ER0 N AE1 SH AH0 N AH0 L IY0
+internist  IH0 N T ER1 N AH0 S T
+internment  IH0 N T ER1 N M AH0 N T
+internship  IH1 N T ER0 N SH IH2 P
+interoperable  IH2 N T ER0 AA1 P ER0 AH0 B AH0 L
+interpersonal  IH2 N T ER0 P ER1 S AH0 N AH0 L
+interplay  IH1 N T ER0 P L EY2
+interpolate  IH0 N T ER1 P AH0 L EY2 T
+interpolation  IH0 N T ER2 P AH0 L EY1 SH AH0 N
+interpreter  IH0 N T ER1 P R AH0 T ER0
+interracial  IH2 N T ER0 R EY1 SH AH0 L
+interrelate  IH2 N T ER0 R IH0 L EY1 T
+interrogation  IH0 N T EH2 R AH0 G EY1 SH AH0 N
+interrogator  IH0 N T EH1 R AH0 G EY2 T ER0
+interruption  IH2 N T ER0 AH1 P SH AH0 N
+intersection  IH2 N T ER0 S EH1 K SH AH0 N
+intersperse  IH2 N T ER0 S P ER1 S
+interstellar  IH2 N T ER0 S T EH1 L ER0
+intertwine  IH2 N T ER0 T W AY1 N
+interviewer  IH1 N T ER0 V Y UW2 ER0
+interweave  IH2 N T ER0 W IY1 V
+intestinal  IH0 N T EH1 S T AH0 N AH0 L
+intestine  IH0 N T EH1 S T AH0 N
+intimacy  IH1 N T AH0 M AH0 S IY0
+intimately  IH1 N T AH0 M AH0 T L IY0
+intimation  IH2 N T AH0 M EY1 SH AH0 N
+intimidate  IH0 N T IH1 M AH0 D EY2 T
+intimidation  IH0 N T IH2 M AH0 D EY1 SH AH0 N
+intolerable  IH0 N T AA1 L ER0 AH0 B AH0 L
+intolerance  IH0 N T AA1 L ER0 AH0 N S
+intolerant  IH0 N T AA1 L ER0 AH0 N T
+intonation  IH2 N T AH0 N EY1 SH AH0 N
+intoxicate  IH0 N T AA1 K S AH0 K EY2 T
+intoxication  IH0 N T AA2 K S AH0 K EY1 SH AH0 N
+intractable  IH0 N T R AE1 K T AH0 B AH0 L
+intranet  IH1 N T R AH0 N EH2 T
+intransigent  IH0 N T R AE1 N S AH0 JH AH0 N T
+intravenous  IH2 N T R AH0 V IY1 N AH0 S
+intrepid  IH0 N T R EH1 P AH0 D
+intricacy  IH1 N T R AH0 K AH0 S IY0
+intricately  IH1 N T R AH0 K AH0 T L IY0
+intriguing  IH0 N T R IY1 G IH0 NG
+intrinsically  IH0 N T R IH1 N S IH0 K AH0 L IY0
+introductory  IH2 N T R AH0 D AH1 K T ER0 IY0
+introspection  IH2 N T R AH0 S P EH1 K SH AH0 N
+introspective  IH2 N T R AH0 S P EH1 K T IH0 V
+introvert  IH1 N T R AH0 V ER2 T
+introverted  IH1 N T R AH0 V ER2 T IH0 D
+intrude  IH0 N T R UW1 D
+intruder  IH0 N T R UW1 D ER0
+intrusion  IH0 N T R UW1 ZH AH0 N
+intrusive  IH0 N T R UW1 S IH0 V
+intuitive  IH0 N T UW1 AH0 T IH0 V
+intuitively  IH0 N T UW1 AH0 T IH0 V L IY0
+inundate  IH1 N AH0 N D EY2 T
+inundation  IH2 N AH0 N D EY1 SH AH0 N
+invader  IH0 N V EY1 D ER0
+invalidate  IH0 N V AE1 L AH0 D EY2 T
+invaluable  IH0 N V AE1 L Y UW0 AH0 B AH0 L
+invariable  IH0 N V EH1 R IY0 AH0 B AH0 L
+invariably  IH0 N V EH1 R IY0 AH0 B L IY0
+invasive  IH0 N V EY1 S IH0 V
+inventive  IH0 N V EH1 N T IH0 V
+inventor  IH0 N V EH1 N T ER0
+inverse  IH0 N V ER1 S
+inversely  IH0 N V ER1 S L IY0
+inversion  IH0 N V ER1 ZH AH0 N
+invert  IH0 N V ER1 T
+investigator  IH0 N V EH1 S T AH0 G EY2 T ER0
+inveterate  IH0 N V EH1 T ER0 AH0 T
+invigorate  IH0 N V IH1 G ER0 EY2 T
+invigorating  IH0 N V IH1 G ER0 EY2 T IH0 NG
+invincible  IH0 N V IH1 N S AH0 B AH0 L
+inviolable  IH0 N V AY1 AH0 L AH0 B AH0 L
+invisibly  IH0 N V IH1 Z AH0 B L IY0
+invitation  IH2 N V AH0 T EY1 SH AH0 N
+inviting  IH0 N V AY1 T IH0 NG
+invocation  IH2 N V AH0 K EY1 SH AH0 N
+invoice  IH1 N V OY0 S
+involuntary  IH0 N V AA1 L AH0 N T EH2 R IY0
+involvement  IH0 N V AA1 L V M AH0 N T
+inward  IH1 N W ER0 D
+inwardly  IH1 N W ER0 D L IY0
+iota  AY0 OW1 T AH0
+irascible  IH0 R AE1 S AH0 B AH0 L
+irate  AY0 R EY1 T
+iridescent  IH2 R AH0 D EH1 S AH0 N T
+iris  AY1 R AH0 S
+irksome  ER1 K S AH0 M
+ironclad  AY1 ER0 N K L AE2 D
+ironic  AY0 R AA1 N IH0 K
+ironically  AY0 R AA1 N IH0 K AH0 L IY0
+irony  AY1 R AH0 N IY0
+irradiate  IH0 R EY1 D IY0 EY2 T
+irrational  IH0 R AE1 SH AH0 N AH0 L
+irrationality  IH0 R AE2 SH AH0 N AE1 L AH0 T IY0
+irreconcilable  IH0 R EH2 K AH0 N S AY1 L AH0 B AH0 L
+irrefutable  IH0 R EH1 F Y AH0 T AH0 B AH0 L
+irregularity  IH0 R EH2 G Y AH0 L AE1 R AH0 T IY0
+irrelevance  IH0 R EH1 L AH0 V AH0 N S
+irrelevant  IH0 R EH1 L AH0 V AH0 N T
+irreparable  IH0 R EH1 P ER0 AH0 B AH0 L
+irreplaceable  IH2 R IH0 P L EY1 S AH0 B AH0 L
+irrepressible  IH2 R IH0 P R EH1 S AH0 B AH0 L
+irreproachable  IH2 R IH0 P R OW1 CH AH0 B AH0 L
+irresistible  IH2 R IH0 Z IH1 S T AH0 B AH0 L
+irrespective  IH2 R IH0 S P EH1 K T IH0 V
+irresponsible  IH2 R IH0 S P AA1 N S AH0 B AH0 L
+irreversible  IH2 R IH0 V ER1 S AH0 B AH0 L
+irrevocable  IH0 R EH1 V AH0 K AH0 B AH0 L
+irrigate  IH1 R AH0 G EY2 T
+irrigation  IH2 R AH0 G EY1 SH AH0 N
+irritable  IH1 R AH0 T AH0 B AH0 L
+irritant  IH1 R AH0 T AH0 N T
+irritate  IH1 R AH0 T EY2 T
+irritating  IH1 R AH0 T EY2 T IH0 NG
+irritation  IH2 R AH0 T EY1 SH AH0 N
+isolationism  AY2 S AH0 L EY1 SH AH0 N IH2 Z AH0 M
+isometric  AY2 S AH0 M EH1 T R IH0 K
+isotope  AY1 S AH0 T OW2 P
+itinerant  AY0 T IH1 N ER0 AH0 N T
+itinerary  AY0 T IH1 N ER0 EH2 R IY0
+ivy  AY1 V IY0
+jab  JH AE1 B
+jabber  JH AE1 B ER0
+jackal  JH AE1 K AH0 L
+jackass  JH AE1 K AE2 S
+jackknife  JH AE1 K N AY2 F
+jackpot  JH AE1 K P AA2 T
+jade  JH EY1 D
+jaded  JH EY1 D IH0 D
+jag  JH AE1 G
+jagged  JH AE1 G AH0 D
+jaguar  JH AE1 G W AA2 R
+jailer  JH EY1 L ER0
+jamboree  JH AE2 M B ER0 IY1
+jangle  JH AE1 NG G AH0 L
+janitor  JH AE1 N AH0 T ER0
+janitorial  JH AE2 N AH0 T AO1 R IY0 AH0 L
+jargon  JH AA1 R G AH0 N
+jasmine  JH AE1 Z M AH0 N
+jaundice  JH AO1 N D AH0 S
+jaunt  JH AO1 N T
+jaunty  JH AO1 N T IY0
+javelin  JH AE1 V AH0 L AH0 N
+jaywalker  JH EY1 W AO2 K ER0
+jazz  JH AE1 Z
+jazzy  JH AE1 Z IY0
+jealousy  JH EH1 L AH0 S IY0
+jeer  JH IH1 R
+jellyfish  JH EH1 L IY0 F IH2 SH
+jeopardize  JH EH1 P ER0 D AY2 Z
+jeopardy  JH EH1 P ER0 D IY0
+jerky  JH ER1 K IY0
+jest  JH EH1 S T
+jester  JH EH1 S T ER0
+jettison  JH EH1 T AH0 S AH0 N
+jetty  JH EH1 T IY0
+jeweler  JH UW1 AH0 L ER0
+jiggle  JH IH1 G AH0 L
+jilt  JH IH1 L T
+jingle  JH IH1 NG G AH0 L
+jitter  JH IH1 T ER0
+jittery  JH IH1 T ER0 IY0
+jive  JH AY1 V
+jobless  JH AA1 B L AH0 S
+jockey  JH AA1 K IY0
+jocular  JH AA1 K Y AH0 L ER0
+jogger  JH AA1 G ER0
+jolt  JH OW1 L T
+jostle  JH AA1 S AH0 L
+journalistic  JH ER2 N AH0 L IH1 S T IH0 K
+jovial  JH OW1 V IY0 AH0 L
+joyful  JH OY1 F AH0 L
+joyfully  JH OY1 F AH0 L IY0
+joyous  JH OY1 AH0 S
+jubilant  JH UW1 B AH0 L AH0 N T
+jubilation  JH UW2 B AH0 L EY1 SH AH0 N
+judicial  JH UW0 D IH1 SH AH0 L
+judiciary  JH UW0 D IH1 SH IY0 EH2 R IY0
+judicious  JH UW0 D IH1 SH AH0 S
+judiciously  JH UW0 D IH1 SH AH0 S L IY0
+juggle  JH AH1 G AH0 L
+juggler  JH AH1 G L ER0
+jugular  JH AH1 G Y AH0 L ER0
+jumbo  JH AH1 M B OW0
+jumper  JH AH1 M P ER0
+jumpy  JH AH1 M P IY0
+juncture  JH AH1 NG K CH ER0
+juniper  JH UW1 N AH0 P ER0
+junk  JH AH1 NG K
+junkyard  JH AH1 NG K Y AA2 R D
+jurisdictional  JH UH2 R AH0 S D IH1 K SH AH0 N AH0 L
+jurisprudence  JH UH2 R AH0 S P R UW1 D AH0 N S
+juror  JH UH1 R ER0
+jurist  JH UH1 R AH0 S T
+justifiable  JH AH1 S T AH0 F AY2 AH0 B AH0 L
+justifiably  JH AH1 S T AH0 F AY2 AH0 B L IY0
+justification  JH AH2 S T AH0 F AH0 K EY1 SH AH0 N
+justly  JH AH1 S T L IY0
+jut  JH AH1 T
+juxtapose  JH AH2 K S T AH0 P OW1 Z
+juxtaposition  JH AH2 K S T AH0 P AH0 Z IH1 SH AH0 N
+kaleidoscope  K AH0 L AY1 D AH0 S K OW2 P
+kangaroo  K AE2 NG G ER0 UW1
+karate  K ER0 AA1 T IY0
+kayak  K AY1 AE0 K
+keel  K IY1 L
+keenly  K IY1 N L IY0
+keenness  K IY1 N N AH0 S
+keeper  K IY1 P ER0
+keeping  K IY1 P IH0 NG
+keepsake  K IY1 P S EY2 K
+keg  K EH1 G
+kennel  K EH1 N AH0 L
+ketchup  K EH1 CH AH0 P
+keynote  K IY1 N OW2 T
+keystone  K IY1 S T OW2 N
+keystroke  K IY1 S T R OW2 K
+khaki  K AE1 K IY0
+kickback  K IH1 K B AE2 K
+kickoff  K IH1 K AO2 F
+kidnapper  K IH1 D N AE2 P ER0
+kidnapping  K IH1 D N AE2 P IH0 NG
+kiln  K IH1 L N
+kilowatt  K IH1 L AH0 W AA2 T
+kindle  K IH1 N D AH0 L
+kindling  K IH1 N D L IH0 NG
+kindred  K IH1 N D R AH0 D
+kinetic  K AH0 N EH1 T IH0 K
+kingpin  K IH1 NG P IH2 N
+kink  K IH1 NG K
+kinky  K IH1 NG K IY0
+kinship  K IH1 N SH IH0 P
+kiosk  K IY1 AA0 S K
+kitty  K IH1 T IY0
+knapsack  N AE1 P S AE2 K
+kneecap  N IY1 K AE2 P
+knelt  N EH1 L T
+knickers  N IH1 K ER0 Z
+knickknack  N IH1 K N AE2 K
+knighthood  N AY1 T HH UH2 D
+knitter  N IH1 T ER0
+knitting  N IH1 T IH0 NG
+knitwear  N IH1 T W EH2 R
+knockdown  N AA1 K D AW2 N
+knockout  N AA1 K AW2 T
+knoll  N OW1 L
+knotty  N AA1 T IY0
+knowingly  N OW1 IH0 NG L IY0
+kudos  K UW1 D OW0 Z
+laborer  L EY1 B ER0 ER0
+laborious  L AH0 B AO1 R IY0 AH0 S
+laboriously  L AH0 B AO1 R IY0 AH0 S L IY0
+labyrinth  L AE1 B ER0 IH2 N TH
+lace  L EY1 S
+lacerate  L AE1 S ER0 EY2 T
+laceration  L AE2 S ER0 EY1 SH AH0 N
+lackadaisical  L AE2 K AH0 D EY1 Z IH0 K AH0 L
+lackluster  L AE1 K L AH2 S T ER0
+laconic  L AH0 K AA1 N IH0 K
+lacquer  L AE1 K ER0
+lactose  L AE1 K T OW2 S
+lad  L AE1 D
+laden  L EY1 D AH0 N
+ladle  L EY1 D AH0 L
+lagoon  L AH0 G UW1 N
+lair  L EH1 R
+laity  L EY1 AH0 T IY0
+lame  L EY1 M
+lament  L AH0 M EH1 N T
+lamentation  L AE2 M AH0 N T EY1 SH AH0 N
+laminate  L AE1 M AH0 N EY2 T
+lampoon  L AE0 M P UW1 N
+lance  L AE1 N S
+landfall  L AE1 N D F AO2 L
+landfill  L AE1 N D F IH2 L
+landing  L AE1 N D IH0 NG
+landlady  L AE1 N D L EY2 D IY0
+landlocked  L AE1 N D L AA2 K T
+landlord  L AE1 N D L AO2 R D
+landmark  L AE1 N D M AA2 R K
+landmine  L AE1 N D M AY2 N
+landowner  L AE1 N D OW2 N ER0
+landslide  L AE1 N D S L AY2 D
+lanky  L AE1 NG K IY0
+lapse  L AE1 P S
+lard  L AA1 R D
+larder  L AA1 R D ER0
+lark  L AA1 R K
+larva  L AA1 R V AH0
+larvae  L AA1 R V IY0
+laryngitis  L AE2 R AH0 N JH AY1 T AH0 S
+larynx  L AE1 R IH0 NG K S
+lash  L AE1 SH
+lass  L AE1 S
+lasso  L AE1 S OW0
+latency  L EY1 T AH0 N S IY0
+latent  L EY1 T AH0 N T
+lateral  L AE1 T ER0 AH0 L
+laterally  L AE1 T ER0 AH0 L IY0
+latex  L EY1 T EH0 K S
+lathe  L EY1 DH
+lather  L AE1 DH ER0
+lattice  L AE1 T AH0 S
+laud  L AO1 D
+laudable  L AO1 D AH0 B AH0 L
+launder  L AO1 N D ER0
+laureate  L AO1 R IY0 AH0 T
+laurel  L AO1 R AH0 L
+lava  L AA1 V AH0
+lavender  L AE1 V AH0 N D ER0
+lavishly  L AE1 V IH0 SH L IY0
+lawful  L AO1 F AH0 L
+lawless  L AO1 L AH0 S
+lawmaker  L AO1 M EY2 K ER0
+lax  L AE1 K S
+laxity  L AE1 K S AH0 T IY0
+layette  L EY0 EH1 T
+layoff  L EY1 AO2 F
+lazily  L EY1 Z AH0 L IY0
+laziness  L EY1 Z IY0 N AH0 S
+leach  L IY1 CH
+leaflet  L IY1 F L AH0 T
+leafy  L IY1 F IY0
+leakage  L IY1 K AH0 JH
+learner  L ER1 N ER0
+leash  L IY1 SH
+ledge  L EH1 JH
+ledger  L EH1 JH ER0
+leech  L IY1 CH
+leek  L IY1 K
+leer  L IH1 R
+leeway  L IY1 W EY2
+leftist  L EH1 F T IH0 S T
+leftover  L EH1 F T OW2 V ER0
+legality  L IY0 G AE1 L AH0 T IY0
+legalize  L IY1 G AH0 L AY2 Z
+legally  L IY1 G AH0 L IY0
+legibility  L EH2 JH AH0 B IH1 L AH0 T IY0
+legible  L EH1 JH AH0 B AH0 L
+legion  L IY1 JH AH0 N
+legislate  L EH1 JH AH0 S L EY2 T
+legislator  L EH1 JH AH0 S L EY2 T ER0
+legislature  L EH1 JH AH0 S L EY2 CH ER0
+legitimacy  L AH0 JH IH1 T AH0 M AH0 S IY0
+legitimately  L AH0 JH IH1 T AH0 M AH0 T L IY0
+legitimize  L AH0 JH IH1 T AH0 M AY2 Z
+leisurely  L EH1 ZH ER0 L IY0
+lemonade  L EH2 M AH0 N EY1 D
+lender  L EH1 N D ER0
+lengthen  L EH1 NG TH AH0 N
+lengthy  L EH1 NG TH IY0
+leniency  L IY1 N IY0 AH0 N S IY0
+lenient  L IY1 N IY0 AH0 N T
+lentil  L EH1 N T AH0 L
+leper  L EH1 P ER0
+leprosy  L EH1 P R AH0 S IY0
+lesbian  L EH1 Z B IY0 AH0 N
+lesion  L IY1 ZH AH0 N
+lesser  L EH1 S ER0
+lethal  L IY1 TH AH0 L
+lethality  L IY0 TH AE1 L AH0 T IY0
+lethargy  L EH1 TH ER0 JH IY0
+letterhead  L EH1 T ER0 HH EH2 D
+lettuce  L EH1 T AH0 S
+letup  L EH1 T AH2 P
+leukemia  L UW0 K IY1 M IY0 AH0
+levee  L EH1 V IY0
+leverage  L EH1 V ER0 IH0 JH
+levitate  L EH1 V AH0 T EY2 T
+levitation  L EH2 V AH0 T EY1 SH AH0 N
+levity  L EH1 V AH0 T IY0
+levy  L EH1 V IY0
+lexical  L EH1 K S IH0 K AH0 L
+lexicon  L EH1 K S AH0 K AA2 N
+liaison  L IY0 EY1 Z AA0 N
+libel  L AY1 B AH0 L
+libelous  L AY1 B AH0 L AH0 S
+liberalism  L IH1 B ER0 AH0 L IH2 Z AH0 M
+liberalization  L IH2 B ER0 AH0 L AH0 Z EY1 SH AH0 N
+liberalize  L IH1 B ER0 AH0 L AY2 Z
+liberally  L IH1 B ER0 AH0 L IY0
+liberate  L IH1 B ER0 EY2 T
+liberator  L IH1 B ER0 EY2 T ER0
+libertarian  L IH2 B ER0 T EH1 R IY0 AH0 N
+librarian  L AY0 B R EH1 R IY0 AH0 N
+libretto  L IH0 B R EH1 T OW0
+lice  L AY1 S
+licensee  L AY2 S AH0 N S IY1
+licorice  L IH1 K ER0 IH0 SH
+lieutenant  L UW0 T EH1 N AH0 N T
+lifeguard  L AY1 F G AA2 R D
+lifeline  L AY1 F L AY2 N
+lifelong  L AY1 F L AO2 NG
+lifespan  L AY1 F S P AE2 N
+liftoff  L IH1 F T AO2 F
+ligament  L IH1 G AH0 M AH0 N T
+lighten  L AY1 T AH0 N
+lighter  L AY1 T ER0
+lighthearted  L AY2 T HH AA1 R T IH0 D
+lighthouse  L AY1 T HH AW2 S
+lighting  L AY1 T IH0 NG
+lightly  L AY1 T L IY0
+lightweight  L AY1 T W EY2 T
+likable  L AY1 K AH0 B AH0 L
+likeliho  L AY1 K L IY0 HH UH2 D
+liken  L AY1 K AH0 N
+likeness  L AY1 K N AH0 S
+likewise  L AY1 K W AY2 Z
+liking  L AY1 K IH0 NG
+lilac  L AY1 L AE0 K
+lily  L IH1 L IY0
+limber  L IH1 M B ER0
+limbo  L IH1 M B OW0
+lime  L AY1 M
+limelight  L AY1 M L AY2 T
+limousine  L IH1 M AH0 Z IY2 N
+limp  L IH1 M P
+linden  L IH1 N D AH0 N
+lineage  L IH1 N IY0 IH0 JH
+linear  L IH1 N IY0 ER0
+lineup  L AY1 N AH2 P
+lingerie  L AA2 N ZH ER0 EY1
+linguistic  L IH0 NG G W IH1 S T IH0 K
+linguistics  L IH0 NG G W IH1 S T IH0 K S
+liniment  L IH1 N AH0 M AH0 N T
+linkage  L IH1 NG K IH0 JH
+lint  L IH1 N T
+lioness  L AY1 AH0 N AH0 S
+lipstick  L IH1 P S T IH2 K
+liqueur  L IH0 K ER1
+liquidate  L IH1 K W AH0 D EY2 T
+liquidation  L IH2 K W AH0 D EY1 SH AH0 N
+liquidity  L IH0 K W IH1 D AH0 T IY0
+liquor  L IH1 K ER0
+lissome  L IH1 S AH0 M
+listener  L IH1 S AH0 N ER0
+listless  L IH1 S T L AH0 S
+literate  L IH1 T ER0 AH0 T
+lithe  L AY1 DH
+lithium  L IH1 TH IY0 AH0 M
+lithograph  L IH1 TH AH0 G R AE2 F
+litigant  L IH1 T AH0 G AH0 N T
+litigate  L IH1 T AH0 G EY2 T
+litigation  L IH2 T AH0 G EY1 SH AH0 N
+liturgy  L IH1 T ER0 JH IY0
+livelihood  L AY1 V L IY0 HH UH2 D
+lively  L AY1 V L IY0
+liven  L AY1 V AH0 N
+livid  L IH1 V AH0 D
+lizard  L IH1 Z ER0 D
+llama  L AA1 M AH0
+loaf  L OW1 F
+loafer  L OW1 F ER0
+loam  L OW1 M
+loathe  L OW1 DH
+loathing  L OW1 DH IH0 NG
+loathsome  L OW1 DH S AH0 M
+lob  L AA1 B
+lobbyist  L AA1 B IY0 IH0 S T
+lobe  L OW1 B
+lobster  L AA1 B S T ER0
+locale  L OW0 K AE1 L
+locality  L OW0 K AE1 L AH0 T IY0
+localize  L OW1 K AH0 L AY2 Z
+lockdown  L AA1 K D AW2 N
+locker  L AA1 K ER0
+locket  L AA1 K AH0 T
+lockout  L AA1 K AW2 T
+locksmith  L AA1 K S M IH2 TH
+locust  L OW1 K AH0 S T
+lodger  L AA1 JH ER0
+lodging  L AA1 JH IH0 NG
+loft  L AO1 F T
+lofty  L AO1 F T IY0
+logger  L AO1 G ER0
+logging  L AO1 G IH0 NG
+logistic  L AH0 JH IH1 S T IH0 K
+logistical  L AH0 JH IH1 S T IH0 K AH0 L
+logistics  L AH0 JH IH1 S T IH0 K S
+logo  L OW1 G OW0
+loiter  L OY1 T ER0
+lollipop  L AA1 L IY0 P AA2 P
+loneliness  L OW1 N L IY0 N AH0 S
+lonesome  L OW1 N S AH0 M
+longevity  L AO0 N JH EH1 V AH0 T IY0
+longitudinal  L AA2 N JH AH0 T UW1 D AH0 N AH0 L
+lookout  L UH1 K AW2 T
+loom  L UW1 M
+looming  L UW1 M IH0 NG
+loon  L UW1 N
+loophole  L UW1 P HH OW2 L
+loot  L UW1 T
+looter  L UW1 T ER0
+lopsided  L AA1 P S AY2 D IH0 D
+lordship  L AO1 R D SH IH0 P
+lore  L AO1 R
+lotto  L AA1 T OW0
+lotus  L OW1 T AH0 S
+lousy  L AW1 Z IY0
+lout  L AW1 T
+louver  L UW1 V ER0
+lovable  L AH1 V AH0 B AH0 L
+lover  L AH1 V ER0
+lowdown  L OW1 D AW2 N
+lowercase  L OW1 ER0 K EY2 S
+lowland  L OW1 L AH0 N D
+lowly  L OW1 L IY0
+loyalist  L OY1 AH0 L IH0 S T
+lozenge  L AA1 Z AH0 N JH
+lubricate  L UW1 B R AH0 K EY2 T
+lubrication  L UW2 B R AH0 K EY1 SH AH0 N
+lucid  L UW1 S AH0 D
+lucidity  L UW0 S IH1 D AH0 T IY0
+lucrative  L UW1 K R AH0 T IH0 V
+ludicrous  L UW1 D AH0 K R AH0 S
+ludicrously  L UW1 D AH0 K R AH0 S L IY0
+lug  L AH1 G
+lukewarm  L UW1 K W AO2 R M
+lull  L AH1 L
+lullaby  L AH1 L AH0 B AY2
+lumberjack  L AH1 M B ER0 JH AE2 K
+luminary  L UW1 M AH0 N EH2 R IY0
+luminous  L UW1 M AH0 N AH0 S
+lumpy  L AH1 M P IY0
+lunacy  L UW1 N AH0 S IY0
+lunatic  L UW1 N AH0 T IH0 K
+luncheon  L AH1 N CH AH0 N
+lunge  L AH1 N JH
+lurch  L ER1 CH
+lurid  L UH1 R AH0 D
+lurk  L ER1 K
+luscious  L AH1 SH AH0 S
+lush  L AH1 SH
+lust  L AH1 S T
+luster  L AH1 S T ER0
+lustrous  L AH1 S T R AH0 S
+lusty  L AH1 S T IY0
+lute  L UW1 T
+luxurious  L AH0 G ZH UH1 R IY0 AH0 S
+lynch  L IH1 N CH
+lyre  L AY1 R
+lyrical  L IH1 R IH0 K AH0 L
+lyricist  L IH1 R AH0 S IH0 S T
+macabre  M AH0 K AA1 B R AH0
+macaroni  M AE2 K ER0 OW1 N IY0
+mace  M EY1 S
+machete  M AH0 SH EH1 T IY0
+machination  M AE2 K AH0 N EY1 SH AH0 N
+machinist  M AH0 SH IY1 N IH0 S T
+mackerel  M AE1 K ER0 AH0 L
+macro  M AE1 K R OW0
+madden  M AE1 D AH0 N
+maddening  M AE1 D AH0 N IH0 NG
+madhouse  M AE1 D HH AW2 S
+madly  M AE1 D L IY0
+madman  M AE1 D M AH0 N
+madness  M AE1 D N AH0 S
+maelstrom  M EY1 L S T R AH0 M
+maestro  M AY1 S T R OW0
+magenta  M AH0 JH EH1 N T AH0
+maggot  M AE1 G AH0 T
+magical  M AE1 JH IH0 K AH0 L
+magician  M AH0 JH IH1 SH AH0 N
+magnate  M AE1 G N EY2 T
+magnesium  M AE0 G N IY1 Z IY0 AH0 M
+magnetism  M AE1 G N AH0 T IH2 Z AH0 M
+magnetize  M AE1 G N AH0 T AY2 Z
+magnificence  M AE0 G N IH1 F AH0 S AH0 N S
+magnificently  M AE0 G N IH1 F AH0 S AH0 N T L IY0
+magnify  M AE1 G N AH0 F AY2
+mahogany  M AH0 HH AA1 G AH0 N IY0
+maid  M EY1 D
+mailbox  M EY1 L B AA2 K S
+maim  M EY1 M
+mainline  M EY1 N L AY2 N
+mainstay  M EY1 N S T EY2
+maintainability  M EY2 N T EY0 N AH0 B IH1 L AH0 T IY0
+majestic  M AH0 JH EH1 S T IH0 K
+majesty  M AE1 JH AH0 S T IY0
+makeshift  M EY1 K SH IH2 F T
+makeup  M EY1 K AH2 P
+malady  M AE1 L AH0 D IY0
+malcontent  M AE1 L K AH0 N T EH2 N T
+malevolence  M AH0 L EH1 V AH0 L AH0 N S
+malevolent  M AH0 L EH1 V AH0 L AH0 N T
+malfunction  M AE0 L F AH1 NG K SH AH0 N
+malice  M AE1 L AH0 S
+malicious  M AH0 L IH1 SH AH0 S
+maliciously  M AH0 L IH1 SH AH0 S L IY0
+malignancy  M AH0 L IH1 G N AH0 N S IY0
+malignant  M AH0 L IH1 G N AH0 N T
+mallard  M AE1 L ER0 D
+malleable  M AE1 L IY0 AH0 B AH0 L
+mallet  M AE1 L AH0 T
+malnutrition  M AE2 L N UW0 T R IH1 SH AH0 N
+malpractice  M AE0 L P R AE1 K T AH0 S
+malt  M AO1 L T
+maltreat  M AE0 L T R IY1 T
+mammoth  M AE1 M AH0 TH
+manacle  M AE1 N AH0 K AH0 L
+manageable  M AE1 N AH0 JH AH0 B AH0 L
+managerial  M AE2 N AH0 JH IH1 R IY0 AH0 L
+mandatory  M AE1 N D AH0 T AO2 R IY0
+mandible  M AE1 N D AH0 B AH0 L
+mandolin  M AE1 N D AH0 L IH2 N
+mane  M EY1 N
+maneuver  M AH0 N UW1 V ER0
+mangle  M AE1 NG G AH0 L
+mango  M AE1 NG G OW0
+mangrove  M AE1 NG G R OW2 V
+manhandle  M AE1 N HH AE2 N D AH0 L
+manhole  M AE1 N HH OW2 L
+manhood  M AE1 N HH UH2 D
+mania  M EY1 N IY0 AH0
+maniac  M EY1 N IY0 AE2 K
+maniacal  M AH0 N AY1 AH0 K AH0 L
+manic  M AE1 N IH0 K
+manicure  M AE1 N AH0 K Y UH2 R
+manifestation  M AE2 N AH0 F EH0 S T EY1 SH AH0 N
+manifesto  M AE2 N AH0 F EH1 S T OW0
+manifold  M AE1 N AH0 F OW2 L D
+manipulation  M AH0 N IH2 P Y AH0 L EY1 SH AH0 N
+manipulative  M AH0 N IH1 P Y AH0 L AH0 T IH0 V
+manipulator  M AH0 N IH1 P Y AH0 L EY2 T ER0
+mannequin  M AE1 N AH0 K AH0 N
+manpower  M AE1 N P AW2 ER0
+manslaughter  M AE1 N S L AO2 T ER0
+mantel  M AE1 N T AH0 L
+mantle  M AE1 N T AH0 L
+mantra  M AE1 N T R AH0
+manually  M AE1 N Y UW0 AH0 L IY0
+mare  M EH1 R
+marginal  M AA1 R JH AH0 N AH0 L
+marginalize  M AA1 R JH AH0 N AH0 L AY2 Z
+marginally  M AA1 R JH AH0 N AH0 L IY0
+marina  M ER0 IY1 N AH0
+marinate  M AE1 R AH0 N EY2 T
+mariner  M AE1 R AH0 N ER0
+marionette  M AE2 R IY0 AH0 N EH1 T
+maritime  M AE1 R AH0 T AY2 M
+marksman  M AA1 R K S M AH0 N
+marksmanship  M AA1 R K S M AH0 N SH IH2 P
+markup  M AA1 R K AH2 P
+marmalade  M AA1 R M AH0 L EY2 D
+marquee  M AA0 R K IY1
+marrow  M AE1 R OW0
+marshal  M AA1 R SH AH0 L
+marshland  M AA1 R SH L AE2 N D
+marshmallow  M AA1 R SH M EH2 L OW0
+marshy  M AA1 R SH IY0
+martial  M AA1 R SH AH0 L
+martyr  M AA1 R T ER0
+martyrdom  M AA1 R T ER0 D AH0 M
+marvelous  M AA1 R V AH0 L AH0 S
+mascara  M AE0 S K AE1 R AH0
+mascot  M AE1 S K AA0 T
+masculinity  M AE2 S K Y AH0 L IH1 N AH0 T IY0
+mash  M AE1 SH
+mason  M EY1 S AH0 N
+masonry  M EY1 S AH0 N R IY0
+masquerade  M AE2 S K ER0 EY1 D
+massage  M AH0 S AA1 ZH
+masseur  M AH0 S ER1
+massively  M AE1 S IH0 V L IY0
+mast  M AE1 S T
+masterful  M AE1 S T ER0 F AH0 L
+mastermind  M AE1 S T ER0 M AY2 N D
+masterpiece  M AE1 S T ER0 P IY2 S
+mastery  M AE1 S T ER0 IY0
+matchless  M AE1 CH L AH0 S
+matchmaker  M AE1 CH M EY2 K ER0
+materialism  M AH0 T IH1 R IY0 AH0 L IH2 Z AH0 M
+materialistic  M AH0 T IH2 R IY0 AH0 L IH1 S T IH0 K
+materialize  M AH0 T IH1 R IY0 AH0 L AY2 Z
+maternal  M AH0 T ER1 N AH0 L
+maternity  M AH0 T ER1 N AH0 T IY0
+mathematical  M AE2 TH AH0 M AE1 T IH0 K AH0 L
+mathematician  M AE2 TH AH0 M AH0 T IH1 SH AH0 N
+matinee  M AE2 T AH0 N EY1
+patriarch  P EY1 T R IY0 AA2 R K
+patriarchal  P EY2 T R IY0 AA1 R K AH0 L
+patriarchy  P EY1 T R IY0 AA2 R K IY0
+patrician  P AH0 T R IH1 SH AH0 N
+patrimony  P AE1 T R AH0 M OW2 N IY0
+patriotic  P EY2 T R IY0 AA1 T IH0 K
+patriotism  P EY1 T R IY0 AH0 T IH2 Z AH0 M
+patrolman  P AH0 T R OW1 L M AH0 N
+patronage  P AE1 T R AH0 N IH0 JH
+patronize  P EY1 T R AH0 N AY2 Z
+patter  P AE1 T ER0
+pauper  P AO1 P ER0
+pawnbroker  P AO1 N B R OW2 K ER0
+payable  P EY1 AH0 B AH0 L
+paycheck  P EY1 CH EH2 K
+payload  P EY1 L OW2 D
+payoff  P EY1 AO2 F
+payroll  P EY1 R OW2 L
+peacekeeper  P IY1 S K IY2 P ER0
+peacekeeping  P IY1 S K IY2 P IH0 NG
+peacemaker  P IY1 S M EY2 K ER0
+peacetime  P IY1 S T AY2 M
+peach  P IY1 CH
+peacock  P IY1 K AA2 K
+peal  P IY1 L
+pear  P EH1 R
+peasantry  P EH1 Z AH0 N T R IY0
+peat  P IY1 T
+pebble  P EH1 B AH0 L
+pecan  P IH0 K AA1 N
+peck  P EH1 K
+peculiarity  P IH0 K Y UW2 L IY0 AE1 R AH0 T IY0
+peculiarly  P IH0 K Y UW1 L Y ER0 L IY0
+pedagogical  P EH2 D AH0 G AA1 JH IH0 K AH0 L
+pedagogy  P EH1 D AH0 G AA2 JH IY0
+pedal  P EH1 D AH0 L
+pedantic  P AH0 D AE1 N T IH0 K
+peddle  P EH1 D AH0 L
+peddler  P EH1 D L ER0
+pedestal  P EH1 D AH0 S T AH0 L
+pediatric  P IY2 D IY0 AE1 T R IH0 K
+pediatrician  P IY2 D IY0 AH0 T R IH1 SH AH0 N
+pedigree  P EH1 D AH0 G R IY2
+peek  P IY1 K
+peep  P IY1 P
+peerless  P IH1 R L AH0 S
+peeve  P IY1 V
+peevish  P IY1 V IH0 SH
+peg  P EH1 G
+pelican  P EH1 L AH0 K AH0 N
+pellet  P EH1 L AH0 T
+pelt  P EH1 L T
+pelvic  P EH1 L V IH0 K
+pelvis  P EH1 L V AH0 S
+penal  P IY1 N AH0 L
+penalize  P IY1 N AH0 L AY2 Z
+penance  P EH1 N AH0 N S
+penchant  P EH1 N CH AH0 N T
+pendant  P EH1 N D AH0 N T
+pending  P EH1 N D IH0 NG
+pendulum  P EH1 N D Y AH0 L AH0 M
+penetrating  P EH1 N AH0 T R EY2 T IH0 NG
+penetration  P EH2 N AH0 T R EY1 SH AH0 N
+penicillin  P EH2 N AH0 S IH1 L AH0 N
+penitent  P EH1 N AH0 T AH0 N T
+penitentiary  P EH2 N AH0 T EH1 N SH ER0 IY0
+penknife  P EH1 N N AY2 F
+pennant  P EH1 N AH0 N T
+penniless  P EH1 N IY0 L AH0 S
+penny  P EH1 N IY0
+pensioner  P EH1 N SH AH0 N ER0
+pensive  P EH1 N S IH0 V
+pentagon  P EH1 N T AH0 G AA2 N
+pentagonal  P EH0 N T AE1 G AH0 N AH0 L
+penthouse  P EH1 N T HH AW2 S
+peon  P IY1 AH0 N
+peony  P IY1 AH0 N IY0
+peppercorn  P EH1 P ER0 K AO2 R N
+peppermint  P EH1 P ER0 M IH2 N T
+peppy  P EH1 P IY0
+perceivable  P ER0 S IY1 V AH0 B AH0 L
+perceptible  P ER0 S EH1 P T AH0 B AH0 L
+perceptive  P ER0 S EH1 P T IH0 V
+perch  P ER1 CH
+percolate  P ER1 K AH0 L EY2 T
+percussion  P ER0 K AH1 SH AH0 N
+percussionist  P ER0 K AH1 SH AH0 N IH0 S T
+peremptory  P ER0 EH1 M P T ER0 IY0
+perennial  P ER0 EH1 N IY0 AH0 L
+perfection  P ER0 F EH1 K SH AH0 N
+perfectionist  P ER0 F EH1 K SH AH0 N IH0 S T
+perforate  P ER1 F ER0 EY2 T
+perforation  P ER2 F ER0 EY1 SH AH0 N
+performer  P ER0 F AO1 R M ER0
+perfume  P ER0 F Y UW1 M
+perfunctory  P ER0 F AH1 NG K T ER0 IY0
+perilous  P EH1 R AH0 L AH0 S
+periodical  P IH2 R IY0 AA1 D IH0 K AH0 L
+periodically  P IH2 R IY0 AA1 D IH0 K AH0 L IY0
+periphery  P ER0 IH1 F ER0 IY0
+periscope  P EH1 R AH0 S K OW2 P
+perishable  P EH1 R IH0 SH AH0 B AH0 L
+perjury  P ER1 JH ER0 IY0
+perk  P ER1 K
+perky  P ER1 K IY0
+permanence  P ER1 M AH0 N AH0 N S
+permeable  P ER1 M IY0 AH0 B AH0 L
+permeate  P ER1 M IY0 EY2 T
+permissible  P ER0 M IH1 S AH0 B AH0 L
+permissive  P ER0 M IH1 S IH0 V
+perpetual  P ER0 P EH1 CH UW0 AH0 L
+perpetually  P ER0 P EH1 CH UW0 AH0 L IY0
+perpetuate  P ER0 P EH1 CH UW0 EY2 T
+perpetuity  P ER2 P AH0 T UW1 AH0 T IY0
+perplex  P ER0 P L EH1 K S
+perplexing  P ER0 P L EH1 K S IH0 NG
+perplexity  P ER0 P L EH1 K S AH0 T IY0
+persecute  P ER1 S AH0 K Y UW2 T
+persecution  P ER2 S AH0 K Y UW1 SH AH0 N
+persecutor  P ER1 S AH0 K Y UW2 T ER0
+perseverance  P ER2 S AH0 V IH1 R AH0 N S
+persevere  P ER2 S AH0 V IH1 R
+persistence  P ER0 S IH1 S T AH0 N S
+persistent  P ER0 S IH1 S T AH0 N T
+persistently  P ER0 S IH1 S T AH0 N T L IY0
+persona  P ER0 S OW1 N AH0
+personable  P ER1 S AH0 N AH0 B AH0 L
+personage  P ER1 S AH0 N IH0 JH
+personalize  P ER1 S AH0 N AH0 L AY2 Z
+personification  P ER0 S AA2 N AH0 F AH0 K EY1 SH AH0 N
+personify  P ER0 S AA1 N AH0 F AY2
+perspicacious  P ER2 S P AH0 K EY1 SH AH0 S
+perspiration  P ER2 S P ER0 EY1 SH AH0 N
+perspire  P ER0 S P AY1 R
+persuasion  P ER0 S W EY1 ZH AH0 N
+persuasive  P ER0 S W EY1 S IH0 V
+persuasively  P ER0 S W EY1 S IH0 V L IY0
+pertain  P ER0 T EY1 N
+pertinence  P ER1 T AH0 N AH0 N S
+pertinent  P ER1 T AH0 N AH0 N T
+perturb  P ER0 T ER1 B
+perturbation  P ER2 T ER0 B EY1 SH AH0 N
+perusal  P ER0 UW1 Z AH0 L
+peruse  P ER0 UW1 Z
+pervade  P ER0 V EY1 D
+pervasive  P ER0 V EY1 S IH0 V
+perverse  P ER0 V ER1 S
+perversion  P ER0 V ER1 ZH AH0 N
+perversity  P ER0 V ER1 S AH0 T IY0
+pervert  P ER0 V ER1 T
+pessimism  P EH1 S AH0 M IH2 Z AH0 M
+pessimist  P EH1 S AH0 M IH0 S T
+pessimistic  P EH2 S AH0 M IH1 S T IH0 K
+pest  P EH1 S T
+pester  P EH1 S T ER0
+pesticide  P EH1 S T AH0 S AY2 D
+pestilence  P EH1 S T AH0 L AH0 N S
+petal  P EH1 T AH0 L
+petitioner  P AH0 T IH1 SH AH0 N ER0
+petrify  P EH1 T R AH0 F AY2
+petroleum  P AH0 T R OW1 L IY0 AH0 M
+petty  P EH1 T IY0
+petulant  P EH1 CH AH0 L AH0 N T
+pewter  P Y UW1 T ER0
+phantom  F AE1 N T AH0 M
+pharmaceutical  F AA2 R M AH0 S UW1 T IH0 K AH0 L
+pharmacist  F AA1 R M AH0 S IH0 S T
+pharmacology  F AA2 R M AH0 K AA1 L AH0 JH IY0
+pheasant  F EH1 Z AH0 N T
+phenomenal  F AH0 N AA1 M AH0 N AH0 L
+phenomenally  F AH0 N AA1 M AH0 N AH0 L IY0
+philanthropic  F IH2 L AH0 N TH R AA1 P IH0 K
+philanthropist  F AH0 L AE1 N TH R AH0 P IH0 S T
+philanthropy  F AH0 L AE1 N TH R AH0 P IY0
+philosophical  F IH2 L AH0 S AA1 F IH0 K AH0 L
+philosophically  F IH2 L AH0 S AA1 F IH0 K AH0 L IY0
+philosophize  F AH0 L AA1 S AH0 F AY2 Z
+phobia  F OW1 B IY0 AH0
+phonetic  F AH0 N EH1 T IH0 K
+phonetics  F AH0 N EH1 T IH0 K S
+phony  F OW1 N IY0
+phosphate  F AA1 S F EY2 T
+phosphorus  F AA1 S F ER0 AH0 S
+photocopy  F OW1 T OW0 K AA2 P IY0
+photogenic  F OW2 T AH0 JH EH1 N IH0 K
+photographer  F AH0 T AA1 G R AH0 F ER0
+photographic  F OW2 T AH0 G R AE1 F IH0 K
+photon  F OW1 T AA0 N
+photosynthesis  F OW2 T OW0 S IH1 N TH AH0 S AH0 S
+photovoltaic  F OW2 T OW0 V AA0 L T EY1 IH0 K
+phraseology  F R EY2 Z IY0 AA1 L AH0 JH IY0
+physicist  F IH1 Z AH0 S IH0 S T
+physiological  F IH2 Z IY0 AH0 L AA1 JH IH0 K AH0 L
+physiology  F IH2 Z IY0 AA1 L AH0 JH IY0
+pianist  P IY0 AE1 N AH0 S T
+picket  P IH1 K AH0 T
+pickle  P IH1 K AH0 L
+pickpocket  P IH1 K P AA2 K AH0 T
+pickup  P IH1 K AH2 P
+picnic  P IH1 K N IH0 K
+pictorial  P IH0 K T AO1 R IY0 AH0 L
+pictorially  P IH0 K T AO1 R IY0 AH0 L IY0
+picturesque  P IH2 K CH ER0 EH1 S K
+piecemeal  P IY1 S M IY2 L
+pier  P IH1 R
+pierce  P IH1 R S
+piety  P AY1 AH0 T IY0
+pigeon  P IH1 JH AH0 N
+pigment  P IH1 G M AH0 N T
+pigmentation  P IH2 G M AH0 N T EY1 SH AH0 N
+pike  P AY1 K
+pilaster  P AH0 L AE1 S T ER0
+pilgrim  P IH1 L G R AH0 M
+pilgrimage  P IH1 L G R AH0 M IH0 JH
+pillage  P IH1 L IH0 JH
+pillar  P IH1 L ER0
+pillow  P IH1 L OW0
+pillowcase  P IH1 L OW0 K EY2 S
+pinch  P IH1 N CH
+pine  P AY1 N
+pineapple  P AY1 N AE2 P AH0 L
+pinecone  P AY1 N K OW2 N
+pinnacle  P IH1 N AH0 K AH0 L
+pinpoint  P IH1 N P OY2 N T
+pint  P AY1 N T
+pioneering  P AY2 AH0 N IH1 R IH0 NG
+pious  P AY1 AH0 S
+piper  P AY1 P ER0
+piracy  P AY1 R AH0 S IY0
+piranha  P ER0 AA1 N AH0
+pistol  P IH1 S T AH0 L
+piston  P IH1 S T AH0 N
+pitfall  P IH1 T F AO2 L
+pith  P IH1 TH
+pithy  P IH1 TH IY0
+pitiful  P IH1 T AH0 F AH0 L
+pitifully  P IH1 T AH0 F AH0 L IY0
+pitiless  P IH1 T AH0 L AH0 S
+pittance  P IH1 T AH0 N S
+pitted  P IH1 T AH0 D
+pity  P IH1 T IY0
+pivot  P IH1 V AH0 T
+pivotal  P IH1 V AH0 T AH0 L
+pixel  P IH1 K S AH0 L
+pixie  P IH1 K S IY0
+pizzazz  P AH0 Z AE1 Z
+placate  P L EY1 K EY2 T
+placebo  P L AH0 S IY1 B OW0
+placeholder  P L EY1 S HH OW2 L D ER0
+placement  P L EY1 S M AH0 N T
+placid  P L AE1 S AH0 D
+plagiarism  P L EY1 JH ER0 IH2 Z AH0 M
+plagiarize  P L EY1 JH ER0 AY2 Z
+plaid  P L AE1 D
+plainly  P L EY1 N L IY0
+plaintiff  P L EY1 N T AH0 F
+plaintive  P L EY1 N T IH0 V
+plait  P L EY1 T
+plank  P L AE1 NG K
+planner  P L AE1 N ER0
+planter  P L AE1 N T ER0
+plaque  P L AE1 K
+plasticity  P L AE0 S T IH1 S AH0 T IY0
+plat  P L AE1 T
+plateau  P L AE0 T OW1
+platelet  P L EY1 T L AH0 T
+platinum  P L AE1 T AH0 N AH0 M
+platitude  P L AE1 T AH0 T UW2 D
+platonic  P L AH0 T AA1 N IH0 K
+platoon  P L AH0 T UW1 N
+platter  P L AE1 T ER0
+plausibility  P L AO2 Z AH0 B IH1 L AH0 T IY0
+plausible  P L AO1 Z AH0 B AH0 L
+plausibly  P L AO1 Z AH0 B L IY0
+playback  P L EY1 B AE2 K
+playful  P L EY1 F AH0 L
+playground  P L EY1 G R AW2 N D
+playwright  P L EY1 R AY2 T
+pleasantry  P L EH1 Z AH0 N T R IY0
+pleasing  P L IY1 Z IH0 NG
+pleasurable  P L EH1 ZH ER0 AH0 B AH0 L
+plenary  P L IY1 N ER0 IY0
+plentiful  P L EH1 N T AH0 F AH0 L
+pliable  P L AY1 AH0 B AH0 L
+pliant  P L AY1 AH0 N T
+plight  P L AY1 T
+plop  P L AA1 P
+plotter  P L AA1 T ER0
+plow  P L AW1
+ploy  P L OY1
+plucky  P L AH1 K IY0
+plum  P L AH1 M
+plumage  P L UW1 M AH0 JH
+plumber  P L AH1 M ER0
+plumbing  P L AH1 M IH0 NG
+plume  P L UW1 M
+plummet  P L AH1 M AH0 T
+plump  P L AH1 M P
+plunder  P L AH1 N D ER0
+plunger  P L AH1 N JH ER0
+plunk  P L AH1 NG K
+pluralism  P L UH1 R AH0 L IH2 Z AH0 M
+plurality  P L UH0 R AE1 L AH0 T IY0
+plush  P L AH1 SH
+poacher  P OW1 CH ER0
+pocketbook  P AA1 K AH0 T B UH2 K
+podcast  P AA1 D K AE2 S T
+podium  P OW1 D IY0 AH0 M
+poetic  P OW0 EH1 T IH0 K
+poetically  P OW0 EH1 T IH0 K AH0 L IY0
+poignant  P OY1 N Y AH0 N T
+pointer  P OY1 N T ER0
+pointless  P OY1 N T L AH0 S
+poise  P OY1 Z
+poised  P OY1 Z D
+poisonous  P OY1 Z AH0 N AH0 S
+poker  P OW1 K ER0
+polar  P OW1 L ER0
+polarity  P OW0 L AE1 R AH0 T IY0
+polarize  P OW1 L ER0 AY2 Z
+polecat  P OW1 L K AE2 T
+polemic  P AH0 L EH1 M IH0 K
+policeman  P AH0 L IY1 S M AH0 N
+policymaker  P AA1 L AH0 S IY0 M EY2 K ER0
+polio  P OW1 L IY0 OW0
+politicize  P AH0 L IH1 T AH0 S AY2 Z
+polka  P OW1 L K AH0
+pollen  P AA1 L AH0 N
+pollinate  P AA1 L AH0 N EY2 T
+pollination  P AA2 L AH0 N EY1 SH AH0 N
+pollster  P OW1 L S T ER0
+pollutant  P AH0 L UW1 T AH0 N T
+polo  P OW1 L OW0
+polyester  P AA2 L IY0 EH1 S T ER0
+polygamy  P AH0 L IH1 G AH0 M IY0
+polyglot  P AA1 L IY0 G L AA2 T
+polygon  P AA1 L IY0 G AA2 N
+polymer  P AA1 L AH0 M ER0
+polyp  P AA1 L AH0 P
+pomegranate  P AA1 M AH0 G R AE2 N AH0 T
+pomp  P AA1 M P
+pompous  P AA1 M P AH0 S
+poncho  P AA1 N CH OW0
+ponder  P AA1 N D ER0
+ponderous  P AA1 N D ER0 AH0 S
+pontiff  P AA1 N T AH0 F
+pontificate  P AA0 N T IH1 F AH0 K EY2 T
+pontoon  P AA0 N T UW1 N
+poodle  P UW1 D AH0 L
+popcorn  P AA1 P K AO2 R N
+poplar  P AA1 P L ER0
+poppy  P AA1 P IY0
+populace  P AA1 P Y AH0 L AH0 S
+popularize  P AA1 P Y AH0 L ER0 AY2 Z
+populate  P AA1 P Y AH0 L EY2 T
+populist  P AA1 P Y AH0 L IH0 S T
+populous  P AA1 P Y AH0 L AH0 S
+porcelain  P AO1 R S AH0 L AH0 N
+porcupine  P AO1 R K Y AH0 P AY2 N
+pore  P AO1 R
+pork  P AO1 R K
+pornography  P AO0 R N AA1 G R AH0 F IY0
+porous  P AO1 R AH0 S
+porridge  P AO1 R AH0 JH
+portal  P AO1 R T AH0 L
+portend  P AO0 R T EH1 N D
+portent  P AO1 R T EH0 N T
+portentous  P AO0 R T EH1 N T AH0 S
+porter  P AO1 R T ER0
+portico  P AO1 R T AH0 K OW2
+portly  P AO1 R T L IY0
+portrayal  P AO0 R T R EY1 AH0 L
+Portuguese  P AO1 R CH AH0 G IY2 Z
+posit  P AA1 Z AH0 T
+positively  P AA1 Z AH0 T IH0 V L IY0
+posse  P AA1 S IY0
+possessor  P AH0 Z EH1 S ER0
+posterior  P AA0 S T IH1 R IY0 ER0
+posterity  P AA0 S T EH1 R AH0 T IY0
+postgraduate  P OW2 S T G R AE1 JH UW0 AH0 T
+posthumous  P AA1 S CH AH0 M AH0 S
+posting  P OW1 S T IH0 NG
+postman  P OW1 S T M AH0 N
+postmortem  P OW2 S T M AO1 R T AH0 M
+postponement  P OW0 S T P OW1 N M AH0 N T
+postscript  P OW1 S T S K R IH2 P T
+postulate  P AA1 S CH AH0 L EY2 T
+posture  P AA1 S CH ER0
+postwar  P OW1 S T W AO2 R
+potassium  P AH0 T AE1 S IY0 AH0 M
+potency  P OW1 T AH0 N S IY0
+potent  P OW1 T AH0 N T
+potentate  P OW1 T AH0 N T EY2 T
+pothole  P AA1 T HH OW2 L
+potion  P OW1 SH AH0 N
+potter  P AA1 T ER0
+pouch  P AW1 CH
+poultice  P OW1 L T AH0 S
+pounce  P AW1 N S
+pout  P AW1 T
+powerfully  P AW1 ER0 F AH0 L IY0
+powerhouse  P AW1 ER0 HH AW2 S
+powerless  P AW1 ER0 L AH0 S
+pragmatic  P R AE0 G M AE1 T IH0 K
+pragmatically  P R AE0 G M AE1 T IH0 K AH0 L IY0
+pragmatism  P R AE1 G M AH0 T IH2 Z AH0 M
+pragmatist  P R AE1 G M AH0 T IH0 S T
+prairie  P R EH1 R IY0
+praiseworthy  P R EY1 Z W ER2 DH IY0
+pram  P R AE1 M
+prance  P R AE1 N S
+prank  P R AE1 NG K
+prankster  P R AE1 NG K S T ER0
+prawn  P R AO1 N
+preach  P R IY1 CH
+preacher  P R IY1 CH ER0
+preamble  P R IY1 AE0 M B AH0 L
+precarious  P R IH0 K EH1 R IY0 AH0 S
+precariously  P R IH0 K EH1 R IY0 AH0 S L IY0
+precaution  P R IY0 K AO1 SH AH0 N
+precautionary  P R IY0 K AO1 SH AH0 N EH2 R IY0
+precedence  P R EH1 S AH0 D AH0 N S
+precept  P R IY1 S EH0 P T
+precinct  P R IY1 S IH0 NG K T
+precipice  P R EH1 S AH0 P AH0 S
+precipitate  P R IH0 S IH1 P AH0 T EY2 T
+precipitation  P R IH0 S IH2 P AH0 T EY1 SH AH0 N
+precipitous  P R IH0 S IH1 P AH0 T AH0 S
+precision  P R IH0 S IH1 ZH AH0 N
+preclude  P R IH0 K L UW1 D
+precocious  P R IH0 K OW1 SH AH0 S
+preconceive  P R IY2 K AH0 N S IY1 V
+preconception  P R IY2 K AH0 N S EH1 P SH AH0 N
+precondition  P R IY2 K AH0 N D IH1 SH AH0 N
+precursor  P R IY0 K ER1 S ER0
+predatory  P R EH1 D AH0 T AO2 R IY0
+predestine  P R IH0 D EH1 S T AH0 N
+predicament  P R IH0 D IH1 K AH0 M AH0 N T
+predicate  P R EH1 D AH0 K EY2 T
+predictable  P R IH0 D IH1 K T AH0 B AH0 L
+predictably  P R IH0 D IH1 K T AH0 B L IY0
+prediction  P R IH0 D IH1 K SH AH0 N
+predictive  P R IH0 D IH1 K T IH0 V
+predilection  P R EH2 D AH0 L EH1 K SH AH0 N
+predispose  P R IY2 D IH0 S P OW1 Z
+predisposition  P R IY2 D IH0 S P AH0 Z IH1 SH AH0 N
+predominance  P R IH0 D AA1 M AH0 N AH0 N S
+predominant  P R IH0 D AA1 M AH0 N AH0 N T
+predominantly  P R IH0 D AA1 M AH0 N AH0 N T L IY0
+predominate  P R IH0 D AA1 M AH0 N EY2 T
+preeminent  P R IY0 EH1 M AH0 N AH0 N T
+preempt  P R IY0 EH1 M P T
+preemptive  P R IY0 EH1 M P T IH0 V
+prefabricate  P R IY0 F AE1 B R AH0 K EY2 T
+preface  P R EH1 F AH0 S
+prefect  P R IY1 F EH0 K T
+preferably  P R EH1 F ER0 AH0 B L IY0
+preferential  P R EH2 F ER0 EH1 N SH AH0 L
+prefix  P R IY1 F IH0 K S
+prehistoric  P R IY2 HH IH0 S T AO1 R IH0 K
+prejudicial  P R EH2 JH AH0 D IH1 SH AH0 L
+prelude  P R EH1 L UW2 D
+premature  P R IY2 M AH0 CH UH1 R
+prematurely  P R IY2 M AH0 CH UH1 R L IY0
+premeditate  P R IY0 M EH1 D AH0 T EY2 T
+premier  P R IH0 M IH1 R
+premiere  P R IH0 M IH1 R
+premonition  P R EH2 M AH0 N IH1 SH AH0 N
+preoccupation  P R IY0 AA2 K Y AH0 P EY1 SH AH0 N
+preoccupy  P R IY0 AA1 K Y AH0 P AY2
+preordain  P R IY2 AO0 R D EY1 N
+preparatory  P R IH0 P AE1 R AH0 T AO2 R IY0
+preponderance  P R IH0 P AA1 N D ER0 AH0 N S
+preposition  P R EH2 P AH0 Z IH1 SH AH0 N
+preposterous  P R IH0 P AA1 S T ER0 AH0 S
+prerequisite  P R IY0 R EH1 K W AH0 Z AH0 T
+prerogative  P R IH0 R AA1 G AH0 T IH0 V
+presage  P R EH1 S AH0 JH
+preschool  P R IY1 S K UW2 L
+prescribe  P R IH0 S K R AY1 B
+prescriptive  P R IH0 S K R IH1 P T IH0 V
+presenter  P R IH0 Z EH1 N T ER0
+preservation  P R EH2 Z ER0 V EY1 SH AH0 N
+preservative  P R IH0 Z ER1 V AH0 T IH0 V
+preside  P R IH0 Z AY1 D
+presidency  P R EH1 Z AH0 D AH0 N S IY0
+presidential  P R EH2 Z AH0 D EH1 N SH AH0 L
+pressing  P R EH1 S IH0 NG
+prestige  P R EH0 S T IY1 ZH
+presumption  P R IH0 Z AH1 M P SH AH0 N
+presumptuous  P R IH0 Z AH1 M P CH UW0 AH0 S
+presuppose  P R IY2 S AH0 P OW1 Z
+pretender  P R IH0 T EH1 N D ER0
+pretense  P R IH0 T EH1 N S
+pretension  P R IH0 T EH1 N SH AH0 N
+pretentious  P R IH0 T EH1 N SH AH0 S
+pretext  P R IY1 T EH0 K S T
+prettily  P R IH1 T AH0 L IY0
+pretzel  P R EH1 T S AH0 L
+prevalence  P R EH1 V AH0 L AH0 N S
+preventable  P R IH0 V EH1 N T AH0 B AH0 L
+preventative  P R IH0 V EH1 N T AH0 T IH0 V
+prevention  P R IH0 V EH1 N SH AH0 N
+preventive  P R IH0 V EH1 N T IH0 V
+preview  P R IY1 V Y UW2
+priceless  P R AY1 S L AH0 S
+prickle  P R IH1 K AH0 L
+prickly  P R IH1 K L IY0
+prig  P R IH1 G
+prim  P R IH1 M
+primal  P R AY1 M AH0 L
+primate  P R AY1 M EY0 T
+primer  P R IH1 M ER0
+primeval  P R AY0 M IY1 V AH0 L
+primordial  P R AY0 M AO1 R D IY0 AH0 L
+primp  P R IH1 M P
+principality  P R IH2 N S AH0 P AE1 L AH0 T IY0
+principally  P R IH1 N S AH0 P AH0 L IY0
+printout  P R IH1 N T AW2 T
+prior  P R AY1 ER0
+prioritize  P R AY0 AO1 R AH0 T AY2 Z
+prism  P R IH1 Z AH0 M
+pristine  P R IH0 S T IY1 N
+privateer  P R AY2 V AH0 T IH1 R
+privatization  P R AY2 V AH0 T AH0 Z EY1 SH AH0 N
+privatize  P R AY1 V AH0 T AY2 Z
+privileged  P R IH1 V AH0 L IH0 JH D
+probabilistic  P R AA2 B AH0 B AH0 L IH1 S T IH0 K
+probability  P R AA2 B AH0 B IH1 L AH0 T IY0
+probation  P R OW0 B EY1 SH AH0 N
+probationary  P R OW0 B EY1 SH AH0 N EH2 R IY0
+probity  P R OW1 B AH0 T IY0
+procedural  P R AH0 S IY1 JH ER0 AH0 L
+proceedings  P R AH0 S IY1 D IH0 NG Z
+proceeds  P R OW1 S IY2 D Z
+procession  P R AH0 S EH1 SH AH0 N
+proclamation  P R AA2 K L AH0 M EY1 SH AH0 N
+proclivity  P R OW0 K L IH1 V AH0 T IY0
+procrastinate  P R OW0 K R AE1 S T AH0 N EY2 T
+procrastination  P R OW0 K R AE2 S T AH0 N EY1 SH AH0 N
+procurement  P R OW0 K Y UH1 R M AH0 N T
+prod  P R AA1 D
+prodigal  P R AA1 D AH0 G AH0 L
+prodigious  P R AH0 D IH1 JH AH0 S
+prodigy  P R AA1 D AH0 JH IY0
+producer  P R AH0 D UW1 S ER0
+productively  P R AH0 D AH1 K T IH0 V L IY0
+profane  P R OW0 F EY1 N
+profanity  P R OW0 F AE1 N AH0 T IY0
+profess  P R AH0 F EH1 S
+professionalism  P R AH0 F EH1 SH AH0 N AH0 L IH2 Z AH0 M
+professionally  P R AH0 F EH1 SH AH0 N AH0 L IY0
+proficiency  P R AH0 F IH1 SH AH0 N S IY0
+proficient  P R AH0 F IH1 SH AH0 N T
+proficiently  P R AH0 F IH1 SH AH0 N T L IY0
+profitability  P R AA2 F AH0 T AH0 B IH1 L AH0 T IY0
+profitably  P R AA1 F AH0 T AH0 B L IY0
+profiteer  P R AA2 F AH0 T IH1 R
+profoundly  P R AH0 F AW1 N D L IY0
+profundity  P R AH0 F AH1 N D AH0 T IY0
+profuse  P R AH0 F Y UW1 S
+profusely  P R AH0 F Y UW1 S L IY0
+profusion  P R AH0 F Y UW1 ZH AH0 N
+progenitor  P R OW0 JH EH1 N AH0 T ER0
+progeny  P R AA1 JH AH0 N IY0
+prognosis  P R AA0 G N OW1 S AH0 S
+prognosticate  P R AA0 G N AA1 S T AH0 K EY2 T
+programmer  P R OW1 G R AE2 M ER0
+programming  P R OW1 G R AE2 M IH0 NG
+progression  P R AH0 G R EH1 SH AH0 N
+progressively  P R AH0 G R EH1 S IH0 V L IY0
+prohibit  P R OW0 HH IH1 B AH0 T
+prohibition  P R OW2 AH0 B IH1 SH AH0 N
+prohibitive  P R OW0 HH IH1 B AH0 T IH0 V
+projectile  P R AH0 JH EH1 K T AH0 L
+projection  P R AH0 JH EH1 K SH AH0 N
+projector  P R AH0 JH EH1 K T ER0
+proletarian  P R OW2 L AH0 T EH1 R IY0 AH0 N
+proletariat  P R OW2 L AH0 T EH1 R IY0 AH0 T
+proliferate  P R AH0 L IH1 F ER0 EY2 T
+proliferation  P R AH0 L IH2 F ER0 EY1 SH AH0 N
+prolific  P R AH0 L IH1 F IH0 K
+prologue  P R OW1 L AO2 G
+prolong  P R AH0 L AO1 NG
+prolonged  P R AH0 L AO1 NG D
+promenade  P R AA2 M AH0 N EY1 D
+prominence  P R AA1 M AH0 N AH0 N S
+prominently  P R AA1 M AH0 N AH0 N T L IY0
+promiscuity  P R AA2 M IH0 S K Y UW1 AH0 T IY0
+promiscuous  P R AH0 M IH1 S K Y UW0 AH0 S
+promoter  P R AH0 M OW1 T ER0
+promotional  P R AH0 M OW1 SH AH0 N AH0 L
+promptly  P R AA1 M P T L IY0
+promptness  P R AA1 M P T N AH0 S
+promulgate  P R AA1 M AH0 L G EY2 T
+prone  P R OW1 N
+pronoun  P R OW1 N AW2 N
+pronounce  P R AH0 N AW1 N S
+pronounced  P R AH0 N AW1 N S T
+pronouncement  P R AH0 N AW1 N S M AH0 N T
+pronunciation  P R AH0 N AH2 N S IY0 EY1 SH AH0 N
+proofread  P R UW1 F R IY2 D
+propagandist  P R AA2 P AH0 G AE1 N D AH0 S T
+propagate  P R AA1 P AH0 G EY2 T
+propagation  P R AA2 P AH0 G EY1 SH AH0 N
+propellant  P R AH0 P EH1 L AH0 N T
+propeller  P R AH0 P EH1 L ER0
+propensity  P R AH0 P EH1 N S AH0 T IY0
+prophesy  P R AA1 F AH0 S AY2
+prophetic  P R AH0 F EH1 T IH0 K
+proponent  P R AH0 P OW1 N AH0 N T
+proportional  P R AH0 P AO1 R SH AH0 N AH0 L
+proportionally  P R AH0 P AO1 R SH AH0 N AH0 L IY0
+proportionate  P R AH0 P AO1 R SH AH0 N AH0 T
+proposer  P R AH0 P OW1 Z ER0
+proposition  P R AA2 P AH0 Z IH1 SH AH0 N
+proprietary  P R AH0 P R AY1 AH0 T EH2 R IY0
+proprietor  P R AH0 P R AY1 AH0 T ER0
+propriety  P R AH0 P R AY1 AH0 T IY0
+propulsion  P R AH0 P AH1 L SH AH0 N
+prosaic  P R OW0 Z EY1 IH0 K
+proscribe  P R OW0 S K R AY1 B
+prose  P R OW1 Z
+prosecution  P R AA2 S AH0 K Y UW1 SH AH0 N
+prosecutor  P R AA1 S AH0 K Y UW2 T ER0
+proselytize  P R AA1 S AH0 L AH0 T AY2 Z
+prospective  P R AH0 S P EH1 K T IH0 V
+prospector  P R AA1 S P EH0 K T ER0
+prospectus  P R AH0 S P EH1 K T AH0 S
+prosper  P R AA1 S P ER0
+prosperous  P R AA1 S P ER0 AH0 S
+prosthesis  P R AA0 S TH IY1 S AH0 S
+prosthetic  P R AA0 S TH EH1 T IH0 K
+prostitute  P R AA1 S T AH0 T UW2 T
+prostitution  P R AA2 S T AH0 T UW1 SH AH0 N
+protagonist  P R OW0 T AE1 G AH0 N AH0 S T
+protector  P R AH0 T EH1 K T ER0
+protectorate  P R AH0 T EH1 K T ER0 AH0 T
+protege  P R OW1 T AH0 ZH EY2
+protestant  P R AA1 T AH0 S T AH0 N T
+protestation  P R AA2 T AH0 S T EY1 SH AH0 N
+protester  P R OW0 T EH1 S T ER0
+proton  P R OW1 T AA0 N
+protracted  P R OW0 T R AE1 K T IH0 D
+protrude  P R OW0 T R UW1 D
+protrusion  P R OW0 T R UW1 ZH AH0 N
+protuberance  P R OW0 T UW1 B ER0 AH0 N S
+proudly  P R AW1 D L IY0
+provenance  P R AA1 V AH0 N AH0 N S
+proverb  P R AA1 V ER0 B
+proverbial  P R AH0 V ER1 B IY0 AH0 L
+provider  P R AH0 V AY1 D ER0
+providence  P R AA1 V AH0 D AH0 N S
+provident  P R AA1 V AH0 D AH0 N T
+providential  P R AA2 V AH0 D EH1 N SH AH0 L
+provincial  P R AH0 V IH1 N SH AH0 L
+provincialism  P R AH0 V IH1 N SH AH0 L IH2 Z AH0 M
+provisional  P R AH0 V IH1 ZH AH0 N AH0 L
+provisionally  P R AH0 V IH1 ZH AH0 N AH0 L IY0
+proviso  P R AH0 V AY1 Z OW0
+provocation  P R AA2 V AH0 K EY1 SH AH0 N
+provocative  P R AH0 V AA1 K AH0 T IH0 V
+prowess  P R AW1 AH0 S
+prowl  P R AW1 L
+prowler  P R AW1 L ER0
+proxy  P R AA1 K S IY0
+prudence  P R UW1 D AH0 N S
+prudent  P R UW1 D AH0 N T
+prudently  P R UW1 D AH0 N T L IY0
+prune  P R UW1 N
+pry  P R AY1
+pseudonym  S UW1 D AH0 N IH2 M
+psyche  S AY1 K IY0
+psychiatrist  S AY0 K AY1 AH0 T R IH0 S T
+psychiatry  S AY0 K AY1 AH0 T R IY0
+psychic  S AY1 K IH0 K
+psychoanalysis  S AY2 K OW0 AH0 N AE1 L AH0 S AH0 S
+psychoanalyst  S AY2 K OW0 AE1 N AH0 L AH0 S T
+psychologist  S AY0 K AA1 L AH0 JH IH0 S T
+psychopath  S AY1 K AH0 P AE2 TH
+psychosis  S AY0 K OW1 S AH0 S
+psychosomatic  S AY2 K OW0 S AH0 M AE1 T IH0 K
+psychotherapy  S AY2 K OW0 TH EH1 R AH0 P IY0
+psychotic  S AY0 K AA1 T IH0 K
+puberty  P Y UW1 B ER0 T IY0
+publicist  P AH1 B L AH0 S AH0 S T
+publicize  P AH1 B L AH0 S AY2 Z
+publicly  P AH1 B L IH0 K L IY0
+publisher  P AH1 B L IH0 SH ER0
+publishing  P AH1 B L IH0 SH IH0 NG
+pudding  P UH1 D IH0 NG
+puddle  P AH1 D AH0 L
+puff  P AH1 F
+puffy  P AH1 F IY0
+pulley  P UH1 L IY0
+pulp  P AH1 L P
+pulpit  P UH1 L P AH0 T
+pulsar  P AH1 L S AA0 R
+pulsate  P AH1 L S EY2 T
+pulverize  P AH1 L V ER0 AY2 Z
+pummel  P AH1 M AH0 L
+pumpkin  P AH1 M P K AH0 N
+pun  P AH1 N
+punctual  P AH1 NG K CH UW0 AH0 L
+punctuality  P AH2 NG K CH UW0 AE1 L AH0 T IY0
+punctuate  P AH1 NG K CH UW0 EY2 T
+punctuation  P AH2 NG K CH UW0 EY1 SH AH0 N
+puncture  P AH1 NG K CH ER0
+pundit  P AH1 N D AH0 T
+pungent  P AH1 N JH AH0 N T
+punishment  P AH1 N IH0 SH M AH0 N T
+punitive  P Y UW1 N AH0 T IH0 V
+punk  P AH1 NG K
+punt  P AH1 N T
+pup  P AH1 P
+pupa  P Y UW1 P AH0
+puppet  P AH1 P AH0 T
+puppeteer  P AH2 P AH0 T IH1 R
+purchaser  P ER1 CH AH0 S ER0
+purgatory  P ER1 G AH0 T AO2 R IY0
+purge  P ER1 JH
+purification  P Y UH2 R AH0 F AH0 K EY1 SH AH0 N
+purifier  P Y UH1 R AH0 F AY2 ER0
+purify  P Y UH1 R AH0 F AY2
+purist  P Y UH1 R AH0 S T
+puritan  P Y UH1 R AH0 T AH0 N
+puritanical  P Y UH2 R AH0 T AE1 N AH0 K AH0 L
+purity  P Y UH1 R AH0 T IY0
+purport  P ER0 P AO1 R T
+purportedly  P ER0 P AO1 R T AH0 D L IY0
+purposeful  P ER1 P AH0 S F AH0 L
+purposefully  P ER1 P AH0 S F AH0 L IY0
+purposely  P ER1 P AH0 S L IY0
+purr  P ER1
+purse  P ER1 S
+pursuant  P ER0 S UW1 AH0 N T
+pursue  P ER0 S UW1
+pursuer  P ER0 S UW1 ER0
+purveyor  P ER0 V EY1 ER0
+pushover  P UH1 SH OW2 V ER0
+pushy  P UH1 SH IY0
+putrid  P Y UW1 T R IH0 D
+putt  P AH1 T
+putter  P AH1 T ER0
+putty  P AH1 T IY0
+puzzlement  P AH1 Z AH0 L M AH0 N T
+pylon  P AY1 L AA0 N
+pyre  P AY1 R
+python  P AY1 TH AA0 N

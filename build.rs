@@ -1,7 +1,15 @@
-//! Build script for shabda: generates the English pronunciation dictionary
+//! Build script for shabdakosh: generates the English pronunciation dictionary
 //! from `data/cmudict-5k.txt` at compile time.
 //!
 //! The ARPABET-to-Phoneme mapping here mirrors `src/arpabet.rs` — keep both in sync.
+//!
+//! ## Data file format
+//!
+//! - `WORD  PH1 PH2 PH3` — single pronunciation (two-space separator)
+//! - `WORD(n)  PH1 PH2` — variant pronunciation (n >= 2)
+//! - `;;; @freq=0.85` — frequency annotation for the next entry line
+//! - `;;; @region=GA` — region annotation for the next entry line (GA or RP)
+//! - `;;;` — regular comment (ignored)
 
 use std::collections::BTreeMap;
 use std::env;
@@ -9,26 +17,64 @@ use std::fs;
 use std::io::Write;
 use std::path::Path;
 
+struct BuildPronunciation {
+    phoneme_exprs: Vec<String>,
+    frequency: Option<f32>,
+    region: Option<String>,
+}
+
+struct BuildEntry {
+    pronunciations: Vec<BuildPronunciation>,
+}
+
 fn main() {
     println!("cargo::rerun-if-changed=data/cmudict-5k.txt");
 
-    let data = fs::read_to_string("data/cmudict-5k.txt").expect("failed to read data/cmudict-5k.txt");
+    let data =
+        fs::read_to_string("data/cmudict-5k.txt").expect("failed to read data/cmudict-5k.txt");
 
-    // Parse entries into (word, Vec<phoneme_expr>)
-    let mut entries: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut entries: BTreeMap<String, BuildEntry> = BTreeMap::new();
+    let mut pending_freq: Option<f32> = None;
+    let mut pending_region: Option<String> = None;
 
     for (line_num, line) in data.lines().enumerate() {
         let line = line.trim();
-        if line.is_empty() || line.starts_with(";;;") {
+        if line.is_empty() {
             continue;
         }
 
-        // Format: WORD  PH1 PH2 PH3 (two-space separator)
-        let Some((word, phonemes_str)) = line.split_once("  ") else {
-            panic!("line {}: missing two-space separator: {line}", line_num + 1);
+        // Handle comment lines (may contain annotations)
+        if line.starts_with(";;;") {
+            let comment = &line[3..];
+            for token in comment.split_whitespace() {
+                if let Some(val) = token.strip_prefix("@freq=") {
+                    pending_freq = Some(
+                        val.parse::<f32>()
+                            .unwrap_or_else(|_| panic!("line {}: invalid @freq value: {val}", line_num + 1)),
+                    );
+                } else if let Some(val) = token.strip_prefix("@region=") {
+                    pending_region = Some(val.to_string());
+                }
+            }
+            continue;
+        }
+
+        // Parse entry line: WORD  PH1 PH2 or WORD(n)  PH1 PH2
+        let Some((word_part, phonemes_str)) = line.split_once("  ") else {
+            panic!(
+                "line {}: missing two-space separator: {line}",
+                line_num + 1
+            );
         };
 
-        let word = word.trim().to_lowercase();
+        // Strip (n) variant suffix to get base word
+        let word = word_part
+            .trim()
+            .split('(')
+            .next()
+            .unwrap_or(word_part.trim())
+            .to_lowercase();
+
         let phoneme_exprs: Vec<String> = phonemes_str
             .split_whitespace()
             .map(|sym| arpabet_to_phoneme_expr(sym, line_num + 1))
@@ -38,7 +84,19 @@ fn main() {
             panic!("line {}: no phonemes for word '{word}'", line_num + 1);
         }
 
-        entries.entry(word).or_insert(phoneme_exprs);
+        let pronunciation = BuildPronunciation {
+            phoneme_exprs,
+            frequency: pending_freq.take(),
+            region: pending_region.take(),
+        };
+
+        entries
+            .entry(word)
+            .or_insert_with(|| BuildEntry {
+                pronunciations: Vec::new(),
+            })
+            .pronunciations
+            .push(pronunciation);
     }
 
     // Generate Rust source
@@ -53,36 +111,81 @@ fn main() {
     writeln!(out).unwrap();
     writeln!(
         out,
-        "fn generated_english_entries() -> alloc::collections::BTreeMap<alloc::string::String, alloc::vec::Vec<svara::phoneme::Phoneme>> {{"
+        "fn generated_english_entries() -> alloc::collections::BTreeMap<alloc::string::String, crate::dictionary::entry::DictEntry> {{"
     )
     .unwrap();
     writeln!(out, "    use alloc::string::String;").unwrap();
     writeln!(out, "    use alloc::vec;").unwrap();
     writeln!(out, "    use svara::phoneme::Phoneme;").unwrap();
-    writeln!(out).unwrap();
     writeln!(
         out,
-        "    let mut m = alloc::collections::BTreeMap::new();"
+        "    #[allow(unused_imports)]"
     )
     .unwrap();
+    writeln!(
+        out,
+        "    use crate::dictionary::entry::{{DictEntry, Pronunciation, Region}};"
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "    let mut m = alloc::collections::BTreeMap::new();").unwrap();
 
-    for (word, phonemes) in &entries {
-        let phoneme_list = phonemes.join(", ");
-        writeln!(
-            out,
-            "    m.insert(String::from({:?}), vec![{}]);",
-            word, phoneme_list
-        )
-        .unwrap();
+    for (word, entry) in &entries {
+        if entry.pronunciations.len() == 1 {
+            // Single pronunciation — use DictEntry::new() for simplicity
+            let pron = &entry.pronunciations[0];
+            let phonemes = pron.phoneme_exprs.join(", ");
+            let mut expr = format!("Pronunciation::new(vec![{phonemes}])");
+            if let Some(freq) = pron.frequency {
+                expr = format!("{expr}.with_frequency({freq}_f32)");
+            }
+            if let Some(ref region) = pron.region {
+                let region_expr = region_to_expr(region);
+                expr = format!("{expr}.with_region({region_expr})");
+            }
+            writeln!(
+                out,
+                "    m.insert(String::from({word:?}), DictEntry::new({expr}));"
+            )
+            .unwrap();
+        } else {
+            // Multiple pronunciations — use DictEntry::from_pronunciations()
+            write!(out, "    m.insert(String::from({word:?}), DictEntry::from_pronunciations(vec![").unwrap();
+            for (i, pron) in entry.pronunciations.iter().enumerate() {
+                if i > 0 {
+                    write!(out, ", ").unwrap();
+                }
+                let phonemes = pron.phoneme_exprs.join(", ");
+                write!(out, "Pronunciation::new(vec![{phonemes}])").unwrap();
+                if let Some(freq) = pron.frequency {
+                    write!(out, ".with_frequency({freq}_f32)").unwrap();
+                }
+                if let Some(ref region) = pron.region {
+                    let region_expr = region_to_expr(region);
+                    write!(out, ".with_region({region_expr})").unwrap();
+                }
+            }
+            writeln!(out, "]).expect(\"non-empty\"));").unwrap();
+        }
     }
 
     writeln!(out, "    m").unwrap();
     writeln!(out, "}}").unwrap();
 
+    let total_prons: usize = entries.values().map(|e| e.pronunciations.len()).sum();
     eprintln!(
-        "shabdakosh build: generated {} dictionary entries",
-        entries.len()
+        "shabdakosh build: generated {} entries ({} pronunciations)",
+        entries.len(),
+        total_prons
     );
+}
+
+fn region_to_expr(code: &str) -> &'static str {
+    match code {
+        "GA" => "Region::GeneralAmerican",
+        "RP" => "Region::ReceivedPronunciation",
+        _ => panic!("unknown region code: {code}"),
+    }
 }
 
 /// Converts an ARPABET symbol (possibly with stress digit) to a Rust expression string.

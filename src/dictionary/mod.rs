@@ -10,12 +10,22 @@
 //!
 //! Application-specific pronunciations can be added via [`PronunciationDict::insert_user`].
 //! User entries take precedence over base entries during [`PronunciationDict::lookup`].
+//!
+//! ## Variant pronunciations
+//!
+//! Words with multiple pronunciations (heteronyms like "read", "live", "wind") are
+//! represented as [`DictEntry`] values containing multiple [`Pronunciation`] variants.
+//! Use [`PronunciationDict::lookup_entry`] or [`PronunciationDict::lookup_all`]
+//! to access all variants.
 
+pub mod entry;
 pub mod format;
 
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use serde::{Deserialize, Serialize};
 use svara::phoneme::Phoneme;
+
+use entry::{DictEntry, Pronunciation};
 
 // Pull in the generated dictionary function from build.rs output.
 include!(concat!(env!("OUT_DIR"), "/generated_dict.rs"));
@@ -25,11 +35,19 @@ include!(concat!(env!("OUT_DIR"), "/generated_dict.rs"));
 /// Supports a two-layer lookup: user entries (overlay) take precedence over
 /// base entries. This allows applications to override or extend the built-in
 /// dictionary without modifying it.
+///
+/// Each word maps to a [`DictEntry`] containing one or more [`Pronunciation`]
+/// variants with optional frequency and region metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PronunciationDict {
-    entries: BTreeMap<String, Vec<Phoneme>>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    user_entries: BTreeMap<String, Vec<Phoneme>>,
+    #[serde(deserialize_with = "deserialize_entries_compat")]
+    entries: BTreeMap<String, DictEntry>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_entries_compat_default"
+    )]
+    user_entries: BTreeMap<String, DictEntry>,
 }
 
 impl PronunciationDict {
@@ -53,7 +71,7 @@ impl PronunciationDict {
         }
     }
 
-    /// Creates a minimal English dictionary with ~28 common function words.
+    /// Creates a minimal English dictionary with ~29 common function words.
     ///
     /// Useful for testing or memory-constrained environments.
     #[must_use]
@@ -164,28 +182,59 @@ impl PronunciationDict {
 
     /// Creates a dictionary from a pre-built entries map.
     #[must_use]
-    pub fn from_entries(entries: BTreeMap<String, Vec<Phoneme>>) -> Self {
+    pub fn from_entries(entries: BTreeMap<String, DictEntry>) -> Self {
         Self {
             entries,
             user_entries: BTreeMap::new(),
         }
     }
 
-    /// Inserts a word into the base dictionary.
+    /// Creates a dictionary from a simple map of word -> phonemes.
+    ///
+    /// Each entry is wrapped into a single-pronunciation [`DictEntry`].
+    #[must_use]
+    pub fn from_simple_entries(entries: BTreeMap<String, Vec<Phoneme>>) -> Self {
+        let entries = entries
+            .into_iter()
+            .map(|(word, phonemes)| (word, DictEntry::from_phonemes(&phonemes)))
+            .collect();
+        Self {
+            entries,
+            user_entries: BTreeMap::new(),
+        }
+    }
+
+    /// Inserts a word into the base dictionary with a single pronunciation.
     pub fn insert(&mut self, word: &str, phonemes: &[Phoneme]) {
         self.entries.insert(
             alloc::string::ToString::to_string(&word.to_lowercase()),
-            phonemes.to_vec(),
+            DictEntry::from_phonemes(phonemes),
         );
     }
 
-    /// Inserts a word into the user overlay.
+    /// Inserts a full [`DictEntry`] into the base dictionary.
+    pub fn insert_entry(&mut self, word: &str, entry: DictEntry) {
+        self.entries.insert(
+            alloc::string::ToString::to_string(&word.to_lowercase()),
+            entry,
+        );
+    }
+
+    /// Inserts a word into the user overlay with a single pronunciation.
     ///
     /// User entries take precedence over base entries during lookup.
     pub fn insert_user(&mut self, word: &str, phonemes: &[Phoneme]) {
         self.user_entries.insert(
             alloc::string::ToString::to_string(&word.to_lowercase()),
-            phonemes.to_vec(),
+            DictEntry::from_phonemes(phonemes),
+        );
+    }
+
+    /// Inserts a full [`DictEntry`] into the user overlay.
+    pub fn insert_user_entry(&mut self, word: &str, entry: DictEntry) {
+        self.user_entries.insert(
+            alloc::string::ToString::to_string(&word.to_lowercase()),
+            entry,
         );
     }
 
@@ -200,7 +249,7 @@ impl PronunciationDict {
 
     /// Returns a reference to the user overlay entries.
     #[must_use]
-    pub fn user_entries(&self) -> &BTreeMap<String, Vec<Phoneme>> {
+    pub fn user_entries(&self) -> &BTreeMap<String, DictEntry> {
         &self.user_entries
     }
 
@@ -210,16 +259,34 @@ impl PronunciationDict {
         self.user_entries.len()
     }
 
-    /// Looks up a word's pronunciation.
+    /// Looks up the primary pronunciation of a word.
     ///
     /// Checks the user overlay first, then the base dictionary.
+    /// Returns the phonemes of the highest-frequency pronunciation.
     #[must_use]
     pub fn lookup(&self, word: &str) -> Option<&[Phoneme]> {
+        self.lookup_entry(word)
+            .map(|entry| entry.primary_phonemes())
+    }
+
+    /// Looks up the full dictionary entry for a word.
+    ///
+    /// Checks the user overlay first, then the base dictionary.
+    /// Returns the [`DictEntry`] with all pronunciation variants.
+    #[must_use]
+    pub fn lookup_entry(&self, word: &str) -> Option<&DictEntry> {
         let key = alloc::string::ToString::to_string(&word.to_lowercase());
         self.user_entries
             .get(&key)
             .or_else(|| self.entries.get(&key))
-            .map(|v| v.as_slice())
+    }
+
+    /// Looks up all pronunciations of a word.
+    ///
+    /// Checks the user overlay first, then the base dictionary.
+    #[must_use]
+    pub fn lookup_all(&self, word: &str) -> Option<&[Pronunciation]> {
+        self.lookup_entry(word).map(|entry| entry.all())
     }
 
     /// Returns the number of base dictionary entries.
@@ -236,7 +303,7 @@ impl PronunciationDict {
 
     /// Returns a reference to the base entries.
     #[must_use]
-    pub fn entries(&self) -> &BTreeMap<String, Vec<Phoneme>> {
+    pub fn entries(&self) -> &BTreeMap<String, DictEntry> {
         &self.entries
     }
 }
@@ -245,4 +312,45 @@ impl Default for PronunciationDict {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// --- Serde backward compatibility ---
+//
+// v0.1.0 serialized entries as BTreeMap<String, Vec<Phoneme>>.
+// v0.2.0 uses BTreeMap<String, DictEntry>.
+// We use an untagged enum to accept either format per map value.
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum EntryCompat {
+    New(DictEntry),
+    Old(Vec<Phoneme>),
+}
+
+impl EntryCompat {
+    fn into_entry(self) -> DictEntry {
+        match self {
+            Self::New(entry) => entry,
+            Self::Old(phonemes) => DictEntry::from_phonemes(&phonemes),
+        }
+    }
+}
+
+fn deserialize_entries_compat<'de, D>(
+    deserializer: D,
+) -> core::result::Result<BTreeMap<String, DictEntry>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw: BTreeMap<String, EntryCompat> = BTreeMap::deserialize(deserializer)?;
+    Ok(raw.into_iter().map(|(k, v)| (k, v.into_entry())).collect())
+}
+
+fn deserialize_entries_compat_default<'de, D>(
+    deserializer: D,
+) -> core::result::Result<BTreeMap<String, DictEntry>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserialize_entries_compat(deserializer)
 }

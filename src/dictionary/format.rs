@@ -1,16 +1,25 @@
 //! Import/export for pronunciation dictionaries.
 //!
 //! Supports CMUdict text format (no_std compatible) and JSON (requires `json` feature).
+//!
+//! ## Extended CMUdict format
+//!
+//! - `WORD  PH1 PH2 PH3` — single pronunciation
+//! - `WORD(n)  PH1 PH2` — variant pronunciation (n >= 2)
+//! - `;;; @freq=0.85` — frequency annotation for the next entry
+//! - `;;; @region=GA|RP` — region annotation for the next entry
+//! - `;;;` — regular comment (ignored)
 
 use alloc::string::String;
 
+use crate::dictionary::entry::{DictEntry, Pronunciation, Region};
 use crate::dictionary::PronunciationDict;
 use crate::error::{Result, ShabdakoshError};
 
-/// Parses a CMUdict-format string into a [`PronunciationDict`].
+/// Parses an extended CMUdict-format string into a [`PronunciationDict`].
 ///
-/// Each non-comment line: `WORD  PH1 PH2 PH3` (two-space separator).
-/// Comment lines start with `;;;` and are ignored.
+/// Supports variant pronunciations (`WORD(n)`) and metadata annotations
+/// (`@freq`, `@region`).
 ///
 /// # Errors
 ///
@@ -18,25 +27,57 @@ use crate::error::{Result, ShabdakoshError};
 /// an ARPABET symbol is unrecognized.
 pub fn parse_cmudict(input: &str) -> Result<PronunciationDict> {
     use crate::arpabet;
+    use alloc::collections::BTreeMap;
 
-    let mut dict = PronunciationDict::new();
+    let mut entries: BTreeMap<String, alloc::vec::Vec<Pronunciation>> = BTreeMap::new();
+    let mut pending_freq: Option<f32> = None;
+    let mut pending_region: Option<Region> = None;
 
     for (line_num, line) in input.lines().enumerate() {
         let line = line.trim();
-        if line.is_empty() || line.starts_with(";;;") {
+        if line.is_empty() {
             continue;
         }
 
-        let (word, phonemes_str) = line.split_once("  ").ok_or_else(|| {
+        // Handle comment lines (may contain annotations)
+        if line.starts_with(";;;") {
+            let comment = &line[3..];
+            for token in comment.split_whitespace() {
+                if let Some(val) = token.strip_prefix("@freq=") {
+                    pending_freq = Some(val.parse::<f32>().map_err(|_| {
+                        ShabdakoshError::DictParseError(alloc::format!(
+                            "line {}: invalid @freq value: {val}",
+                            line_num + 1
+                        ))
+                    })?);
+                } else if let Some(val) = token.strip_prefix("@region=") {
+                    pending_region = Some(Region::from_code(val).ok_or_else(|| {
+                        ShabdakoshError::DictParseError(alloc::format!(
+                            "line {}: unknown region code: {val}",
+                            line_num + 1
+                        ))
+                    })?);
+                }
+            }
+            continue;
+        }
+
+        let (word_part, phonemes_str) = line.split_once("  ").ok_or_else(|| {
             ShabdakoshError::DictParseError(alloc::format!(
                 "line {}: missing two-space separator",
                 line_num + 1
             ))
         })?;
 
-        let word = word.trim();
-        let mut phonemes = alloc::vec::Vec::new();
+        // Strip (n) variant suffix
+        let word = word_part
+            .trim()
+            .split('(')
+            .next()
+            .unwrap_or(word_part.trim())
+            .to_lowercase();
 
+        let mut phonemes = alloc::vec::Vec::new();
         for sym in phonemes_str.split_whitespace() {
             let phoneme = arpabet::arpabet_to_phoneme_with_stress(sym).ok_or_else(|| {
                 ShabdakoshError::DictParseError(alloc::format!(
@@ -54,75 +95,105 @@ pub fn parse_cmudict(input: &str) -> Result<PronunciationDict> {
             )));
         }
 
-        dict.insert(word, &phonemes);
+        let mut pron = Pronunciation::new(phonemes);
+        if let Some(freq) = pending_freq.take() {
+            pron = pron.with_frequency(freq);
+        }
+        if let Some(region) = pending_region.take() {
+            pron = pron.with_region(region);
+        }
+
+        entries
+            .entry(alloc::string::ToString::to_string(&word))
+            .or_default()
+            .push(pron);
+    }
+
+    // Build the dictionary from collected entries
+    let mut dict = PronunciationDict::new();
+    for (word, pronunciations) in entries {
+        if let Some(entry) = DictEntry::from_pronunciations(pronunciations) {
+            dict.insert_entry(&word, entry);
+        }
     }
 
     Ok(dict)
 }
 
-/// Serializes a [`PronunciationDict`] to CMUdict text format.
+/// Serializes a [`PronunciationDict`] to extended CMUdict text format.
 ///
 /// Only base entries are exported (not user overlay entries).
 /// Use [`to_cmudict_with_user`] to include user entries.
 #[must_use]
 pub fn to_cmudict(dict: &PronunciationDict) -> String {
-    use crate::arpabet;
-
     let mut output = String::new();
     output.push_str(";;; Generated by shabdakosh\n");
 
-    for (word, phonemes) in dict.entries() {
-        output.push_str(word);
-        output.push_str("  ");
-        let symbols: alloc::vec::Vec<&str> = phonemes
-            .iter()
-            .filter_map(arpabet::phoneme_to_arpabet)
-            .collect();
-        output.push_str(&symbols.join(" "));
-        output.push('\n');
+    for (word, entry) in dict.entries() {
+        write_entry_cmudict(&mut output, word, entry);
     }
 
     output
 }
 
-/// Serializes a [`PronunciationDict`] to CMUdict text format,
+/// Serializes a [`PronunciationDict`] to extended CMUdict text format,
 /// including both base and user overlay entries.
 #[must_use]
 pub fn to_cmudict_with_user(dict: &PronunciationDict) -> String {
-    use crate::arpabet;
-
     let mut output = String::new();
     output.push_str(";;; Generated by shabdakosh\n");
 
-    // Base entries
-    for (word, phonemes) in dict.entries() {
-        // Skip if overridden by user entry
+    // Base entries (skip if overridden by user)
+    for (word, entry) in dict.entries() {
         if dict.user_entries().contains_key(word) {
             continue;
         }
-        output.push_str(word);
-        output.push_str("  ");
-        let symbols: alloc::vec::Vec<&str> = phonemes
-            .iter()
-            .filter_map(arpabet::phoneme_to_arpabet)
-            .collect();
-        output.push_str(&symbols.join(" "));
-        output.push('\n');
+        write_entry_cmudict(&mut output, word, entry);
     }
 
     // User entries
-    for (word, phonemes) in dict.user_entries() {
+    for (word, entry) in dict.user_entries() {
+        write_entry_cmudict(&mut output, word, entry);
+    }
+
+    output
+}
+
+/// Writes a single dictionary entry in extended CMUdict format.
+fn write_entry_cmudict(output: &mut String, word: &str, entry: &DictEntry) {
+    use crate::arpabet;
+    use core::fmt::Write;
+
+    for (i, pron) in entry.all().iter().enumerate() {
+        // Emit metadata annotations if present
+        let has_freq = pron.frequency().is_some();
+        let has_region = pron.region().is_some();
+        if has_freq || has_region {
+            output.push_str(";;;");
+            if let Some(freq) = pron.frequency() {
+                let _ = write!(output, " @freq={freq}");
+            }
+            if let Some(region) = pron.region() {
+                let _ = write!(output, " @region={}", region.code());
+            }
+            output.push('\n');
+        }
+
+        // Word (with variant suffix for non-primary)
         output.push_str(word);
+        if i > 0 {
+            let _ = write!(output, "({})", i + 1);
+        }
         output.push_str("  ");
-        let symbols: alloc::vec::Vec<&str> = phonemes
+
+        let symbols: alloc::vec::Vec<&str> = pron
+            .phonemes()
             .iter()
             .filter_map(arpabet::phoneme_to_arpabet)
             .collect();
         output.push_str(&symbols.join(" "));
         output.push('\n');
     }
-
-    output
 }
 
 /// Parses a JSON string into a [`PronunciationDict`].

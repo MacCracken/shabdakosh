@@ -5,7 +5,7 @@
 //!
 //! ## Features
 //!
-//! - **5,000+ entry English dictionary** generated at compile time from CMUdict
+//! - **10,000+ entry English dictionary** generated at compile time from CMUdict
 //! - **ARPABET mapping** — bidirectional conversion between ARPABET and svara phonemes
 //! - **User overlay** — application-specific entries that override the base dictionary
 //! - **Import/export** — CMUdict text format and JSON (with `json` feature)
@@ -17,7 +17,7 @@
 //!
 //! let dict = PronunciationDict::english();
 //! assert!(dict.lookup("hello").is_some());
-//! assert!(dict.len() >= 5000);
+//! assert!(dict.len() >= 10000);
 //! ```
 //!
 //! ## Feature Flags
@@ -35,6 +35,7 @@ pub mod arpabet;
 pub mod dictionary;
 pub mod error;
 
+pub use dictionary::entry::{DictEntry, Pronunciation, Region};
 pub use dictionary::PronunciationDict;
 pub use error::{Result, ShabdakoshError};
 
@@ -47,5 +48,8 @@ mod assert_traits {
     fn public_types_are_send_sync() {
         _assert_send_sync::<crate::error::ShabdakoshError>();
         _assert_send_sync::<crate::dictionary::PronunciationDict>();
+        _assert_send_sync::<crate::dictionary::entry::DictEntry>();
+        _assert_send_sync::<crate::dictionary::entry::Pronunciation>();
+        _assert_send_sync::<crate::dictionary::entry::Region>();
     }
 }
