@@ -1,8 +1,8 @@
 //! Integration tests for shabdakosh.
 
+use shabdakosh::PronunciationDict;
 use shabdakosh::dictionary::format;
 use shabdakosh::dictionary::{self, DictDiff};
-use shabdakosh::PronunciationDict;
 
 // --- Dictionary size and coverage ---
 
@@ -20,9 +20,26 @@ fn test_expanded_dictionary_size() {
 fn test_expanded_dictionary_common_words() {
     let dict = PronunciationDict::english();
     let words = [
-        "people", "because", "through", "enough", "beautiful", "colonel", "psychology",
-        "knight", "thought", "language", "world", "hello", "the", "computer", "science",
-        "music", "water", "friend", "school", "house",
+        "people",
+        "because",
+        "through",
+        "enough",
+        "beautiful",
+        "colonel",
+        "psychology",
+        "knight",
+        "thought",
+        "language",
+        "world",
+        "hello",
+        "the",
+        "computer",
+        "science",
+        "music",
+        "water",
+        "friend",
+        "school",
+        "house",
     ];
     for word in words {
         assert!(
@@ -228,7 +245,10 @@ fn test_cmudict_export_with_variants() {
     let output = format::to_cmudict(&dict);
     assert!(output.contains("read  "), "should have primary");
     assert!(output.contains("read(2)  "), "should have variant");
-    assert!(output.contains("@freq="), "should have frequency annotation");
+    assert!(
+        output.contains("@freq="),
+        "should have frequency annotation"
+    );
 }
 
 // --- IPA format ---
@@ -306,7 +326,10 @@ fn test_merge_override() {
 
     base.merge(&other);
     // "cat" overridden, "dog" added
-    assert_eq!(base.lookup("cat").unwrap(), &[svara::phoneme::Phoneme::PlosiveT]);
+    assert_eq!(
+        base.lookup("cat").unwrap(),
+        &[svara::phoneme::Phoneme::PlosiveT]
+    );
     assert!(base.lookup("dog").is_some());
 }
 
@@ -321,7 +344,10 @@ fn test_merge_conservative() {
 
     base.merge_conservative(&other);
     // "cat" kept, "dog" added
-    assert_eq!(base.lookup("cat").unwrap(), &[svara::phoneme::Phoneme::PlosiveK]);
+    assert_eq!(
+        base.lookup("cat").unwrap(),
+        &[svara::phoneme::Phoneme::PlosiveK]
+    );
     assert!(base.lookup("dog").is_some());
 }
 

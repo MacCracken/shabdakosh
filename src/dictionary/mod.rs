@@ -391,9 +391,13 @@ pub fn diff(left: &PronunciationDict, right: &PronunciationDict) -> DictDiff {
         let r = right.lookup_entry(word);
         match (l, r) {
             (None, Some(_)) => result.added.push(alloc::string::ToString::to_string(word)),
-            (Some(_), None) => result.removed.push(alloc::string::ToString::to_string(word)),
+            (Some(_), None) => result
+                .removed
+                .push(alloc::string::ToString::to_string(word)),
             (Some(le), Some(re)) if le != re => {
-                result.changed.push(alloc::string::ToString::to_string(word));
+                result
+                    .changed
+                    .push(alloc::string::ToString::to_string(word));
             }
             _ => {}
         }

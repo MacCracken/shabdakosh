@@ -201,7 +201,11 @@ mod tests {
 
     #[test]
     fn test_pronunciation_new() {
-        let p = Pronunciation::new(alloc::vec![Phoneme::PlosiveK, Phoneme::VowelAsh, Phoneme::PlosiveT]);
+        let p = Pronunciation::new(alloc::vec![
+            Phoneme::PlosiveK,
+            Phoneme::VowelAsh,
+            Phoneme::PlosiveT
+        ]);
         assert_eq!(p.phonemes().len(), 3);
         assert_eq!(p.frequency(), None);
         assert_eq!(p.region(), None);
@@ -242,8 +246,7 @@ mod tests {
     fn test_dict_entry_frequency_ordering() {
         let p1 = Pronunciation::new(alloc::vec![Phoneme::VowelA]).with_frequency(0.3);
         let p2 = Pronunciation::new(alloc::vec![Phoneme::VowelE]).with_frequency(0.7);
-        let entry =
-            DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
+        let entry = DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
         // Higher frequency should be first
         assert_eq!(entry.primary_phonemes(), &[Phoneme::VowelE]);
         assert_eq!(entry.all()[1].phonemes(), &[Phoneme::VowelA]);
@@ -253,19 +256,17 @@ mod tests {
     fn test_dict_entry_none_frequency_sorts_last() {
         let p1 = Pronunciation::new(alloc::vec![Phoneme::VowelA]); // no frequency
         let p2 = Pronunciation::new(alloc::vec![Phoneme::VowelE]).with_frequency(0.5);
-        let entry =
-            DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
+        let entry = DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
         assert_eq!(entry.primary_phonemes(), &[Phoneme::VowelE]);
     }
 
     #[test]
     fn test_dict_entry_for_region() {
-        let p1 = Pronunciation::new(alloc::vec![Phoneme::VowelA])
-            .with_region(Region::GeneralAmerican);
+        let p1 =
+            Pronunciation::new(alloc::vec![Phoneme::VowelA]).with_region(Region::GeneralAmerican);
         let p2 = Pronunciation::new(alloc::vec![Phoneme::VowelOpenA])
             .with_region(Region::ReceivedPronunciation);
-        let entry =
-            DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
+        let entry = DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
         let rp = entry.for_region(Region::ReceivedPronunciation).unwrap();
         assert_eq!(rp.phonemes(), &[Phoneme::VowelOpenA]);
     }
@@ -295,8 +296,7 @@ mod tests {
     fn test_serde_roundtrip_dict_entry() {
         let p1 = Pronunciation::new(alloc::vec![Phoneme::VowelA]).with_frequency(0.7);
         let p2 = Pronunciation::new(alloc::vec![Phoneme::VowelE]).with_frequency(0.3);
-        let entry =
-            DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
+        let entry = DictEntry::from_pronunciations(alloc::vec![p1, p2]).unwrap();
         let json = serde_json::to_string(&entry).unwrap();
         let entry2: DictEntry = serde_json::from_str(&json).unwrap();
         assert_eq!(entry, entry2);

@@ -243,24 +243,18 @@ mod tests {
             arpabet_to_phoneme_with_stress("AA1"),
             Some(Phoneme::VowelOpenA)
         );
-        assert_eq!(
-            arpabet_to_phoneme_with_stress("IY0"),
-            Some(Phoneme::VowelE)
-        );
+        assert_eq!(arpabet_to_phoneme_with_stress("IY0"), Some(Phoneme::VowelE));
         // Consonants have no stress digit
-        assert_eq!(
-            arpabet_to_phoneme_with_stress("B"),
-            Some(Phoneme::PlosiveB)
-        );
+        assert_eq!(arpabet_to_phoneme_with_stress("B"), Some(Phoneme::PlosiveB));
     }
 
     #[test]
     fn test_serde_roundtrip() {
         // Verify all mapped phonemes survive serde roundtrip
         let symbols = [
-            "AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY",
-            "UH", "UW", "B", "CH", "D", "DH", "F", "G", "HH", "JH", "K", "L", "M", "N", "NG",
-            "P", "R", "S", "SH", "T", "TH", "V", "W", "Y", "Z", "ZH",
+            "AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH",
+            "UW", "B", "CH", "D", "DH", "F", "G", "HH", "JH", "K", "L", "M", "N", "NG", "P", "R",
+            "S", "SH", "T", "TH", "V", "W", "Y", "Z", "ZH",
         ];
         for sym in symbols {
             let phoneme = arpabet_to_phoneme(sym).unwrap();

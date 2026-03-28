@@ -12,8 +12,8 @@ pub mod ssml;
 
 use alloc::string::String;
 
-use crate::dictionary::entry::{DictEntry, Pronunciation, Region};
 use crate::dictionary::PronunciationDict;
+use crate::dictionary::entry::{DictEntry, Pronunciation, Region};
 use crate::error::{Result, ShabdakoshError};
 
 /// Parses an extended CMUdict-format string into a [`PronunciationDict`].
@@ -134,7 +134,9 @@ pub fn to_cmudict(dict: &PronunciationDict) -> String {
     words.sort_unstable();
 
     for word in words {
-        let Some(entry) = dict.entries().get(word) else { continue };
+        let Some(entry) = dict.entries().get(word) else {
+            continue;
+        };
         write_entry_cmudict(&mut output, word, entry);
     }
 
@@ -156,7 +158,9 @@ pub fn to_cmudict_with_user(dict: &PronunciationDict) -> String {
         if dict.user_entries().contains_key(word) {
             continue;
         }
-        let Some(entry) = dict.entries().get(word) else { continue };
+        let Some(entry) = dict.entries().get(word) else {
+            continue;
+        };
         write_entry_cmudict(&mut output, word, entry);
     }
 
@@ -326,8 +330,9 @@ pub fn load_cmudict_file(path: &std::path::Path) -> Result<PronunciationDict> {
 #[cfg(feature = "std")]
 pub fn save_cmudict_file(dict: &PronunciationDict, path: &std::path::Path) -> Result<()> {
     let data = to_cmudict(dict);
-    std::fs::write(path, data)
-        .map_err(|e| ShabdakoshError::DictParseError(alloc::format!("failed to write file: {e}")))?;
+    std::fs::write(path, data).map_err(|e| {
+        ShabdakoshError::DictParseError(alloc::format!("failed to write file: {e}"))
+    })?;
     Ok(())
 }
 

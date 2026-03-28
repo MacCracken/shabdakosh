@@ -5,9 +5,9 @@
 
 use alloc::string::String;
 
+use crate::dictionary::PronunciationDict;
 use crate::dictionary::entry::{DictEntry, Pronunciation};
 use crate::dictionary::format::{xml_escape, xml_unescape};
-use crate::dictionary::PronunciationDict;
 use crate::error::{Result, ShabdakoshError};
 use crate::ipa;
 

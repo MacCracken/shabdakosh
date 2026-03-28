@@ -97,11 +97,7 @@ mod tests {
 
     #[test]
     fn test_roundtrip() {
-        let phonemes = alloc::vec![
-            Phoneme::PlosiveK,
-            Phoneme::VowelAsh,
-            Phoneme::PlosiveT,
-        ];
+        let phonemes = alloc::vec![Phoneme::PlosiveK, Phoneme::VowelAsh, Phoneme::PlosiveT,];
         let tag = to_ssml_phoneme("cat", &phonemes);
         let (word, parsed) = parse_ssml_phoneme(&tag).unwrap();
         assert_eq!(word, "cat");
