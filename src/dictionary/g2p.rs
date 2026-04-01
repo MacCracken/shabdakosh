@@ -307,7 +307,7 @@ impl<M: G2PModel + Clone> Clone for FallbackDict<M> {
 /// The actual FST engine is **not bundled** — this wrapper calls out to
 /// an external library or binary. See the `phonetisaurus-g2p-rs` crate
 /// (when available) for a pure-Rust implementation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FstModel {
     model_path: alloc::string::String,
     notation: FstNotation,
@@ -559,5 +559,23 @@ mod tests {
         let (phonemes, source) = fallback.lookup_with_source("test").unwrap();
         assert_eq!(phonemes, alloc::vec![Phoneme::PlosiveT]);
         assert_eq!(source, LookupSource::UserOverlay);
+    }
+
+    #[test]
+    fn test_fst_model_serde_roundtrip() {
+        let model = FstModel::new("/path/to/model.fst", FstNotation::Arpabet);
+        let json = serde_json::to_string(&model).unwrap();
+        let model2: FstModel = serde_json::from_str(&json).unwrap();
+        assert_eq!(model.model_path(), model2.model_path());
+        assert_eq!(model.notation(), model2.notation());
+    }
+
+    #[test]
+    fn test_fst_notation_serde_roundtrip() {
+        for notation in [FstNotation::Arpabet, FstNotation::Ipa] {
+            let json = serde_json::to_string(&notation).unwrap();
+            let notation2: FstNotation = serde_json::from_str(&json).unwrap();
+            assert_eq!(notation, notation2);
+        }
     }
 }

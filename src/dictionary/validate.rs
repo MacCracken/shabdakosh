@@ -12,6 +12,7 @@ use crate::ipa::phoneme_to_ipa;
 
 /// A dictionary entry that contains phonemes not in the target inventory.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct InvalidEntry {
     /// The word with invalid phonemes.
     pub word: String,
@@ -19,8 +20,20 @@ pub struct InvalidEntry {
     pub invalid_phonemes: Vec<Phoneme>,
 }
 
+impl InvalidEntry {
+    /// Creates a new invalid entry record.
+    #[must_use]
+    pub fn new(word: String, invalid_phonemes: Vec<Phoneme>) -> Self {
+        Self {
+            word,
+            invalid_phonemes,
+        }
+    }
+}
+
 /// Result of validating a dictionary against a phoneme inventory.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct ValidationReport {
     /// The language code of the inventory used for validation.
     pub language: String,
@@ -29,6 +42,15 @@ pub struct ValidationReport {
 }
 
 impl ValidationReport {
+    /// Creates a new validation report.
+    #[must_use]
+    pub fn new(language: String, invalid_entries: Vec<InvalidEntry>) -> Self {
+        Self {
+            language,
+            invalid_entries,
+        }
+    }
+
     /// Returns `true` if all entries passed validation.
     #[must_use]
     pub fn is_valid(&self) -> bool {
@@ -148,6 +170,7 @@ fn check_entry(
 
 /// A phonotactic violation found in a dictionary entry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PhonotacticViolation {
     /// The word containing the violation.
     pub word: String,
@@ -159,6 +182,7 @@ pub struct PhonotacticViolation {
 
 /// Result of phonotactic validation across a dictionary.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PhonotacticReport {
     /// The language code of the phonotactic profile used.
     pub language: String,
@@ -242,20 +266,24 @@ fn check_pronunciation(
         if let (Some(a), Some(b)) = (ipa_a, ipa_b) {
             let sequence = alloc::format!("{a}{b}");
 
-            // Check if this sequence is explicitly forbidden in onset position.
-            if let Some(false) = phonotactics.is_permitted(&sequence, SyllablePosition::Onset) {
-                violations.push(PhonotacticViolation {
-                    word: alloc::string::ToString::to_string(word),
-                    description: alloc::format!("forbidden onset sequence '{sequence}'"),
-                    sequence: sequence.clone(),
-                });
-            }
+            // Check if this sequence is explicitly forbidden in any syllable position.
+            // Without full syllabification (a v2.0 feature), we check both onset
+            // and coda and report a single violation if forbidden in either.
+            let forbidden_onset =
+                phonotactics.is_permitted(&sequence, SyllablePosition::Onset) == Some(false);
+            let forbidden_coda =
+                phonotactics.is_permitted(&sequence, SyllablePosition::Coda) == Some(false);
 
-            // Check coda position too.
-            if let Some(false) = phonotactics.is_permitted(&sequence, SyllablePosition::Coda) {
+            if forbidden_onset || forbidden_coda {
+                let position = match (forbidden_onset, forbidden_coda) {
+                    (true, true) => "onset/coda",
+                    (true, false) => "onset",
+                    (false, true) => "coda",
+                    _ => unreachable!(),
+                };
                 violations.push(PhonotacticViolation {
                     word: alloc::string::ToString::to_string(word),
-                    description: alloc::format!("forbidden coda sequence '{sequence}'"),
+                    description: alloc::format!("forbidden {position} sequence '{sequence}'"),
                     sequence,
                 });
             }

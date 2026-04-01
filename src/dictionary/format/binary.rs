@@ -136,6 +136,7 @@ fn to_dict_entry(prons: Vec<BinaryPronunciation>) -> Option<DictEntry> {
 /// # Errors
 ///
 /// Returns [`ShabdakoshError::DictParseError`] if serialization fails.
+#[must_use = "serialization result should be used"]
 pub fn to_binary(dict: &PronunciationDict) -> Result<Vec<u8>> {
     let intermediate = BinaryDict::from_dict(dict);
     let payload = postcard::to_allocvec(&intermediate).map_err(|e| {
@@ -155,6 +156,7 @@ pub fn to_binary(dict: &PronunciationDict) -> Result<Vec<u8>> {
 ///
 /// Returns [`ShabdakoshError::DictParseError`] if the magic number, version,
 /// or payload is invalid.
+#[must_use = "deserialization result should be used"]
 pub fn from_binary(data: &[u8]) -> Result<PronunciationDict> {
     if data.len() < HEADER_SIZE {
         return Err(ShabdakoshError::DictParseError(

@@ -29,6 +29,7 @@ fn main() {
         "import" => cmd_import(&args[2..]),
         "export" => cmd_export(&args[2..]),
         "merge" => cmd_merge(&args[2..]),
+        "validate" => cmd_validate(&args[2..]),
         "diff" => cmd_diff(&args[2..]),
         "coverage" => cmd_coverage(&args[2..]),
         "info" => cmd_info(&args[2..]),
@@ -164,6 +165,36 @@ fn cmd_export(args: &[String]) -> Result<(), String> {
         "exported {} entries to {output} ({out_format} format)",
         dict.len()
     );
+    Ok(())
+}
+
+fn cmd_validate(args: &[String]) -> Result<(), String> {
+    if args.is_empty() {
+        return Err("usage: validate <dict-file>".into());
+    }
+    let fmt = detect_format(&args[0]);
+    let dict = load_dict(fmt, &args[0])?;
+
+    // Check for empty entries or entries with no phonemes.
+    let mut issues = 0_usize;
+    for (word, entry) in dict.entries() {
+        if entry.all().is_empty() {
+            println!("  empty entry: {word}");
+            issues += 1;
+        }
+        for pron in entry.all() {
+            if pron.phonemes().is_empty() {
+                println!("  empty phonemes: {word}");
+                issues += 1;
+            }
+        }
+    }
+
+    if issues == 0 {
+        println!("validated {} entries: no issues found", dict.len());
+    } else {
+        println!("validated {} entries: {issues} issue(s) found", dict.len());
+    }
     Ok(())
 }
 

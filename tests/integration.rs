@@ -617,10 +617,7 @@ mod varna_tests {
 
     #[test]
     fn test_validation_report_serde_roundtrip() {
-        let report = validate::ValidationReport {
-            language: "en".into(),
-            invalid_entries: vec![],
-        };
+        let report = validate::ValidationReport::new("en".into(), vec![]);
         let json = serde_json::to_string(&report).unwrap();
         let rt: validate::ValidationReport = serde_json::from_str(&json).unwrap();
         assert_eq!(report, rt);

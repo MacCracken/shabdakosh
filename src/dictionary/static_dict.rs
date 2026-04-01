@@ -25,7 +25,11 @@ use svara::phoneme::Phoneme;
 use crate::dictionary::entry::Region;
 
 /// A single static pronunciation (no heap allocation).
+///
+/// Contains `&'static` references to data baked into the binary at compile time.
+/// Not serializable — use [`Pronunciation`](super::entry::Pronunciation) for that.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct StaticPronunciation {
     /// Phoneme sequence (static slice).
     pub phonemes: &'static [Phoneme],
@@ -36,7 +40,11 @@ pub struct StaticPronunciation {
 }
 
 /// A static dictionary entry containing one or more pronunciations.
+///
+/// Contains `&'static` references — not serializable.
+/// Use [`DictEntry`](super::entry::DictEntry) for serializable entries.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct StaticEntry {
     /// All pronunciations, sorted by frequency descending.
     pub pronunciations: &'static [StaticPronunciation],

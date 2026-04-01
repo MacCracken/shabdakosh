@@ -22,6 +22,7 @@ use super::PronunciationDict;
 
 /// Coverage analysis of a text corpus against a dictionary.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct CoverageReport {
     /// Total number of word tokens in the corpus.
     pub total_tokens: usize,

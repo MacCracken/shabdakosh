@@ -38,6 +38,7 @@ use super::PronunciationDict;
 ///
 /// Contains the surrounding words and the position of the target word.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct HeteronymContext {
     /// The surrounding words (the full sentence or phrase).
     pub words: Vec<String>,
@@ -50,10 +51,10 @@ impl HeteronymContext {
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if `position >= words.len()`.
+    /// Panics if `position >= words.len()`.
     #[must_use]
     pub fn new(words: &[&str], position: usize) -> Self {
-        debug_assert!(
+        assert!(
             position < words.len(),
             "position {position} out of bounds for {} words",
             words.len()
@@ -70,7 +71,10 @@ impl HeteronymContext {
     /// Returns the words before the target word.
     #[must_use]
     pub fn preceding_words(&self) -> &[String] {
-        &self.words[..self.position]
+        // position is validated in new(); after deserialization it could be
+        // out of bounds, so clamp defensively.
+        let pos = self.position.min(self.words.len());
+        &self.words[..pos]
     }
 
     /// Returns the words after the target word.
@@ -83,10 +87,14 @@ impl HeteronymContext {
         }
     }
 
-    /// Returns the target word.
+    /// Returns the target word, or `None` if the position is out of bounds
+    /// (can happen after deserialization with stale data).
     #[must_use]
     pub fn target_word(&self) -> &str {
-        &self.words[self.position]
+        self.words
+            .get(self.position)
+            .map(|s| s.as_str())
+            .unwrap_or("")
     }
 }
 

@@ -46,6 +46,7 @@ pub use dictionary::coverage::CoverageReport;
 pub use dictionary::detect::{detect_language_hint, detect_script, detect_script_name};
 pub use dictionary::entry::{DictEntry, Pronunciation, Region};
 pub use dictionary::g2p::{FallbackDict, G2PModel, G2PResult, LookupSource};
+pub use dictionary::stream::LookupStream;
 pub use dictionary::trie::PrefixTrie;
 #[cfg(feature = "varna")]
 pub use dictionary::validate::{
@@ -66,6 +67,14 @@ mod assert_traits {
         _assert_send_sync::<crate::dictionary::entry::DictEntry>();
         _assert_send_sync::<crate::dictionary::entry::Pronunciation>();
         _assert_send_sync::<crate::dictionary::entry::Region>();
+        _assert_send_sync::<crate::dictionary::DictDiff>();
+        _assert_send_sync::<crate::dictionary::g2p::G2PResult>();
+        _assert_send_sync::<crate::dictionary::g2p::LookupSource>();
+        _assert_send_sync::<crate::dictionary::g2p::FstModel>();
+        _assert_send_sync::<crate::dictionary::g2p::FstNotation>();
+        _assert_send_sync::<crate::dictionary::trie::PrefixTrie>();
+        _assert_send_sync::<crate::dictionary::coverage::CoverageReport>();
+        _assert_send_sync::<crate::dictionary::heteronym::HeteronymContext>();
     }
 
     #[cfg(feature = "varna")]
@@ -73,5 +82,7 @@ mod assert_traits {
     fn varna_types_are_send_sync() {
         _assert_send_sync::<crate::dictionary::validate::ValidationReport>();
         _assert_send_sync::<crate::dictionary::validate::InvalidEntry>();
+        _assert_send_sync::<crate::dictionary::validate::PhonotacticViolation>();
+        _assert_send_sync::<crate::dictionary::validate::PhonotacticReport>();
     }
 }
