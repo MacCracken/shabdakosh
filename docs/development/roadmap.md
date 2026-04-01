@@ -1,6 +1,50 @@
 # shabdakosh Roadmap
 
-Current version: **1.1.0**
+Current version: **2.0.0**
+
+---
+
+## Completed
+
+### v2.0 — Breaking Changes
+
+Unified phoneme notation, syllabification, morphological decomposition, performance optimizations, and `#[non_exhaustive]` on all public structs.
+
+- **Feature**: `PhonemeNotation` trait — abstract over ARPABET, IPA, X-SAMPA (`notation` module)
+- **Feature**: `Syllable`, `StressLevel`, `syllabify()` — syllable boundaries via Maximal Onset Principle
+- **Feature**: `Morpheme`, `MorphemeKind`, `Decomposition` — morphological decomposition tags
+- **Performance**: Lookup 3x faster, binary serialize 35% faster, trie construction 18% faster
+- **Breaking**: `#[non_exhaustive]` on all public structs; trie children switched to HashMap
+
+### v1.4 — Quality & Tooling
+
+Phonotactic validation, coverage reporting, CLI, C FFI, WASM, heteronym hooks.
+
+- **Feature**: `PhonotacticReport` — detect forbidden phoneme sequences via varna
+- **Feature**: `CoverageReport` — text corpus coverage analysis
+- **Feature**: `shabdakosh-cli` binary — import/export/merge/validate/diff/coverage/info
+- **Feature**: C FFI (`extern "C"` API with opaque handles, `ffi` feature)
+- **Feature**: WASM bindings via `wasm-bindgen` (`wasm` feature)
+- **Feature**: `HeteronymResolver` trait and `lookup_with_context()` for POS-tagger integration
+
+### v1.3 — Performance & Scale
+
+Compile-time perfect hash, binary format, lazy loading, trie index, streaming lookup.
+
+- **Feature**: `PrefixTrie` for O(k) prefix search and autocomplete
+- **Feature**: Binary dictionary format via postcard (`to_binary` / `from_binary`)
+- **Feature**: PHF static dictionary — zero-allocation base lookups (`static_dict`)
+- **Feature**: `LazyDict` with mmap for on-demand loading (`mmap` feature)
+- **Feature**: `LookupStream` iterator for zero-allocation streaming word processing
+
+### v1.2 — Neural G2P Integration
+
+G2P model trait, fallback chain (user overlay → base dict → model), Phonetisaurus FST stub, confidence scores, dictionary learning.
+
+- **Feature**: `G2PModel` trait, `G2PResult`, `FallbackDict<M>`
+- **Feature**: `LookupSource` enum for identifying where results came from
+- **Feature**: `FstModel` / `FstNotation` integration point for WFST-based G2P
+- **Feature**: `promote_prediction()` / `promote_if_confident()` for dictionary learning
 
 ---
 
@@ -12,40 +56,3 @@ Current version: **1.1.0**
 - [ ] **Hindi/Devanagari dictionary** (5,000+ entries) — validated against `varna::phoneme::hindi()`. Near 1:1 grapheme-phoneme mapping.
 - [ ] **German dictionary** (5,000+ entries) — validated against `varna::phoneme::german()`. Compound word handling via decomposition.
 - [ ] **Sanskrit dictionary** (5,000+ entries) — validated against `varna::phoneme::sanskrit()`. Leverages varna's Swadesh list + Devanagari script metadata.
-
-### v1.2 — Neural G2P Integration
-
-**Goal**: Bridge dictionary lookup with neural G2P models for unknown words, inspired by [DeepPhonemizer](https://github.com/ExpressiveLabs/deepphonemizer-rs), [OpenPhonemizer](https://github.com/NeuralVox/OpenPhonemizer), and [OLaPh](https://arxiv.org/abs/2509.20086).
-
-- [ ] **G2P model trait** — Define a `trait G2PModel { fn predict(&self, word: &str) -> Vec<Phoneme>; }` that neural models can implement. shabdakosh provides the trait; model crates provide implementations.
-- [ ] **Fallback chain** — `PronunciationDict::with_fallback(model: impl G2PModel)` — lookup tries: user overlay -> base dict -> neural model. This is the pattern used by gruut and eSpeak-ng.
-- [ ] **Phonetisaurus FST support** — Optional integration with `phonetisaurus-g2p-rs` for WFST-based G2P. Lighter than neural models, good accuracy.
-- [ ] **Confidence scores** — G2P predictions include a confidence score (0.0-1.0). Low-confidence predictions can be flagged for human review and addition to the dictionary.
-- [ ] **Dictionary learning** — When a G2P prediction is confirmed (by user or downstream feedback), automatically promote it to the user overlay. Dictionaries grow from usage.
-
-### v1.3 — Performance & Scale
-
-**Goal**: Handle 100K+ entry dictionaries efficiently for production TTS workloads.
-
-- [ ] **Compile-time perfect hash (phf)** — Replace hashbrown with phf for the static base dictionary. Zero runtime allocation for base lookups.
-- [ ] **Binary dictionary format** — Compact serialization for fast loading. Avoid JSON/text parsing overhead for large dictionaries. Memory-mapped file support.
-- [ ] **Lazy loading** — Load dictionary entries on demand from a binary file. Only materialize entries that are actually looked up. Critical for embedded/mobile.
-- [ ] **Trie index** — Prefix-based lookup for autocomplete and partial matching (e.g., "comput" matches "computer", "compute", "computing").
-- [ ] **Streaming lookup** — Process words as a stream without materializing the full dictionary in memory. For real-time TTS pipelines.
-
-### v1.4 — Quality & Tooling
-
-**Goal**: Tools for dictionary maintainers and TTS developers.
-
-- [ ] **Pronunciation validation** — Detect impossible or unlikely phoneme sequences using varna's phonotactic constraints per language (e.g., three consecutive plosives). Replaces ad-hoc rules with varna's structured data.
-- [ ] **Coverage reporting** — Given a text corpus, report what percentage of tokens are dictionary-covered vs. falling through to rules/G2P. Identifies gaps.
-- [ ] **Dictionary builder CLI** — Command-line tool for: importing CMUdict/IPA/PLS sources, merging dictionaries, validating entries, exporting to any format, computing diff between versions.
-- [ ] **C FFI** — `extern "C"` API for dictionary lookup, enabling integration with C/C++ TTS engines, Python bindings (via PyO3), and WASM.
-- [ ] **WASM target** — Compile to WebAssembly for browser-based TTS. Dictionary served as a binary blob, looked up client-side.
-- [ ] **Heteronym disambiguation hooks** — Callback API where a POS tagger can inform the dictionary which variant to select for heteronyms (e.g., "I read books" vs "I have read books").
-
-### v2.0 — Breaking Changes (eventual)
-
-- [ ] **Unified phoneme notation** — Abstract over ARPABET, IPA, and SAMPA with a `PhonemeNotation` trait. Dictionary entries store notation-agnostic phoneme IDs.
-- [ ] **Syllabification** — Dictionary entries include syllable boundaries. Needed for stress rules, hyphenation, and rhythm-based prosody.
-- [ ] **Morphological awareness** — Dictionary entries can be tagged with morphological decomposition (un+happy, re+write). Enables productive pronunciation of derived forms without explicit entries.

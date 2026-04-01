@@ -38,6 +38,7 @@ pub mod error;
 #[cfg(feature = "ffi")]
 pub mod ffi;
 pub mod ipa;
+pub mod notation;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 

@@ -27,8 +27,10 @@ pub mod g2p;
 pub mod heteronym;
 #[cfg(feature = "mmap")]
 pub mod lazy;
+pub mod morphology;
 pub mod static_dict;
 pub mod stream;
+pub mod syllable;
 pub mod trie;
 #[cfg(feature = "varna")]
 pub mod validate;
