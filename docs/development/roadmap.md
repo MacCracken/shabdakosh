@@ -35,20 +35,6 @@
 - Dictionary diff (added/removed/changed)
 - All v1.0 criteria met
 
-## v1.0 Criteria — All Met
-
-- [x] 10,000+ entry English dictionary (10,600+)
-- [x] Hash map for O(1) lookup (hashbrown::HashMap)
-- [x] Variant pronunciations with selection API (DictEntry, lookup_all, for_region)
-- [x] IPA import/export (ipa.rs, format::parse_ipa/to_ipa)
-- [x] Comprehensive documentation (rustdoc on all public items)
-- [x] All public types: Serialize + Deserialize + roundtrip tested
-- [x] Benchmarks baselined (criterion)
-
----
-
-## Post-v1.0 Roadmap
-
 ### v1.1.0 — Multi-Language Foundation (varna integration) (2026-04-01)
 
 - Optional `varna` feature flag with inventory validation
@@ -58,7 +44,12 @@
 - Script detection and language detection hints via varna's Unicode ranges
 - IPA length mark normalization for cross-inventory validation
 
-**Pending data expansion** (future minor releases):
+---
+
+## Backlog
+
+### Data Expansion
+
 - [ ] **Spanish dictionary** (5,000+ entries) — validated against `varna::phoneme::spanish()`. RAE-sourced pronunciation data.
 - [ ] **Hindi/Devanagari dictionary** (5,000+ entries) — validated against `varna::phoneme::hindi()`. Near 1:1 grapheme-phoneme mapping.
 - [ ] **German dictionary** (5,000+ entries) — validated against `varna::phoneme::german()`. Compound word handling via decomposition.
