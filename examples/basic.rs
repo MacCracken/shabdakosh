@@ -52,7 +52,11 @@ fn main() {
     #[cfg(feature = "varna")]
     {
         // Script detection
-        let scripts = [("hello", "Latin"), ("नमस्ते", "Devanagari"), ("مرحبا", "Arabic")];
+        let scripts = [
+            ("hello", "Latin"),
+            ("नमस्ते", "Devanagari"),
+            ("مرحبا", "Arabic"),
+        ];
         for (word, expected) in scripts {
             if let Some((_, name)) = shabdakosh::detect_script_name(word) {
                 println!("{word} -> {name} script");
@@ -80,7 +84,10 @@ fn main() {
             ],
         );
         if let Some(report) = test_dict.validate() {
-            println!("Validation: {}", if report.is_valid() { "PASS" } else { "FAIL" });
+            println!(
+                "Validation: {}",
+                if report.is_valid() { "PASS" } else { "FAIL" }
+            );
         }
     }
 }
