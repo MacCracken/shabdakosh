@@ -1,48 +1,6 @@
 # shabdakosh Roadmap
 
-## Completed
-
-### v0.1.0 — Initial Release (2026-03-27)
-
-- 5,014-entry English dictionary from CMUdict (compile-time codegen)
-- ARPABET-to-svara Phoneme bidirectional mapping (39 symbols)
-- User overlay (application-specific entries override base dictionary)
-- CMUdict text format import/export (no_std compatible)
-- JSON import/export (optional `json` feature)
-- File I/O convenience wrappers (std-only)
-- no_std + alloc support
-- Serde roundtrip for all types
-- Send + Sync compile-time assertions
-- Criterion benchmarks for construction and lookup
-
-### v0.2.0 — Dictionary Expansion (2026-03-27)
-
-- 10,600+ entry English dictionary (doubled from 5K)
-- Variant pronunciations for 23 common heteronyms (read, live, wind, etc.)
-- `Pronunciation`, `DictEntry`, `Region` types
-- Frequency metadata (`@freq` annotations)
-- Extended CMUdict format: `WORD(n)` variants, `@freq`/`@region` annotations
-- New lookup methods: `lookup_entry()`, `lookup_all()`, `insert_entry()`
-
-### v1.0.0 — Stable Release (2026-03-27)
-
-- O(1) lookup via hashbrown::HashMap
-- IPA module: bidirectional IPA-Phoneme mapping
-- IPA format import/export
-- W3C PLS (Pronunciation Lexicon Specification) import/export
-- SSML `<phoneme>` tag support
-- Dictionary merge (override + conservative)
-- Dictionary diff (added/removed/changed)
-- All v1.0 criteria met
-
-### v1.1.0 — Multi-Language Foundation (varna integration) (2026-04-01)
-
-- Optional `varna` feature flag with inventory validation
-- Lexicon ingestion: `varna::lexicon::Lexicon` → `PronunciationDict` via `from_lexicon()`
-- Language-tagged entries: `language: Option<String>` on `PronunciationDict`
-- Seed dictionaries from varna Swadesh lists: `spanish()`, `hindi()`, `german()`, `sanskrit()`
-- Script detection and language detection hints via varna's Unicode ranges
-- IPA length mark normalization for cross-inventory validation
+Current version: **1.1.0**
 
 ---
 
