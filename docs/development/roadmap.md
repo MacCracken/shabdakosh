@@ -48,11 +48,10 @@ G2P model trait, fallback chain (user overlay → base dict → model), Phonetis
 
 ---
 
-## Backlog
+## Out of Scope
 
-### Data Expansion
+### Multi-language Data Expansion
 
-- [ ] **Spanish dictionary** (5,000+ entries) — validated against `varna::phoneme::spanish()`. RAE-sourced pronunciation data.
-- [ ] **Hindi/Devanagari dictionary** (5,000+ entries) — validated against `varna::phoneme::hindi()`. Near 1:1 grapheme-phoneme mapping.
-- [ ] **German dictionary** (5,000+ entries) — validated against `varna::phoneme::german()`. Compound word handling via decomposition.
-- [ ] **Sanskrit dictionary** (5,000+ entries) — validated against `varna::phoneme::sanskrit()`. Leverages varna's Swadesh list + Devanagari script metadata.
+5,000+ entry dictionaries for Spanish, Hindi, German, and Sanskrit were originally planned here but belong downstream — shabdakosh cannot depend on shabda (circular), and varna only provides 25-entry Swadesh seeds. Language expansion should live in shabda or a dedicated data crate that can source and generate pronunciations.
+
+shabdakosh provides the infrastructure: `from_lexicon()`, IPA/CMUdict/PLS/binary import, validation, and seed constructors.
