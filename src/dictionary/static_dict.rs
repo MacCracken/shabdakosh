@@ -86,15 +86,20 @@ include!(concat!(env!("OUT_DIR"), "/generated_phf_dict.rs"));
 #[cfg(feature = "phf")]
 #[must_use]
 pub fn lookup(word: &str) -> Option<&'static [Phoneme]> {
-    lookup_entry(&word.to_lowercase()).map(|e| e.primary_phonemes())
+    lookup_entry(word).map(|e| e.primary_phonemes())
 }
 
 /// Looks up the full static entry for a word.
 #[cfg(feature = "phf")]
 #[must_use]
 pub fn lookup_entry(word: &str) -> Option<&'static StaticEntry> {
-    let key = word.to_lowercase();
-    PHF_ENGLISH_DICT.get(key.as_str())
+    // Fast path: skip allocation if already lowercase.
+    if word.bytes().all(|b| !b.is_ascii_uppercase()) {
+        PHF_ENGLISH_DICT.get(word)
+    } else {
+        let key = word.to_lowercase();
+        PHF_ENGLISH_DICT.get(key.as_str())
+    }
 }
 
 /// Returns the number of entries in the static dictionary.

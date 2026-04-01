@@ -314,10 +314,17 @@ impl PronunciationDict {
     /// Returns the [`DictEntry`] with all pronunciation variants.
     #[must_use]
     pub fn lookup_entry(&self, word: &str) -> Option<&DictEntry> {
-        let key = alloc::string::ToString::to_string(&word.to_lowercase());
-        self.user_entries
-            .get(&key)
-            .or_else(|| self.entries.get(&key))
+        // Fast path: if already lowercase, look up without allocating.
+        if word.bytes().all(|b| !b.is_ascii_uppercase()) {
+            self.user_entries
+                .get(word)
+                .or_else(|| self.entries.get(word))
+        } else {
+            let key = alloc::string::ToString::to_string(&word.to_lowercase());
+            self.user_entries
+                .get(&key)
+                .or_else(|| self.entries.get(&key))
+        }
     }
 
     /// Looks up all pronunciations of a word.

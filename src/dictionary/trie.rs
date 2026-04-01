@@ -20,7 +20,8 @@
 //! assert!(matches.contains(&"hello".to_string()));
 //! ```
 
-use alloc::{collections::BTreeMap, string::String, vec::Vec};
+use alloc::{string::String, vec::Vec};
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::PronunciationDict;
@@ -28,15 +29,14 @@ use super::PronunciationDict;
 /// A prefix trie node.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 struct TrieNode {
-    children: BTreeMap<char, TrieNode>,
+    children: HashMap<char, TrieNode>,
     is_word: bool,
 }
 
 /// A prefix trie built from dictionary words.
 ///
 /// Supports O(k) exact match and prefix search, where k is the key length.
-/// Uses [`BTreeMap`] for children to keep memory layout compact and
-/// serialization deterministic.
+/// Uses [`HashMap`](hashbrown::HashMap) for O(1) child access.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PrefixTrie {
     root: TrieNode,
@@ -106,6 +106,7 @@ impl PrefixTrie {
         let mut results = Vec::new();
         let mut current = String::from(prefix);
         collect_words(node, &mut current, &mut results);
+        results.sort_unstable();
         results
     }
 

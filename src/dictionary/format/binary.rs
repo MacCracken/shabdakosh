@@ -40,11 +40,11 @@ const VERSION: u8 = 1;
 /// Header size: 4 bytes magic + 1 byte version.
 const HEADER_SIZE: usize = 5;
 
-/// Intermediate representation for binary serialization.
+/// Owned intermediate representation for binary deserialization.
 ///
 /// Avoids the `#[serde(untagged)]` backward-compat deserializers in
 /// `PronunciationDict` which postcard doesn't support.
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct BinaryDict {
     entries: BTreeMap<String, Vec<BinaryPronunciation>>,
     user_entries: BTreeMap<String, Vec<BinaryPronunciation>>,
@@ -58,19 +58,40 @@ struct BinaryPronunciation {
     region: Option<Region>,
 }
 
-impl BinaryDict {
-    fn from_dict(dict: &PronunciationDict) -> Self {
+/// Borrowing intermediate representation for zero-copy serialization.
+#[derive(Serialize)]
+struct BinaryDictRef<'a> {
+    entries: BTreeMap<&'a str, Vec<BinaryPronunciationRef<'a>>>,
+    user_entries: BTreeMap<&'a str, Vec<BinaryPronunciationRef<'a>>>,
+    language: Option<&'a str>,
+}
+
+#[derive(Serialize)]
+struct BinaryPronunciationRef<'a> {
+    phonemes: &'a [svara::phoneme::Phoneme],
+    frequency: Option<f32>,
+    region: Option<Region>,
+}
+
+impl<'a> BinaryDictRef<'a> {
+    fn from_dict(dict: &'a PronunciationDict) -> Self {
         Self {
-            entries: convert_entries(dict.entries()),
+            entries: dict
+                .entries()
+                .iter()
+                .map(|(k, v)| (k.as_str(), convert_entry_ref(v)))
+                .collect(),
             user_entries: dict
                 .user_entries()
                 .iter()
-                .map(|(k, v)| (k.clone(), convert_entry(v)))
+                .map(|(k, v)| (k.as_str(), convert_entry_ref(v)))
                 .collect(),
-            language: dict.language().map(alloc::string::ToString::to_string),
+            language: dict.language(),
         }
     }
+}
 
+impl BinaryDict {
     fn into_dict(self) -> PronunciationDict {
         let mut dict = PronunciationDict::new();
         if let Some(lang) = &self.language {
@@ -93,21 +114,12 @@ impl BinaryDict {
     }
 }
 
-fn convert_entries(
-    entries: &hashbrown::HashMap<String, DictEntry>,
-) -> BTreeMap<String, Vec<BinaryPronunciation>> {
-    entries
-        .iter()
-        .map(|(k, v)| (k.clone(), convert_entry(v)))
-        .collect()
-}
-
-fn convert_entry(entry: &DictEntry) -> Vec<BinaryPronunciation> {
+fn convert_entry_ref<'a>(entry: &'a DictEntry) -> Vec<BinaryPronunciationRef<'a>> {
     entry
         .all()
         .iter()
-        .map(|p| BinaryPronunciation {
-            phonemes: p.phonemes().to_vec(),
+        .map(|p| BinaryPronunciationRef {
+            phonemes: p.phonemes(),
             frequency: p.frequency(),
             region: p.region(),
         })
@@ -138,7 +150,7 @@ fn to_dict_entry(prons: Vec<BinaryPronunciation>) -> Option<DictEntry> {
 /// Returns [`ShabdakoshError::DictParseError`] if serialization fails.
 #[must_use = "serialization result should be used"]
 pub fn to_binary(dict: &PronunciationDict) -> Result<Vec<u8>> {
-    let intermediate = BinaryDict::from_dict(dict);
+    let intermediate = BinaryDictRef::from_dict(dict);
     let payload = postcard::to_allocvec(&intermediate).map_err(|e| {
         ShabdakoshError::DictParseError(alloc::format!("binary serialize error: {e}"))
     })?;
