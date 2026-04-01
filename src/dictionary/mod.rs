@@ -18,8 +18,12 @@
 //! Use [`PronunciationDict::lookup_entry`] or [`PronunciationDict::lookup_all`]
 //! to access all variants.
 
+#[cfg(feature = "varna")]
+pub mod detect;
 pub mod entry;
 pub mod format;
+#[cfg(feature = "varna")]
+pub mod validate;
 
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use hashbrown::HashMap;
@@ -49,6 +53,9 @@ pub struct PronunciationDict {
         deserialize_with = "deserialize_user_entries_compat"
     )]
     user_entries: BTreeMap<String, DictEntry>,
+    /// ISO 639 language code (e.g., "en", "es", "hi").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    language: Option<String>,
 }
 
 impl PronunciationDict {
@@ -58,6 +65,7 @@ impl PronunciationDict {
         Self {
             entries: HashMap::new(),
             user_entries: BTreeMap::new(),
+            language: None,
         }
     }
 
@@ -69,6 +77,7 @@ impl PronunciationDict {
         Self {
             entries: generated_english_entries(),
             user_entries: BTreeMap::new(),
+            language: Some(alloc::string::ToString::to_string("en")),
         }
     }
 
@@ -78,6 +87,7 @@ impl PronunciationDict {
     #[must_use]
     pub fn english_minimal() -> Self {
         let mut dict = Self::new();
+        dict.language = Some(alloc::string::ToString::to_string("en"));
 
         dict.insert("the", &[Phoneme::FricativeDh, Phoneme::VowelSchwa]);
         dict.insert("a", &[Phoneme::VowelSchwa]);
@@ -187,6 +197,7 @@ impl PronunciationDict {
         Self {
             entries,
             user_entries: BTreeMap::new(),
+            language: None,
         }
     }
 
@@ -202,6 +213,7 @@ impl PronunciationDict {
         Self {
             entries,
             user_entries: BTreeMap::new(),
+            language: None,
         }
     }
 
@@ -246,6 +258,24 @@ impl PronunciationDict {
         self.user_entries
             .remove(&alloc::string::ToString::to_string(&word.to_lowercase()))
             .is_some()
+    }
+
+    /// Returns the ISO 639 language code, if set.
+    #[must_use]
+    pub fn language(&self) -> Option<&str> {
+        self.language.as_deref()
+    }
+
+    /// Sets the ISO 639 language code.
+    pub fn set_language(&mut self, code: &str) {
+        self.language = Some(alloc::string::ToString::to_string(code));
+    }
+
+    /// Builder-style method to set the language code.
+    #[must_use]
+    pub fn with_language(mut self, code: &str) -> Self {
+        self.set_language(code);
+        self
     }
 
     /// Returns a reference to the user overlay entries.
@@ -335,6 +365,137 @@ impl PronunciationDict {
                 self.user_entries.insert(word.clone(), entry.clone());
             }
         }
+    }
+
+    /// Validates this dictionary's entries against the varna phoneme inventory
+    /// for the dictionary's language.
+    ///
+    /// Returns `None` if no language is set or the language is not recognized
+    /// by varna. Returns `Some(report)` with validation results otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "varna")]
+    /// # {
+    /// use shabdakosh::PronunciationDict;
+    /// use svara::phoneme::Phoneme;
+    ///
+    /// let mut dict = PronunciationDict::new().with_language("en");
+    /// dict.insert("pat", &[Phoneme::PlosiveP, Phoneme::VowelAsh, Phoneme::PlosiveT]);
+    /// let report = dict.validate().unwrap();
+    /// assert!(report.is_valid());
+    /// # }
+    /// ```
+    #[cfg(feature = "varna")]
+    #[must_use]
+    pub fn validate(&self) -> Option<validate::ValidationReport> {
+        let code = self.language.as_deref()?;
+        let inventory = varna::registry::phonemes(code)?;
+        Some(validate::validate_inventory(self, &inventory))
+    }
+
+    /// Creates a dictionary from a varna [`Lexicon`](varna::lexicon::Lexicon).
+    ///
+    /// Each lexical entry's IPA transcription is parsed into svara phonemes.
+    /// The dictionary's language is set from the lexicon's language code.
+    /// Entries whose IPA produces no recognized phonemes are skipped.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "varna")]
+    /// # {
+    /// use shabdakosh::PronunciationDict;
+    ///
+    /// let lexicon = varna::lexicon::swadesh::by_code("es").unwrap();
+    /// let dict = PronunciationDict::from_lexicon(&lexicon);
+    /// assert!(dict.len() > 0);
+    /// assert_eq!(dict.language(), Some("es"));
+    /// # }
+    /// ```
+    #[cfg(feature = "varna")]
+    #[must_use]
+    pub fn from_lexicon(lexicon: &varna::lexicon::Lexicon) -> Self {
+        let mut dict = Self::new();
+        dict.language = Some(alloc::string::ToString::to_string(
+            lexicon.language_code.as_ref(),
+        ));
+
+        for entry in &lexicon.entries {
+            let phonemes = crate::ipa::parse_ipa_word(entry.ipa.as_ref());
+            if phonemes.is_empty() {
+                continue;
+            }
+
+            let frequency = entry.frequency_rank.map(|rank| {
+                // Convert rank (lower = more common) to frequency (higher = more common).
+                // Use 1/(1+rank) to produce a 0.0-1.0 score.
+                1.0 / (1.0 + rank as f32)
+            });
+
+            let mut pronunciation = Pronunciation::new(phonemes);
+            if let Some(freq) = frequency {
+                pronunciation = pronunciation.with_frequency(freq);
+            }
+
+            // Use the native word as the key.
+            let key = alloc::string::ToString::to_string(&entry.word.to_lowercase());
+            dict.entries
+                .insert(key, entry::DictEntry::new(pronunciation));
+        }
+
+        dict
+    }
+
+    /// Creates a seed Spanish dictionary from varna's Swadesh list.
+    ///
+    /// Contains ~25 core vocabulary entries. Use [`from_lexicon`](Self::from_lexicon)
+    /// with a larger lexicon for more comprehensive coverage.
+    #[cfg(feature = "varna")]
+    #[must_use]
+    pub fn spanish() -> Self {
+        Self::from_lexicon(&varna::lexicon::swadesh::by_code("es").unwrap_or_else(|| {
+            varna::lexicon::Lexicon {
+                language_code: "es".into(),
+                entries: alloc::vec![],
+            }
+        }))
+    }
+
+    /// Creates a seed Hindi dictionary from varna's Swadesh list.
+    #[cfg(feature = "varna")]
+    #[must_use]
+    pub fn hindi() -> Self {
+        Self::from_lexicon(&varna::lexicon::swadesh::by_code("hi").unwrap_or_else(|| {
+            varna::lexicon::Lexicon {
+                language_code: "hi".into(),
+                entries: alloc::vec![],
+            }
+        }))
+    }
+
+    /// Creates a seed German dictionary from varna's Swadesh list.
+    #[cfg(feature = "varna")]
+    #[must_use]
+    pub fn german() -> Self {
+        Self::from_lexicon(&varna::lexicon::swadesh::by_code("de").unwrap_or_else(|| {
+            varna::lexicon::Lexicon {
+                language_code: "de".into(),
+                entries: alloc::vec![],
+            }
+        }))
+    }
+
+    /// Creates a seed Sanskrit dictionary (language-tagged, empty).
+    ///
+    /// Sanskrit does not yet have Swadesh data in varna. This constructor
+    /// provides an empty dictionary with the language code set for future
+    /// population.
+    #[cfg(feature = "varna")]
+    #[must_use]
+    pub fn sanskrit() -> Self {
+        Self::new().with_language("sa")
     }
 }
 

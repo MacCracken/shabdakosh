@@ -1,6 +1,6 @@
 [package]
 name = "shabdakosh"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 rust-version = "1.89"
 license = "GPL-3.0-only"
@@ -20,6 +20,7 @@ serde = { version = "1", default-features = false, features = ["derive", "alloc"
 svara = { version = "1", default-features = false }
 thiserror = { version = "2", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["alloc"], optional = true }
+varna = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
@@ -27,7 +28,8 @@ serde_json = "1"
 
 [features]
 default = ["std"]
-full = ["std", "json"]
+full = ["std", "json", "varna"]
+varna = ["std", "dep:varna"]
 std = ["serde/std", "svara/std", "thiserror/std"]
 json = ["dep:serde_json"]
 

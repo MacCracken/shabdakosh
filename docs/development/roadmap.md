@@ -49,31 +49,22 @@
 
 ## Post-v1.0 Roadmap
 
-### v1.1 — Standards & Interop
+### v1.1.0 — Multi-Language Foundation (varna integration) (2026-04-01)
 
-**Goal**: First-class integration with speech synthesis standards used by industry TTS engines (Google Cloud TTS, Amazon Polly, Azure Speech).
+- Optional `varna` feature flag with inventory validation
+- Lexicon ingestion: `varna::lexicon::Lexicon` → `PronunciationDict` via `from_lexicon()`
+- Language-tagged entries: `language: Option<String>` on `PronunciationDict`
+- Seed dictionaries from varna Swadesh lists: `spanish()`, `hindi()`, `german()`, `sanskrit()`
+- Script detection and language detection hints via varna's Unicode ranges
+- IPA length mark normalization for cross-inventory validation
 
-- [ ] **W3C PLS (Pronunciation Lexicon Specification) import/export** — XML format used by SSML-based TTS engines for custom pronunciation lexicons. Parse `<lexicon>` documents, emit valid PLS XML. Enables shabdakosh dictionaries to be used directly with Amazon Polly, Google Cloud TTS, and Azure Speech.
-- [ ] **SSML `<phoneme>` tag support** — Parse and emit `<phoneme alphabet="ipa" ph="...">` tags. Used by all major TTS APIs for inline pronunciation overrides.
-- [ ] **Merge dictionaries** — Combine multiple `PronunciationDict` instances with configurable precedence (base < domain < user). Enables modular dictionary composition (medical + legal + general).
-- [ ] **Dictionary diff** — Compare two dictionaries, report additions, removals, and pronunciation disagreements. Useful for quality assurance when updating dictionary sources.
+**Pending data expansion** (future minor releases):
+- [ ] **Spanish dictionary** (5,000+ entries) — validated against `varna::phoneme::spanish()`. RAE-sourced pronunciation data.
+- [ ] **Hindi/Devanagari dictionary** (5,000+ entries) — validated against `varna::phoneme::hindi()`. Near 1:1 grapheme-phoneme mapping.
+- [ ] **German dictionary** (5,000+ entries) — validated against `varna::phoneme::german()`. Compound word handling via decomposition.
+- [ ] **Sanskrit dictionary** (5,000+ entries) — validated against `varna::phoneme::sanskrit()`. Leverages varna's Swadesh list + Devanagari script metadata.
 
-### v1.2 — Multi-Language Foundation (lipi integration)
-
-**Goal**: Support languages beyond English. lipi provides IPA inventories to validate dictionary entries against; shabdakosh ingests lipi's `Lexicon` type as a dictionary source alongside CMUdict.
-
-**Boundary**: lipi owns "what phonemes exist in language X". shabdakosh owns "word → pronunciation mapping". Dictionary entries are validated against lipi inventories to catch transcription errors.
-
-- [ ] **Optional `lipi` feature flag** — lipi inventory validation on dictionary entries (reject phonemes not in target language's inventory)
-- [ ] **IPA dictionary format using lipi types** — `lipi::lexicon::Lexicon` can be ingested as a dictionary source, converting `LexEntry` → `DictEntry`
-- [ ] **Language-tagged entries** — `PronunciationDict` gains a `language: Option<Language>` field. Entries can be tagged per-language, enabling polyglot dictionaries.
-- [ ] **Spanish dictionary** (5,000+ entries) — validated against `lipi::phoneme::spanish()`. RAE-sourced pronunciation data.
-- [ ] **Hindi/Devanagari dictionary** — validated against `lipi::phoneme::hindi()`. Near 1:1 grapheme-phoneme mapping.
-- [ ] **German dictionary** (5,000+ entries) — validated against `lipi::phoneme::german()`. Compound word handling via decomposition.
-- [ ] **Sanskrit dictionary** — validated against `lipi::phoneme::sanskrit()`. Leverages lipi's Swadesh list + Devanagari script metadata.
-- [ ] **Language detection hint** — Given a word, suggest most likely source language based on lipi's script Unicode ranges and n-gram patterns.
-
-### v1.3 — Neural G2P Integration
+### v1.2 — Neural G2P Integration
 
 **Goal**: Bridge dictionary lookup with neural G2P models for unknown words, inspired by [DeepPhonemizer](https://github.com/ExpressiveLabs/deepphonemizer-rs), [OpenPhonemizer](https://github.com/NeuralVox/OpenPhonemizer), and [OLaPh](https://arxiv.org/abs/2509.20086).
 
@@ -83,7 +74,7 @@
 - [ ] **Confidence scores** — G2P predictions include a confidence score (0.0-1.0). Low-confidence predictions can be flagged for human review and addition to the dictionary.
 - [ ] **Dictionary learning** — When a G2P prediction is confirmed (by user or downstream feedback), automatically promote it to the user overlay. Dictionaries grow from usage.
 
-### v1.4 — Performance & Scale
+### v1.3 — Performance & Scale
 
 **Goal**: Handle 100K+ entry dictionaries efficiently for production TTS workloads.
 
@@ -93,11 +84,11 @@
 - [ ] **Trie index** — Prefix-based lookup for autocomplete and partial matching (e.g., "comput" matches "computer", "compute", "computing").
 - [ ] **Streaming lookup** — Process words as a stream without materializing the full dictionary in memory. For real-time TTS pipelines.
 
-### v1.5 — Quality & Tooling
+### v1.4 — Quality & Tooling
 
 **Goal**: Tools for dictionary maintainers and TTS developers.
 
-- [ ] **Pronunciation validation** — Detect impossible or unlikely phoneme sequences using lipi's phonotactic constraints per language (e.g., three consecutive plosives). Replaces ad-hoc rules with lipi's structured data.
+- [ ] **Pronunciation validation** — Detect impossible or unlikely phoneme sequences using varna's phonotactic constraints per language (e.g., three consecutive plosives). Replaces ad-hoc rules with varna's structured data.
 - [ ] **Coverage reporting** — Given a text corpus, report what percentage of tokens are dictionary-covered vs. falling through to rules/G2P. Identifies gaps.
 - [ ] **Dictionary builder CLI** — Command-line tool for: importing CMUdict/IPA/PLS sources, merging dictionaries, validating entries, exporting to any format, computing diff between versions.
 - [ ] **C FFI** — `extern "C"` API for dictionary lookup, enabling integration with C/C++ TTS engines, Python bindings (via PyO3), and WASM.

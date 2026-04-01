@@ -433,3 +433,206 @@ fn test_ssml_integration_roundtrip() {
     assert_eq!(word, "cat");
     assert_eq!(parsed, phonemes);
 }
+
+// --- Language field tests ---
+
+#[test]
+fn test_language_field_english() {
+    let dict = PronunciationDict::english();
+    assert_eq!(dict.language(), Some("en"));
+}
+
+#[test]
+fn test_language_field_english_minimal() {
+    let dict = PronunciationDict::english_minimal();
+    assert_eq!(dict.language(), Some("en"));
+}
+
+#[test]
+fn test_language_field_new() {
+    let dict = PronunciationDict::new();
+    assert_eq!(dict.language(), None);
+}
+
+#[test]
+fn test_language_field_with_language() {
+    let dict = PronunciationDict::new().with_language("fr");
+    assert_eq!(dict.language(), Some("fr"));
+}
+
+#[test]
+fn test_language_field_set_language() {
+    let mut dict = PronunciationDict::new();
+    dict.set_language("de");
+    assert_eq!(dict.language(), Some("de"));
+}
+
+#[test]
+fn test_language_field_serde_roundtrip() {
+    let dict = PronunciationDict::english_minimal();
+    let json = serde_json::to_string(&dict).unwrap();
+    let dict2: PronunciationDict = serde_json::from_str(&json).unwrap();
+    assert_eq!(dict2.language(), Some("en"));
+}
+
+#[test]
+fn test_language_field_serde_absent() {
+    // Simulate a v1.0.0 serialized dict (no language field).
+    let json = r#"{"entries":{}}"#;
+    let dict: PronunciationDict = serde_json::from_str(json).unwrap();
+    assert_eq!(dict.language(), None);
+}
+
+// --- Varna integration tests ---
+
+#[cfg(feature = "varna")]
+mod varna_tests {
+    use shabdakosh::PronunciationDict;
+    use shabdakosh::dictionary::detect;
+    use shabdakosh::dictionary::validate;
+
+    #[test]
+    fn test_from_lexicon_spanish() {
+        let lexicon = varna::lexicon::swadesh::by_code("es").unwrap();
+        let dict = PronunciationDict::from_lexicon(&lexicon);
+        assert!(!dict.is_empty());
+        assert_eq!(dict.language(), Some("es"));
+    }
+
+    #[test]
+    fn test_from_lexicon_hindi() {
+        let lexicon = varna::lexicon::swadesh::by_code("hi").unwrap();
+        let dict = PronunciationDict::from_lexicon(&lexicon);
+        assert!(!dict.is_empty());
+        assert_eq!(dict.language(), Some("hi"));
+    }
+
+    #[test]
+    fn test_from_lexicon_german() {
+        let lexicon = varna::lexicon::swadesh::by_code("de").unwrap();
+        let dict = PronunciationDict::from_lexicon(&lexicon);
+        assert!(!dict.is_empty());
+        assert_eq!(dict.language(), Some("de"));
+    }
+
+    #[test]
+    fn test_from_lexicon_lookup() {
+        let lexicon = varna::lexicon::swadesh::by_code("es").unwrap();
+        let dict = PronunciationDict::from_lexicon(&lexicon);
+        // "agua" (water) should be in the Spanish Swadesh list.
+        assert!(
+            dict.lookup("agua").is_some(),
+            "expected 'agua' in Spanish seed dict"
+        );
+    }
+
+    #[test]
+    fn test_spanish_seed() {
+        let dict = PronunciationDict::spanish();
+        assert!(!dict.is_empty());
+        assert_eq!(dict.language(), Some("es"));
+    }
+
+    #[test]
+    fn test_hindi_seed() {
+        let dict = PronunciationDict::hindi();
+        assert!(!dict.is_empty());
+        assert_eq!(dict.language(), Some("hi"));
+    }
+
+    #[test]
+    fn test_german_seed() {
+        let dict = PronunciationDict::german();
+        assert!(!dict.is_empty());
+        assert_eq!(dict.language(), Some("de"));
+    }
+
+    #[test]
+    fn test_sanskrit_seed() {
+        let dict = PronunciationDict::sanskrit();
+        assert_eq!(dict.len(), 0);
+        assert_eq!(dict.language(), Some("sa"));
+    }
+
+    #[test]
+    fn test_validate_consonants_pass() {
+        let mut dict = PronunciationDict::new();
+        dict.insert(
+            "test",
+            &[
+                svara::phoneme::Phoneme::PlosiveP,
+                svara::phoneme::Phoneme::VowelAsh,
+                svara::phoneme::Phoneme::PlosiveT,
+            ],
+        );
+        let inventory = varna::phoneme::english();
+        let report = validate::validate_inventory(&dict, &inventory);
+        assert!(report.is_valid());
+    }
+
+    #[test]
+    fn test_validate_convenience_method() {
+        let mut dict = PronunciationDict::new().with_language("en");
+        dict.insert(
+            "pat",
+            &[
+                svara::phoneme::Phoneme::PlosiveP,
+                svara::phoneme::Phoneme::VowelAsh,
+                svara::phoneme::Phoneme::PlosiveT,
+            ],
+        );
+        let report = dict.validate().unwrap();
+        assert!(report.is_valid());
+    }
+
+    #[test]
+    fn test_validate_no_language() {
+        let dict = PronunciationDict::new();
+        assert!(dict.validate().is_none());
+    }
+
+    #[test]
+    fn test_detect_script_latin() {
+        assert_eq!(detect::detect_script("hello"), Some("Latn"));
+    }
+
+    #[test]
+    fn test_detect_script_devanagari() {
+        assert_eq!(detect::detect_script("नमस्ते"), Some("Deva"));
+    }
+
+    #[test]
+    fn test_detect_language_hint_latin() {
+        let hints = detect::detect_language_hint("hello");
+        assert!(hints.contains(&"en"));
+        assert!(hints.contains(&"es"));
+    }
+
+    #[test]
+    fn test_detect_language_hint_devanagari() {
+        let hints = detect::detect_language_hint("नमस्ते");
+        assert!(hints.contains(&"hi"));
+        assert!(hints.contains(&"sa"));
+    }
+
+    #[test]
+    fn test_validation_report_serde_roundtrip() {
+        let report = validate::ValidationReport {
+            language: "en".into(),
+            invalid_entries: vec![],
+        };
+        let json = serde_json::to_string(&report).unwrap();
+        let rt: validate::ValidationReport = serde_json::from_str(&json).unwrap();
+        assert_eq!(report, rt);
+    }
+
+    #[test]
+    fn test_from_lexicon_serde_roundtrip() {
+        let lexicon = varna::lexicon::swadesh::by_code("es").unwrap();
+        let dict = PronunciationDict::from_lexicon(&lexicon);
+        let json = serde_json::to_string(&dict).unwrap();
+        let dict2: PronunciationDict = serde_json::from_str(&json).unwrap();
+        assert_eq!(dict.language(), dict2.language());
+        assert_eq!(dict.len(), dict2.len());
+    }
+}

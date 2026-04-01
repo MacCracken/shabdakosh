@@ -7,7 +7,7 @@
 - **Type**: Flat library crate
 - **License**: GPL-3.0
 - **MSRV**: 1.89
-- **Version**: SemVer 1.0.0
+- **Version**: SemVer 1.1.0
 
 ## Consumers
 
@@ -17,6 +17,7 @@ shabda (G2P engine), dhvani (audio engine), vansh (voice AI shell), and any AGNO
 
 - **svara**: Phoneme types, synthesis engine, voice profiles
 - **hashbrown**: O(1) HashMap for base dictionary lookup
+- **varna** (optional): Phoneme inventories, lexicons, scripts for multi-language support
 
 ## Work Loop
 
@@ -54,11 +55,13 @@ shabda (G2P engine), dhvani (audio engine), vansh (voice AI shell), and any AGNO
 
 - `arpabet.rs` — ARPABET-to-Phoneme bidirectional mapping
 - `ipa.rs` — IPA-to-Phoneme bidirectional mapping
-- `dictionary/mod.rs` — PronunciationDict, merge, diff, DictDiff
+- `dictionary/mod.rs` — PronunciationDict, merge, diff, DictDiff, from_lexicon
 - `dictionary/entry.rs` — DictEntry, Pronunciation, Region
 - `dictionary/format/mod.rs` — CMUdict, IPA, JSON import/export
 - `dictionary/format/pls.rs` — W3C PLS XML import/export
 - `dictionary/format/ssml.rs` — SSML phoneme tag support
+- `dictionary/validate.rs` — Inventory validation against varna (feature-gated)
+- `dictionary/detect.rs` — Script/language detection via varna (feature-gated)
 - `error.rs` — ShabdakoshError
 
 ## Data File

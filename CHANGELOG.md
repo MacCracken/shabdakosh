@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.0 — 2026-04-01
+
+Multi-language foundation via varna integration.
+
+- **`varna` feature flag** — optional dependency on varna for multi-language support
+- **Language-tagged dictionaries** — `PronunciationDict` gains `language()`, `set_language()`, `with_language()` for ISO 639 codes
+- **Inventory validation** — `validate()` checks dictionary phonemes against varna's per-language phoneme inventories; `validate_inventory()` for explicit inventory
+- **Lexicon ingestion** — `from_lexicon()` converts `varna::lexicon::Lexicon` into a `PronunciationDict`, parsing IPA transcriptions into svara phonemes
+- **Script detection** — `detect_script()` identifies writing system (Latin, Devanagari, Arabic, etc.) from Unicode code points
+- **Language detection hint** — `detect_language_hint()` suggests candidate languages based on detected script
+- **Seed dictionaries** — `spanish()`, `hindi()`, `german()`, `sanskrit()` constructors from varna's Swadesh lists
+- **New error variants** — `PhonemeNotInInventory`, `UnknownLanguage`
+- IPA length mark normalization in validation (handles ɔ/ɔː, ɑ/ɑː convention differences)
+- Serde backward compatibility: `language` field is optional, absent in v1.0 serialized data
+
 ## 1.0.0 — 2026-03-27
 
 Stable release with O(1) lookup, IPA, standards compliance, and dictionary operations.

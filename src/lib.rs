@@ -26,6 +26,7 @@
 //! |---------|---------|-------------|
 //! | `std` | Yes | Standard library. Disable for `no_std` + `alloc` |
 //! | `json` | No | JSON import/export via serde_json |
+//! | `varna` | No | Multi-language support: inventory validation, lexicon ingestion, script detection |
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -36,7 +37,11 @@ pub mod dictionary;
 pub mod error;
 pub mod ipa;
 
+#[cfg(feature = "varna")]
+pub use dictionary::detect::{detect_language_hint, detect_script, detect_script_name};
 pub use dictionary::entry::{DictEntry, Pronunciation, Region};
+#[cfg(feature = "varna")]
+pub use dictionary::validate::{InvalidEntry, ValidationReport};
 pub use dictionary::{DictDiff, PronunciationDict};
 pub use error::{Result, ShabdakoshError};
 
@@ -52,5 +57,12 @@ mod assert_traits {
         _assert_send_sync::<crate::dictionary::entry::DictEntry>();
         _assert_send_sync::<crate::dictionary::entry::Pronunciation>();
         _assert_send_sync::<crate::dictionary::entry::Region>();
+    }
+
+    #[cfg(feature = "varna")]
+    #[test]
+    fn varna_types_are_send_sync() {
+        _assert_send_sync::<crate::dictionary::validate::ValidationReport>();
+        _assert_send_sync::<crate::dictionary::validate::InvalidEntry>();
     }
 }
