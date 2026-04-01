@@ -172,6 +172,101 @@ fn main() {
         total_prons,
         num_batches,
     );
+
+    // --- PHF static dictionary (when phf feature is enabled) ---
+    #[cfg(feature = "phf")]
+    generate_phf_dict(&entries, &out_dir);
+}
+
+#[cfg(feature = "phf")]
+fn generate_phf_dict(entries: &BTreeMap<String, BuildEntry>, out_dir: &str) {
+    let dest = Path::new(out_dir).join("generated_phf_dict.rs");
+    let mut out = fs::File::create(&dest).expect("failed to create generated_phf_dict.rs");
+
+    writeln!(
+        out,
+        "// Auto-generated PHF dictionary by build.rs from data/cmudict-5k.txt"
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "// DO NOT EDIT — changes will be overwritten on next build."
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+
+    // Generate static phoneme arrays and pronunciation arrays for each word.
+    for (word, entry) in entries {
+        let safe_name = word.replace(['-', '\''], "_").to_uppercase();
+        for (i, pron) in entry.pronunciations.iter().enumerate() {
+            let phonemes: Vec<String> = pron
+                .phoneme_exprs
+                .iter()
+                .map(|e| format!("svara::phoneme::{e}"))
+                .collect();
+            writeln!(
+                out,
+                "static PHF_PH_{safe_name}_{i}: &[svara::phoneme::Phoneme] = &[{}];",
+                phonemes.join(", ")
+            )
+            .unwrap();
+        }
+
+        // Generate static pronunciation array.
+        let pron_entries: Vec<String> = entry
+            .pronunciations
+            .iter()
+            .enumerate()
+            .map(|(i, pron)| {
+                let freq = match pron.frequency {
+                    Some(f) => format!("Some({f}_f32)"),
+                    None => "None".to_string(),
+                };
+                let region = match &pron.region {
+                    Some(r) => {
+                        let expr = region_to_expr(r);
+                        format!("Some(crate::dictionary::entry::{expr})")
+                    }
+                    None => "None".to_string(),
+                };
+                format!(
+                    "crate::dictionary::static_dict::StaticPronunciation {{ phonemes: PHF_PH_{safe_name}_{i}, frequency: {freq}, region: {region} }}"
+                )
+            })
+            .collect();
+        writeln!(
+            out,
+            "static PHF_PR_{safe_name}: &[crate::dictionary::static_dict::StaticPronunciation] = &[{}];",
+            pron_entries.join(", ")
+        )
+        .unwrap();
+    }
+
+    writeln!(out).unwrap();
+
+    // Generate the phf map.
+    let mut map = phf_codegen::Map::new();
+    for word in entries.keys() {
+        let safe_name = word.replace(['-', '\''], "_").to_uppercase();
+        map.entry(
+            word.as_str(),
+            &format!(
+                "crate::dictionary::static_dict::StaticEntry {{ pronunciations: PHF_PR_{safe_name} }}"
+            ),
+        );
+    }
+
+    writeln!(
+        out,
+        "static PHF_ENGLISH_DICT: phf::Map<&'static str, crate::dictionary::static_dict::StaticEntry> = {};",
+        map.build()
+    )
+    .unwrap();
+
+    eprintln!(
+        "shabdakosh build: generated PHF dictionary ({} entries)",
+        entries.len()
+    );
 }
 
 fn write_entry(out: &mut fs::File, word: &str, entry: &BuildEntry) {

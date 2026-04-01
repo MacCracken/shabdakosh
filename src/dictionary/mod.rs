@@ -18,10 +18,18 @@
 //! Use [`PronunciationDict::lookup_entry`] or [`PronunciationDict::lookup_all`]
 //! to access all variants.
 
+pub mod coverage;
 #[cfg(feature = "varna")]
 pub mod detect;
 pub mod entry;
 pub mod format;
+pub mod g2p;
+pub mod heteronym;
+#[cfg(feature = "mmap")]
+pub mod lazy;
+pub mod static_dict;
+pub mod stream;
+pub mod trie;
 #[cfg(feature = "varna")]
 pub mod validate;
 
@@ -367,6 +375,54 @@ impl PronunciationDict {
         }
     }
 
+    /// Wraps this dictionary with a G2P model fallback.
+    ///
+    /// The returned [`FallbackDict`](g2p::FallbackDict) tries lookups in order:
+    /// user overlay → base dictionary → G2P model.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shabdakosh::PronunciationDict;
+    /// use shabdakosh::dictionary::g2p::{G2PModel, G2PResult};
+    /// use svara::phoneme::Phoneme;
+    ///
+    /// struct MyModel;
+    /// impl G2PModel for MyModel {
+    ///     fn predict(&self, _word: &str) -> Option<G2PResult> {
+    ///         Some(G2PResult::new(vec![Phoneme::VowelSchwa], 0.5))
+    ///     }
+    /// }
+    ///
+    /// let dict = PronunciationDict::english_minimal();
+    /// let fallback = dict.with_fallback(MyModel);
+    /// assert!(fallback.lookup("hello").is_some());
+    /// ```
+    #[must_use]
+    pub fn with_fallback<M: g2p::G2PModel>(self, model: M) -> g2p::FallbackDict<M> {
+        g2p::FallbackDict::new(self, model)
+    }
+
+    /// Searches for all words starting with the given prefix.
+    ///
+    /// Builds a [`PrefixTrie`](trie::PrefixTrie) on each call. If you need
+    /// repeated prefix searches, build the trie once with
+    /// [`PrefixTrie::from_dict`](trie::PrefixTrie::from_dict) and reuse it.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shabdakosh::PronunciationDict;
+    ///
+    /// let dict = PronunciationDict::english_minimal();
+    /// let matches = dict.prefix_search("he");
+    /// assert!(matches.contains(&"hello".to_string()));
+    /// ```
+    #[must_use]
+    pub fn prefix_search(&self, prefix: &str) -> Vec<alloc::string::String> {
+        trie::PrefixTrie::from_dict(self).search_prefix(prefix)
+    }
+
     /// Validates this dictionary's entries against the varna phoneme inventory
     /// for the dictionary's language.
     ///
@@ -393,6 +449,40 @@ impl PronunciationDict {
         let code = self.language.as_deref()?;
         let inventory = varna::registry::phonemes(code)?;
         Some(validate::validate_inventory(self, &inventory))
+    }
+
+    /// Validates dictionary entries against phonotactic constraints.
+    ///
+    /// Uses varna's phonotactic profiles to detect forbidden phoneme sequences,
+    /// excessive consonant clusters, etc.
+    ///
+    /// Returns `None` if the dictionary's language has no phonotactic profile.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "varna")]
+    /// # {
+    /// use shabdakosh::PronunciationDict;
+    /// use svara::phoneme::Phoneme;
+    ///
+    /// let mut dict = PronunciationDict::new().with_language("en");
+    /// dict.insert("test", &[Phoneme::PlosiveT, Phoneme::VowelOpenE, Phoneme::FricativeS, Phoneme::PlosiveT]);
+    /// let report = dict.validate_phonotactics().unwrap();
+    /// println!("violations: {}", report.violation_count());
+    /// # }
+    /// ```
+    #[cfg(feature = "varna")]
+    #[must_use]
+    pub fn validate_phonotactics(&self) -> Option<validate::PhonotacticReport> {
+        let code = self.language.as_deref()?;
+        let phonotactics = match code {
+            "en" => Some(varna::phoneme::syllable::english_phonotactics()),
+            "sa" => Some(varna::phoneme::syllable::sanskrit_phonotactics()),
+            "ja" => Some(varna::phoneme::syllable::japanese_phonotactics()),
+            _ => None,
+        }?;
+        Some(validate::validate_phonotactics(self, &phonotactics))
     }
 
     /// Creates a dictionary from a varna [`Lexicon`](varna::lexicon::Lexicon).

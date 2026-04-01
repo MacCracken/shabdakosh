@@ -19,8 +19,15 @@ hashbrown = { version = "0.15", default-features = false, features = ["default-h
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 svara = { version = "1", default-features = false }
 thiserror = { version = "2", default-features = false }
+memmap2 = { version = "0.9", optional = true }
+phf = { version = "0.11", default-features = false, optional = true }
+postcard = { version = "1", default-features = false, features = ["alloc"], optional = true }
 serde_json = { version = "1", default-features = false, features = ["alloc"], optional = true }
 varna = { version = "1", default-features = false, optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+
+[build-dependencies]
+phf_codegen = { version = "0.11", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
@@ -28,10 +35,21 @@ serde_json = "1"
 
 [features]
 default = ["std"]
-full = ["std", "json", "varna"]
+binary = ["dep:postcard"]
+ffi = ["std"]
+mmap = ["std", "binary", "dep:memmap2"]
+phf = ["dep:phf", "dep:phf_codegen"]
+cli = ["std", "json", "binary"]
+wasm = ["json", "dep:wasm-bindgen"]
+full = ["std", "json", "varna", "binary"]
 varna = ["std", "dep:varna"]
 std = ["serde/std", "svara/std", "thiserror/std"]
 json = ["dep:serde_json"]
+
+[[bin]]
+name = "shabdakosh-cli"
+path = "src/bin/shabdakosh-cli.rs"
+required-features = ["cli"]
 
 [[bench]]
 name = "benchmarks"

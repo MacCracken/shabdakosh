@@ -7,6 +7,8 @@
 //! - **SSML** `<phoneme>` tags — [`ssml`] module
 //! - **JSON** (requires `json` feature)
 
+#[cfg(feature = "binary")]
+pub mod binary;
 pub mod pls;
 pub mod ssml;
 

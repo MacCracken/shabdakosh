@@ -144,6 +144,178 @@ fn check_entry(
     }
 }
 
+// --- Phonotactic validation ---
+
+/// A phonotactic violation found in a dictionary entry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PhonotacticViolation {
+    /// The word containing the violation.
+    pub word: String,
+    /// Description of the violation.
+    pub description: String,
+    /// The IPA sequence that violated phonotactic constraints.
+    pub sequence: String,
+}
+
+/// Result of phonotactic validation across a dictionary.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PhonotacticReport {
+    /// The language code of the phonotactic profile used.
+    pub language: String,
+    /// All violations found.
+    pub violations: Vec<PhonotacticViolation>,
+}
+
+impl PhonotacticReport {
+    /// Returns `true` if no phonotactic violations were found.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.violations.is_empty()
+    }
+
+    /// Returns the number of violations.
+    #[must_use]
+    pub fn violation_count(&self) -> usize {
+        self.violations.len()
+    }
+}
+
+/// Validates dictionary entries against phonotactic constraints.
+///
+/// Checks each pronunciation for forbidden phoneme sequences as defined
+/// by the varna [`Phonotactics`](varna::phoneme::syllable::Phonotactics) profile.
+///
+/// # Examples
+///
+/// ```rust
+/// # #[cfg(feature = "varna")]
+/// # {
+/// use shabdakosh::PronunciationDict;
+/// use shabdakosh::dictionary::validate::validate_phonotactics;
+/// use varna::phoneme::syllable::english_phonotactics;
+///
+/// let dict = PronunciationDict::english();
+/// let phonotactics = english_phonotactics();
+/// let report = validate_phonotactics(&dict, &phonotactics);
+/// // Most entries should pass phonotactic constraints.
+/// println!("violations: {}", report.violation_count());
+/// # }
+/// ```
+#[must_use]
+pub fn validate_phonotactics(
+    dict: &super::PronunciationDict,
+    phonotactics: &varna::phoneme::syllable::Phonotactics,
+) -> PhonotacticReport {
+    let mut violations = Vec::new();
+
+    // Check both base and user entries.
+    for (word, entry) in dict.entries().iter().chain(dict.user_entries().iter()) {
+        for pron in entry.all() {
+            check_pronunciation(word, pron.phonemes(), phonotactics, &mut violations);
+        }
+    }
+
+    violations.sort_by(|a, b| a.word.cmp(&b.word));
+
+    PhonotacticReport {
+        language: alloc::string::ToString::to_string(&phonotactics.language_code),
+        violations,
+    }
+}
+
+/// Checks a single pronunciation against phonotactic constraints.
+fn check_pronunciation(
+    word: &str,
+    phonemes: &[Phoneme],
+    phonotactics: &varna::phoneme::syllable::Phonotactics,
+    violations: &mut Vec<PhonotacticViolation>,
+) {
+    use varna::phoneme::syllable::SyllablePosition;
+
+    // Check consecutive consonant pairs against onset/coda constraints.
+    // This is a simplified check — full syllabification would be more accurate
+    // but is a v2.0 feature.
+    for window in phonemes.windows(2) {
+        let ipa_a = crate::ipa::phoneme_to_ipa(&window[0]);
+        let ipa_b = crate::ipa::phoneme_to_ipa(&window[1]);
+
+        if let (Some(a), Some(b)) = (ipa_a, ipa_b) {
+            let sequence = alloc::format!("{a}{b}");
+
+            // Check if this sequence is explicitly forbidden in onset position.
+            if let Some(false) = phonotactics.is_permitted(&sequence, SyllablePosition::Onset) {
+                violations.push(PhonotacticViolation {
+                    word: alloc::string::ToString::to_string(word),
+                    description: alloc::format!("forbidden onset sequence '{sequence}'"),
+                    sequence: sequence.clone(),
+                });
+            }
+
+            // Check coda position too.
+            if let Some(false) = phonotactics.is_permitted(&sequence, SyllablePosition::Coda) {
+                violations.push(PhonotacticViolation {
+                    word: alloc::string::ToString::to_string(word),
+                    description: alloc::format!("forbidden coda sequence '{sequence}'"),
+                    sequence,
+                });
+            }
+        }
+    }
+
+    // Check max onset/coda cluster length.
+    // Count consecutive consonants (simplified: any non-vowel phoneme).
+    let max_onset = phonotactics.syllable.max_onset as usize;
+    let max_coda = phonotactics.syllable.max_coda as usize;
+
+    let mut consonant_run = 0_usize;
+    for phoneme in phonemes {
+        if is_consonant(phoneme) {
+            consonant_run += 1;
+            // Use max of onset + coda as a generous upper bound.
+            // Without syllabification, we can't distinguish onset from coda.
+            if consonant_run > max_onset + max_coda {
+                violations.push(PhonotacticViolation {
+                    word: alloc::string::ToString::to_string(word),
+                    description: alloc::format!(
+                        "consonant cluster of {consonant_run} exceeds max onset ({max_onset}) + coda ({max_coda})"
+                    ),
+                    sequence: alloc::format!("({consonant_run} consonants)"),
+                });
+                break;
+            }
+        } else {
+            consonant_run = 0;
+        }
+    }
+}
+
+/// Simple consonant classification based on phoneme variant.
+fn is_consonant(phoneme: &Phoneme) -> bool {
+    !matches!(
+        phoneme,
+        Phoneme::VowelA
+            | Phoneme::VowelE
+            | Phoneme::VowelI
+            | Phoneme::VowelO
+            | Phoneme::VowelU
+            | Phoneme::VowelOpenA
+            | Phoneme::VowelOpenE
+            | Phoneme::VowelOpenO
+            | Phoneme::VowelNearI
+            | Phoneme::VowelNearU
+            | Phoneme::VowelAsh
+            | Phoneme::VowelSchwa
+            | Phoneme::VowelCupV
+            | Phoneme::VowelBird
+            | Phoneme::DiphthongAI
+            | Phoneme::DiphthongAU
+            | Phoneme::DiphthongEI
+            | Phoneme::DiphthongOI
+            | Phoneme::DiphthongOU
+            | Phoneme::Silence
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -278,5 +450,80 @@ mod tests {
         assert_eq!(report.invalid_count(), 1);
         // Only ŋ should be invalid, p is valid in Spanish.
         assert_eq!(report.invalid_entries[0].invalid_phonemes.len(), 1);
+    }
+
+    // --- Phonotactic validation tests ---
+
+    #[test]
+    fn test_phonotactic_report_serde_roundtrip() {
+        let report = PhonotacticReport {
+            language: alloc::string::ToString::to_string("en"),
+            violations: alloc::vec![PhonotacticViolation {
+                word: alloc::string::ToString::to_string("test"),
+                description: alloc::string::ToString::to_string("forbidden onset"),
+                sequence: alloc::string::ToString::to_string("tl"),
+            }],
+        };
+        let json = serde_json::to_string(&report).unwrap();
+        let roundtripped: PhonotacticReport = serde_json::from_str(&json).unwrap();
+        assert_eq!(report, roundtripped);
+    }
+
+    #[test]
+    fn test_phonotactic_empty_dict() {
+        let dict = PronunciationDict::new();
+        let phonotactics = varna::phoneme::syllable::english_phonotactics();
+        let report = validate_phonotactics(&dict, &phonotactics);
+        assert!(report.is_valid());
+    }
+
+    #[test]
+    fn test_phonotactic_valid_english() {
+        // "cat" = /k æ t/ — should have no violations.
+        let mut dict = PronunciationDict::new();
+        dict.insert(
+            "cat",
+            &[Phoneme::PlosiveK, Phoneme::VowelAsh, Phoneme::PlosiveT],
+        );
+        let phonotactics = varna::phoneme::syllable::english_phonotactics();
+        let report = validate_phonotactics(&dict, &phonotactics);
+        assert!(
+            report.is_valid(),
+            "cat should be phonotactically valid, but got violations: {:?}",
+            report.violations
+        );
+    }
+
+    #[test]
+    fn test_phonotactic_convenience_method() {
+        let mut dict = PronunciationDict::new().with_language("en");
+        dict.insert(
+            "cat",
+            &[Phoneme::PlosiveK, Phoneme::VowelAsh, Phoneme::PlosiveT],
+        );
+        let report = dict.validate_phonotactics().unwrap();
+        assert!(report.is_valid());
+    }
+
+    #[test]
+    fn test_phonotactic_no_language() {
+        let dict = PronunciationDict::new();
+        assert!(dict.validate_phonotactics().is_none());
+    }
+
+    #[test]
+    fn test_phonotactic_unknown_language() {
+        let dict = PronunciationDict::new().with_language("xx");
+        assert!(dict.validate_phonotactics().is_none());
+    }
+
+    #[test]
+    fn test_is_consonant() {
+        assert!(is_consonant(&Phoneme::PlosiveK));
+        assert!(is_consonant(&Phoneme::FricativeS));
+        assert!(is_consonant(&Phoneme::NasalM));
+        assert!(!is_consonant(&Phoneme::VowelA));
+        assert!(!is_consonant(&Phoneme::DiphthongAI));
+        assert!(!is_consonant(&Phoneme::VowelSchwa));
     }
 }

@@ -35,13 +35,22 @@ extern crate alloc;
 pub mod arpabet;
 pub mod dictionary;
 pub mod error;
+#[cfg(feature = "ffi")]
+pub mod ffi;
 pub mod ipa;
+#[cfg(feature = "wasm")]
+pub mod wasm;
 
+pub use dictionary::coverage::CoverageReport;
 #[cfg(feature = "varna")]
 pub use dictionary::detect::{detect_language_hint, detect_script, detect_script_name};
 pub use dictionary::entry::{DictEntry, Pronunciation, Region};
+pub use dictionary::g2p::{FallbackDict, G2PModel, G2PResult, LookupSource};
+pub use dictionary::trie::PrefixTrie;
 #[cfg(feature = "varna")]
-pub use dictionary::validate::{InvalidEntry, ValidationReport};
+pub use dictionary::validate::{
+    InvalidEntry, PhonotacticReport, PhonotacticViolation, ValidationReport,
+};
 pub use dictionary::{DictDiff, PronunciationDict};
 pub use error::{Result, ShabdakoshError};
 
