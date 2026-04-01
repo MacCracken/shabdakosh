@@ -58,15 +58,20 @@
 - [ ] **Merge dictionaries** — Combine multiple `PronunciationDict` instances with configurable precedence (base < domain < user). Enables modular dictionary composition (medical + legal + general).
 - [ ] **Dictionary diff** — Compare two dictionaries, report additions, removals, and pronunciation disagreements. Useful for quality assurance when updating dictionary sources.
 
-### v1.2 — Multi-Language Foundation
+### v1.2 — Multi-Language Foundation (lipi integration)
 
-**Goal**: Support languages beyond English, starting with the most phonetically regular.
+**Goal**: Support languages beyond English. lipi provides IPA inventories to validate dictionary entries against; shabdakosh ingests lipi's `Lexicon` type as a dictionary source alongside CMUdict.
 
+**Boundary**: lipi owns "what phonemes exist in language X". shabdakosh owns "word → pronunciation mapping". Dictionary entries are validated against lipi inventories to catch transcription errors.
+
+- [ ] **Optional `lipi` feature flag** — lipi inventory validation on dictionary entries (reject phonemes not in target language's inventory)
+- [ ] **IPA dictionary format using lipi types** — `lipi::lexicon::Lexicon` can be ingested as a dictionary source, converting `LexEntry` → `DictEntry`
 - [ ] **Language-tagged entries** — `PronunciationDict` gains a `language: Option<Language>` field. Entries can be tagged per-language, enabling polyglot dictionaries.
-- [ ] **Spanish dictionary** (5,000+ entries) — Highly regular orthography makes rule-based G2P very accurate. RAE-sourced pronunciation data.
-- [ ] **Hindi/Devanagari dictionary** — Near 1:1 grapheme-phoneme mapping. Leverage Unicode Devanagari block for direct phoneme derivation.
-- [ ] **German dictionary** (5,000+ entries) — Compound word handling via decomposition. Pronunciation rules for umlauts, diphthongs, and consonant clusters.
-- [ ] **Language detection hint** — Given a word, suggest most likely source language based on character set and n-gram patterns. Helps polyglot TTS route words to the correct dictionary.
+- [ ] **Spanish dictionary** (5,000+ entries) — validated against `lipi::phoneme::spanish()`. RAE-sourced pronunciation data.
+- [ ] **Hindi/Devanagari dictionary** — validated against `lipi::phoneme::hindi()`. Near 1:1 grapheme-phoneme mapping.
+- [ ] **German dictionary** (5,000+ entries) — validated against `lipi::phoneme::german()`. Compound word handling via decomposition.
+- [ ] **Sanskrit dictionary** — validated against `lipi::phoneme::sanskrit()`. Leverages lipi's Swadesh list + Devanagari script metadata.
+- [ ] **Language detection hint** — Given a word, suggest most likely source language based on lipi's script Unicode ranges and n-gram patterns.
 
 ### v1.3 — Neural G2P Integration
 
@@ -92,7 +97,7 @@
 
 **Goal**: Tools for dictionary maintainers and TTS developers.
 
-- [ ] **Pronunciation validation** — Detect impossible or unlikely phoneme sequences (e.g., three consecutive plosives). Rule-based phonotactic constraints per language.
+- [ ] **Pronunciation validation** — Detect impossible or unlikely phoneme sequences using lipi's phonotactic constraints per language (e.g., three consecutive plosives). Replaces ad-hoc rules with lipi's structured data.
 - [ ] **Coverage reporting** — Given a text corpus, report what percentage of tokens are dictionary-covered vs. falling through to rules/G2P. Identifies gaps.
 - [ ] **Dictionary builder CLI** — Command-line tool for: importing CMUdict/IPA/PLS sources, merging dictionaries, validating entries, exporting to any format, computing diff between versions.
 - [ ] **C FFI** — `extern "C"` API for dictionary lookup, enabling integration with C/C++ TTS engines, Python bindings (via PyO3), and WASM.
