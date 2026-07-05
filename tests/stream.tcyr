@@ -1,0 +1,60 @@
+# stream.tcyr — tests for src/dictionary/stream.cyr
+# (ports rust-old/src/dictionary/stream.rs). Uses english_minimal.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/stream.cyr"
+
+alloc_init();
+
+fn _w2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _w3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+
+var dict = shabda_dict_english_minimal();
+
+# ================================================================
+test_group("stream basic (both found)");
+var s = shabda_dict_lookup_stream(dict, _w2("hello", "world"));
+assert_eq(shabda_lookup_stream_next(s), 1, "item 1");
+assert_neq(shabda_stream_phonemes(s), 0, "hello found");
+assert_eq(shabda_lookup_stream_next(s), 1, "item 2");
+assert_neq(shabda_stream_phonemes(s), 0, "world found");
+assert_eq(shabda_lookup_stream_next(s), 0, "exhausted");
+
+# ================================================================
+test_group("stream with miss");
+var s2 = shabda_dict_lookup_stream(dict, _w2("hello", "xyzzy"));
+shabda_lookup_stream_next(s2);
+assert_neq(shabda_stream_phonemes(s2), 0, "hello found");
+shabda_lookup_stream_next(s2);
+assert_eq(shabda_stream_phonemes(s2), 0, "xyzzy not found (None)");
+
+# ================================================================
+test_group("stream empty");
+var s3 = shabda_dict_lookup_stream(dict, vec_new());
+assert_eq(shabda_lookup_stream_next(s3), 0, "empty -> done immediately");
+
+# ================================================================
+test_group("stream preserves words");
+var s4 = shabda_dict_lookup_stream(dict, _w2("hello", "world"));
+shabda_lookup_stream_next(s4);
+assert_streq(shabda_stream_word(s4), "hello", "word 0 = hello");
+shabda_lookup_stream_next(s4);
+assert_streq(shabda_stream_word(s4), "world", "word 1 = world");
+
+# ================================================================
+test_group("stream size_hint");
+var s5 = shabda_dict_lookup_stream(dict, _w3("a", "b", "c"));
+assert_eq(shabda_lookup_stream_size_hint(s5), 3, "3 remaining at start");
+shabda_lookup_stream_next(s5);
+assert_eq(shabda_lookup_stream_size_hint(s5), 2, "2 remaining after 1");
+
+var rc = assert_summary();
+syscall(60, rc);

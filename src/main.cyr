@@ -22,6 +22,7 @@ include "src/dictionary/_cmudict_data.cyr"
 include "src/dictionary/cmudict.cyr"
 include "src/dictionary/mod.cyr"
 include "src/dictionary/coverage.cyr"
+include "src/dictionary/stream.cyr"
 
 fn main() {
     alloc_init();
@@ -62,6 +63,11 @@ fn main() {
     println_int(shabda_dict_len(shabda_dict_english_minimal()));
     # L4 smoke — coverage of "the hello world xyz" (3 of 4 covered)
     println_int(shabda_coverage_covered_tokens(shabda_dict_coverage(shabda_dict_english_minimal(), "the hello world xyz")));
+    # L4 smoke — streaming lookup over 2 words -> remaining size hint
+    var sw = vec_new();
+    vec_push(sw, "hello");
+    vec_push(sw, "xyz");
+    println_int(shabda_lookup_stream_size_hint(shabda_dict_lookup_stream(shabda_dict_english_minimal(), sw)));
     return 0;
 }
 

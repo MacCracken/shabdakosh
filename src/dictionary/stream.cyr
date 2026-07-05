@@ -1,0 +1,55 @@
+# stream.cyr — streaming word-to-phoneme lookup.
+#
+# Ports rust-old/src/dictionary/stream.rs (the LookupStream iterator). CYRIUS has
+# no Iterator trait, so this is a stateful cursor over a vec of word cstrs: each
+# shabda_lookup_stream_next(s) advances and stashes the current (word, phonemes)
+# in the stream struct — zero-alloc per step (no per-item tuple). Extends the
+# keystone (shabda_dict_lookup); included after src/dictionary/mod.cyr.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+#
+# ShLookupStream layout (40 bytes): [0]=dict [8]=words(vec of word cstr) [16]=pos
+#   [24]=cur_word(cstr) [32]=cur_phonemes(vec or 0).
+
+# Create a streaming lookup over `words` (a vec of word cstrs).
+#must_use
+fn shabda_dict_lookup_stream(dict, words): i64 {
+    var s = alloc(40);
+    store64(s + 0, dict);
+    store64(s + 8, words);
+    store64(s + 16, 0);
+    store64(s + 24, 0);
+    store64(s + 32, 0);
+    return s;
+}
+
+# Advance to the next word: 1 if there is one (read it via shabda_stream_word /
+# shabda_stream_phonemes), 0 when exhausted.
+fn shabda_lookup_stream_next(s): i64 {
+    var pos = load64(s + 16);
+    var words = load64(s + 8);
+    if (pos >= vec_len(words)) { return 0; }
+    var word = vec_get(words, pos);
+    store64(s + 24, word);
+    store64(s + 32, shabda_dict_lookup(load64(s + 0), word));
+    store64(s + 16, pos + 1);
+    return 1;
+}
+
+# Current word (cstr) after a successful next().
+#must_use
+fn shabda_stream_word(s): i64 {
+    return load64(s + 24);
+}
+
+# Current pronunciation phonemes (vec), or 0 if the word was not found.
+#must_use
+fn shabda_stream_phonemes(s): i64 {
+    return load64(s + 32);
+}
+
+# Remaining word count (Rust's size_hint upper/lower bound).
+#must_use
+fn shabda_lookup_stream_size_hint(s): i64 {
+    return vec_len(load64(s + 8)) - load64(s + 16);
+}

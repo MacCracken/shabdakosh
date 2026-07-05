@@ -56,8 +56,8 @@ formats → gated/optional.
 | L2 | build.rs → gen | programs/gen_cmudict.cyr + _cmudict_data.cyr + cmudict.cyr | ✅ done | 15 | generator reuses arpabet.cyr (no table dup); emits 283KB/12-piece packed data (10,617 words, 0 unknown); cmudict.cyr loader → lib/hashmap |
 | L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ✅ ported | 39 | PronunciationDict (base+overlay maps), lookup (overlay→base, lowercase fast-path), merge/merge_conservative, diff/DictDiff, english()/english_minimal(); g2p/trie/varna/serde methods deferred to their tiers |
 | L4 | dictionary/coverage.rs | src/dictionary/coverage.cyr | ✅ ported | 22 | CoverageReport + coverage(): tokenize/strip-punct/lowercase, dedup+sort uncovered; coverage_pct as f64 |
-| L4 | dictionary/stream.rs | … | ⏳ next | — | zero-alloc streaming lookup iterator |
-| L4 | dictionary/trie.rs | … | ⬜ | — | HashMap<char,node> |
+| L4 | dictionary/stream.rs | src/dictionary/stream.cyr | ✅ ported | 12 | LookupStream iterator → stateful cursor (zero-alloc per step); next/word/phonemes/size_hint |
+| L4 | dictionary/trie.rs | … | ⏳ next | — | PrefixTrie: HashMap<char,node> recursive |
 | L4 | dictionary/heteronym.rs | … | ⬜ | — | `&dyn` resolver |
 | L4 | dictionary/g2p.rs | … | ⬜ | — | FallbackDict / G2PModel / FstModel stub |
 | L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
@@ -97,8 +97,8 @@ deferred to their tiers: `with_fallback` (g2p, L4), `prefix_search` (trie, L4), 
 (L6), JSON serde (format L5) — these get wired into `mod.cyr` as those modules land.
 **Known divergence to revisit**: `merge` shares entry pointers where Rust deep-clones — observable
 only if the merged-from dict is mutated afterward; flag for a future clone or an ADR.
-Next: L4 extensions. **coverage done** (22 tests) → 349 assertions / 11 suites. Remaining L4:
-stream, trie, heteronym, g2p.
+Next: L4 extensions. **coverage + stream done** → 361 assertions / 12 suites. Remaining L4:
+trie (next), heteronym, g2p. (trie unblocks `prefix_search` in the keystone.)
 
 ## Dependencies
 
