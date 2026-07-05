@@ -19,6 +19,7 @@ modules = [
     "src/error.cyr",
     "src/arpabet.cyr",
     "src/ipa.cyr",
+    "src/dictionary/entry.cyr",
 ]
 
 # stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown

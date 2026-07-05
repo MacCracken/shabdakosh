@@ -1,0 +1,88 @@
+# entry.tcyr — tests for src/dictionary/entry.cyr (ports rust-old/src/dictionary/entry.rs).
+# Needs svara for SVARA_PH_* test data. The Rust serde-roundtrip tests
+# (Pronunciation / DictEntry) are deferred to the format layer (L5) per the
+# locked serde stance; Region round-trips via its code here.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/dictionary/entry.cyr"
+
+alloc_init();
+
+# vec-of-phoneme helpers for building test pronunciations.
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+
+# ================================================================
+test_group("pronunciation new");
+var p = shabda_pronunciation_new(_v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+assert_eq(vec_len(shabda_pronunciation_phonemes(p)), 3, "3 phonemes");
+assert_eq(shabda_pronunciation_has_frequency(p), 0, "no frequency");
+assert_eq(shabda_pronunciation_has_region(p), 0, "no region");
+
+# ================================================================
+test_group("pronunciation builder");
+var pb = shabda_pronunciation_with_region(shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_PLOSIVE_K)), 0.75), SHABDA_REGION_GA);
+assert_eq(shabda_pronunciation_has_frequency(pb), 1, "has frequency");
+assert_eq(shabda_pronunciation_frequency(pb), 0.75, "frequency 0.75");
+assert_eq(shabda_pronunciation_region(pb), SHABDA_REGION_GA, "region GA");
+assert_eq(shabda_pronunciation_has_region(pb), 1, "has region");
+
+# ================================================================
+test_group("region code roundtrip");
+assert_eq(shabda_region_from_code("GA"), SHABDA_REGION_GA, "from GA");
+assert_eq(shabda_region_from_code("RP"), SHABDA_REGION_RP, "from RP");
+assert_eq(shabda_region_from_code("XX"), SHABDA_REGION_NONE, "from XX -> none");
+assert_streq(shabda_region_code(SHABDA_REGION_GA), "GA", "code GA");
+assert_streq(shabda_region_code(SHABDA_REGION_RP), "RP", "code RP");
+
+# ================================================================
+test_group("dict entry single");
+var e1 = shabda_dict_entry_from_phonemes(_v1(SVARA_PH_PLOSIVE_K));
+assert_eq(shabda_dict_entry_len(e1), 1, "len 1");
+assert_eq(shabda_dict_entry_is_empty(e1), 0, "not empty");
+var pp1 = shabda_dict_entry_primary_phonemes(e1);
+assert_eq(vec_len(pp1), 1, "primary 1 phoneme");
+assert_eq(vec_get(pp1, 0), SVARA_PH_PLOSIVE_K, "primary phoneme K");
+
+# ================================================================
+test_group("dict entry empty rejected");
+assert_eq(shabda_dict_entry_from_pronunciations(vec_new()), 0, "empty -> None (0)");
+
+# ================================================================
+test_group("dict entry frequency ordering");
+var op1 = shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_A)), 0.3);
+var op2 = shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), 0.7);
+var oe = shabda_dict_entry_from_pronunciations(_v2(op1, op2));
+assert_eq(vec_get(shabda_dict_entry_primary_phonemes(oe), 0), SVARA_PH_VOWEL_E, "primary E (higher freq first)");
+assert_eq(vec_get(shabda_pronunciation_phonemes(vec_get(shabda_dict_entry_all(oe), 1)), 0), SVARA_PH_VOWEL_A, "second is A");
+
+# ================================================================
+test_group("none frequency sorts last");
+var np1 = shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_A));
+var np2 = shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), 0.5);
+var ne = shabda_dict_entry_from_pronunciations(_v2(np1, np2));
+assert_eq(vec_get(shabda_dict_entry_primary_phonemes(ne), 0), SVARA_PH_VOWEL_E, "primary E (None sorts last)");
+
+# ================================================================
+test_group("dict entry for_region");
+var rp1 = shabda_pronunciation_with_region(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_A)), SHABDA_REGION_GA);
+var rp2 = shabda_pronunciation_with_region(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_OPEN_A)), SHABDA_REGION_RP);
+var re = shabda_dict_entry_from_pronunciations(_v2(rp1, rp2));
+var found = shabda_dict_entry_for_region(re, SHABDA_REGION_RP);
+assert_neq(found, 0, "found an RP variant");
+assert_eq(vec_get(shabda_pronunciation_phonemes(found), 0), SVARA_PH_VOWEL_OPEN_A, "RP variant is open-a");
+assert_eq(shabda_dict_entry_for_region(re, SHABDA_REGION_NONE), 0, "no NONE-region variant");
+
+# ================================================================
+test_group("add pronunciation re-sorts");
+var ae = shabda_dict_entry_from_phonemes(_v1(SVARA_PH_VOWEL_A));
+shabda_dict_entry_add_pronunciation(ae, shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), 0.9));
+assert_eq(shabda_dict_entry_len(ae), 2, "len 2");
+assert_eq(vec_get(shabda_dict_entry_primary_phonemes(ae), 0), SVARA_PH_VOWEL_E, "new high-freq E is primary");
+
+var rc = assert_summary();
+syscall(60, rc);

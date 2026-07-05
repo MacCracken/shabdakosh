@@ -14,6 +14,7 @@ include "lib/svara.cyr"
 include "src/error.cyr"
 include "src/arpabet.cyr"
 include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
 
 fn main() {
     alloc_init();
@@ -24,6 +25,12 @@ fn main() {
     println(shabda_phoneme_to_arpabet(shabda_arpabet_to_phoneme_with_stress("AH0")));
     # L1 smoke — IPA parse + render round-trip: "hɛˈloʊ" -> "hɛloʊ"
     println(shabda_phonemes_to_ipa(shabda_parse_ipa_word("hɛˈloʊ")));
+    # L1 smoke — DictEntry "K AE T" -> primary pronunciation phoneme count (3)
+    var kat = vec_new();
+    vec_push(kat, SVARA_PH_PLOSIVE_K);
+    vec_push(kat, SVARA_PH_VOWEL_ASH);
+    vec_push(kat, SVARA_PH_PLOSIVE_T);
+    println_int(vec_len(shabda_dict_entry_primary_phonemes(shabda_dict_entry_from_phonemes(kat))));
     return 0;
 }
 

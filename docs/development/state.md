@@ -48,8 +48,8 @@ formats → gated/optional.
 | L0 | error.rs | src/error.cyr | ✅ ported | 15 | ShabdakoshError → sakshi packed codes + `shabda_err_name`; fmt/lint clean |
 | L1 | arpabet.rs | src/arpabet.cyr | ✅ ported | 61 | ARPABET ↔ `SVARA_PH_*`; svara path-dep wired; fmt/lint clean |
 | L1 | ipa.rs | src/ipa.cyr | ✅ ported | 74 | IPA ↔ `SVARA_PH_*`; greedy longest-byte-match parser (tie-bar affricates), phonemes↔string; fmt/lint clean |
-| L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ⏳ next | — | Pronunciation / Region / DictEntry (first container module) |
-| L1 | dictionary/morphology.rs | src/dictionary/morphology.cyr | ⬜ | — | self-contained |
+| L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 25 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; freq-desc insertion sort; container serde deferred to L5 |
+| L1 | dictionary/morphology.rs | src/dictionary/morphology.cyr | ⏳ next | — | self-contained |
 | L1 | dictionary/syllable.rs | src/dictionary/syllable.cyr | ⬜ | — | Maximal Onset; self-contained |
 | L2 | notation.rs | src/notation.cyr | ⬜ | — | Arpabet/Ipa/XSampa; uses arpabet+ipa |
 | L2 | build.rs → gen | gen_cmudict.cyr + _cmudict_data.cyr | ⬜ | — | codegen the base dict |
@@ -70,8 +70,8 @@ formats → gated/optional.
 | L6 | ffi.rs | … | ⬜ | — | C ABI via cyrius header |
 | L6 | wasm.rs | … | ⬜ | — | no Cyrius wasm target — surface + doc gap |
 
-**3 of ~24 modules ported** (L0 error, L1 arpabet, L1 ipa). Build + smoke + tests green
-(152 assertions across 4 suites). `SHABDA_PH_NONE` sentinel lives in `error.cyr` (L0 base,
+**4 of ~24 modules ported** (L0 error; L1 arpabet, ipa, entry). Build + smoke + tests green
+(177 assertions across 5 suites). `SHABDA_PH_NONE` sentinel lives in `error.cyr` (L0 base,
 shared by arpabet/ipa).
 
 ## Dependencies
