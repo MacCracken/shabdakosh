@@ -1,0 +1,159 @@
+# json.cyr — PronunciationDict JSON codec (the hand-written serde replacement).
+#
+# Ports from_json/to_json of rust-old/src/dictionary/format/mod.rs. Per the locked
+# serde stance this is PERMANENT format-layer code (not a throwaway #derive stub);
+# it uses bayan's typed json_v_* DOM for BOTH directions. Included after
+# src/dictionary/mod.cyr (+ bayan stdlib).
+#
+# bayan cstr/Str contract: json_v_obj_set KEYS and json_v_str_new VALUES are Str
+# (fat pointers) — wrap cstr literals with str_from(). json_v_obj_get takes a
+# cstr key. json_v_str / json_v_obj_key RETURN Str — str_cstr() them for the
+# dict API (which wants NUL-terminated cstrs).
+#
+# 3.0.0 JSON schema (Cyrius-native — phonemes are integer ordinals):
+#   {"language":"en",
+#    "entries":{"cat":{"pronunciations":[{"phonemes":[24,7,22],"frequency":0.5,"region":"GA"}]}},
+#    "user_entries":{ ... }}
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+# ---- to_json (build via the DOM) ---------------------------------------------
+fn _shabda_pron_to_jsonv(pron): i64 {
+    var obj = json_v_obj_new();
+    var arr = json_v_arr_new();
+    var phon = shabda_pronunciation_phonemes(pron);
+    var n = vec_len(phon);
+    var i = 0;
+    while (i < n) {
+        json_v_arr_push(arr, json_v_int_new(vec_get(phon, i)));
+        i = i + 1;
+    }
+    json_v_obj_set(obj, str_from("phonemes"), arr);
+    if (shabda_pronunciation_has_frequency(pron) == 1) {
+        json_v_obj_set(obj, str_from("frequency"), json_v_float_new(shabda_pronunciation_frequency(pron)));
+    }
+    if (shabda_pronunciation_has_region(pron) == 1) {
+        var rc = shabda_region_code(shabda_pronunciation_region(pron));
+        json_v_obj_set(obj, str_from("region"), json_v_str_new(str_from(rc)));
+    }
+    return obj;
+}
+
+fn _shabda_entry_to_jsonv(entry): i64 {
+    var obj = json_v_obj_new();
+    var arr = json_v_arr_new();
+    var prons = shabda_dict_entry_all(entry);
+    var n = vec_len(prons);
+    var i = 0;
+    while (i < n) {
+        json_v_arr_push(arr, _shabda_pron_to_jsonv(vec_get(prons, i)));
+        i = i + 1;
+    }
+    json_v_obj_set(obj, str_from("pronunciations"), arr);
+    return obj;
+}
+
+fn _shabda_map_to_jsonv(m): i64 {
+    var obj = json_v_obj_new();
+    var keys = map_keys(m);
+    var n = vec_len(keys);
+    var i = 0;
+    var wk = 0;
+    while (i < n) {
+        wk = vec_get(keys, i);
+        # wk is already a Str (map key) — pass it directly as the object key.
+        json_v_obj_set(obj, wk, _shabda_entry_to_jsonv(map_get(m, wk)));
+        i = i + 1;
+    }
+    return obj;
+}
+
+# Serialize a PronunciationDict to a JSON cstr.
+#must_use
+fn shabda_to_json(dict): cstring {
+    var root = json_v_obj_new();
+    var lang = shabda_dict_language(dict);
+    if (lang != 0) {
+        json_v_obj_set(root, str_from("language"), json_v_str_new(str_from(lang)));
+    }
+    json_v_obj_set(root, str_from("entries"), _shabda_map_to_jsonv(shabda_dict_entries(dict)));
+    json_v_obj_set(root, str_from("user_entries"), _shabda_map_to_jsonv(shabda_dict_user_entries(dict)));
+    return str_data(json_v_build(root));
+}
+
+# ---- from_json (parse via the DOM) -------------------------------------------
+fn _shabda_pron_from_jsonv(pobj): i64 {
+    var phon = vec_new();
+    var pharr = json_v_obj_get(pobj, "phonemes");
+    if (pharr != 0) {
+        var n = json_v_arr_len(pharr);
+        var i = 0;
+        while (i < n) {
+            vec_push(phon, json_v_int(json_v_arr_get(pharr, i)));
+            i = i + 1;
+        }
+    }
+    var pron = shabda_pronunciation_new(phon);
+    var fq = json_v_obj_get(pobj, "frequency");
+    if (fq != 0) {
+        if (json_v_is_null(fq) == 0) {
+            pron = shabda_pronunciation_with_frequency(pron, json_v_float(fq));
+        }
+    }
+    var rg = json_v_obj_get(pobj, "region");
+    if (rg != 0) {
+        if (json_v_is_null(rg) == 0) {
+            pron = shabda_pronunciation_with_region(pron, shabda_region_from_code(str_cstr(json_v_str(rg))));
+        }
+    }
+    return pron;
+}
+
+fn _shabda_entry_from_jsonv(eobj): i64 {
+    var parr = json_v_obj_get(eobj, "pronunciations");
+    if (parr == 0) { return 0; }
+    var prons = vec_new();
+    var n = json_v_arr_len(parr);
+    var i = 0;
+    while (i < n) {
+        vec_push(prons, _shabda_pron_from_jsonv(json_v_arr_get(parr, i)));
+        i = i + 1;
+    }
+    return shabda_dict_entry_from_pronunciations(prons);
+}
+
+fn _shabda_parse_entries_into(dict, obj, is_user): i64 {
+    var n = json_v_obj_len(obj);
+    var i = 0;
+    var entry = 0;
+    while (i < n) {
+        entry = _shabda_entry_from_jsonv(json_v_obj_val(obj, i));
+        if (entry != 0) {
+            if (is_user == 1) {
+                shabda_dict_insert_user_entry(dict, str_cstr(json_v_obj_key(obj, i)), entry);
+            } else {
+                shabda_dict_insert_entry(dict, str_cstr(json_v_obj_key(obj, i)), entry);
+            }
+        }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Parse a JSON string into a PronunciationDict, or 0 on error.
+#must_use
+fn shabda_from_json(input): i64 {
+    var root = json_v_parse_str(input, strlen(input));
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return 0; }
+    var dict = shabda_dict_new();
+    var lang = json_v_obj_get(root, "language");
+    if (lang != 0) {
+        if (json_v_is_null(lang) == 0) { shabda_dict_set_language(dict, str_cstr(json_v_str(lang))); }
+    }
+    var entries = json_v_obj_get(root, "entries");
+    if (entries != 0) { _shabda_parse_entries_into(dict, entries, 0); }
+    var user = json_v_obj_get(root, "user_entries");
+    if (user != 0) { _shabda_parse_entries_into(dict, user, 1); }
+    return dict;
+}

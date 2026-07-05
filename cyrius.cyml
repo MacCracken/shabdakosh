@@ -32,6 +32,7 @@ modules = [
     "src/dictionary/heteronym.cyr",
     "src/dictionary/g2p.cyr",
     "src/dictionary/format/mod.cyr",
+    "src/dictionary/format/json.cyr",
 ]
 
 # stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown

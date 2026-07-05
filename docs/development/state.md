@@ -61,7 +61,7 @@ formats → gated/optional.
 | L4 | dictionary/heteronym.rs | src/dictionary/heteronym.cyr | ✅ ported | 17 | HeteronymContext + resolver as fn-ptr (fncall2); lookup_with_context variant selection |
 | L4 | dictionary/g2p.rs | src/dictionary/g2p.cyr | ✅ ported | 29 | G2PResult, LookupSource, FallbackDict (model = (predict_fp,state) pair), promote*, FstModel stub; wires with_fallback |
 | L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
-| L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr | 🔶 text ✅ | 26 | CMUdict + IPA parse/emit, XML escape/unescape, file I/O. JSON dict codec is the next bite (per serde stance) |
+| L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr | ✅ ported | 45 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec** (bayan DOM both ways) — the serde-stance deliverable |
 | L5 | dictionary/format/pls.rs | … | ⬜ | — | W3C PLS XML |
 | L5 | dictionary/format/ssml.rs | … | ⬜ | — | SSML phoneme tag |
 | L5 | dictionary/format/binary.rs | … | ⬜ | — | postcard equiv (maximal scope) |
@@ -108,6 +108,12 @@ bug in cmudict.cyr**: `f64_parse` takes a cstr byte-pointer (not a `str_new` Str
 frequencies were silently parsing to 0 — now fixed + regression-tested (bass @freq=0.5). Next
 sub-bites: the hand-written **PronunciationDict JSON codec** (the serde-stance deliverable),
 then format/pls, format/ssml, format/binary.
+
+**JSON codec done** (`format/json.cyr`, 19 tests → 484 assertions / 17 suites): hand-written
+`to_json`/`from_json` for `PronunciationDict` via bayan's `json_v_*` DOM — the permanent
+serde-replacement per the locked stance (round-trips words/phonemes/frequency/region/language/
+user-overlay; invalid JSON → 0). Debugging it pinned down the **bayan cstr/Str contract**
+(see memory). Next L5: format/pls, format/ssml, format/binary.
 
 ## Dependencies
 
