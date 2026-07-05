@@ -1,0 +1,184 @@
+# trie.cyr — prefix trie for word lookup / autocomplete.
+#
+# Ports rust-old/src/dictionary/trie.rs (PrefixTrie). Rust keyed children by
+# `char`; this keys by BYTE — equivalent for ASCII words, and correct at the
+# byte level for UTF-8 (prefix search over bytes). Each node's children are a
+# small vec of (byte, node) pairs (sparse fan-out; linear scan is fine). Extends
+# the keystone (from_dict / prefix_search); included after src/dictionary/mod.cyr.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+#
+# TrieNode layout (16 bytes): [0]=children(vec of pair*) [8]=is_word(0/1).
+# child pair (16 bytes): [0]=byte [8]=child node.
+# PrefixTrie layout (16 bytes): [0]=root(node) [8]=word_count.
+
+fn _shabda_trie_node_new(): i64 {
+    var n = alloc(16);
+    store64(n + 0, vec_new());
+    store64(n + 8, 0);
+    return n;
+}
+
+# Child node for `byte`, or 0.
+fn _shabda_trie_get_child(node, byte): i64 {
+    var ch = load64(node + 0);
+    var n = vec_len(ch);
+    var i = 0;
+    var pair = 0;
+    while (i < n) {
+        pair = vec_get(ch, i);
+        if (load64(pair + 0) == byte) { return load64(pair + 8); }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Child node for `byte`, creating it if absent.
+fn _shabda_trie_get_or_add_child(node, byte): i64 {
+    var existing = _shabda_trie_get_child(node, byte);
+    if (existing != 0) { return existing; }
+    var child = _shabda_trie_node_new();
+    var pair = alloc(16);
+    store64(pair + 0, byte);
+    store64(pair + 8, child);
+    vec_push(load64(node + 0), pair);
+    return child;
+}
+
+# Copy buf[0..n) into a fresh NUL-terminated cstr.
+fn _shabda_trie_dup_n(buf, n): i64 {
+    var out = alloc(n + 1);
+    var i = 0;
+    while (i < n) {
+        store8(out + i, load8(buf + i));
+        i = i + 1;
+    }
+    store8(out + n, 0);
+    return out;
+}
+
+#must_use
+fn shabda_trie_new(): i64 {
+    var t = alloc(16);
+    store64(t + 0, _shabda_trie_node_new());
+    store64(t + 8, 0);
+    return t;
+}
+
+# Insert the `len` bytes at `data` (internal — used for both cstr and Str inserts).
+fn _shabda_trie_insert_bytes(t, data, len): i64 {
+    var node = load64(t + 0);
+    var i = 0;
+    while (i < len) {
+        node = _shabda_trie_get_or_add_child(node, load8(data + i));
+        i = i + 1;
+    }
+    if (load64(node + 8) == 0) {
+        store64(node + 8, 1);
+        store64(t + 8, load64(t + 8) + 1);
+    }
+    return 0;
+}
+
+# Insert a word (cstr).
+fn shabda_trie_insert(t, word): i64 {
+    return _shabda_trie_insert_bytes(t, word, strlen(word));
+}
+
+# Build a trie from all dictionary words (base + user overlay). Keys may be
+# non-NUL-terminated Str (cmudict), so insert by (data, len).
+#must_use
+fn shabda_trie_from_dict(dict): i64 {
+    var t = shabda_trie_new();
+    var bkeys = map_keys(shabda_dict_entries(dict));
+    var n = vec_len(bkeys);
+    var i = 0;
+    var k = 0;
+    while (i < n) {
+        k = vec_get(bkeys, i);
+        _shabda_trie_insert_bytes(t, str_data(k), str_len(k));
+        i = i + 1;
+    }
+    var ukeys = map_keys(shabda_dict_user_entries(dict));
+    var un = vec_len(ukeys);
+    i = 0;
+    while (i < un) {
+        k = vec_get(ukeys, i);
+        _shabda_trie_insert_bytes(t, str_data(k), str_len(k));
+        i = i + 1;
+    }
+    return t;
+}
+
+# 1 if the trie contains the exact word (cstr).
+#must_use
+fn shabda_trie_contains(t, word): i64 {
+    var node = load64(t + 0);
+    var i = 0;
+    while (load8(word + i) != 0) {
+        node = _shabda_trie_get_child(node, load8(word + i));
+        if (node == 0) { return 0; }
+        i = i + 1;
+    }
+    return load64(node + 8);
+}
+
+#must_use
+fn shabda_trie_len(t): i64 {
+    return load64(t + 8);
+}
+
+#must_use
+fn shabda_trie_is_empty(t): i64 {
+    if (load64(t + 8) == 0) { return 1; }
+    return 0;
+}
+
+# Recursively collect all words under `node`; `buf[0..depth)` is the path so far.
+fn _shabda_trie_collect(node, buf, depth, results): i64 {
+    if (load64(node + 8) == 1) {
+        vec_push(results, str_from(_shabda_trie_dup_n(buf, depth)));
+    }
+    var ch = load64(node + 0);
+    var nc = vec_len(ch);
+    var i = 0;
+    var pair = 0;
+    while (i < nc) {
+        pair = vec_get(ch, i);
+        store8(buf + depth, load64(pair + 0));
+        _shabda_trie_collect(load64(pair + 8), buf, depth + 1, results);
+        i = i + 1;
+    }
+    return 0;
+}
+
+# All words starting with `prefix` (cstr), sorted alphabetically (by byte).
+#must_use
+fn shabda_trie_search_prefix(t, prefix): i64 {
+    var results = vec_new();
+    var node = load64(t + 0);
+    var i = 0;
+    while (load8(prefix + i) != 0) {
+        node = _shabda_trie_get_child(node, load8(prefix + i));
+        if (node == 0) { return results; }
+        i = i + 1;
+    }
+    var plen = strlen(prefix);
+    var buf = alloc(plen + 512);
+    var k = 0;
+    while (k < plen) {
+        store8(buf + k, load8(prefix + k));
+        k = k + 1;
+    }
+    _shabda_trie_collect(node, buf, plen, results);
+    _shabda_sort_strs(results);
+    return results;
+}
+
+# Keystone method (was deferred from mod.cyr): all base+user words starting with
+# `prefix` (cstr), sorted. Builds a trie per call — reuse a from_dict trie for
+# repeated searches.
+#must_use
+fn shabda_dict_prefix_search(d, prefix): i64 {
+    return shabda_trie_search_prefix(shabda_trie_from_dict(d), prefix);
+}

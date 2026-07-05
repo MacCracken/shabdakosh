@@ -28,6 +28,7 @@ modules = [
     "src/dictionary/mod.cyr",
     "src/dictionary/coverage.cyr",
     "src/dictionary/stream.cyr",
+    "src/dictionary/trie.cyr",
 ]
 
 # stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown

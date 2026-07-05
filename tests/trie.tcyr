@@ -1,0 +1,111 @@
+# trie.tcyr — tests for src/dictionary/trie.cyr (ports rust-old/src/dictionary/trie.rs).
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/trie.cyr"
+
+alloc_init();
+
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _has(results, w): i64 {
+    var n = vec_len(results);
+    var i = 0;
+    while (i < n) {
+        if (streq(str_data(vec_get(results, i)), w) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# ================================================================
+test_group("empty trie");
+var t0 = shabda_trie_new();
+assert_eq(shabda_trie_is_empty(t0), 1, "is_empty");
+assert_eq(shabda_trie_len(t0), 0, "len 0");
+assert_eq(shabda_trie_contains(t0, "hello"), 0, "no hello");
+assert_eq(vec_len(shabda_trie_search_prefix(t0, "h")), 0, "empty prefix search");
+
+# ================================================================
+test_group("insert and contains");
+var t = shabda_trie_new();
+shabda_trie_insert(t, "hello");
+shabda_trie_insert(t, "help");
+shabda_trie_insert(t, "world");
+assert_eq(shabda_trie_contains(t, "hello"), 1, "hello");
+assert_eq(shabda_trie_contains(t, "help"), 1, "help");
+assert_eq(shabda_trie_contains(t, "world"), 1, "world");
+assert_eq(shabda_trie_contains(t, "hell"), 0, "hell (prefix, not word)");
+assert_eq(shabda_trie_contains(t, "helloo"), 0, "helloo (past word)");
+assert_eq(shabda_trie_len(t), 3, "len 3");
+
+# ================================================================
+test_group("duplicate insert");
+var td = shabda_trie_new();
+shabda_trie_insert(td, "hello");
+shabda_trie_insert(td, "hello");
+assert_eq(shabda_trie_len(td), 1, "dup -> len 1");
+
+# ================================================================
+test_group("search prefix");
+var ts = shabda_trie_new();
+shabda_trie_insert(ts, "hello");
+shabda_trie_insert(ts, "help");
+shabda_trie_insert(ts, "helper");
+shabda_trie_insert(ts, "world");
+var rs = shabda_trie_search_prefix(ts, "hel");
+assert_eq(vec_len(rs), 3, "3 matches for 'hel'");
+assert_eq(_has(rs, "hello"), 1, "has hello");
+assert_eq(_has(rs, "help"), 1, "has help");
+assert_eq(_has(rs, "helper"), 1, "has helper");
+
+# ================================================================
+test_group("search prefix exact / no match / empty prefix");
+assert_eq(vec_len(shabda_trie_search_prefix(ts, "hello")), 1, "exact 'hello' -> 1");
+assert_eq(vec_len(shabda_trie_search_prefix(ts, "xyz")), 0, "no match -> 0");
+var tab = shabda_trie_new();
+shabda_trie_insert(tab, "a");
+shabda_trie_insert(tab, "b");
+assert_eq(vec_len(shabda_trie_search_prefix(tab, "")), 2, "empty prefix -> all (2)");
+
+# ================================================================
+test_group("results sorted");
+var tsort = shabda_trie_new();
+shabda_trie_insert(tsort, "cat");
+shabda_trie_insert(tsort, "car");
+shabda_trie_insert(tsort, "card");
+shabda_trie_insert(tsort, "care");
+var rsort = shabda_trie_search_prefix(tsort, "car");
+assert_eq(vec_len(rsort), 3, "3 matches for 'car'");
+assert_streq(str_data(vec_get(rsort, 0)), "car", "sorted[0] car");
+assert_streq(str_data(vec_get(rsort, 1)), "card", "sorted[1] card");
+assert_streq(str_data(vec_get(rsort, 2)), "care", "sorted[2] care");
+
+# ================================================================
+test_group("from_dict (base + user overlay)");
+var td2 = shabda_trie_from_dict(shabda_dict_english_minimal());
+assert_eq(shabda_trie_len(td2), 29, "trie.len == dict.len (29)");
+assert_eq(shabda_trie_contains(td2, "hello"), 1, "hello");
+assert_eq(shabda_trie_contains(td2, "the"), 1, "the");
+assert_eq(shabda_trie_contains(td2, "xyzzy"), 0, "no xyzzy");
+var du = shabda_dict_new();
+shabda_dict_insert(du, "base", _v1(SVARA_PH_PLOSIVE_B));
+shabda_dict_insert_user(du, "user", _v1(SVARA_PH_VOWEL_U));
+var tu = shabda_trie_from_dict(du);
+assert_eq(shabda_trie_contains(tu, "base"), 1, "base (from base map)");
+assert_eq(shabda_trie_contains(tu, "user"), 1, "user (from overlay)");
+assert_eq(shabda_trie_len(tu), 2, "len 2");
+
+# ================================================================
+test_group("keystone prefix_search");
+var pr = shabda_dict_prefix_search(shabda_dict_english_minimal(), "he");
+assert_eq(_has(pr, "hello"), 1, "prefix_search 'he' includes hello");
+
+var rc = assert_summary();
+syscall(60, rc);

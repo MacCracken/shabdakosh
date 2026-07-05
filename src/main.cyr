@@ -23,6 +23,7 @@ include "src/dictionary/cmudict.cyr"
 include "src/dictionary/mod.cyr"
 include "src/dictionary/coverage.cyr"
 include "src/dictionary/stream.cyr"
+include "src/dictionary/trie.cyr"
 
 fn main() {
     alloc_init();
@@ -68,6 +69,8 @@ fn main() {
     vec_push(sw, "hello");
     vec_push(sw, "xyz");
     println_int(shabda_lookup_stream_size_hint(shabda_dict_lookup_stream(shabda_dict_english_minimal(), sw)));
+    # L4 smoke — prefix_search "he" over english_minimal (he, hello)
+    println_int(vec_len(shabda_dict_prefix_search(shabda_dict_english_minimal(), "he")));
     return 0;
 }
 
