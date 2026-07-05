@@ -44,6 +44,8 @@ test_group("heteronym (folded variants)");
 var bass = map_get(m, str_from("bass"));
 assert_neq(bass, 0, "bass present");
 assert_eq(shabda_dict_entry_len(bass), 2, "bass: 2 pronunciations");
+assert_eq(shabda_pronunciation_has_frequency(shabda_dict_entry_primary(bass)), 1, "bass primary has @freq");
+assert_eq(shabda_pronunciation_frequency(shabda_dict_entry_primary(bass)), 0.5, "bass @freq=0.5 parsed");
 
 # ================================================================
 test_group("missing word");

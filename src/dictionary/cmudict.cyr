@@ -64,7 +64,7 @@ fn _shabda_cmudict_parse_entry(m, piece, s, e): i64 {
                     if (load8(piece + q) == 94) { break; }   # '^'
                     q = q + 1;
                 }
-                freq = f64_parse(str_new(piece + fs, q - fs));
+                freq = f64_parse(piece + fs);
             }
         }
         # optional ^region (2-char code)

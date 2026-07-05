@@ -1,0 +1,497 @@
+# format/mod.cyr — dictionary import/export: CMUdict + IPA text formats, XML
+# escape helpers (shared by pls/ssml), and file I/O.
+#
+# Ports rust-old/src/dictionary/format/mod.rs (minus the JSON codec, which is its
+# own bite per the serde stance). Parsers return a PronunciationDict pointer, or
+# 0 on a parse error (Rust's Err(DictParseError) — the specific message is
+# dropped, per the sakshi error model). Included after arpabet + ipa + mod.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+# ---- byte-scan helpers -------------------------------------------------------
+fn _shabda_fmt_is_ws(c): i64 {
+    if (c == 32) { return 1; }
+    if (c == 9) { return 1; }
+    if (c == 13) { return 1; }
+    return 0;
+}
+
+fn _shabda_fmt_line_end(s, off, end): i64 {
+    while (off < end) {
+        if (load8(s + off) == 10) { return off; }
+        off = off + 1;
+    }
+    return off;
+}
+
+# Lowercased NUL-terminated copy of s[start..end).
+fn _shabda_fmt_lower_dup(s, start, end): i64 {
+    var n = end - start;
+    var buf = alloc(n + 1);
+    var i = 0;
+    var c = 0;
+    while (i < n) {
+        c = load8(s + start + i);
+        if (c >= 65) {
+            if (c <= 90) { c = c + 32; }
+        }
+        store8(buf + i, c);
+        i = i + 1;
+    }
+    store8(buf + n, 0);
+    return buf;
+}
+
+# NUL-terminated copy of s[start..end) (no case change).
+fn _shabda_fmt_dup(s, start, end): i64 {
+    var n = end - start;
+    var buf = alloc(n + 1);
+    var i = 0;
+    while (i < n) {
+        store8(buf + i, load8(s + start + i));
+        i = i + 1;
+    }
+    store8(buf + n, 0);
+    return buf;
+}
+
+# 1 if s[pos..] begins with cstr `lit`.
+fn _shabda_starts_at(s, pos, lit): i64 {
+    var j = 0;
+    var n = strlen(lit);
+    while (j < n) {
+        if (load8(s + pos + j) != load8(lit + j)) { return 0; }
+        j = j + 1;
+    }
+    return 1;
+}
+
+# ---- XML escape / unescape (shared with pls / ssml) --------------------------
+fn _shabda_xml_entity(c): i64 {
+    if (c == 38) { return "&amp;"; }
+    if (c == 60) { return "&lt;"; }
+    if (c == 62) { return "&gt;"; }
+    if (c == 34) { return "&quot;"; }
+    if (c == 39) { return "&apos;"; }
+    return 0;
+}
+
+# Escape XML special chars (& < > " ') in `s`. Returns a fresh cstr.
+#must_use
+fn shabda_xml_escape(s): cstring {
+    var sb = str_builder_new();
+    var i = 0;
+    var ent = 0;
+    while (load8(s + i) != 0) {
+        ent = _shabda_xml_entity(load8(s + i));
+        if (ent != 0) {
+            str_builder_add_cstr(sb, ent);
+        } else {
+            str_builder_add_byte(sb, load8(s + i));
+        }
+        i = i + 1;
+    }
+    return str_data(str_builder_build(sb));
+}
+
+# Decode one unit at s[i]: append the decoded byte(s) to `sb`, return bytes read.
+fn _shabda_xml_decode_at(s, i, sb): i64 {
+    if (_shabda_starts_at(s, i, "&amp;") == 1) { str_builder_add_byte(sb, 38); return 5; }
+    if (_shabda_starts_at(s, i, "&lt;") == 1) { str_builder_add_byte(sb, 60); return 4; }
+    if (_shabda_starts_at(s, i, "&gt;") == 1) { str_builder_add_byte(sb, 62); return 4; }
+    if (_shabda_starts_at(s, i, "&quot;") == 1) { str_builder_add_byte(sb, 34); return 6; }
+    if (_shabda_starts_at(s, i, "&apos;") == 1) { str_builder_add_byte(sb, 39); return 6; }
+    str_builder_add_byte(sb, load8(s + i));
+    return 1;
+}
+
+# Unescape XML entities in `s`. Returns a fresh cstr.
+#must_use
+fn shabda_xml_unescape(s): cstring {
+    var sb = str_builder_new();
+    var len = strlen(s);
+    var i = 0;
+    while (i < len) {
+        i = i + _shabda_xml_decode_at(s, i, sb);
+    }
+    return str_data(str_builder_build(sb));
+}
+
+# ---- CMUdict parse -----------------------------------------------------------
+# Parse extended CMUdict text into a PronunciationDict, or 0 on parse error
+# (missing two-space separator, unknown ARPABET symbol, or empty phonemes).
+#must_use
+fn shabda_parse_cmudict(input): i64 {
+    var word_map = map_new_str();
+    var order = vec_new();
+    var pending_freq = SHABDA_FREQ_NONE;
+    var pending_region = SHABDA_REGION_NONE;
+    var len = strlen(input);
+    var pos = 0;
+    var le = 0;
+    var s = 0;
+    var e = 0;
+    var sep = 0;
+    var found = 0;
+    var wend = 0;
+    var phon = 0;
+    var pp = 0;
+    var ss = 0;
+    var ee = 0;
+    var sym = 0;
+    var ph = 0;
+    var pron = 0;
+    var wkey = 0;
+    var acc = 0;
+    var ti = 0;
+    var vs = 0;
+    var ve = 0;
+    while (pos < len) {
+        le = _shabda_fmt_line_end(input, pos, len);
+        s = pos;
+        while (s < le) {
+            if (_shabda_fmt_is_ws(load8(input + s)) == 0) { break; }
+            s = s + 1;
+        }
+        e = le;
+        while (e > s) {
+            if (_shabda_fmt_is_ws(load8(input + e - 1)) == 0) { break; }
+            e = e - 1;
+        }
+        if (s >= e) { pos = le + 1; continue; }
+
+        # comment / annotation line
+        if (_shabda_starts_at(input, s, ";;;") == 1) {
+            ti = s + 3;
+            while (ti < e) {
+                if (load8(input + ti) == 64) {   # '@'
+                    if (_shabda_starts_at(input, ti, "@freq=") == 1) {
+                        vs = ti + 6;
+                        ve = vs;
+                        while (ve < e) {
+                            if (_shabda_fmt_is_ws(load8(input + ve)) == 1) { break; }
+                            ve = ve + 1;
+                        }
+                        pending_freq = f64_parse(input + vs);
+                        ti = ve;
+                    } else {
+                        if (_shabda_starts_at(input, ti, "@region=") == 1) {
+                            vs = ti + 8;
+                            ve = vs;
+                            while (ve < e) {
+                                if (_shabda_fmt_is_ws(load8(input + ve)) == 1) { break; }
+                                ve = ve + 1;
+                            }
+                            pending_region = shabda_region_from_code(_shabda_fmt_dup(input, vs, ve));
+                            ti = ve;
+                        } else {
+                            ti = ti + 1;
+                        }
+                    }
+                } else {
+                    ti = ti + 1;
+                }
+            }
+            pos = le + 1;
+            continue;
+        }
+
+        # entry line: find two-space separator
+        sep = s;
+        found = 0;
+        while (sep < e - 1) {
+            if (load8(input + sep) == 32) {
+                if (load8(input + sep + 1) == 32) { found = 1; break; }
+            }
+            sep = sep + 1;
+        }
+        if (found == 0) { return 0; }
+
+        # base word (strip '(' variant suffix), lowercased
+        wend = s;
+        while (wend < sep) {
+            if (load8(input + wend) == 40) { break; }
+            wend = wend + 1;
+        }
+        var wlc = _shabda_fmt_lower_dup(input, s, wend);
+
+        # phonemes
+        phon = vec_new();
+        pp = sep + 2;
+        while (pp < e) {
+            while (pp < e) {
+                if (_shabda_fmt_is_ws(load8(input + pp)) == 0) { break; }
+                pp = pp + 1;
+            }
+            if (pp >= e) { break; }
+            ss = pp;
+            while (pp < e) {
+                if (_shabda_fmt_is_ws(load8(input + pp)) == 1) { break; }
+                pp = pp + 1;
+            }
+            ee = pp;
+            sym = _shabda_fmt_dup(input, ss, ee);
+            ph = shabda_arpabet_to_phoneme_with_stress(sym);
+            if (ph == SHABDA_PH_NONE) { return 0; }
+            vec_push(phon, ph);
+        }
+        if (vec_len(phon) == 0) { return 0; }
+
+        pron = shabda_pronunciation_new(phon);
+        if (pending_freq != SHABDA_FREQ_NONE) {
+            pron = shabda_pronunciation_with_frequency(pron, pending_freq);
+            pending_freq = SHABDA_FREQ_NONE;
+        }
+        if (pending_region != SHABDA_REGION_NONE) {
+            pron = shabda_pronunciation_with_region(pron, pending_region);
+            pending_region = SHABDA_REGION_NONE;
+        }
+
+        wkey = str_from(wlc);
+        acc = map_get(word_map, wkey);
+        if (acc == 0) {
+            acc = vec_new();
+            vec_push(acc, pron);
+            map_set(word_map, wkey, acc);
+            vec_push(order, wkey);
+        } else {
+            vec_push(acc, pron);
+        }
+        pos = le + 1;
+    }
+
+    # build the dict
+    var dict = shabda_dict_new();
+    var i = 0;
+    var nw = vec_len(order);
+    var wk = 0;
+    var entry = 0;
+    while (i < nw) {
+        wk = vec_get(order, i);
+        entry = shabda_dict_entry_from_pronunciations(map_get(word_map, wk));
+        if (entry != 0) {
+            shabda_dict_insert_entry(dict, str_data(wk), entry);
+        }
+        i = i + 1;
+    }
+    return dict;
+}
+
+# ---- CMUdict emit ------------------------------------------------------------
+# Append one entry (all its pronunciations) to `sb` in CMUdict format.
+fn _shabda_write_entry_cmudict(sb, word, entry): i64 {
+    var prons = shabda_dict_entry_all(entry);
+    var n = vec_len(prons);
+    var i = 0;
+    var pron = 0;
+    var hasf = 0;
+    var hasr = 0;
+    var fbuf = 0;
+    var flen = 0;
+    var phon = 0;
+    var np = 0;
+    var k = 0;
+    var arp = 0;
+    while (i < n) {
+        pron = vec_get(prons, i);
+        hasf = shabda_pronunciation_has_frequency(pron);
+        hasr = shabda_pronunciation_has_region(pron);
+        if (hasf == 1) {
+            str_builder_add_cstr(sb, ";;; @freq=");
+            fbuf = alloc(32);
+            flen = fmt_float_buf(shabda_pronunciation_frequency(pron), fbuf, 4);
+            store8(fbuf + flen, 0);
+            str_builder_add_cstr(sb, fbuf);
+            if (hasr == 1) {
+                str_builder_add_cstr(sb, " @region=");
+                str_builder_add_cstr(sb, shabda_region_code(shabda_pronunciation_region(pron)));
+            }
+            str_builder_add_cstr(sb, "\n");
+        } else {
+            if (hasr == 1) {
+                str_builder_add_cstr(sb, ";;; @region=");
+                str_builder_add_cstr(sb, shabda_region_code(shabda_pronunciation_region(pron)));
+                str_builder_add_cstr(sb, "\n");
+            }
+        }
+        str_builder_add_cstr(sb, word);
+        if (i > 0) {
+            str_builder_add_cstr(sb, "(");
+            str_builder_add_int(sb, i + 1);
+            str_builder_add_cstr(sb, ")");
+        }
+        str_builder_add_cstr(sb, "  ");
+        phon = shabda_pronunciation_phonemes(pron);
+        np = vec_len(phon);
+        k = 0;
+        while (k < np) {
+            if (k > 0) { str_builder_add_cstr(sb, " "); }
+            arp = shabda_phoneme_to_arpabet(vec_get(phon, k));
+            if (arp != 0) { str_builder_add_cstr(sb, arp); }
+            k = k + 1;
+        }
+        str_builder_add_cstr(sb, "\n");
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Serialize base entries to CMUdict text (sorted). Returns a cstr.
+#must_use
+fn shabda_to_cmudict(dict): cstring {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, ";;; Generated by shabdakosh\n");
+    var words = map_keys(shabda_dict_entries(dict));
+    _shabda_sort_strs(words);
+    var n = vec_len(words);
+    var i = 0;
+    var wk = 0;
+    while (i < n) {
+        wk = vec_get(words, i);
+        _shabda_write_entry_cmudict(sb, str_data(wk), map_get(shabda_dict_entries(dict), wk));
+        i = i + 1;
+    }
+    return str_data(str_builder_build(sb));
+}
+
+# Serialize base + user overlay to CMUdict text. Returns a cstr.
+#must_use
+fn shabda_to_cmudict_with_user(dict): cstring {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, ";;; Generated by shabdakosh\n");
+    var base = shabda_dict_entries(dict);
+    var user = shabda_dict_user_entries(dict);
+    var words = map_keys(base);
+    _shabda_sort_strs(words);
+    var n = vec_len(words);
+    var i = 0;
+    var wk = 0;
+    while (i < n) {
+        wk = vec_get(words, i);
+        if (map_has(user, wk) == 0) {
+            _shabda_write_entry_cmudict(sb, str_data(wk), map_get(base, wk));
+        }
+        i = i + 1;
+    }
+    var uwords = map_keys(user);
+    _shabda_sort_strs(uwords);
+    var un = vec_len(uwords);
+    i = 0;
+    while (i < un) {
+        wk = vec_get(uwords, i);
+        _shabda_write_entry_cmudict(sb, str_data(wk), map_get(user, wk));
+        i = i + 1;
+    }
+    return str_data(str_builder_build(sb));
+}
+
+# ---- IPA parse / emit --------------------------------------------------------
+# Parse an IPA dictionary (`word /IPA/` or `word IPA` per line), or 0 on error.
+#must_use
+fn shabda_parse_ipa(input): i64 {
+    var dict = shabda_dict_new();
+    var len = strlen(input);
+    var pos = 0;
+    var le = 0;
+    var s = 0;
+    var e = 0;
+    var slash = 0;
+    var wend = 0;
+    var istart = 0;
+    var iend = 0;
+    var phon = 0;
+    while (pos < len) {
+        le = _shabda_fmt_line_end(input, pos, len);
+        s = pos;
+        while (s < le) {
+            if (_shabda_fmt_is_ws(load8(input + s)) == 0) { break; }
+            s = s + 1;
+        }
+        e = le;
+        while (e > s) {
+            if (_shabda_fmt_is_ws(load8(input + e - 1)) == 0) { break; }
+            e = e - 1;
+        }
+        if (s >= e) { pos = le + 1; continue; }
+        if (load8(input + s) == 35) { pos = le + 1; continue; }   # '#' comment
+
+        # find a '/' -> "word /IPA/"
+        slash = s;
+        while (slash < e) {
+            if (load8(input + slash) == 47) { break; }
+            slash = slash + 1;
+        }
+        if (slash < e) {
+            wend = slash;
+            while (wend > s) {
+                if (_shabda_fmt_is_ws(load8(input + wend - 1)) == 0) { break; }
+                wend = wend - 1;
+            }
+            istart = slash + 1;
+            iend = e;
+            if (iend > istart) {
+                if (load8(input + iend - 1) == 47) { iend = iend - 1; }
+            }
+        } else {
+            # "word IPA" — split on first whitespace
+            wend = s;
+            while (wend < e) {
+                if (_shabda_fmt_is_ws(load8(input + wend)) == 1) { break; }
+                wend = wend + 1;
+            }
+            if (wend >= e) { return 0; }   # missing IPA transcription
+            istart = wend;
+            while (istart < e) {
+                if (_shabda_fmt_is_ws(load8(input + istart)) == 0) { break; }
+                istart = istart + 1;
+            }
+            iend = e;
+        }
+        phon = shabda_parse_ipa_word(_shabda_fmt_dup(input, istart, iend));
+        if (vec_len(phon) == 0) { return 0; }
+        shabda_dict_insert(dict, _shabda_fmt_dup(input, s, wend), phon);
+        pos = le + 1;
+    }
+    return dict;
+}
+
+# Serialize to IPA format (`word /IPA/`, sorted, primary only). Returns a cstr.
+#must_use
+fn shabda_to_ipa(dict): cstring {
+    var sb = str_builder_new();
+    var words = map_keys(shabda_dict_entries(dict));
+    _shabda_sort_strs(words);
+    var n = vec_len(words);
+    var i = 0;
+    var wk = 0;
+    var entry = 0;
+    while (i < n) {
+        wk = vec_get(words, i);
+        entry = map_get(shabda_dict_entries(dict), wk);
+        str_builder_add_cstr(sb, str_data(wk));
+        str_builder_add_cstr(sb, " /");
+        str_builder_add_cstr(sb, shabda_phonemes_to_ipa(shabda_dict_entry_primary_phonemes(entry)));
+        str_builder_add_cstr(sb, "/\n");
+        i = i + 1;
+    }
+    return str_data(str_builder_build(sb));
+}
+
+# ---- file I/O ----------------------------------------------------------------
+# Load + parse a CMUdict file, or 0 on read / parse error.
+#must_use
+fn shabda_load_cmudict_file(path): i64 {
+    var buf = alloc(1048576);
+    var n = file_read_all(path, buf, 1048575);
+    if (n < 0) { return 0; }
+    store8(buf + n, 0);
+    return shabda_parse_cmudict(buf);
+}
+
+# Save a dict to a CMUdict file. Returns 0 on success, negative on write error.
+fn shabda_save_cmudict_file(dict, path): i64 {
+    var data = shabda_to_cmudict(dict);
+    var n = file_write_all(path, data, strlen(data));
+    if (n < 0) { return (0 - 1); }
+    return 0;
+}

@@ -1,0 +1,74 @@
+# format.tcyr — tests for src/dictionary/format/mod.cyr (text formats + XML).
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/format/mod.cyr"
+
+alloc_init();
+
+# ================================================================
+test_group("xml escape / unescape");
+assert_streq(shabda_xml_escape("a<b>&c\"d'e"), "a&lt;b&gt;&amp;c&quot;d&apos;e", "escape");
+assert_streq(shabda_xml_unescape("a&lt;b&gt;&amp;c&quot;d&apos;e"), "a<b>&c\"d'e", "unescape");
+assert_streq(shabda_xml_unescape(shabda_xml_escape("<x a=\"1\">&")), "<x a=\"1\">&", "roundtrip");
+
+# ================================================================
+test_group("parse_cmudict");
+var d = shabda_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n");
+assert_neq(d, 0, "parsed ok");
+assert_eq(shabda_dict_len(d), 2, "2 entries");
+var catp = shabda_dict_lookup(d, "cat");
+assert_neq(catp, 0, "cat present");
+assert_eq(vec_get(catp, 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
+assert_eq(vec_get(catp, 1), SVARA_PH_VOWEL_ASH, "cat[1] AE");
+assert_eq(vec_get(catp, 2), SVARA_PH_PLOSIVE_T, "cat[2] T");
+
+# ================================================================
+test_group("cmudict roundtrip");
+var d2 = shabda_parse_cmudict(shabda_to_cmudict(d));
+assert_neq(d2, 0, "re-parsed ok");
+assert_eq(shabda_dict_len(d2), 2, "2 entries after roundtrip");
+assert_eq(vec_get(shabda_dict_lookup(d2, "dog"), 0), SVARA_PH_PLOSIVE_D, "dog[0] D");
+
+# ================================================================
+test_group("cmudict heteronym + @freq");
+var df = shabda_parse_cmudict(";;; @freq=0.5\nread  R IY1 D\n;;; @freq=0.5\nread(2)  R EH1 D\n");
+assert_neq(df, 0, "parsed heteronym");
+var re = shabda_dict_lookup_entry(df, "read");
+assert_eq(shabda_dict_entry_len(re), 2, "read has 2 pronunciations");
+assert_eq(shabda_pronunciation_has_frequency(shabda_dict_entry_primary(re)), 1, "freq set");
+assert_eq(shabda_pronunciation_frequency(shabda_dict_entry_primary(re)), 0.5, "freq 0.5");
+
+# ================================================================
+test_group("parse_cmudict errors");
+assert_eq(shabda_parse_cmudict("catNOSEP K AE1 T\n"), 0, "missing two-space -> 0");
+assert_eq(shabda_parse_cmudict("cat  K ZZZ T\n"), 0, "unknown ARPABET symbol -> 0");
+
+# ================================================================
+test_group("parse_ipa / to_ipa");
+var di = shabda_parse_ipa("cat /kæt/\ndog /dɔɡ/\n");
+assert_neq(di, 0, "parsed ipa");
+assert_eq(shabda_dict_len(di), 2, "2 entries");
+assert_eq(vec_get(shabda_dict_lookup(di, "cat"), 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
+var di2 = shabda_parse_ipa(shabda_to_ipa(di));
+assert_neq(di2, 0, "ipa roundtrip parse");
+assert_eq(shabda_dict_len(di2), 2, "2 after roundtrip");
+assert_eq(vec_get(shabda_dict_lookup(di2, "cat"), 0), SVARA_PH_PLOSIVE_K, "roundtrip cat[0] K");
+
+# ================================================================
+test_group("parse_ipa: 'word IPA' (no slashes) + comments");
+var di3 = shabda_parse_ipa("# a comment\ncat kæt\n");
+assert_neq(di3, 0, "word IPA form");
+assert_neq(shabda_dict_lookup(di3, "cat"), 0, "cat present (comment skipped)");
+
+var rc = assert_summary();
+syscall(60, rc);

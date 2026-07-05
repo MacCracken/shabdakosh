@@ -61,7 +61,7 @@ formats → gated/optional.
 | L4 | dictionary/heteronym.rs | src/dictionary/heteronym.cyr | ✅ ported | 17 | HeteronymContext + resolver as fn-ptr (fncall2); lookup_with_context variant selection |
 | L4 | dictionary/g2p.rs | src/dictionary/g2p.cyr | ✅ ported | 29 | G2PResult, LookupSource, FallbackDict (model = (predict_fp,state) pair), promote*, FstModel stub; wires with_fallback |
 | L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
-| L5 | dictionary/format/mod.rs | … | ⏳ next | — | CMUdict/IPA/JSON I/O + PronunciationDict JSON (permanent, per serde stance) |
+| L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr | 🔶 text ✅ | 26 | CMUdict + IPA parse/emit, XML escape/unescape, file I/O. JSON dict codec is the next bite (per serde stance) |
 | L5 | dictionary/format/pls.rs | … | ⬜ | — | W3C PLS XML |
 | L5 | dictionary/format/ssml.rs | … | ⬜ | — | SSML phoneme tag |
 | L5 | dictionary/format/binary.rs | … | ⬜ | — | postcard equiv (maximal scope) |
@@ -100,8 +100,14 @@ only if the merged-from dict is mutated afterward; flag for a future clone or an
 **L4 extension tier COMPLETE** (coverage, stream, trie, heteronym, g2p) → 437 assertions /
 15 suites. `prefix_search` + `with_fallback` now wired into the keystone. (Cleaned a stray
 `deferred`-keyword lint warning in the committed trie.cyr.) A parity audit over L3+L4 is
-planned before release. Next: **L5 format layer** — format/mod (CMUdict/IPA/JSON + the
-hand-written PronunciationDict JSON per the serde stance), then pls, ssml, binary.
+planned before release.
+
+**L5 format layer started** — `format/mod` TEXT formats done (CMUdict + IPA parse/emit, XML
+escape/unescape, file I/O) → 465 assertions / 16 suites. Fixing this bite surfaced a **latent
+bug in cmudict.cyr**: `f64_parse` takes a cstr byte-pointer (not a `str_new` Str), so heteronym
+frequencies were silently parsing to 0 — now fixed + regression-tested (bass @freq=0.5). Next
+sub-bites: the hand-written **PronunciationDict JSON codec** (the serde-stance deliverable),
+then format/pls, format/ssml, format/binary.
 
 ## Dependencies
 
