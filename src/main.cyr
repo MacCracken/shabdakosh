@@ -25,6 +25,7 @@ include "src/dictionary/coverage.cyr"
 include "src/dictionary/stream.cyr"
 include "src/dictionary/trie.cyr"
 include "src/dictionary/heteronym.cyr"
+include "src/dictionary/g2p.cyr"
 
 fn main() {
     alloc_init();
@@ -78,6 +79,9 @@ fn main() {
     vec_push(hw, "read");
     vec_push(hw, "books");
     println_int(vec_len(shabda_heteronym_preceding_words(shabda_heteronym_context_new(hw, 1))));
+    # L4 smoke — fallback dict (FstModel stub) still serves "hello" from base (4 phonemes)
+    var fbm = shabda_dict_with_fallback(shabda_dict_english_minimal(), &shabda_fst_model_predict, shabda_fst_model_new("/x", SHABDA_FST_NOTATION_ARPABET));
+    println_int(vec_len(shabda_fallback_dict_lookup(fbm, "hello")));
     return 0;
 }
 

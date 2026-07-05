@@ -59,9 +59,9 @@ formats → gated/optional.
 | L4 | dictionary/stream.rs | src/dictionary/stream.cyr | ✅ ported | 12 | LookupStream iterator → stateful cursor (zero-alloc per step); next/word/phonemes/size_hint |
 | L4 | dictionary/trie.rs | src/dictionary/trie.cyr | ✅ ported | 30 | PrefixTrie (byte-keyed vec-of-pairs nodes, recursive collect); from_dict; wires keystone prefix_search |
 | L4 | dictionary/heteronym.rs | src/dictionary/heteronym.cyr | ✅ ported | 17 | HeteronymContext + resolver as fn-ptr (fncall2); lookup_with_context variant selection |
-| L4 | dictionary/g2p.rs | … | ⏳ next | — | FallbackDict / G2PModel (fn-ptr) / FstModel stub; wires with_fallback |
+| L4 | dictionary/g2p.rs | src/dictionary/g2p.cyr | ✅ ported | 29 | G2PResult, LookupSource, FallbackDict (model = (predict_fp,state) pair), promote*, FstModel stub; wires with_fallback |
 | L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
-| L5 | dictionary/format/mod.rs | … | ⬜ | — | CMUdict/IPA/JSON |
+| L5 | dictionary/format/mod.rs | … | ⏳ next | — | CMUdict/IPA/JSON I/O + PronunciationDict JSON (permanent, per serde stance) |
 | L5 | dictionary/format/pls.rs | … | ⬜ | — | W3C PLS XML |
 | L5 | dictionary/format/ssml.rs | … | ⬜ | — | SSML phoneme tag |
 | L5 | dictionary/format/binary.rs | … | ⬜ | — | postcard equiv (maximal scope) |
@@ -97,8 +97,11 @@ deferred to their tiers: `with_fallback` (g2p, L4), `prefix_search` (trie, L4), 
 (L6), JSON serde (format L5) — these get wired into `mod.cyr` as those modules land.
 **Known divergence to revisit**: `merge` shares entry pointers where Rust deep-clones — observable
 only if the merged-from dict is mutated afterward; flag for a future clone or an ADR.
-Next: L4 extensions. **coverage + stream + trie + heteronym done** → 408 assertions / 14 suites;
-`prefix_search` wired. Remaining L4: g2p (next) — closes the L4 tier and wires `with_fallback`.
+**L4 extension tier COMPLETE** (coverage, stream, trie, heteronym, g2p) → 437 assertions /
+15 suites. `prefix_search` + `with_fallback` now wired into the keystone. (Cleaned a stray
+`deferred`-keyword lint warning in the committed trie.cyr.) A parity audit over L3+L4 is
+planned before release. Next: **L5 format layer** — format/mod (CMUdict/IPA/JSON + the
+hand-written PronunciationDict JSON per the serde stance), then pls, ssml, binary.
 
 ## Dependencies
 

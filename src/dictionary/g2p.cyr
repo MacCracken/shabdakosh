@@ -1,0 +1,194 @@
+# g2p.cyr — grapheme-to-phoneme model integration + fallback dictionary.
+#
+# Ports rust-old/src/dictionary/g2p.rs. Rust's G2PModel trait objects carry state
+# (MockG2PModel's confidence, FstModel's path), so a bare fn-pointer is not
+# enough: a "model" here is a (predict_fp, model_state) PAIR — predict_fp is
+# fn(word, state) -> G2PResult* (or 0 for None), invoked via fncall2. Extends the
+# keystone (with_fallback); included after src/dictionary/mod.cyr.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+# ---- G2PResult (16 bytes): [0]=phonemes(vec) [8]=confidence(f64 bits) ----------
+#must_use
+fn shabda_g2p_result_new(phonemes, confidence): i64 {
+    var r = alloc(16);
+    store64(r + 0, phonemes);
+    store64(r + 8, confidence);
+    return r;
+}
+
+#must_use
+fn shabda_g2p_result_phonemes(r): i64 {
+    return load64(r + 0);
+}
+
+#must_use
+fn shabda_g2p_result_confidence(r): i64 {
+    return load64(r + 8);
+}
+
+# into_phonemes: consumes the result, yields the phoneme vec (same handle).
+#must_use
+fn shabda_g2p_result_into_phonemes(r): i64 {
+    return load64(r + 0);
+}
+
+# ---- LookupSource (#[non_exhaustive] enum) -----------------------------------
+var SHABDA_SOURCE_USER_OVERLAY    = 0;
+var SHABDA_SOURCE_BASE_DICTIONARY = 1;
+var SHABDA_SOURCE_G2P_MODEL       = 2;
+
+# ShLookupResult (24 bytes): [0]=phonemes(vec) [8]=source(tag)
+#   [16]=confidence(f64 bits; only meaningful for G2P_MODEL). 0 == None.
+fn _shabda_lookup_result_new(phonemes, source, confidence): i64 {
+    var r = alloc(24);
+    store64(r + 0, phonemes);
+    store64(r + 8, source);
+    store64(r + 16, confidence);
+    return r;
+}
+
+#must_use
+fn shabda_lookup_result_phonemes(r): i64 { return load64(r + 0); }
+
+#must_use
+fn shabda_lookup_result_source(r): i64 { return load64(r + 8); }
+
+#must_use
+fn shabda_lookup_result_confidence(r): i64 { return load64(r + 16); }
+
+# Clone an int (phoneme) vec — dict lookups return owned Vecs in Rust.
+fn _shabda_clone_iv(v): i64 {
+    var out = vec_new();
+    var n = vec_len(v);
+    var i = 0;
+    while (i < n) {
+        vec_push(out, vec_get(v, i));
+        i = i + 1;
+    }
+    return out;
+}
+
+# ---- FallbackDict (24 bytes): [0]=dict [8]=predict_fp [16]=model_state ---------
+#must_use
+fn shabda_fallback_dict_new(dict, predict_fp, model_state): i64 {
+    var f = alloc(24);
+    store64(f + 0, dict);
+    store64(f + 8, predict_fp);
+    store64(f + 16, model_state);
+    return f;
+}
+
+# The underlying dictionary (also serves as dict_mut / the dict half of into_parts).
+#must_use
+fn shabda_fallback_dict_dict(f): i64 {
+    return load64(f + 0);
+}
+
+# The model state (the model half of into_parts).
+#must_use
+fn shabda_fallback_dict_model(f): i64 {
+    return load64(f + 16);
+}
+
+# Primary pronunciation: user overlay -> base dict -> G2P model. Returns an
+# (owned) phoneme vec, or 0 if none.
+#must_use
+fn shabda_fallback_dict_lookup(f, word): i64 {
+    var phonemes = shabda_dict_lookup(load64(f + 0), word);
+    if (phonemes != 0) { return _shabda_clone_iv(phonemes); }
+    var key = str_from(str_lower_cstr(word));
+    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    if (result == 0) { return 0; }
+    return shabda_g2p_result_into_phonemes(result);
+}
+
+# Look up with source: user overlay -> base -> G2P. Returns a ShLookupResult
+# (phonemes + source tag + confidence), or 0 if none.
+#must_use
+fn shabda_fallback_dict_lookup_with_source(f, word): i64 {
+    var dict = load64(f + 0);
+    var key = str_from(str_lower_cstr(word));
+    var e = map_get(shabda_dict_user_entries(dict), key);
+    if (e != 0) {
+        var up = _shabda_clone_iv(shabda_dict_entry_primary_phonemes(e));
+        return _shabda_lookup_result_new(up, SHABDA_SOURCE_USER_OVERLAY, 0);
+    }
+    e = map_get(shabda_dict_entries(dict), key);
+    if (e != 0) {
+        var bp = _shabda_clone_iv(shabda_dict_entry_primary_phonemes(e));
+        return _shabda_lookup_result_new(bp, SHABDA_SOURCE_BASE_DICTIONARY, 0);
+    }
+    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    if (result == 0) { return 0; }
+    var gp = shabda_g2p_result_into_phonemes(result);
+    var gc = shabda_g2p_result_confidence(result);
+    return _shabda_lookup_result_new(gp, SHABDA_SOURCE_G2P_MODEL, gc);
+}
+
+# Full dictionary entry (dict layers only, no G2P), or 0.
+#must_use
+fn shabda_fallback_dict_lookup_entry(f, word): i64 {
+    return shabda_dict_lookup_entry(load64(f + 0), word);
+}
+
+# Promote a G2P prediction to the user overlay (no-op if already in the dict).
+# Returns 1 if promoted.
+fn shabda_fallback_dict_promote_prediction(f, word): i64 {
+    var dict = load64(f + 0);
+    if (shabda_dict_lookup_entry(dict, word) != 0) { return 0; }
+    var key = str_from(str_lower_cstr(word));
+    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    if (result == 0) { return 0; }
+    shabda_dict_insert_user(dict, word, shabda_g2p_result_phonemes(result));
+    return 1;
+}
+
+# Promote only if confidence >= threshold (f64 bits). Returns 1 if promoted.
+fn shabda_fallback_dict_promote_if_confident(f, word, threshold): i64 {
+    var dict = load64(f + 0);
+    if (shabda_dict_lookup_entry(dict, word) != 0) { return 0; }
+    var key = str_from(str_lower_cstr(word));
+    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    if (result == 0) { return 0; }
+    if (f64_ge(shabda_g2p_result_confidence(result), threshold) == 1) {
+        shabda_dict_insert_user(dict, word, shabda_g2p_result_phonemes(result));
+        return 1;
+    }
+    return 0;
+}
+
+# The keystone's with_fallback (lives here since it builds a FallbackDict).
+#must_use
+fn shabda_dict_with_fallback(dict, predict_fp, model_state): i64 {
+    return shabda_fallback_dict_new(dict, predict_fp, model_state);
+}
+
+# ---- FstModel (Phonetisaurus WFST wrapper) -----------------------------------
+var SHABDA_FST_NOTATION_ARPABET = 0;
+var SHABDA_FST_NOTATION_IPA     = 1;
+
+# ShFstModel (16 bytes): [0]=model_path(cstr) [8]=notation(SHABDA_FST_NOTATION_*).
+#must_use
+fn shabda_fst_model_new(model_path, notation): i64 {
+    var m = alloc(16);
+    store64(m + 0, model_path);
+    store64(m + 8, notation);
+    return m;
+}
+
+#must_use
+fn shabda_fst_model_path(m): cstring {
+    return load64(m + 0);
+}
+
+#must_use
+fn shabda_fst_model_notation(m): i64 {
+    return load64(m + 8);
+}
+
+# G2PModel predict for FstModel — a STUB that always returns None (0). Wire in a
+# real WFST engine here. Signature is (word, state) for use as a predict_fp.
+fn shabda_fst_model_predict(word, state): i64 {
+    return 0;
+}

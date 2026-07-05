@@ -175,9 +175,9 @@ fn shabda_trie_search_prefix(t, prefix): i64 {
     return results;
 }
 
-# Keystone method (was deferred from mod.cyr): all base+user words starting with
-# `prefix` (cstr), sorted. Builds a trie per call — reuse a from_dict trie for
-# repeated searches.
+# The keystone's prefix_search (lives here since it builds a trie): all base+user
+# words starting with `prefix` (cstr), sorted. Builds a trie per call — reuse a
+# from_dict trie for repeated searches.
 #must_use
 fn shabda_dict_prefix_search(d, prefix): i64 {
     return shabda_trie_search_prefix(shabda_trie_from_dict(d), prefix);
