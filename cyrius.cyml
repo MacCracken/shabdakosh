@@ -1,0 +1,39 @@
+[package]
+name = "shabdakosh"
+version = "${file:VERSION}"
+description = "shabdakosh — pronunciation dictionary for AGNOS (ARPABET/IPA↔phoneme, CMUdict/PLS/SSML/JSON I/O, user overlay, G2P fallback). Cyrius port of a 7,085-line Rust library."
+license = "GPL-3.0-only"
+repository = "https://github.com/MacCracken/shabdakosh"
+language = "cyrius"
+cyrius = "6.4.5"
+
+[build]
+entry = "src/main.cyr"
+output = "build/shabdakosh"
+
+# `[lib]` is the distlib bundle `cyrius distlib` writes to dist/shabdakosh.cyr —
+# modules concatenated in dependency order (deps before dependents). Grows one
+# entry per ported module.
+[lib]
+modules = [
+    "src/error.cyr",
+    "src/arpabet.cyr",
+    "src/ipa.cyr",
+]
+
+# stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown
+# replacement), `bayan` (JSON codecs), `tagged` (Option-shaped returns), `math`
+# get added at the dictionary/serde tiers. The svara + varna git/path deps get
+# added when arpabet/ipa (svara SVARA_PH_* phonemes) and validate/detect (varna)
+# land — not front-loaded, per the incremental port playbook.
+[deps]
+stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "assert", "fnptr", "atomic", "sakshi", "math", "ganita", "tagged", "hashmap", "bayan"]
+
+# svara — SVARA_PH_* phoneme identities (the PhonemeEvent-compat contract) plus
+# the voice/synthesis surface shabdakosh maps to. Consumed from arpabet.cyr
+# onward. Local path dep for now (switch to git+tag for release). The dist
+# bundle needs the `hashmap` + `bayan` folds in scope (declared above, per
+# svara's dist/svara.deps sidecar).
+[deps.svara]
+path = "../svara"
+modules = ["dist/svara.cyr"]

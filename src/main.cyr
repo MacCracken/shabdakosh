@@ -1,0 +1,31 @@
+# shabdakosh — Cyrius port
+# Ported from 7085 lines of Rust. Smoke entry: grows one include per ported
+# module; builds + links at every step. Modules never include each other —
+# this entry orders them (stdlib + sakshi auto-resolve from cyrius.cyml).
+
+# svara dependency chain (SVARA_PH_* phonemes + its transitive backends).
+# Named deps need explicit includes, in dependency order, before the modules
+# that use them; hashmap/bayan/sakshi auto-resolve from [deps].stdlib.
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+
+fn main() {
+    alloc_init();
+    println("shabdakosh ready");
+    # L0 smoke — sakshi-backed error surface
+    println(shabda_err_name(shabda_err_dict_parse()));
+    # L1 smoke — ARPABET round-trip: "AH0" -> schwa -> "AH0"
+    println(shabda_phoneme_to_arpabet(shabda_arpabet_to_phoneme_with_stress("AH0")));
+    # L1 smoke — IPA parse + render round-trip: "hɛˈloʊ" -> "hɛloʊ"
+    println(shabda_phonemes_to_ipa(shabda_parse_ipa_word("hɛˈloʊ")));
+    return 0;
+}
+
+var r = main();
+syscall(SYS_EXIT, r);

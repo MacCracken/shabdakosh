@@ -1,91 +1,100 @@
 # shabdakosh — Claude Code Instructions
 
+> **Core rule**: this file is **preferences, process, and procedures** — durable
+> rules that change rarely. Volatile state (current version, module line counts,
+> port progress, test counts) lives in
+> [`docs/development/state.md`](docs/development/state.md). Do not inline state here.
+
 ## Project Identity
 
-**shabdakosh** (Sanskrit: dictionary) — Pronunciation dictionary crate for AGNOS
+**shabdakosh** (Sanskrit: *dictionary*) — pronunciation dictionary for AGNOS.
+Cyrius port of a 7,085-line Rust library (preserved at `rust-old/`).
 
-- **Type**: Flat library crate
-- **License**: GPL-3.0
-- **MSRV**: 1.89
-- **Version**: SemVer 2.0.0
+- **Type**: Port (Rust → Cyrius), flat library crate
+- **License**: GPL-3.0-only
+- **Language**: Cyrius (toolchain pinned in `cyrius.cyml [package].cyrius`)
+- **Version**: `VERSION` at the project root is the source of truth — do not inline the number here
+
+## Goal
+
+shabdakosh OWNS **pronunciation lookup** in the AGNOS stack: a dictionary-first
+grapheme→phoneme store mapping words to sequences of **svara phonemes**
+(`SVARA_PH_*`), with ARPABET/IPA/X-SAMPA notation bridges, CMUdict/PLS/SSML/JSON
+I/O, a user overlay, and G2P fallback. Accuracy over speed; dictionary-first.
 
 ## Consumers
 
-shabda (G2P engine), dhvani (audio engine), vansh (voice AI shell), and any AGNOS component needing pronunciation lookup.
+shabda (G2P engine), dhvani (audio engine), vansh (voice AI shell) — and any AGNOS
+component needing pronunciation lookup. Will pull `dist/shabdakosh.cyr`.
 
-## Dependencies
+## Scaffolding
 
-- **svara**: Phoneme types, synthesis engine, voice profiles
-- **hashbrown**: O(1) HashMap for base dictionary lookup
-- **varna** (optional): Phoneme inventories, lexicons, scripts for multi-language support
+Scaffolded with `cyrius port`. Original Rust at `rust-old/` is the reference oracle —
+do not modify it; cross-check the port against it.
+
+## Quick Start
+
+```sh
+cyrius deps                                   # resolve dependencies
+cyrius build src/main.cyr build/shabdakosh    # compile
+cyrius test tests/<mod>.tcyr                   # run one suite
+cyrius tests tests                             # run all .tcyr
+```
 
 ## Work Loop
 
-1. Read the relevant code before proposing changes
-2. Make the change
-3. `cargo fmt`
-4. `cargo clippy --all-features --all-targets -- -D warnings`
-5. `cargo test --all-features`
-6. `cargo test --doc`
-7. `cargo check --no-default-features` (no_std verification)
-8. `cargo bench` (if performance-relevant)
-9. Update CHANGELOG.md if user-facing
-10. Update docs/development/roadmap.md if completing a roadmap item
+1. Read the `rust-old/` module before porting it (it is the parity oracle)
+2. Port the module; keep `src/main.cyr` including it and building at every step
+3. `cyrius fmt <file>`
+4. `cyrius lint <file>`
+5. `cyrius test tests/<mod>.tcyr` and `cyrius tests tests`
+6. `cyrius doctest <file>` (if it has doc examples)
+7. `cyrius bench` (if performance-relevant — **never skip**)
+8. Update `CHANGELOG.md` if user-facing; update `docs/development/state.md` progress
 
-## Task Sizing
+## Key Principles (durable)
 
-- **Small**: Single-function change, test fix, doc tweak
-- **Medium**: New format support, new dictionary method, test suite expansion
-- **Large**: Storage migration, new module (e.g., ipa.rs), data expansion
+- **Cross-check against `rust-old/`** — the correctness bar is "matches what Rust did." Diverge only with an ADR.
+- **Correctness over cleverness** — a silent divergence from Rust means the bug wins.
+- Test after every change; ONE change at a time.
+- Build with `cyrius build` (the manifest auto-resolves deps), not `cat | cc5`.
+- Source files only need project `include`s — stdlib auto-resolves from `cyrius.cyml`.
+- `var buf[N]` = N **bytes**, not N entries.
+- **Prefix everything** `shabda_`/`SHABDA_`/`SH_`/`Sh` — the distlib links flat (coexists with svara/varna).
 
-## Key Principles
+## Port Invariants (carried from the Rust crate)
 
-- Never skip benchmarks
-- `#[non_exhaustive]` on ALL public enums
-- `#[must_use]` on all pure functions
-- Every type must be Serialize + Deserialize (serde)
-- Zero unwrap/panic in library code
-- All types must have serde roundtrip tests
-- Dictionary-first, accuracy over speed
-- Phoneme output must be compatible with svara's PhonemeEvent
-- O(1) lookup for base dictionary (hashbrown::HashMap)
-- User overlay uses BTreeMap (small, sorted for export)
-
-## Module Structure
-
-- `arpabet.rs` — ARPABET-to-Phoneme bidirectional mapping
-- `ipa.rs` — IPA-to-Phoneme bidirectional mapping
-- `dictionary/mod.rs` — PronunciationDict, merge, diff, DictDiff, from_lexicon
-- `dictionary/entry.rs` — DictEntry, Pronunciation, Region
-- `dictionary/format/mod.rs` — CMUdict, IPA, JSON import/export
-- `dictionary/format/pls.rs` — W3C PLS XML import/export
-- `dictionary/format/ssml.rs` — SSML phoneme tag support
-- `dictionary/validate.rs` — Inventory validation against varna (feature-gated)
-- `dictionary/detect.rs` — Script/language detection via varna (feature-gated)
-- `error.rs` — ShabdakoshError
+- `#[non_exhaustive]` on all public enums → keep additive; give every `match` a `_ =>` catch-all arm.
+- `#[must_use]` on pure functions → `#must_use`.
+- Every type Serialize+Deserialize with roundtrip tests — see the serialization stance in `docs/development/state.md`.
+- **Zero unwrap/panic** in library code → errors build on **sakshi** (packed i64 `[ctx][category][code]`, `0 == ok`, non-zero == error). A fallible fn returns a packed shabda error (`0 == ok`, test with `shabda_is_err`) and writes its payload to an out-param — or returns a payload pointer with `0` meaning none. No thiserror/Display; `shabda_err_name()` gives diagnostic text.
+- Phoneme output compatible with svara's `PhonemeEvent` — a pronunciation is a sequence of svara `SVARA_PH_*` ordinals.
+- **O(1)** base-dictionary lookup (`lib/hashmap.cyr`, the hashbrown replacement).
+- User overlay is sorted for export — no Cyrius BTreeMap, so hashmap + sort-on-export.
+- **Never skip benchmarks** before claiming a performance change.
 
 ## Data File
 
-`data/cmudict-5k.txt` is processed by `build.rs` at compile time. Format:
+`data/cmudict-5k.txt` (300 KB, 10,692 lines) is the base-dictionary source of truth. Format:
+
 - `WORD  PH1 PH2` — entry (two-space separator)
-- `WORD(n)  PH1 PH2` — variant pronunciation
-- `;;; @freq=0.85` — frequency annotation for next entry
-- `;;; @region=GA` — region annotation for next entry
+- `WORD(n)  …` — variant pronunciation (folded under the lowercased base word)
+- `;;; @freq=0.85` — frequency annotation for the next entry
+- `;;; @region=GA` — region annotation for the next entry
 
-## DO NOT
+A `gen_cmudict.cyr` generator reads it and emits the checked-in
+`src/dictionary/_cmudict_data.cyr` (the Cyrius replacement for the Rust `build.rs`).
+Regenerate that module after editing the data.
 
-- **Do not commit or push** — the user handles all git operations
-- **NEVER use `gh` CLI** — use `curl` to GitHub API only
-- Do not add unnecessary dependencies
-- Do not skip benchmarks before claiming performance improvements
+## Rules (Hard Constraints)
 
-## Documentation
+- **Do not commit or push** — the user handles all git operations.
+- **Never use `gh` CLI** — use `curl` to the GitHub API if needed.
+- Do not modify `rust-old/` (parity oracle) or `lib/` (vendored stdlib/deps).
+- Do not add unnecessary dependencies.
+- Do not hardcode toolchain versions in CI YAML — `cyrius = "X.Y.Z"` in `cyrius.cyml` is the source of truth.
 
-- CHANGELOG.md: Keep a Changelog format (Added/Changed/Fixed/Removed)
-- README.md: Quick start, feature list, architecture
-- docs/development/roadmap.md: Completed versions + backlog
-
-## CHANGELOG Format
+## CHANGELOG Format (Keep a Changelog + SemVer)
 
 ```
 ## [version] — YYYY-MM-DD
@@ -95,3 +104,12 @@ Description.
 - **Feature**: description
 - **Breaking**: description
 ```
+
+## Documentation
+
+- [`docs/adr/`](docs/adr/) — Architecture Decision Records (*why X over Y?*)
+- [`docs/architecture/`](docs/architecture/) — non-obvious constraints
+- [`docs/guides/`](docs/guides/) — task-oriented how-tos
+- [`docs/examples/`](docs/examples/) — runnable examples
+- [`docs/development/state.md`](docs/development/state.md) — live port state
+- [`docs/development/roadmap.md`](docs/development/roadmap.md) — milestones
