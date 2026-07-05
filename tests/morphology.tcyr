@@ -1,0 +1,75 @@
+# morphology.tcyr — tests for src/dictionary/morphology.cyr
+# (ports rust-old/src/dictionary/morphology.rs). Needs svara for SVARA_PH_* test
+# data. Container serde-roundtrip tests belong to the format layer (L5) per the
+# locked serde stance.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/dictionary/morphology.cyr"
+
+alloc_init();
+
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+fn _v4(a, b, c, d): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); vec_push(v, d); return v; }
+
+# "un" + "happi" + "ness" — the Rust example decomposition.
+fn _example(): i64 {
+    var ms = vec_new();
+    vec_push(ms, shabda_morpheme_new("un", SHABDA_MORPH_PREFIX, _v2(SVARA_PH_VOWEL_CUP_V, SVARA_PH_NASAL_N)));
+    vec_push(ms, shabda_morpheme_new("happi", SHABDA_MORPH_ROOT, _v4(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_P, SVARA_PH_VOWEL_E)));
+    vec_push(ms, shabda_morpheme_new("ness", SHABDA_MORPH_SUFFIX, _v3(SVARA_PH_NASAL_N, SVARA_PH_VOWEL_OPEN_E, SVARA_PH_FRIC_S)));
+    return shabda_decomposition_new(ms);
+}
+
+# ================================================================
+test_group("morpheme new");
+var m = shabda_morpheme_new("un", SHABDA_MORPH_PREFIX, _v1(SVARA_PH_VOWEL_CUP_V));
+assert_streq(shabda_morpheme_text(m), "un", "text un");
+assert_eq(shabda_morpheme_kind(m), SHABDA_MORPH_PREFIX, "kind prefix");
+assert_eq(vec_len(shabda_morpheme_phonemes(m)), 1, "1 phoneme");
+assert_eq(vec_get(shabda_morpheme_phonemes(m), 0), SVARA_PH_VOWEL_CUP_V, "phoneme cup-v");
+
+# ================================================================
+test_group("composite phonemes");
+var d = _example();
+assert_eq(vec_len(shabda_decomposition_composite_phonemes(d)), 9, "composite 9 (2+4+3)");
+var comp = shabda_decomposition_composite_phonemes(d);
+assert_eq(vec_get(comp, 0), SVARA_PH_VOWEL_CUP_V, "composite[0] = un's cup-v");
+assert_eq(vec_get(comp, 2), SVARA_PH_FRIC_H, "composite[2] = happi's h");
+
+# ================================================================
+test_group("text");
+assert_streq(shabda_decomposition_text(d), "unhappiness", "text unhappiness");
+
+# ================================================================
+test_group("root");
+var r = shabda_decomposition_root(d);
+assert_neq(r, 0, "has root");
+assert_streq(shabda_morpheme_text(r), "happi", "root text happi");
+assert_eq(shabda_morpheme_kind(r), SHABDA_MORPH_ROOT, "root kind");
+
+# ================================================================
+test_group("prefixes / suffixes");
+assert_eq(vec_len(shabda_decomposition_prefixes(d)), 1, "1 prefix");
+assert_eq(vec_len(shabda_decomposition_suffixes(d)), 1, "1 suffix");
+assert_streq(shabda_morpheme_text(vec_get(shabda_decomposition_prefixes(d), 0)), "un", "prefix un");
+assert_streq(shabda_morpheme_text(vec_get(shabda_decomposition_suffixes(d), 0)), "ness", "suffix ness");
+
+# ================================================================
+test_group("len / is_empty");
+assert_eq(shabda_decomposition_len(d), 3, "len 3");
+assert_eq(shabda_decomposition_is_empty(d), 0, "not empty");
+
+# ================================================================
+test_group("empty decomposition");
+var ed = shabda_decomposition_new(vec_new());
+assert_eq(shabda_decomposition_is_empty(ed), 1, "empty is empty");
+assert_eq(shabda_decomposition_root(ed), 0, "empty root none");
+assert_eq(vec_len(shabda_decomposition_composite_phonemes(ed)), 0, "empty composite 0");
+
+var rc = assert_summary();
+syscall(60, rc);

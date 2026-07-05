@@ -15,6 +15,7 @@ include "src/error.cyr"
 include "src/arpabet.cyr"
 include "src/ipa.cyr"
 include "src/dictionary/entry.cyr"
+include "src/dictionary/morphology.cyr"
 
 fn main() {
     alloc_init();
@@ -31,6 +32,11 @@ fn main() {
     vec_push(kat, SVARA_PH_VOWEL_ASH);
     vec_push(kat, SVARA_PH_PLOSIVE_T);
     println_int(vec_len(shabda_dict_entry_primary_phonemes(shabda_dict_entry_from_phonemes(kat))));
+    # L1 smoke — morphology: "un" + "lock" -> "unlock"
+    var msm = vec_new();
+    vec_push(msm, shabda_morpheme_new("un", SHABDA_MORPH_PREFIX, vec_new()));
+    vec_push(msm, shabda_morpheme_new("lock", SHABDA_MORPH_ROOT, vec_new()));
+    println(shabda_decomposition_text(shabda_decomposition_new(msm)));
     return 0;
 }
 
