@@ -5,7 +5,7 @@ description = "shabdakosh — pronunciation dictionary for AGNOS (ARPABET/IPA↔
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/shabdakosh"
 language = "cyrius"
-cyrius = "6.4.6"
+cyrius = "6.4.7"
 
 [build]
 entry = "src/main.cyr"
@@ -25,6 +25,7 @@ modules = [
     "src/notation.cyr",
     "src/dictionary/_cmudict_data.cyr",
     "src/dictionary/cmudict.cyr",
+    "src/dictionary/mod.cyr",
 ]
 
 # stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown

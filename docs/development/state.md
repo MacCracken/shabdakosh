@@ -11,8 +11,8 @@ preserved at `rust-old/` as the parity oracle.
 
 ## Toolchain
 
-- **Cyrius pin**: `6.4.6` (in `cyrius.cyml [package].cyrius`) — bumped from 6.4.5 when
-  the installed cycc drifted to 6.4.6; `lib/` re-synced, all suites still green.
+- **Cyrius pin**: `6.4.7` (in `cyrius.cyml [package].cyrius`) — bumped 6.4.5→6.4.6→6.4.7 as
+  the installed cycc drifted; `lib/` re-synced each time, all suites stay green.
 
 ## Port decisions (locked 2026-07-05)
 
@@ -54,7 +54,7 @@ formats → gated/optional.
 | L1 | dictionary/syllable.rs | src/dictionary/syllable.cyr | ✅ ported | 23 | StressLevel/Syllable + syllabify (Maximal Onset); is_nucleus = ordinal 0..19; self-contained |
 | L2 | notation.rs | src/notation.cyr | ✅ ported | 51 | PhonemeNotation trait → notation-tag dispatch; ARPABET/IPA/X-SAMPA; new X-SAMPA table; parse/render; ASCII-whitespace parity-audited |
 | L2 | build.rs → gen | programs/gen_cmudict.cyr + _cmudict_data.cyr + cmudict.cyr | ✅ done | 15 | generator reuses arpabet.cyr (no table dup); emits 283KB/12-piece packed data (10,617 words, 0 unknown); cmudict.cyr loader → lib/hashmap |
-| L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ⏳ next | — | keystone: PronunciationDict, user overlay, merge, diff |
+| L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ✅ ported | 39 | PronunciationDict (base+overlay maps), lookup (overlay→base, lowercase fast-path), merge/merge_conservative, diff/DictDiff, english()/english_minimal(); g2p/trie/varna/serde methods deferred to their tiers |
 | L4 | dictionary/coverage.rs | … | ⬜ | — | |
 | L4 | dictionary/stream.rs | … | ⬜ | — | |
 | L4 | dictionary/trie.rs | … | ⬜ | — | HashMap<char,node> |
@@ -87,7 +87,17 @@ symbols) — reusing the ported `arpabet.cyr` mapping (no Rust-style table dupli
 `src/dictionary/cmudict.cyr` parses the pieces into a `lib/hashmap` map at load. Verified:
 `shabda_cmudict_english()` loads 10,617 words; `cat`→[K,AE,T], `a`→[schwa], heteronym `bass`→2
 prons. Regen: `cyrius build programs/gen_cmudict.cyr build/gen_cmudict && ./build/gen_cmudict`.
-Total 288 assertions / 9 suites, all green. Next: the L3 `dictionary/mod` keystone.
+Total 327 assertions / 10 suites, all green.
+
+**L3 keystone done** (`dictionary/mod.cyr`): `PronunciationDict` = base hashmap + user-overlay
+hashmap + language; `lookup`/`lookup_entry`/`lookup_all` (overlay→base, lowercase fast-path),
+`insert*`/`remove_user`, `merge`/`merge_conservative`, `english()` (loads the generated dict) /
+`english_minimal()` (29 words), and `diff`/`DictDiff` (sorted, deep entry equality). Methods
+deferred to their tiers: `with_fallback` (g2p, L4), `prefix_search` (trie, L4), varna methods
+(L6), JSON serde (format L5) — these get wired into `mod.cyr` as those modules land.
+**Known divergence to revisit**: `merge` shares entry pointers where Rust deep-clones — observable
+only if the merged-from dict is mutated afterward; flag for a future clone or an ADR.
+Next: L4 extensions (coverage, stream, trie, heteronym, g2p).
 
 ## Dependencies
 

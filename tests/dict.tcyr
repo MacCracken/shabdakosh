@@ -1,0 +1,115 @@
+# dict.tcyr — tests for src/dictionary/mod.cyr (ports rust-old/src/dictionary/mod.rs core).
+# Needs svara + error + entry + generated dict + loader + mod.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+
+alloc_init();
+
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+
+# ================================================================
+test_group("new / empty");
+var d0 = shabda_dict_new();
+assert_eq(shabda_dict_len(d0), 0, "len 0");
+assert_eq(shabda_dict_is_empty(d0), 1, "is_empty");
+assert_eq(shabda_dict_user_len(d0), 0, "user_len 0");
+assert_eq(shabda_dict_language(d0), 0, "no language");
+
+# ================================================================
+test_group("english (generated base dict)");
+var eng = shabda_dict_english();
+assert_gt(shabda_dict_len(eng), 10000, "english > 10k entries");
+assert_streq(shabda_dict_language(eng), "en", "language en");
+var ecat = shabda_dict_lookup(eng, "cat");
+assert_neq(ecat, 0, "cat present");
+assert_eq(vec_get(ecat, 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
+assert_eq(shabda_dict_lookup(eng, "zzznotword"), 0, "missing -> 0");
+
+# ================================================================
+test_group("english_minimal");
+var em = shabda_dict_english_minimal();
+assert_eq(shabda_dict_len(em), 29, "29 entries");
+assert_streq(shabda_dict_language(em), "en", "language en");
+var eh = shabda_dict_lookup(em, "hello");
+assert_neq(eh, 0, "hello present");
+assert_eq(vec_len(eh), 4, "hello 4 phonemes");
+assert_eq(vec_get(eh, 0), SVARA_PH_FRIC_H, "hello[0] H");
+# uppercase lookup hits the lowercase entry
+var eh2 = shabda_dict_lookup(em, "HELLO");
+assert_neq(eh2, 0, "uppercase HELLO finds hello");
+assert_eq(vec_len(eh2), 4, "HELLO 4 phonemes");
+
+# ================================================================
+test_group("insert + lookup");
+var d = shabda_dict_new();
+shabda_dict_insert(d, "test", _v1(SVARA_PH_PLOSIVE_T));
+assert_eq(shabda_dict_len(d), 1, "1 entry");
+assert_eq(vec_get(shabda_dict_lookup(d, "test"), 0), SVARA_PH_PLOSIVE_T, "test -> T");
+
+# ================================================================
+test_group("user overlay precedence");
+shabda_dict_insert(d, "foo", _v1(SVARA_PH_VOWEL_A));
+shabda_dict_insert_user(d, "foo", _v1(SVARA_PH_VOWEL_E));
+assert_eq(vec_get(shabda_dict_lookup(d, "foo"), 0), SVARA_PH_VOWEL_E, "user overlay wins");
+assert_eq(shabda_dict_user_len(d), 1, "user_len 1");
+# remove_user falls back to base
+assert_eq(shabda_dict_remove_user(d, "foo"), 1, "removed");
+assert_eq(shabda_dict_remove_user(d, "foo"), 0, "already gone");
+assert_eq(vec_get(shabda_dict_lookup(d, "foo"), 0), SVARA_PH_VOWEL_A, "falls back to base");
+
+# ================================================================
+test_group("set_language / with_language");
+var ld = shabda_dict_new();
+shabda_dict_set_language(ld, "es");
+assert_streq(shabda_dict_language(ld), "es", "set_language es");
+assert_streq(shabda_dict_language(shabda_dict_with_language(shabda_dict_new(), "hi")), "hi", "with_language hi");
+
+# ================================================================
+test_group("merge (other wins) / merge_conservative (self wins)");
+var m1 = shabda_dict_new();
+shabda_dict_insert(m1, "x", _v1(SVARA_PH_VOWEL_A));
+shabda_dict_insert(m1, "w", _v1(SVARA_PH_VOWEL_A));
+var m2 = shabda_dict_new();
+shabda_dict_insert(m2, "y", _v1(SVARA_PH_VOWEL_E));
+shabda_dict_insert(m2, "w", _v1(SVARA_PH_VOWEL_E));
+shabda_dict_merge(m1, m2);
+assert_eq(shabda_dict_len(m1), 3, "merged -> 3 (x,y,w)");
+assert_neq(shabda_dict_lookup(m1, "y"), 0, "y merged in");
+assert_eq(vec_get(shabda_dict_lookup(m1, "w"), 0), SVARA_PH_VOWEL_E, "merge conflict: other wins");
+var m3 = shabda_dict_new();
+shabda_dict_insert(m3, "w", _v1(SVARA_PH_VOWEL_A));
+shabda_dict_merge_conservative(m3, m2);
+assert_eq(vec_get(shabda_dict_lookup(m3, "w"), 0), SVARA_PH_VOWEL_A, "conservative conflict: self wins");
+assert_neq(shabda_dict_lookup(m3, "y"), 0, "conservative adds missing y");
+
+# ================================================================
+test_group("diff (added / removed / changed)");
+var L = shabda_dict_new();
+shabda_dict_insert(L, "same", _v1(SVARA_PH_VOWEL_A));
+shabda_dict_insert(L, "removed", _v1(SVARA_PH_VOWEL_E));
+shabda_dict_insert(L, "changed", _v1(SVARA_PH_VOWEL_I));
+var R = shabda_dict_new();
+shabda_dict_insert(R, "same", _v1(SVARA_PH_VOWEL_A));
+shabda_dict_insert(R, "added", _v1(SVARA_PH_VOWEL_O));
+shabda_dict_insert(R, "changed", _v1(SVARA_PH_VOWEL_U));
+var dd = shabda_dict_diff(L, R);
+assert_eq(vec_len(shabda_dict_diff_added(dd)), 1, "1 added");
+assert_streq(str_data(vec_get(shabda_dict_diff_added(dd), 0)), "added", "added = 'added'");
+assert_eq(vec_len(shabda_dict_diff_removed(dd)), 1, "1 removed");
+assert_streq(str_data(vec_get(shabda_dict_diff_removed(dd), 0)), "removed", "removed = 'removed'");
+assert_eq(vec_len(shabda_dict_diff_changed(dd)), 1, "1 changed");
+assert_streq(str_data(vec_get(shabda_dict_diff_changed(dd), 0)), "changed", "changed = 'changed'");
+assert_eq(shabda_dict_diff_len(dd), 3, "3 total diffs");
+assert_eq(shabda_dict_diff_is_empty(dd), 0, "not empty");
+assert_eq(shabda_dict_diff_is_empty(shabda_dict_diff(L, L)), 1, "L vs L is empty");
+
+var rc = assert_summary();
+syscall(60, rc);
