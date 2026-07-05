@@ -1,0 +1,195 @@
+# pls.cyr — W3C PLS (Pronunciation Lexicon Specification) XML import/export.
+#
+# Ports rust-old/src/dictionary/format/pls.rs. Only the `ipa` alphabet is
+# supported. Hand-rolled XML scanning (like the Rust). Reuses shabda_xml_escape /
+# _unescape, _shabda_starts_at, _shabda_fmt_dup from format/mod.cyr; the dict
+# helpers _shabda_sort_strs / _shabda_collect_keys / _shabda_dict_lookup_entry_str
+# from mod.cyr. Included after src/dictionary/format/mod.cyr.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+fn _shabda_pls_ws(c): i64 {
+    if (c == 32) { return 1; }
+    if (c == 9) { return 1; }
+    if (c == 10) { return 1; }
+    if (c == 13) { return 1; }
+    return 0;
+}
+
+# Index of cstr `pat` in s within [from, limit), or -1.
+fn _shabda_pls_find(s, from, limit, pat): i64 {
+    var plen = strlen(pat);
+    var i = from;
+    while (i + plen <= limit) {
+        if (_shabda_starts_at(s, i, pat) == 1) { return i; }
+        i = i + 1;
+    }
+    return (0 - 1);
+}
+
+# Value of attribute `attr` (first `attr="value"`), or 0.
+fn _shabda_pls_extract_attr(input, attr): i64 {
+    var pb = str_builder_new();
+    str_builder_add_cstr(pb, attr);
+    str_builder_add_cstr(pb, "=\"");
+    var pat = str_data(str_builder_build(pb));
+    var len = strlen(input);
+    var start = _shabda_pls_find(input, 0, len, pat);
+    if (start < 0) { return 0; }
+    var vs = start + strlen(pat);
+    var ve = _shabda_pls_find(input, vs, len, "\"");
+    if (ve < 0) { return 0; }
+    return _shabda_fmt_dup(input, vs, ve);
+}
+
+# Trimmed text of the first `<tag>...</tag>` within [from, limit), or 0.
+fn _shabda_pls_extract_elem(input, from, limit, tag): i64 {
+    var ob = str_builder_new();
+    str_builder_add_cstr(ob, "<");
+    str_builder_add_cstr(ob, tag);
+    str_builder_add_cstr(ob, ">");
+    var openc = str_data(str_builder_build(ob));
+    var cb = str_builder_new();
+    str_builder_add_cstr(cb, "</");
+    str_builder_add_cstr(cb, tag);
+    str_builder_add_cstr(cb, ">");
+    var closec = str_data(str_builder_build(cb));
+    var start = _shabda_pls_find(input, from, limit, openc);
+    if (start < 0) { return 0; }
+    var ts = start + strlen(openc);
+    var te = _shabda_pls_find(input, ts, limit, closec);
+    if (te < 0) { return 0; }
+    while (ts < te) {
+        if (_shabda_pls_ws(load8(input + ts)) == 0) { break; }
+        ts = ts + 1;
+    }
+    while (te > ts) {
+        if (_shabda_pls_ws(load8(input + te - 1)) == 0) { break; }
+        te = te - 1;
+    }
+    return _shabda_fmt_dup(input, ts, te);
+}
+
+# Parse a W3C PLS XML string into a PronunciationDict, or 0 on error
+# (unsupported alphabet).
+#must_use
+fn shabda_parse_pls(input): i64 {
+    var alpha = _shabda_pls_extract_attr(input, "alphabet");
+    if (alpha != 0) {
+        if (streq(alpha, "ipa") == 0) { return 0; }
+    }
+    var dict = shabda_dict_new();
+    var len = strlen(input);
+    var pos = 0;
+    var lstart = 0;
+    var lend = 0;
+    var gtext = 0;
+    var word = 0;
+    var prons = 0;
+    var ppos = 0;
+    var ph = 0;
+    var phon = 0;
+    var pe = 0;
+    var entry = 0;
+    while (pos < len) {
+        lstart = _shabda_pls_find(input, pos, len, "<lexeme");
+        if (lstart < 0) { break; }
+        lend = _shabda_pls_find(input, lstart, len, "</lexeme>");
+        if (lend < 0) { break; }
+        lend = lend + strlen("</lexeme>");
+
+        gtext = _shabda_pls_extract_elem(input, lstart, lend, "grapheme");
+        if (gtext == 0) { pos = lend; continue; }
+        word = shabda_xml_unescape(gtext);
+
+        prons = vec_new();
+        ppos = lstart;
+        while (ppos < lend) {
+            ph = _shabda_pls_extract_elem(input, ppos, lend, "phoneme");
+            if (ph == 0) { break; }
+            phon = shabda_parse_ipa_word(ph);
+            if (vec_len(phon) > 0) { vec_push(prons, shabda_pronunciation_new(phon)); }
+            pe = _shabda_pls_find(input, ppos, lend, "</phoneme>");
+            if (pe < 0) { break; }
+            ppos = pe + strlen("</phoneme>");
+        }
+
+        entry = shabda_dict_entry_from_pronunciations(prons);
+        if (entry != 0) { shabda_dict_insert_entry(dict, word, entry); }
+        pos = lend;
+    }
+    return dict;
+}
+
+# Append the PLS header + <lexicon> open to `sb`.
+fn _shabda_pls_header(sb, lang): i64 {
+    str_builder_add_cstr(sb, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    str_builder_add_cstr(sb, "<lexicon version=\"1.0\" ");
+    str_builder_add_cstr(sb, "xmlns=\"http://www.w3.org/2005/01/pronunciation-lexicon\" ");
+    str_builder_add_cstr(sb, "alphabet=\"ipa\" xml:lang=\"");
+    str_builder_add_cstr(sb, lang);
+    str_builder_add_cstr(sb, "\">\n");
+    return 0;
+}
+
+# Append one <lexeme> (grapheme + all phonemes) to `sb`.
+fn _shabda_pls_write_lexeme(sb, word, entry): i64 {
+    str_builder_add_cstr(sb, "  <lexeme>\n");
+    str_builder_add_cstr(sb, "    <grapheme>");
+    str_builder_add_cstr(sb, shabda_xml_escape(word));
+    str_builder_add_cstr(sb, "</grapheme>\n");
+    var prons = shabda_dict_entry_all(entry);
+    var n = vec_len(prons);
+    var i = 0;
+    while (i < n) {
+        str_builder_add_cstr(sb, "    <phoneme>");
+        str_builder_add_cstr(sb, shabda_phonemes_to_ipa(shabda_pronunciation_phonemes(vec_get(prons, i))));
+        str_builder_add_cstr(sb, "</phoneme>\n");
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "  </lexeme>\n");
+    return 0;
+}
+
+# Serialize base entries to PLS XML (IPA alphabet). Returns a cstr.
+#must_use
+fn shabda_to_pls(dict, lang): cstring {
+    var sb = str_builder_new();
+    _shabda_pls_header(sb, lang);
+    var words = map_keys(shabda_dict_entries(dict));
+    _shabda_sort_strs(words);
+    var n = vec_len(words);
+    var i = 0;
+    var wk = 0;
+    while (i < n) {
+        wk = vec_get(words, i);
+        _shabda_pls_write_lexeme(sb, str_cstr(wk), map_get(shabda_dict_entries(dict), wk));
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "</lexicon>\n");
+    return str_data(str_builder_build(sb));
+}
+
+# Serialize all effective entries (user overrides base) to PLS XML. Returns a cstr.
+#must_use
+fn shabda_to_pls_with_user(dict, lang): cstring {
+    var sb = str_builder_new();
+    _shabda_pls_header(sb, lang);
+    var seen = map_new_str();
+    _shabda_collect_keys(seen, shabda_dict_entries(dict));
+    _shabda_collect_keys(seen, shabda_dict_user_entries(dict));
+    var words = map_keys(seen);
+    _shabda_sort_strs(words);
+    var n = vec_len(words);
+    var i = 0;
+    var wk = 0;
+    var entry = 0;
+    while (i < n) {
+        wk = vec_get(words, i);
+        entry = _shabda_dict_lookup_entry_str(dict, wk);
+        if (entry != 0) { _shabda_pls_write_lexeme(sb, str_cstr(wk), entry); }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "</lexicon>\n");
+    return str_data(str_builder_build(sb));
+}

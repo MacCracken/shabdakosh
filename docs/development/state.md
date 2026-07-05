@@ -62,8 +62,8 @@ formats → gated/optional.
 | L4 | dictionary/g2p.rs | src/dictionary/g2p.cyr | ✅ ported | 29 | G2PResult, LookupSource, FallbackDict (model = (predict_fp,state) pair), promote*, FstModel stub; wires with_fallback |
 | L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
 | L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr | ✅ ported | 45 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec** (bayan DOM both ways) — the serde-stance deliverable |
-| L5 | dictionary/format/pls.rs | … | ⬜ | — | W3C PLS XML |
-| L5 | dictionary/format/ssml.rs | … | ⬜ | — | SSML phoneme tag |
+| L5 | dictionary/format/pls.rs | src/dictionary/format/pls.cyr | ✅ ported | 10 | W3C PLS XML parse/emit (ipa alphabet), hand-rolled scan; to_pls/to_pls_with_user |
+| L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ⏳ next | — | SSML <phoneme> tag parse/emit |
 | L5 | dictionary/format/binary.rs | … | ⬜ | — | postcard equiv (maximal scope) |
 | L6 | dictionary/validate.rs | … | ⬜ | — | varna-gated |
 | L6 | dictionary/detect.rs | … | ⬜ | — | varna-gated |
@@ -114,6 +114,10 @@ then format/pls, format/ssml, format/binary.
 serde-replacement per the locked stance (round-trips words/phonemes/frequency/region/language/
 user-overlay; invalid JSON → 0). Debugging it pinned down the **bayan cstr/Str contract**
 (see memory). Next L5: format/pls, format/ssml, format/binary.
+
+**format/pls done** (10 tests → 494 assertions / 18 suites): W3C PLS XML parse/emit (ipa
+alphabet only, hand-rolled bounded scan, XML escape). Remaining L5: format/ssml (next),
+format/binary.
 
 ## Dependencies
 

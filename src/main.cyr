@@ -28,6 +28,7 @@ include "src/dictionary/heteronym.cyr"
 include "src/dictionary/g2p.cyr"
 include "src/dictionary/format/mod.cyr"
 include "src/dictionary/format/json.cyr"
+include "src/dictionary/format/pls.cyr"
 
 fn main() {
     alloc_init();
@@ -88,6 +89,8 @@ fn main() {
     println_int(shabda_dict_len(shabda_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n")));
     # L5 smoke — JSON codec roundtrip: parse -> to_json -> from_json -> entry count
     println_int(shabda_dict_len(shabda_from_json(shabda_to_json(shabda_parse_cmudict("cat  K AE1 T\n")))));
+    # L5 smoke — parse a PLS lexeme -> entry count
+    println_int(shabda_dict_len(shabda_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>hi</grapheme><phoneme>haɪ</phoneme></lexeme></lexicon>")));
     return 0;
 }
 
