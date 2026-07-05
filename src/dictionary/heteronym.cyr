@@ -1,0 +1,95 @@
+# heteronym.cyr — heteronym disambiguation via a resolver callback.
+#
+# Ports rust-old/src/dictionary/heteronym.rs. Rust's `&dyn HeteronymResolver`
+# trait object becomes a FN POINTER: a resolver is `fn(word, context) -> i64`
+# returning a variant index, or -1 (Rust's None) to fall back to the primary.
+# lookup_with_context calls it via fncall2. Extends the keystone; included after
+# src/dictionary/mod.cyr. Phoneme-agnostic.
+#
+# HeteronymContext::new panics in Rust on out-of-bounds position; here we do NOT
+# panic (zero-panic principle) — the accessors clamp defensively, as the Rust
+# accessors already do for deserialized data.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+#
+# ShHeteronymContext layout (16 bytes): [0]=words(vec of word cstr) [8]=position.
+
+#must_use
+fn shabda_heteronym_context_new(words, position): i64 {
+    var c = alloc(16);
+    store64(c + 0, words);
+    store64(c + 8, position);
+    return c;
+}
+
+#must_use
+fn shabda_heteronym_context_words(c): i64 {
+    return load64(c + 0);
+}
+
+#must_use
+fn shabda_heteronym_context_position(c): i64 {
+    return load64(c + 8);
+}
+
+# Target word (cstr), or "" if the position is out of bounds.
+#must_use
+fn shabda_heteronym_target_word(c): cstring {
+    var words = load64(c + 0);
+    var pos = load64(c + 8);
+    if (pos < 0) { return ""; }
+    if (pos >= vec_len(words)) { return ""; }
+    return vec_get(words, pos);
+}
+
+# Words before the target (a fresh vec), clamped to [0, min(pos, len)).
+#must_use
+fn shabda_heteronym_preceding_words(c): i64 {
+    var words = load64(c + 0);
+    var pos = load64(c + 8);
+    var len = vec_len(words);
+    var end = pos;
+    if (end > len) { end = len; }
+    if (end < 0) { end = 0; }
+    var out = vec_new();
+    var i = 0;
+    while (i < end) {
+        vec_push(out, vec_get(words, i));
+        i = i + 1;
+    }
+    return out;
+}
+
+# Words after the target (a fresh vec); empty if the target is last / out of range.
+#must_use
+fn shabda_heteronym_following_words(c): i64 {
+    var words = load64(c + 0);
+    var pos = load64(c + 8);
+    var len = vec_len(words);
+    var out = vec_new();
+    var i = pos + 1;
+    if (i < 0) { i = 0; }
+    while (i < len) {
+        vec_push(out, vec_get(words, i));
+        i = i + 1;
+    }
+    return out;
+}
+
+# Look up `word` (cstr) using a heteronym `resolver` fn-pointer for disambiguation.
+# The resolver is fn(word, context) -> variant index, or -1 for None. Returns the
+# selected variant's phonemes (vec), or the primary's; 0 if the word is absent.
+#must_use
+fn shabda_dict_lookup_with_context(d, word, resolver, context): i64 {
+    var entry = shabda_dict_lookup_entry(d, word);
+    if (entry == 0) { return 0; }
+    if (shabda_dict_entry_len(entry) > 1) {
+        var idx = fncall2(resolver, word, context);
+        if (idx >= 0) {
+            if (idx < shabda_dict_entry_len(entry)) {
+                return shabda_pronunciation_phonemes(vec_get(shabda_dict_entry_all(entry), idx));
+            }
+        }
+    }
+    return shabda_dict_entry_primary_phonemes(entry);
+}

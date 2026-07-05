@@ -1,0 +1,70 @@
+# heteronym.tcyr — tests for src/dictionary/heteronym.cyr
+# (ports rust-old/src/dictionary/heteronym.rs). Resolvers are fn-pointers.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/heteronym.cyr"
+
+alloc_init();
+
+# resolver fn-pointers (was: trait impls)
+fn _primary_resolver(word, ctx): i64 { return 0; }
+fn _second_resolver(word, ctx): i64 { return 1; }
+fn _none_resolver(word, ctx): i64 { return (0 - 1); }
+fn _bad_resolver(word, ctx): i64 { return 999; }
+
+fn _w1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _w2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _w3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+
+# ================================================================
+test_group("context new");
+var ctx = shabda_heteronym_context_new(_w3("I", "read", "books"), 1);
+assert_streq(shabda_heteronym_target_word(ctx), "read", "target = read");
+assert_eq(vec_len(shabda_heteronym_preceding_words(ctx)), 1, "1 preceding");
+assert_streq(vec_get(shabda_heteronym_preceding_words(ctx), 0), "I", "preceding = I");
+assert_eq(vec_len(shabda_heteronym_following_words(ctx)), 1, "1 following");
+assert_streq(vec_get(shabda_heteronym_following_words(ctx), 0), "books", "following = books");
+
+# ================================================================
+test_group("context first / last word");
+var ctxf = shabda_heteronym_context_new(_w2("read", "this"), 0);
+assert_eq(vec_len(shabda_heteronym_preceding_words(ctxf)), 0, "first: no preceding");
+assert_eq(vec_len(shabda_heteronym_following_words(ctxf)), 1, "first: 1 following");
+var ctxl = shabda_heteronym_context_new(_w2("I", "read"), 1);
+assert_eq(vec_len(shabda_heteronym_preceding_words(ctxl)), 1, "last: 1 preceding");
+assert_eq(vec_len(shabda_heteronym_following_words(ctxl)), 0, "last: no following");
+
+# ================================================================
+test_group("lookup_with_context: single pronunciation ignores resolver");
+var em = shabda_dict_english_minimal();
+var sctx = shabda_heteronym_context_new(_w1("the"), 0);
+assert_eq(shabda_dict_lookup_with_context(em, "the", &_second_resolver, sctx), shabda_dict_lookup(em, "the"), "the (1 pron) -> primary");
+
+# ================================================================
+test_group("lookup_with_context: heteronym variant selection");
+var eng = shabda_dict_english();
+var re = shabda_dict_lookup_entry(eng, "read");
+assert_neq(re, 0, "read present");
+assert_gte(shabda_dict_entry_len(re), 2, "read has >= 2 pronunciations");
+var rall = shabda_dict_entry_all(re);
+var rctx = shabda_heteronym_context_new(_w3("I", "read", "books"), 1);
+assert_eq(shabda_dict_lookup_with_context(eng, "read", &_primary_resolver, rctx), shabda_pronunciation_phonemes(vec_get(rall, 0)), "primary -> variant 0");
+assert_eq(shabda_dict_lookup_with_context(eng, "read", &_second_resolver, rctx), shabda_pronunciation_phonemes(vec_get(rall, 1)), "second -> variant 1");
+assert_eq(shabda_dict_lookup_with_context(eng, "read", &_none_resolver, rctx), shabda_dict_lookup(eng, "read"), "none -> primary");
+assert_eq(shabda_dict_lookup_with_context(eng, "read", &_bad_resolver, rctx), shabda_dict_lookup(eng, "read"), "out-of-bounds idx -> primary");
+
+# ================================================================
+test_group("lookup_with_context: missing word");
+var mctx = shabda_heteronym_context_new(_w1("xyzzy"), 0);
+assert_eq(shabda_dict_lookup_with_context(em, "xyzzy", &_primary_resolver, mctx), 0, "missing -> 0 (None)");
+
+var rc = assert_summary();
+syscall(60, rc);

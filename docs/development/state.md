@@ -58,8 +58,8 @@ formats → gated/optional.
 | L4 | dictionary/coverage.rs | src/dictionary/coverage.cyr | ✅ ported | 22 | CoverageReport + coverage(): tokenize/strip-punct/lowercase, dedup+sort uncovered; coverage_pct as f64 |
 | L4 | dictionary/stream.rs | src/dictionary/stream.cyr | ✅ ported | 12 | LookupStream iterator → stateful cursor (zero-alloc per step); next/word/phonemes/size_hint |
 | L4 | dictionary/trie.rs | src/dictionary/trie.cyr | ✅ ported | 30 | PrefixTrie (byte-keyed vec-of-pairs nodes, recursive collect); from_dict; wires keystone prefix_search |
-| L4 | dictionary/heteronym.rs | … | ⏳ next | — | HeteronymResolver (&dyn → fn-ptr), lookup_with_context |
-| L4 | dictionary/g2p.rs | … | ⬜ | — | FallbackDict / G2PModel / FstModel stub |
+| L4 | dictionary/heteronym.rs | src/dictionary/heteronym.cyr | ✅ ported | 17 | HeteronymContext + resolver as fn-ptr (fncall2); lookup_with_context variant selection |
+| L4 | dictionary/g2p.rs | … | ⏳ next | — | FallbackDict / G2PModel (fn-ptr) / FstModel stub; wires with_fallback |
 | L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
 | L5 | dictionary/format/mod.rs | … | ⬜ | — | CMUdict/IPA/JSON |
 | L5 | dictionary/format/pls.rs | … | ⬜ | — | W3C PLS XML |
@@ -97,8 +97,8 @@ deferred to their tiers: `with_fallback` (g2p, L4), `prefix_search` (trie, L4), 
 (L6), JSON serde (format L5) — these get wired into `mod.cyr` as those modules land.
 **Known divergence to revisit**: `merge` shares entry pointers where Rust deep-clones — observable
 only if the merged-from dict is mutated afterward; flag for a future clone or an ADR.
-Next: L4 extensions. **coverage + stream + trie done** → 391 assertions / 13 suites;
-`prefix_search` now wired into the keystone. Remaining L4: heteronym (next), g2p.
+Next: L4 extensions. **coverage + stream + trie + heteronym done** → 408 assertions / 14 suites;
+`prefix_search` wired. Remaining L4: g2p (next) — closes the L4 tier and wires `with_fallback`.
 
 ## Dependencies
 

@@ -24,6 +24,7 @@ include "src/dictionary/mod.cyr"
 include "src/dictionary/coverage.cyr"
 include "src/dictionary/stream.cyr"
 include "src/dictionary/trie.cyr"
+include "src/dictionary/heteronym.cyr"
 
 fn main() {
     alloc_init();
@@ -71,6 +72,12 @@ fn main() {
     println_int(shabda_lookup_stream_size_hint(shabda_dict_lookup_stream(shabda_dict_english_minimal(), sw)));
     # L4 smoke — prefix_search "he" over english_minimal (he, hello)
     println_int(vec_len(shabda_dict_prefix_search(shabda_dict_english_minimal(), "he")));
+    # L4 smoke — heteronym context: preceding-word count for "I [read] books"
+    var hw = vec_new();
+    vec_push(hw, "I");
+    vec_push(hw, "read");
+    vec_push(hw, "books");
+    println_int(vec_len(shabda_heteronym_preceding_words(shabda_heteronym_context_new(hw, 1))));
     return 0;
 }
 
