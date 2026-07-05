@@ -1,0 +1,69 @@
+# coverage.tcyr — tests for src/dictionary/coverage.cyr
+# (ports rust-old/src/dictionary/coverage.rs). Uses english_minimal.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/coverage.cyr"
+
+alloc_init();
+
+var dict = shabda_dict_english_minimal();
+
+# ================================================================
+test_group("coverage full");
+var rf = shabda_dict_coverage(dict, "the hello world");
+assert_eq(shabda_coverage_total_tokens(rf), 3, "3 tokens");
+assert_eq(shabda_coverage_covered_tokens(rf), 3, "3 covered");
+assert_eq(shabda_coverage_is_fully_covered(rf), 1, "fully covered");
+assert_eq(shabda_coverage_pct(rf), f64_from(100), "100%");
+
+# ================================================================
+test_group("coverage partial");
+var rp = shabda_dict_coverage(dict, "the hello xyzzy");
+assert_eq(shabda_coverage_total_tokens(rp), 3, "3 tokens");
+assert_eq(shabda_coverage_covered_tokens(rp), 2, "2 covered");
+assert_eq(shabda_coverage_is_fully_covered(rp), 0, "not fully covered");
+assert_eq(shabda_coverage_uncovered_count(rp), 1, "1 uncovered");
+assert_streq(str_data(vec_get(shabda_coverage_uncovered_words(rp), 0)), "xyzzy", "uncovered = xyzzy");
+
+# ================================================================
+test_group("coverage empty");
+var re = shabda_dict_coverage(dict, "");
+assert_eq(shabda_coverage_total_tokens(re), 0, "0 tokens");
+assert_eq(shabda_coverage_pct(re), 0, "0% for empty");
+assert_eq(shabda_coverage_is_fully_covered(re), 1, "empty -> fully covered");
+
+# ================================================================
+test_group("strips punctuation");
+var rpn = shabda_dict_coverage(dict, "hello, world! the.");
+assert_eq(shabda_coverage_total_tokens(rpn), 3, "3 tokens");
+assert_eq(shabda_coverage_covered_tokens(rpn), 3, "3 covered (punct stripped)");
+
+# ================================================================
+test_group("case insensitive");
+var rci = shabda_dict_coverage(dict, "Hello THE World");
+assert_eq(shabda_coverage_covered_tokens(rci), 3, "3 covered (case-insensitive)");
+
+# ================================================================
+test_group("unique uncovered");
+var ru = shabda_dict_coverage(dict, "xyzzy xyzzy xyzzy");
+assert_eq(shabda_coverage_total_tokens(ru), 3, "3 tokens");
+assert_eq(shabda_coverage_covered_tokens(ru), 0, "0 covered");
+assert_eq(shabda_coverage_uncovered_count(ru), 1, "1 unique uncovered word");
+
+# ================================================================
+test_group("normalize_token");
+assert_streq(_shabda_normalize_token("Hello,", 0, strlen("Hello,")), "hello", "Hello, -> hello");
+assert_streq(_shabda_normalize_token("\"world\"", 0, strlen("\"world\"")), "world", "quoted -> world");
+assert_streq(_shabda_normalize_token("(test)", 0, strlen("(test)")), "test", "(test) -> test");
+assert_eq(load8(_shabda_normalize_token("...", 0, strlen("..."))), 0, "... -> empty");
+
+var rc = assert_summary();
+syscall(60, rc);

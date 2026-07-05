@@ -21,6 +21,7 @@ include "src/notation.cyr"
 include "src/dictionary/_cmudict_data.cyr"
 include "src/dictionary/cmudict.cyr"
 include "src/dictionary/mod.cyr"
+include "src/dictionary/coverage.cyr"
 
 fn main() {
     alloc_init();
@@ -59,6 +60,8 @@ fn main() {
     println_int(shabda_cmudict_load(map_new_str()));
     # L3 smoke — dictionary keystone: english_minimal entry count
     println_int(shabda_dict_len(shabda_dict_english_minimal()));
+    # L4 smoke — coverage of "the hello world xyz" (3 of 4 covered)
+    println_int(shabda_coverage_covered_tokens(shabda_dict_coverage(shabda_dict_english_minimal(), "the hello world xyz")));
     return 0;
 }
 

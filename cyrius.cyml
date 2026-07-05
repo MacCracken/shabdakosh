@@ -26,6 +26,7 @@ modules = [
     "src/dictionary/_cmudict_data.cyr",
     "src/dictionary/cmudict.cyr",
     "src/dictionary/mod.cyr",
+    "src/dictionary/coverage.cyr",
 ]
 
 # stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown
