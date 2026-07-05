@@ -82,9 +82,12 @@ cyrius tests tests                             # run all .tcyr
 - `;;; @freq=0.85` — frequency annotation for the next entry
 - `;;; @region=GA` — region annotation for the next entry
 
-A `gen_cmudict.cyr` generator reads it and emits the checked-in
-`src/dictionary/_cmudict_data.cyr` (the Cyrius replacement for the Rust `build.rs`).
-Regenerate that module after editing the data.
+`programs/gen_cmudict.cyr` reads it and emits the checked-in
+`src/dictionary/_cmudict_data.cyr` (packed-string pieces; the Cyrius replacement for the Rust
+`build.rs`). It `include`s `src/arpabet.cyr` and reuses that mapping — one source of truth (no
+Rust-style table duplication). `src/dictionary/cmudict.cyr` loads the pieces into a
+`lib/hashmap` at runtime. **Regenerate after editing the data:**
+`cyrius build programs/gen_cmudict.cyr build/gen_cmudict && ./build/gen_cmudict`.
 
 ## Rules (Hard Constraints)
 

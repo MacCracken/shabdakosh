@@ -53,8 +53,8 @@ formats → gated/optional.
 | L1 | dictionary/morphology.rs | src/dictionary/morphology.cyr | ✅ ported | 20 | MorphemeKind/Morpheme/Decomposition; composite/root/prefixes/suffixes; self-contained |
 | L1 | dictionary/syllable.rs | src/dictionary/syllable.cyr | ✅ ported | 23 | StressLevel/Syllable + syllabify (Maximal Onset); is_nucleus = ordinal 0..19; self-contained |
 | L2 | notation.rs | src/notation.cyr | ✅ ported | 51 | PhonemeNotation trait → notation-tag dispatch; ARPABET/IPA/X-SAMPA; new X-SAMPA table; parse/render; ASCII-whitespace parity-audited |
-| L2 | build.rs → gen | gen_cmudict.cyr + _cmudict_data.cyr | ⏳ next | — | codegen the base dict |
-| L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ⬜ | — | keystone: PronunciationDict, diff |
+| L2 | build.rs → gen | programs/gen_cmudict.cyr + _cmudict_data.cyr + cmudict.cyr | ✅ done | 15 | generator reuses arpabet.cyr (no table dup); emits 283KB/12-piece packed data (10,617 words, 0 unknown); cmudict.cyr loader → lib/hashmap |
+| L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ⏳ next | — | keystone: PronunciationDict, user overlay, merge, diff |
 | L4 | dictionary/coverage.rs | … | ⬜ | — | |
 | L4 | dictionary/stream.rs | … | ⬜ | — | |
 | L4 | dictionary/trie.rs | … | ⬜ | — | HashMap<char,node> |
@@ -78,7 +78,16 @@ entry, morphology, syllable; L2 notation). Build + smoke + tests green (273 asse
 **Parity audit (7 auditors + adversarial verify) — 5 modules clean, 2 low-severity divergences
 found & fixed + regression-tested:** (a) entry's freq sort bubbled a NaN frequency to primary
 (Rust keeps it in place) → NaN-safe predicate; (b) notation's whitespace tokenizer missed VT/FF
-→ added. Next: the CMUdict codegen (`build.rs` port), then the L3 `dictionary/mod` keystone.
+→ added.
+
+**CMUdict codegen done (the `build.rs` port):** `programs/gen_cmudict.cyr` reads
+`data/cmudict-5k.txt`, folds variants via a hashmap, and emits the checked-in
+`src/dictionary/_cmudict_data.cyr` (283 KB, 12 packed-string pieces, 10,617 words, 0 unknown
+symbols) — reusing the ported `arpabet.cyr` mapping (no Rust-style table duplication).
+`src/dictionary/cmudict.cyr` parses the pieces into a `lib/hashmap` map at load. Verified:
+`shabda_cmudict_english()` loads 10,617 words; `cat`→[K,AE,T], `a`→[schwa], heteronym `bass`→2
+prons. Regen: `cyrius build programs/gen_cmudict.cyr build/gen_cmudict && ./build/gen_cmudict`.
+Total 288 assertions / 9 suites, all green. Next: the L3 `dictionary/mod` keystone.
 
 ## Dependencies
 

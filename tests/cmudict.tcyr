@@ -1,0 +1,53 @@
+# cmudict.tcyr — verifies the generated base dict (_cmudict_data.cyr) loads
+# correctly via src/dictionary/cmudict.cyr. Needs svara (SVARA_PH_*) + error +
+# entry + the generated data.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+
+alloc_init();
+
+var m = shabda_cmudict_english();
+
+# ================================================================
+test_group("dictionary size");
+assert_gt(map_size(m), 10000, "loaded >10k words");
+
+# ================================================================
+test_group("single-pronunciation lookups");
+var a = map_get(m, str_from("a"));
+assert_neq(a, 0, "a present");
+assert_eq(vec_len(shabda_dict_entry_primary_phonemes(a)), 1, "a: 1 phoneme");
+assert_eq(vec_get(shabda_dict_entry_primary_phonemes(a), 0), SVARA_PH_VOWEL_SCHWA, "a -> schwa (AH0)");
+
+var cat = map_get(m, str_from("cat"));
+assert_neq(cat, 0, "cat present");
+var catp = shabda_dict_entry_primary_phonemes(cat);
+assert_eq(vec_len(catp), 3, "cat: 3 phonemes");
+assert_eq(vec_get(catp, 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
+assert_eq(vec_get(catp, 1), SVARA_PH_VOWEL_ASH, "cat[1] AE");
+assert_eq(vec_get(catp, 2), SVARA_PH_PLOSIVE_T, "cat[2] T");
+
+var abandon = map_get(m, str_from("abandon"));
+assert_neq(abandon, 0, "abandon present");
+assert_eq(vec_len(shabda_dict_entry_primary_phonemes(abandon)), 7, "abandon: 7 phonemes");
+assert_eq(vec_get(shabda_dict_entry_primary_phonemes(abandon), 0), SVARA_PH_VOWEL_SCHWA, "abandon[0] schwa");
+
+# ================================================================
+test_group("heteronym (folded variants)");
+var bass = map_get(m, str_from("bass"));
+assert_neq(bass, 0, "bass present");
+assert_eq(shabda_dict_entry_len(bass), 2, "bass: 2 pronunciations");
+
+# ================================================================
+test_group("missing word");
+assert_eq(map_get(m, str_from("zzzznotaword")), 0, "missing -> 0");
+
+var rc = assert_summary();
+syscall(60, rc);

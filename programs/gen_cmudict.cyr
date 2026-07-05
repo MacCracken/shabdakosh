@@ -1,0 +1,365 @@
+# programs/gen_cmudict.cyr — native Cyrius codegen for the base English dictionary.
+#
+# The faithful port of the Rust build.rs. Reads data/cmudict-5k.txt, folds
+# variant pronunciations per base word (via a hashmap, like build.rs's BTreeMap),
+# and emits src/dictionary/_cmudict_data.cyr as chunked packed-string globals +
+# a piece accessor. Unlike build.rs (which had to DUPLICATE the ARPABET table
+# because build scripts can't import the crate), this generator INCLUDES the
+# ported src/arpabet.cyr and reuses shabda_arpabet_to_phoneme_with_stress — one
+# source of truth.
+#
+# Packed format (one entry): word|o,o,o[~freq][^RR];  (o = svara phoneme ordinal;
+# freq = decimal; RR = GA/RP). Entries concatenated into ~24KB string pieces.
+#
+# Run from the project root:
+#   cyrius build programs/gen_cmudict.cyr build/gen_cmudict
+#   ./build/gen_cmudict
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+
+# Pron accumulator (24 bytes): [0]=phonemes(vec) [8]=freq(cstr or 0) [16]=region(cstr or 0).
+
+# ---- small helpers -----------------------------------------------------------
+fn _gc_is_ws(c): i64 {
+    if (c == 32) { return 1; }
+    if (c == 9) { return 1; }
+    if (c == 13) { return 1; }
+    return 0;
+}
+
+fn _gc_line_end(src, off, end): i64 {
+    while (off < end) {
+        if (load8(src + off) == 10) { return off; }
+        off = off + 1;
+    }
+    return off;
+}
+
+# Copy src[start..end] into a fresh NUL-terminated cstr.
+fn _gc_dup(src, start, end): i64 {
+    var n = end - start;
+    var buf = alloc(n + 1);
+    var i = 0;
+    while (i < n) {
+        store8(buf + i, load8(src + start + i));
+        i = i + 1;
+    }
+    store8(buf + n, 0);
+    return buf;
+}
+
+# Append cstr s to buf at off; return bytes written.
+fn _gc_emit_cstr(buf, off, s): i64 {
+    var i = 0;
+    while (load8(s + i) != 0) {
+        store8(buf + off + i, load8(s + i));
+        i = i + 1;
+    }
+    return i;
+}
+
+# Append non-negative decimal n to buf at off; return bytes written.
+fn _gc_emit_dec(buf, off, n): i64 {
+    if (n == 0) {
+        store8(buf + off, 48);
+        return 1;
+    }
+    var digits = 0;
+    var tmp = n;
+    while (tmp > 0) {
+        digits = digits + 1;
+        tmp = tmp / 10;
+    }
+    var i = digits - 1;
+    tmp = n;
+    while (i >= 0) {
+        store8(buf + off + i, 48 + (tmp - (tmp / 10) * 10));
+        tmp = tmp / 10;
+        i = i - 1;
+    }
+    return digits;
+}
+
+# ---- main --------------------------------------------------------------------
+fn main() {
+    alloc_init();
+
+    # read the data file
+    var src = alloc(524288);
+    var src_len = file_read_all("data/cmudict-5k.txt", src, 524287);
+    if (src_len <= 0) {
+        println("gen_cmudict: failed to read data/cmudict-5k.txt");
+        return 1;
+    }
+
+    # fold entries: word Str -> entry accumulator (vec of pron*); order vec keeps
+    # first-occurrence order for a stable emit.
+    var word_map = map_new_str();
+    var order = vec_new();
+
+    var pending_freq = 0;     # cstr or 0
+    var pending_region = 0;   # cstr or 0
+    var unknown = 0;          # count of unrecognized ARPABET symbols
+
+    var pos = 0;
+    var le = 0;
+    var s = 0;
+    var e = 0;
+    var c = 0;
+    var symbuf = alloc(16);
+    while (pos < src_len) {
+        le = _gc_line_end(src, pos, src_len);
+        # trim leading ws
+        s = pos;
+        while (s < le) {
+            if (_gc_is_ws(load8(src + s)) == 0) { break; }
+            s = s + 1;
+        }
+        # trim trailing ws
+        e = le;
+        while (e > s) {
+            if (_gc_is_ws(load8(src + e - 1)) == 0) { break; }
+            e = e - 1;
+        }
+        if (s >= e) { pos = le + 1; continue; }
+
+        # comment / annotation line?
+        if (load8(src + s) == 59) {   # ';'
+            # scan for @freq= / @region= tokens
+            var ti = s;
+            while (ti < e) {
+                if (load8(src + ti) == 64) {   # '@'
+                    # token key
+                    var ks = ti + 1;
+                    var kv = ks;
+                    while (kv < e) {
+                        if (load8(src + kv) == 61) { break; }   # '='
+                        kv = kv + 1;
+                    }
+                    # value spans kv+1 .. next ws
+                    var vs = kv + 1;
+                    var ve = vs;
+                    while (ve < e) {
+                        if (_gc_is_ws(load8(src + ve)) == 1) { break; }
+                        ve = ve + 1;
+                    }
+                    # key is [ks..kv): "freq" or "region"
+                    if (load8(src + ks) == 102) {   # 'f' -> freq
+                        pending_freq = _gc_dup(src, vs, ve);
+                    }
+                    if (load8(src + ks) == 114) {   # 'r' -> region
+                        pending_region = _gc_dup(src, vs, ve);
+                    }
+                    ti = ve;
+                } else {
+                    ti = ti + 1;
+                }
+            }
+            pos = le + 1;
+            continue;
+        }
+
+        # entry line: find two-space separator
+        var sep = s;
+        var found = 0;
+        while (sep < e - 1) {
+            if (load8(src + sep) == 32) {
+                if (load8(src + sep + 1) == 32) { found = 1; break; }
+            }
+            sep = sep + 1;
+        }
+        if (found == 0) { pos = le + 1; continue; }
+
+        # base word = [s .. wend) where wend stops at '(' or the separator
+        var wend = s;
+        while (wend < sep) {
+            if (load8(src + wend) == 40) { break; }   # '('
+            wend = wend + 1;
+        }
+
+        # parse phonemes [sep+2 .. e) split on ws -> ordinals
+        var phon = vec_new();
+        var pp = sep + 2;
+        var ss = 0;
+        var ee = 0;
+        var k = 0;
+        var ph = 0;
+        while (pp < e) {
+            # skip ws
+            while (pp < e) {
+                if (_gc_is_ws(load8(src + pp)) == 0) { break; }
+                pp = pp + 1;
+            }
+            if (pp >= e) { break; }
+            ss = pp;
+            while (pp < e) {
+                if (_gc_is_ws(load8(src + pp)) == 1) { break; }
+                pp = pp + 1;
+            }
+            ee = pp;
+            # copy symbol to symbuf, NUL-terminate
+            k = 0;
+            while (ss + k < ee) {
+                store8(symbuf + k, load8(src + ss + k));
+                k = k + 1;
+            }
+            store8(symbuf + k, 0);
+            ph = shabda_arpabet_to_phoneme_with_stress(symbuf);
+            if (ph == SHABDA_PH_NONE) {
+                unknown = unknown + 1;
+            } else {
+                vec_push(phon, ph);
+            }
+        }
+
+        # build pron accumulator
+        var pron = alloc(24);
+        store64(pron + 0, phon);
+        store64(pron + 8, pending_freq);
+        store64(pron + 16, pending_region);
+        pending_freq = 0;
+        pending_region = 0;
+
+        # fold into the entry for this base word
+        var wkey = str_new(src + s, wend - s);
+        var acc = map_get(word_map, wkey);
+        if (acc == 0) {
+            acc = vec_new();
+            vec_push(acc, pron);
+            map_set(word_map, wkey, acc);
+            vec_push(order, wkey);
+        } else {
+            vec_push(acc, pron);
+        }
+
+        pos = le + 1;
+    }
+
+    # ---- emit src/dictionary/_cmudict_data.cyr ----
+    var out = alloc(1048576);
+    var oo = 0;
+    oo = oo + _gc_emit_cstr(out, oo, "# _cmudict_data.cyr - AUTO-GENERATED by programs/gen_cmudict.cyr from\n");
+    oo = oo + _gc_emit_cstr(out, oo, "# data/cmudict-5k.txt. Do NOT edit by hand; regeneration overwrites.\n");
+    oo = oo + _gc_emit_cstr(out, oo, "# Packed format per entry: word|o,o,o[~freq][^RR];  (o = SVARA_PH_* ordinal).\n");
+    oo = oo + _gc_emit_cstr(out, oo, "# Loaded by src/dictionary/cmudict.cyr into a lib/hashmap map.\n\n");
+
+    var nwords = vec_len(order);
+    var piece_target = 24576;   # ~24 KB per string-literal piece
+    var piece_count = 0;
+    var piece_open = 0;
+    var piece_bytes = 0;
+
+    var wi = 0;
+    var wk = 0;
+    var acc2 = 0;
+    var np = 0;
+    var prj = 0;
+    var pr = 0;
+    var phv = 0;
+    var nph = 0;
+    var phi = 0;
+    var fq = 0;
+    var rg = 0;
+    while (wi < nwords) {
+        # open a new piece if needed
+        if (piece_open == 0) {
+            oo = oo + _gc_emit_cstr(out, oo, "var _SHABDA_CMUDICT_PIECE_");
+            oo = oo + _gc_emit_dec(out, oo, piece_count);
+            oo = oo + _gc_emit_cstr(out, oo, " = \"");
+            piece_open = 1;
+            piece_bytes = 0;
+        }
+
+        wk = vec_get(order, wi);
+        acc2 = map_get(word_map, wk);
+
+        # word (the base word bytes, then |pron|pron...;)
+        var wdata = str_data(wk);
+        var wlen = str_len(wk);
+        var bi = 0;
+        while (bi < wlen) {
+            store8(out + oo, load8(wdata + bi));
+            oo = oo + 1;
+            bi = bi + 1;
+        }
+        piece_bytes = piece_bytes + wlen;
+
+        # prons
+        np = vec_len(acc2);
+        prj = 0;
+        while (prj < np) {
+            store8(out + oo, 124); oo = oo + 1;   # '|'
+            piece_bytes = piece_bytes + 1;
+            pr = vec_get(acc2, prj);
+            phv = load64(pr + 0);
+            nph = vec_len(phv);
+            phi = 0;
+            while (phi < nph) {
+                if (phi > 0) { store8(out + oo, 44); oo = oo + 1; piece_bytes = piece_bytes + 1; }   # ','
+                var d = _gc_emit_dec(out, oo, vec_get(phv, phi));
+                oo = oo + d; piece_bytes = piece_bytes + d;
+                phi = phi + 1;
+            }
+            fq = load64(pr + 8);
+            if (fq != 0) {
+                store8(out + oo, 126); oo = oo + 1; piece_bytes = piece_bytes + 1;   # '~'
+                var df = _gc_emit_cstr(out, oo, fq);
+                oo = oo + df; piece_bytes = piece_bytes + df;
+            }
+            rg = load64(pr + 16);
+            if (rg != 0) {
+                store8(out + oo, 94); oo = oo + 1; piece_bytes = piece_bytes + 1;   # '^'
+                var dr = _gc_emit_cstr(out, oo, rg);
+                oo = oo + dr; piece_bytes = piece_bytes + dr;
+            }
+            prj = prj + 1;
+        }
+        store8(out + oo, 59); oo = oo + 1;   # ';'
+        piece_bytes = piece_bytes + 1;
+
+        # close the piece at an entry boundary once it's big enough
+        if (piece_bytes >= piece_target) {
+            oo = oo + _gc_emit_cstr(out, oo, "\";\n");
+            piece_count = piece_count + 1;
+            piece_open = 0;
+        }
+        wi = wi + 1;
+    }
+    if (piece_open == 1) {
+        oo = oo + _gc_emit_cstr(out, oo, "\";\n");
+        piece_count = piece_count + 1;
+    }
+
+    # piece count + accessor
+    oo = oo + _gc_emit_cstr(out, oo, "\nvar _SHABDA_CMUDICT_PIECE_COUNT = ");
+    oo = oo + _gc_emit_dec(out, oo, piece_count);
+    oo = oo + _gc_emit_cstr(out, oo, ";\n\n");
+    oo = oo + _gc_emit_cstr(out, oo, "fn _shabda_cmudict_piece(i): cstring {\n");
+    var ai = 0;
+    while (ai < piece_count) {
+        oo = oo + _gc_emit_cstr(out, oo, "    if (i == ");
+        oo = oo + _gc_emit_dec(out, oo, ai);
+        oo = oo + _gc_emit_cstr(out, oo, ") { return _SHABDA_CMUDICT_PIECE_");
+        oo = oo + _gc_emit_dec(out, oo, ai);
+        oo = oo + _gc_emit_cstr(out, oo, "; }\n");
+        ai = ai + 1;
+    }
+    oo = oo + _gc_emit_cstr(out, oo, "    return 0;\n}\n");
+
+    var nw = file_write_all("src/dictionary/_cmudict_data.cyr", out, oo);
+
+    println("gen_cmudict: done");
+    print_num(nwords);   println(" words");
+    print_num(piece_count); println(" pieces");
+    print_num(nw); println(" bytes written");
+    print_num(unknown); println(" unknown symbols");
+    return 0;
+}
+
+var r = main();
+syscall(SYS_EXIT, r);

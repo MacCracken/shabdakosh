@@ -23,6 +23,8 @@ modules = [
     "src/dictionary/morphology.cyr",
     "src/dictionary/syllable.cyr",
     "src/notation.cyr",
+    "src/dictionary/_cmudict_data.cyr",
+    "src/dictionary/cmudict.cyr",
 ]
 
 # stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown

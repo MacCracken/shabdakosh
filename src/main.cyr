@@ -18,6 +18,8 @@ include "src/dictionary/entry.cyr"
 include "src/dictionary/morphology.cyr"
 include "src/dictionary/syllable.cyr"
 include "src/notation.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
 
 fn main() {
     alloc_init();
@@ -52,6 +54,8 @@ fn main() {
     vec_push(catx, SVARA_PH_VOWEL_ASH);
     vec_push(catx, SVARA_PH_PLOSIVE_T);
     println(shabda_notation_render(SHABDA_NOTATION_XSAMPA, catx));
+    # L2 smoke — load the generated base English dictionary, print word count
+    println_int(shabda_cmudict_load(map_new_str()));
     return 0;
 }
 
