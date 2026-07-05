@@ -16,6 +16,7 @@ include "src/arpabet.cyr"
 include "src/ipa.cyr"
 include "src/dictionary/entry.cyr"
 include "src/dictionary/morphology.cyr"
+include "src/dictionary/syllable.cyr"
 
 fn main() {
     alloc_init();
@@ -37,6 +38,13 @@ fn main() {
     vec_push(msm, shabda_morpheme_new("un", SHABDA_MORPH_PREFIX, vec_new()));
     vec_push(msm, shabda_morpheme_new("lock", SHABDA_MORPH_ROOT, vec_new()));
     println(shabda_decomposition_text(shabda_decomposition_new(msm)));
+    # L1 smoke — syllabify "hɛloʊ" phonemes -> syllable count (2)
+    var hello_ph = vec_new();
+    vec_push(hello_ph, SVARA_PH_FRIC_H);
+    vec_push(hello_ph, SVARA_PH_VOWEL_OPEN_E);
+    vec_push(hello_ph, SVARA_PH_LATERAL_L);
+    vec_push(hello_ph, SVARA_PH_DIPH_OU);
+    println_int(vec_len(shabda_syllabify(hello_ph)));
     return 0;
 }
 

@@ -1,0 +1,134 @@
+# syllable.cyr — syllable structure + Maximal Onset Principle syllabification.
+#
+# Ports rust-old/src/dictionary/syllable.rs. Phoneme-agnostic (operates on
+# phoneme ordinals) — stdlib only, no svara. Container serde (Syllable) is
+# handled by the format layer (L5) per the serde stance.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+#
+# ShSyllable layout (16 bytes): [0]=phonemes(vec of i64) [8]=stress(SHABDA_STRESS_*).
+
+# ---- StressLevel (#[non_exhaustive] enum) ------------------------------------
+var SHABDA_STRESS_UNSTRESSED = 0;
+var SHABDA_STRESS_PRIMARY    = 1;   # IPA ˈ
+var SHABDA_STRESS_SECONDARY  = 2;   # IPA ˌ
+
+# ---- Syllable ----------------------------------------------------------------
+# new(phonemes) — unstressed.
+#must_use
+fn shabda_syllable_new(phonemes): i64 {
+    var s = alloc(16);
+    store64(s + 0, phonemes);
+    store64(s + 8, SHABDA_STRESS_UNSTRESSED);
+    return s;
+}
+
+# Builder: set stress level. Mutates + returns self.
+#must_use
+fn shabda_syllable_with_stress(s, stress): i64 {
+    store64(s + 8, stress);
+    return s;
+}
+
+# Phonemes in this syllable (vec of ordinals).
+#must_use
+fn shabda_syllable_phonemes(s): i64 {
+    return load64(s + 0);
+}
+
+# Stress level (SHABDA_STRESS_*).
+#must_use
+fn shabda_syllable_stress(s): i64 {
+    return load64(s + 8);
+}
+
+# Number of phonemes.
+#must_use
+fn shabda_syllable_len(s): i64 {
+    return vec_len(load64(s + 0));
+}
+
+# 1 if the syllable has no phonemes.
+#must_use
+fn shabda_syllable_is_empty(s): i64 {
+    if (vec_len(load64(s + 0)) == 0) { return 1; }
+    return 0;
+}
+
+# ---- Syllabification ---------------------------------------------------------
+# 1 if the phoneme is a vowel or diphthong (a syllable nucleus). svara orders the
+# 15 English vowels as ordinals 0..14 and the 5 diphthongs as 15..19 (a stable
+# ABI), so the nuclei are exactly ordinals 0..19; extended vowels (VOWEL_Y=46,
+# ...) are NOT nuclei — matching the Rust's explicit list.
+fn _shabda_is_nucleus(p): i64 {
+    if (p < 0) { return 0; }
+    if (p > 19) { return 0; }
+    return 1;
+}
+
+# Copy v[start..end] into a fresh vec.
+fn _shabda_slice(v, start, end): i64 {
+    var out = vec_new();
+    var i = start;
+    while (i < end) {
+        vec_push(out, vec_get(v, i));
+        i = i + 1;
+    }
+    return out;
+}
+
+# Syllabify a phoneme sequence (Maximal Onset Principle). Returns a vec of
+# ShSyllable*. Empty input -> empty vec; no vowels -> a single whole-sequence
+# syllable; else one syllable per nucleus, splitting inter-vowel consonant runs
+# so at most one consonant stays as coda (the rest form the next onset).
+#must_use
+fn shabda_syllabify(phonemes): i64 {
+    var out = vec_new();
+    var n = vec_len(phonemes);
+    if (n == 0) { return out; }
+
+    # nucleus indices
+    var nuclei = vec_new();
+    var i = 0;
+    while (i < n) {
+        if (_shabda_is_nucleus(vec_get(phonemes, i)) == 1) { vec_push(nuclei, i); }
+        i = i + 1;
+    }
+    var nn = vec_len(nuclei);
+
+    # no vowels -> whole sequence is one syllable
+    if (nn == 0) {
+        vec_push(out, shabda_syllable_new(_shabda_slice(phonemes, 0, n)));
+        return out;
+    }
+
+    var start = 0;
+    var end = 0;
+    var k = 0;
+    var nucleus_idx = 0;
+    var next_nucleus = 0;
+    var gap_start = 0;
+    var gap_len = 0;
+    while (k < nn) {
+        nucleus_idx = vec_get(nuclei, k);
+        if (k + 1 < nn) {
+            next_nucleus = vec_get(nuclei, k + 1);
+            gap_start = nucleus_idx + 1;
+            gap_len = next_nucleus - gap_start;
+            if (gap_len <= 1) {
+                # 0 or 1 consonant between vowels: all go to the next onset
+                end = gap_start;
+            } else {
+                # multiple consonants: first stays as coda, rest form next onset
+                end = gap_start + 1;
+            }
+        } else {
+            # last syllable: take everything to the end
+            end = n;
+        }
+        vec_push(out, shabda_syllable_new(_shabda_slice(phonemes, start, end)));
+        start = end;
+        k = k + 1;
+    }
+    return out;
+}

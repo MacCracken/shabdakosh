@@ -1,0 +1,78 @@
+# syllable.tcyr — tests for src/dictionary/syllable.cyr
+# (ports rust-old/src/dictionary/syllable.rs). Needs svara for SVARA_PH_* test
+# data. Container serde-roundtrip tests belong to the format layer (L5) per the
+# locked serde stance.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/dictionary/syllable.cyr"
+
+alloc_init();
+
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+fn _v4(a, b, c, d): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); vec_push(v, d); return v; }
+fn _v5(a, b, c, d, e): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); vec_push(v, d); vec_push(v, e); return v; }
+
+# ================================================================
+test_group("syllable new");
+var s = shabda_syllable_new(_v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH));
+assert_eq(shabda_syllable_len(s), 2, "len 2");
+assert_eq(shabda_syllable_stress(s), SHABDA_STRESS_UNSTRESSED, "unstressed");
+assert_eq(shabda_syllable_is_empty(s), 0, "not empty");
+
+# ================================================================
+test_group("syllable with_stress");
+var sp = shabda_syllable_with_stress(shabda_syllable_new(_v1(SVARA_PH_VOWEL_A)), SHABDA_STRESS_PRIMARY);
+assert_eq(shabda_syllable_stress(sp), SHABDA_STRESS_PRIMARY, "primary");
+
+# ================================================================
+test_group("syllabify empty");
+assert_eq(vec_len(shabda_syllabify(vec_new())), 0, "empty -> 0 syllables");
+
+# ================================================================
+test_group("syllabify single vowel");
+var sv = shabda_syllabify(_v1(SVARA_PH_VOWEL_A));
+assert_eq(vec_len(sv), 1, "1 syllable");
+assert_eq(vec_len(shabda_syllable_phonemes(vec_get(sv, 0))), 1, "1 phoneme");
+assert_eq(vec_get(shabda_syllable_phonemes(vec_get(sv, 0)), 0), SVARA_PH_VOWEL_A, "the vowel A");
+
+# ================================================================
+test_group("syllabify CVC (cat)");
+assert_eq(vec_len(shabda_syllabify(_v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T))), 1, "cat -> 1");
+
+# ================================================================
+test_group("syllabify CVCV (mama)");
+var mama = shabda_syllabify(_v4(SVARA_PH_NASAL_M, SVARA_PH_VOWEL_A, SVARA_PH_NASAL_M, SVARA_PH_VOWEL_A));
+assert_eq(vec_len(mama), 2, "mama -> 2 syllables");
+assert_eq(vec_len(shabda_syllable_phonemes(vec_get(mama, 0))), 2, "syl0 = M,A");
+assert_eq(vec_get(shabda_syllable_phonemes(vec_get(mama, 0)), 0), SVARA_PH_NASAL_M, "syl0[0] M");
+assert_eq(vec_get(shabda_syllable_phonemes(vec_get(mama, 0)), 1), SVARA_PH_VOWEL_A, "syl0[1] A");
+assert_eq(vec_get(shabda_syllable_phonemes(vec_get(mama, 1)), 0), SVARA_PH_NASAL_M, "syl1[0] M");
+
+# ================================================================
+test_group("syllabify hello");
+assert_eq(vec_len(shabda_syllabify(_v4(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_OPEN_E, SVARA_PH_LATERAL_L, SVARA_PH_DIPH_OU))), 2, "hello -> 2");
+
+# ================================================================
+test_group("syllabify consonant cluster (street)");
+assert_eq(vec_len(shabda_syllabify(_v5(SVARA_PH_FRIC_S, SVARA_PH_PLOSIVE_T, SVARA_PH_APPROX_R, SVARA_PH_VOWEL_E, SVARA_PH_PLOSIVE_T))), 1, "street -> 1");
+
+# ================================================================
+test_group("syllabify no vowels");
+assert_eq(vec_len(shabda_syllabify(_v2(SVARA_PH_PLOSIVE_P, SVARA_PH_FRIC_S))), 1, "no vowels -> 1");
+
+# ================================================================
+test_group("is_nucleus");
+assert_eq(_shabda_is_nucleus(SVARA_PH_VOWEL_A), 1, "vowel A is nucleus");
+assert_eq(_shabda_is_nucleus(SVARA_PH_DIPH_AI), 1, "diphthong AI is nucleus");
+assert_eq(_shabda_is_nucleus(SVARA_PH_VOWEL_SCHWA), 1, "schwa is nucleus");
+assert_eq(_shabda_is_nucleus(SVARA_PH_PLOSIVE_K), 0, "plosive K not nucleus");
+assert_eq(_shabda_is_nucleus(SVARA_PH_NASAL_M), 0, "nasal M not nucleus");
+assert_eq(_shabda_is_nucleus(SVARA_PH_SILENCE), 0, "silence not nucleus");
+
+var rc = assert_summary();
+syscall(60, rc);

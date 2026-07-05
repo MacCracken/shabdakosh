@@ -11,7 +11,8 @@ preserved at `rust-old/` as the parity oracle.
 
 ## Toolchain
 
-- **Cyrius pin**: `6.4.5` (in `cyrius.cyml [package].cyrius`)
+- **Cyrius pin**: `6.4.6` (in `cyrius.cyml [package].cyrius`) — bumped from 6.4.5 when
+  the installed cycc drifted to 6.4.6; `lib/` re-synced, all suites still green.
 
 ## Port decisions (locked 2026-07-05)
 
@@ -50,8 +51,8 @@ formats → gated/optional.
 | L1 | ipa.rs | src/ipa.cyr | ✅ ported | 74 | IPA ↔ `SVARA_PH_*`; greedy longest-byte-match parser (tie-bar affricates), phonemes↔string; fmt/lint clean |
 | L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 25 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; freq-desc insertion sort; container serde deferred to L5 |
 | L1 | dictionary/morphology.rs | src/dictionary/morphology.cyr | ✅ ported | 20 | MorphemeKind/Morpheme/Decomposition; composite/root/prefixes/suffixes; self-contained |
-| L1 | dictionary/syllable.rs | src/dictionary/syllable.cyr | ⏳ next | — | Maximal Onset Principle; self-contained |
-| L2 | notation.rs | src/notation.cyr | ⬜ | — | Arpabet/Ipa/XSampa; uses arpabet+ipa |
+| L1 | dictionary/syllable.rs | src/dictionary/syllable.cyr | ✅ ported | 23 | StressLevel/Syllable + syllabify (Maximal Onset); is_nucleus = ordinal 0..19; self-contained |
+| L2 | notation.rs | src/notation.cyr | ⏳ next | — | Arpabet/Ipa/XSampa notation bridge; uses arpabet+ipa |
 | L2 | build.rs → gen | gen_cmudict.cyr + _cmudict_data.cyr | ⬜ | — | codegen the base dict |
 | L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ⬜ | — | keystone: PronunciationDict, diff |
 | L4 | dictionary/coverage.rs | … | ⬜ | — | |
@@ -70,9 +71,10 @@ formats → gated/optional.
 | L6 | ffi.rs | … | ⬜ | — | C ABI via cyrius header |
 | L6 | wasm.rs | … | ⬜ | — | no Cyrius wasm target — surface + doc gap |
 
-**5 of ~24 modules ported** (L0 error; L1 arpabet, ipa, entry, morphology). Build + smoke +
-tests green (197 assertions across 6 suites). `SHABDA_PH_NONE` sentinel lives in `error.cyr`
-(L0 base, shared by arpabet/ipa).
+**6 of ~24 modules ported** — the **L1 leaf tier is complete** (L0 error; L1 arpabet, ipa,
+entry, morphology, syllable). Build + smoke + tests green (220 assertions across 7 suites).
+`SHABDA_PH_NONE` sentinel lives in `error.cyr` (L0 base, shared by arpabet/ipa). Next: L2
+notation + the CMUdict codegen, then the L3 `dictionary/mod` keystone.
 
 ## Dependencies
 
