@@ -49,11 +49,11 @@ formats → gated/optional.
 | L0 | error.rs | src/error.cyr | ✅ ported | 15 | ShabdakoshError → sakshi packed codes + `shabda_err_name`; fmt/lint clean |
 | L1 | arpabet.rs | src/arpabet.cyr | ✅ ported | 61 | ARPABET ↔ `SVARA_PH_*`; svara path-dep wired; fmt/lint clean |
 | L1 | ipa.rs | src/ipa.cyr | ✅ ported | 74 | IPA ↔ `SVARA_PH_*`; greedy longest-byte-match parser (tie-bar affricates), phonemes↔string; fmt/lint clean |
-| L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 25 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; freq-desc insertion sort; container serde deferred to L5 |
+| L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 27 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; NaN-safe freq-desc insertion sort (parity-audited); container serde in L5 |
 | L1 | dictionary/morphology.rs | src/dictionary/morphology.cyr | ✅ ported | 20 | MorphemeKind/Morpheme/Decomposition; composite/root/prefixes/suffixes; self-contained |
 | L1 | dictionary/syllable.rs | src/dictionary/syllable.cyr | ✅ ported | 23 | StressLevel/Syllable + syllabify (Maximal Onset); is_nucleus = ordinal 0..19; self-contained |
-| L2 | notation.rs | src/notation.cyr | ⏳ next | — | Arpabet/Ipa/XSampa notation bridge; uses arpabet+ipa |
-| L2 | build.rs → gen | gen_cmudict.cyr + _cmudict_data.cyr | ⬜ | — | codegen the base dict |
+| L2 | notation.rs | src/notation.cyr | ✅ ported | 51 | PhonemeNotation trait → notation-tag dispatch; ARPABET/IPA/X-SAMPA; new X-SAMPA table; parse/render; ASCII-whitespace parity-audited |
+| L2 | build.rs → gen | gen_cmudict.cyr + _cmudict_data.cyr | ⏳ next | — | codegen the base dict |
 | L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ⬜ | — | keystone: PronunciationDict, diff |
 | L4 | dictionary/coverage.rs | … | ⬜ | — | |
 | L4 | dictionary/stream.rs | … | ⬜ | — | |
@@ -71,10 +71,14 @@ formats → gated/optional.
 | L6 | ffi.rs | … | ⬜ | — | C ABI via cyrius header |
 | L6 | wasm.rs | … | ⬜ | — | no Cyrius wasm target — surface + doc gap |
 
-**6 of ~24 modules ported** — the **L1 leaf tier is complete** (L0 error; L1 arpabet, ipa,
-entry, morphology, syllable). Build + smoke + tests green (220 assertions across 7 suites).
-`SHABDA_PH_NONE` sentinel lives in `error.cyr` (L0 base, shared by arpabet/ipa). Next: L2
-notation + the CMUdict codegen, then the L3 `dictionary/mod` keystone.
+**7 of ~24 modules ported** — L1 leaf tier + L2 notation complete (L0 error; L1 arpabet, ipa,
+entry, morphology, syllable; L2 notation). Build + smoke + tests green (273 assertions across
+8 suites). `SHABDA_PH_NONE` sentinel lives in `error.cyr` (L0 base).
+
+**Parity audit (7 auditors + adversarial verify) — 5 modules clean, 2 low-severity divergences
+found & fixed + regression-tested:** (a) entry's freq sort bubbled a NaN frequency to primary
+(Rust keeps it in place) → NaN-safe predicate; (b) notation's whitespace tokenizer missed VT/FF
+→ added. Next: the CMUdict codegen (`build.rs` port), then the L3 `dictionary/mod` keystone.
 
 ## Dependencies
 

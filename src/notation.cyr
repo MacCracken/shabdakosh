@@ -1,0 +1,260 @@
+# notation.cyr — unified phoneme-notation bridge (ARPABET / IPA / X-SAMPA).
+#
+# Ports rust-old/src/notation.rs. CYRIUS has no traits, so the Rust
+# `PhonemeNotation` trait + its three ZST impls become a NOTATION TAG
+# (SHABDA_NOTATION_*) plus dispatch functions that switch on the tag and delegate
+# to arpabet.cyr / ipa.cyr (already ported) and the X-SAMPA table below.
+#
+# Included after svara + error + arpabet + ipa (it calls into all of them) — the
+# entry file orders it.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+# ---- Notation tag (was: the three trait impls) -------------------------------
+var SHABDA_NOTATION_ARPABET = 0;
+var SHABDA_NOTATION_IPA     = 1;
+var SHABDA_NOTATION_XSAMPA  = 2;
+
+# ---- X-SAMPA table (was: private xsampa_to_phoneme / phoneme_to_xsampa) -------
+# X-SAMPA symbol -> svara phoneme ordinal, or SHABDA_PH_NONE. Accepts the "r\"
+# and "r" alternates for the approximant.
+#must_use
+fn _shabda_xsampa_to_phoneme(sym): i64 {
+    # Vowels
+    if (streq(sym, "a") == 1) { return SVARA_PH_VOWEL_A; }
+    if (streq(sym, "e") == 1) { return SVARA_PH_VOWEL_E; }
+    if (streq(sym, "i") == 1) { return SVARA_PH_VOWEL_I; }
+    if (streq(sym, "o") == 1) { return SVARA_PH_VOWEL_O; }
+    if (streq(sym, "u") == 1) { return SVARA_PH_VOWEL_U; }
+    if (streq(sym, "@") == 1) { return SVARA_PH_VOWEL_SCHWA; }
+    if (streq(sym, "O") == 1) { return SVARA_PH_VOWEL_OPEN_O; }
+    if (streq(sym, "{") == 1) { return SVARA_PH_VOWEL_ASH; }
+    if (streq(sym, "I") == 1) { return SVARA_PH_VOWEL_NEAR_I; }
+    if (streq(sym, "U") == 1) { return SVARA_PH_VOWEL_NEAR_U; }
+    if (streq(sym, "A") == 1) { return SVARA_PH_VOWEL_OPEN_A; }
+    if (streq(sym, "E") == 1) { return SVARA_PH_VOWEL_OPEN_E; }
+    if (streq(sym, "V") == 1) { return SVARA_PH_VOWEL_CUP_V; }
+    if (streq(sym, "3") == 1) { return SVARA_PH_VOWEL_BIRD; }
+    if (streq(sym, "i:") == 1) { return SVARA_PH_VOWEL_LONG_I; }
+    # Diphthongs
+    if (streq(sym, "aI") == 1) { return SVARA_PH_DIPH_AI; }
+    if (streq(sym, "aU") == 1) { return SVARA_PH_DIPH_AU; }
+    if (streq(sym, "eI") == 1) { return SVARA_PH_DIPH_EI; }
+    if (streq(sym, "OI") == 1) { return SVARA_PH_DIPH_OI; }
+    if (streq(sym, "oU") == 1) { return SVARA_PH_DIPH_OU; }
+    # Plosives
+    if (streq(sym, "p") == 1) { return SVARA_PH_PLOSIVE_P; }
+    if (streq(sym, "b") == 1) { return SVARA_PH_PLOSIVE_B; }
+    if (streq(sym, "t") == 1) { return SVARA_PH_PLOSIVE_T; }
+    if (streq(sym, "d") == 1) { return SVARA_PH_PLOSIVE_D; }
+    if (streq(sym, "k") == 1) { return SVARA_PH_PLOSIVE_K; }
+    if (streq(sym, "g") == 1) { return SVARA_PH_PLOSIVE_G; }
+    # Fricatives
+    if (streq(sym, "f") == 1) { return SVARA_PH_FRIC_F; }
+    if (streq(sym, "v") == 1) { return SVARA_PH_FRIC_V; }
+    if (streq(sym, "s") == 1) { return SVARA_PH_FRIC_S; }
+    if (streq(sym, "z") == 1) { return SVARA_PH_FRIC_Z; }
+    if (streq(sym, "S") == 1) { return SVARA_PH_FRIC_SH; }
+    if (streq(sym, "Z") == 1) { return SVARA_PH_FRIC_ZH; }
+    if (streq(sym, "T") == 1) { return SVARA_PH_FRIC_TH; }
+    if (streq(sym, "D") == 1) { return SVARA_PH_FRIC_DH; }
+    if (streq(sym, "h") == 1) { return SVARA_PH_FRIC_H; }
+    # Nasals
+    if (streq(sym, "m") == 1) { return SVARA_PH_NASAL_M; }
+    if (streq(sym, "n") == 1) { return SVARA_PH_NASAL_N; }
+    if (streq(sym, "N") == 1) { return SVARA_PH_NASAL_NG; }
+    # Affricates
+    if (streq(sym, "tS") == 1) { return SVARA_PH_AFFR_CH; }
+    if (streq(sym, "dZ") == 1) { return SVARA_PH_AFFR_J; }
+    # Approximants (r\ and r both map to the approximant)
+    if (streq(sym, "r\\") == 1) { return SVARA_PH_APPROX_R; }
+    if (streq(sym, "r") == 1) { return SVARA_PH_APPROX_R; }
+    if (streq(sym, "w") == 1) { return SVARA_PH_APPROX_W; }
+    if (streq(sym, "j") == 1) { return SVARA_PH_APPROX_J; }
+    # Lateral
+    if (streq(sym, "l") == 1) { return SVARA_PH_LATERAL_L; }
+    # Other
+    if (streq(sym, "?") == 1) { return SVARA_PH_GLOTTAL_STOP; }
+    if (streq(sym, "4") == 1) { return SVARA_PH_TAP_FLAP; }
+    return SHABDA_PH_NONE;
+}
+
+# svara phoneme ordinal -> X-SAMPA symbol (canonical), or 0 (no equivalent).
+#must_use
+fn _shabda_phoneme_to_xsampa(ph): cstring {
+    # Vowels
+    if (ph == SVARA_PH_VOWEL_A)       { return "a"; }
+    if (ph == SVARA_PH_VOWEL_E)       { return "e"; }
+    if (ph == SVARA_PH_VOWEL_I)       { return "i"; }
+    if (ph == SVARA_PH_VOWEL_O)       { return "o"; }
+    if (ph == SVARA_PH_VOWEL_U)       { return "u"; }
+    if (ph == SVARA_PH_VOWEL_SCHWA)   { return "@"; }
+    if (ph == SVARA_PH_VOWEL_OPEN_O)  { return "O"; }
+    if (ph == SVARA_PH_VOWEL_ASH)     { return "{"; }
+    if (ph == SVARA_PH_VOWEL_NEAR_I)  { return "I"; }
+    if (ph == SVARA_PH_VOWEL_NEAR_U)  { return "U"; }
+    if (ph == SVARA_PH_VOWEL_OPEN_A)  { return "A"; }
+    if (ph == SVARA_PH_VOWEL_OPEN_E)  { return "E"; }
+    if (ph == SVARA_PH_VOWEL_CUP_V)   { return "V"; }
+    if (ph == SVARA_PH_VOWEL_BIRD)    { return "3"; }
+    if (ph == SVARA_PH_VOWEL_LONG_I)  { return "i:"; }
+    # Diphthongs
+    if (ph == SVARA_PH_DIPH_AI)       { return "aI"; }
+    if (ph == SVARA_PH_DIPH_AU)       { return "aU"; }
+    if (ph == SVARA_PH_DIPH_EI)       { return "eI"; }
+    if (ph == SVARA_PH_DIPH_OI)       { return "OI"; }
+    if (ph == SVARA_PH_DIPH_OU)       { return "oU"; }
+    # Plosives
+    if (ph == SVARA_PH_PLOSIVE_P)     { return "p"; }
+    if (ph == SVARA_PH_PLOSIVE_B)     { return "b"; }
+    if (ph == SVARA_PH_PLOSIVE_T)     { return "t"; }
+    if (ph == SVARA_PH_PLOSIVE_D)     { return "d"; }
+    if (ph == SVARA_PH_PLOSIVE_K)     { return "k"; }
+    if (ph == SVARA_PH_PLOSIVE_G)     { return "g"; }
+    # Fricatives
+    if (ph == SVARA_PH_FRIC_F)        { return "f"; }
+    if (ph == SVARA_PH_FRIC_V)        { return "v"; }
+    if (ph == SVARA_PH_FRIC_S)        { return "s"; }
+    if (ph == SVARA_PH_FRIC_Z)        { return "z"; }
+    if (ph == SVARA_PH_FRIC_SH)       { return "S"; }
+    if (ph == SVARA_PH_FRIC_ZH)       { return "Z"; }
+    if (ph == SVARA_PH_FRIC_TH)       { return "T"; }
+    if (ph == SVARA_PH_FRIC_DH)       { return "D"; }
+    if (ph == SVARA_PH_FRIC_H)        { return "h"; }
+    # Nasals
+    if (ph == SVARA_PH_NASAL_M)       { return "m"; }
+    if (ph == SVARA_PH_NASAL_N)       { return "n"; }
+    if (ph == SVARA_PH_NASAL_NG)      { return "N"; }
+    # Affricates
+    if (ph == SVARA_PH_AFFR_CH)       { return "tS"; }
+    if (ph == SVARA_PH_AFFR_J)        { return "dZ"; }
+    # Approximants
+    if (ph == SVARA_PH_APPROX_R)      { return "r\\"; }
+    if (ph == SVARA_PH_APPROX_W)      { return "w"; }
+    if (ph == SVARA_PH_APPROX_J)      { return "j"; }
+    # Lateral
+    if (ph == SVARA_PH_LATERAL_L)     { return "l"; }
+    # Other
+    if (ph == SVARA_PH_GLOTTAL_STOP)  { return "?"; }
+    if (ph == SVARA_PH_TAP_FLAP)      { return "4"; }
+    return 0;
+}
+
+# ---- Notation dispatch (was: the trait methods) ------------------------------
+# Short name of a notation.
+#must_use
+fn shabda_notation_name(n): cstring {
+    if (n == SHABDA_NOTATION_ARPABET) { return "arpabet"; }
+    if (n == SHABDA_NOTATION_IPA)     { return "ipa"; }
+    if (n == SHABDA_NOTATION_XSAMPA)  { return "x-sampa"; }
+    return 0;
+}
+
+# Notation symbol -> svara phoneme ordinal, or SHABDA_PH_NONE.
+#must_use
+fn shabda_notation_str_to_phoneme(n, symbol): i64 {
+    if (n == SHABDA_NOTATION_ARPABET) { return shabda_arpabet_to_phoneme(symbol); }
+    if (n == SHABDA_NOTATION_IPA)     { return shabda_ipa_to_phoneme(symbol); }
+    if (n == SHABDA_NOTATION_XSAMPA)  { return _shabda_xsampa_to_phoneme(symbol); }
+    return SHABDA_PH_NONE;
+}
+
+# svara phoneme ordinal -> notation symbol cstr, or 0 (no representation).
+#must_use
+fn shabda_notation_phoneme_to_str(n, phoneme): cstring {
+    if (n == SHABDA_NOTATION_ARPABET) { return shabda_phoneme_to_arpabet(phoneme); }
+    if (n == SHABDA_NOTATION_IPA)     { return shabda_phoneme_to_ipa(phoneme); }
+    if (n == SHABDA_NOTATION_XSAMPA)  { return _shabda_phoneme_to_xsampa(phoneme); }
+    return 0;
+}
+
+# 1 if byte `b` is ASCII whitespace. Rust's split_whitespace() uses Unicode
+# White_Space; this covers its full ASCII subset — tab(9), LF(10), VT(11),
+# FF(12), CR(13), space(32). Multi-byte Unicode whitespace (NBSP, U+2028, ...) is
+# not split — an accepted minor divergence for ASCII-only ARPABET/X-SAMPA.
+fn _shabda_is_ws(b): i64 {
+    if (b == 32) { return 1; }
+    if (b == 9) { return 1; }
+    if (b == 10) { return 1; }
+    if (b == 11) { return 1; }
+    if (b == 12) { return 1; }
+    if (b == 13) { return 1; }
+    return 0;
+}
+
+# Copy s[start..end] into a fresh NUL-terminated cstr.
+fn _shabda_substr_cstr(s, start, end): i64 {
+    var len = end - start;
+    var buf = alloc(len + 1);
+    memcpy(buf, s + start, len);
+    store8(buf + len, 0);
+    return buf;
+}
+
+# Default parse: split on whitespace, convert each token, drop unrecognized ones.
+fn _shabda_notation_parse_ws(n, trans): i64 {
+    var out = vec_new();
+    var len = strlen(trans);
+    var i = 0;
+    var start = 0;
+    var in_tok = 0;
+    var b = 0;
+    var ph = 0;
+    while (i < len) {
+        b = load8(trans + i);
+        if (_shabda_is_ws(b) == 1) {
+            if (in_tok == 1) {
+                ph = shabda_notation_str_to_phoneme(n, _shabda_substr_cstr(trans, start, i));
+                if (ph != SHABDA_PH_NONE) { vec_push(out, ph); }
+                in_tok = 0;
+            }
+        } else {
+            if (in_tok == 0) {
+                start = i;
+                in_tok = 1;
+            }
+        }
+        i = i + 1;
+    }
+    if (in_tok == 1) {
+        ph = shabda_notation_str_to_phoneme(n, _shabda_substr_cstr(trans, start, len));
+        if (ph != SHABDA_PH_NONE) { vec_push(out, ph); }
+    }
+    return out;
+}
+
+# Parse a transcription into a vec of phoneme ordinals. IPA uses greedy
+# longest-match (multi-char symbols); ARPABET/X-SAMPA split on whitespace.
+#must_use
+fn shabda_notation_parse(n, trans): i64 {
+    if (n == SHABDA_NOTATION_IPA) { return shabda_parse_ipa_word(trans); }
+    return _shabda_notation_parse_ws(n, trans);
+}
+
+# Default render: join notation symbols with single spaces (skipping phonemes
+# with no representation).
+fn _shabda_notation_render_join(n, phonemes): cstring {
+    var sb = str_builder_new();
+    var nn = vec_len(phonemes);
+    var i = 0;
+    var added = 0;
+    var s = 0;
+    while (i < nn) {
+        s = shabda_notation_phoneme_to_str(n, vec_get(phonemes, i));
+        if (s != 0) {
+            if (added > 0) { str_builder_add_cstr(sb, " "); }
+            str_builder_add_cstr(sb, s);
+            added = added + 1;
+        }
+        i = i + 1;
+    }
+    return str_data(str_builder_build(sb));
+}
+
+# Render a phoneme sequence to a notation string. IPA concatenates (no
+# separator); ARPABET/X-SAMPA space-join.
+#must_use
+fn shabda_notation_render(n, phonemes): cstring {
+    if (n == SHABDA_NOTATION_IPA) { return shabda_phonemes_to_ipa(phonemes); }
+    return _shabda_notation_render_join(n, phonemes);
+}

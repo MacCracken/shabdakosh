@@ -84,5 +84,17 @@ shabda_dict_entry_add_pronunciation(ae, shabda_pronunciation_with_frequency(shab
 assert_eq(shabda_dict_entry_len(ae), 2, "len 2");
 assert_eq(vec_get(shabda_dict_entry_primary_phonemes(ae), 0), SVARA_PH_VOWEL_E, "new high-freq E is primary");
 
+# ================================================================
+# Regression (parity audit): a NaN frequency must stay in place, not bubble to
+# primary — matching Rust's partial_cmp().unwrap_or(Equal) + stable sort.
+test_group("NaN frequency stays in place");
+var nan_bits = 0x7FF8000000000000;
+var nf1 = shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_A)), 0.7);
+var nf2 = shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), nan_bits);
+var nf3 = shabda_pronunciation_with_frequency(shabda_pronunciation_new(_v1(SVARA_PH_VOWEL_I)), 0.3);
+var nfe = shabda_dict_entry_from_pronunciations(_v3(nf1, nf2, nf3));
+assert_eq(vec_get(shabda_dict_entry_primary_phonemes(nfe), 0), SVARA_PH_VOWEL_A, "primary stays 0.7/A despite NaN");
+assert_eq(vec_get(shabda_pronunciation_phonemes(vec_get(shabda_dict_entry_all(nfe), 1)), 0), SVARA_PH_VOWEL_E, "NaN stays in middle");
+
 var rc = assert_summary();
 syscall(60, rc);

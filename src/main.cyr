@@ -17,6 +17,7 @@ include "src/ipa.cyr"
 include "src/dictionary/entry.cyr"
 include "src/dictionary/morphology.cyr"
 include "src/dictionary/syllable.cyr"
+include "src/notation.cyr"
 
 fn main() {
     alloc_init();
@@ -45,6 +46,12 @@ fn main() {
     vec_push(hello_ph, SVARA_PH_LATERAL_L);
     vec_push(hello_ph, SVARA_PH_DIPH_OU);
     println_int(vec_len(shabda_syllabify(hello_ph)));
+    # L2 smoke — notation: render cat [K AE T] in X-SAMPA -> "k { t"
+    var catx = vec_new();
+    vec_push(catx, SVARA_PH_PLOSIVE_K);
+    vec_push(catx, SVARA_PH_VOWEL_ASH);
+    vec_push(catx, SVARA_PH_PLOSIVE_T);
+    println(shabda_notation_render(SHABDA_NOTATION_XSAMPA, catx));
     return 0;
 }
 
