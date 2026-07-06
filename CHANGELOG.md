@@ -12,7 +12,7 @@ bundle (`dist/shabdakosh.cyr`).
 - **Breaking**: Traits → function-pointer dispatch (G2P `FallbackDict`, heteronym resolver) and enum-tag dispatch (notation, lookup source); `Option<T>` → sentinels; `Result<T>` → pointer-or-0.
 - **Feature**: full pronunciation surface — base dictionary (ARPABET/IPA↔svara phonemes), user overlay, O(1) hashmap lookup (~135 ns/hit), merge/diff, coverage, streaming lookup, prefix trie, heteronym context, G2P fallback chain.
 - **Feature**: I/O formats — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format (replacing postcard); `LazyDict` (mmap-backed with a `file_read_all` fallback).
-- **Feature**: varna-backed inventory + phonotactics **validation** and script/language **detection** (with a UTF-8 code-point decoder).
+- **Feature**: varna-backed inventory + phonotactics **validation**, script/language **detection** (with a UTF-8 code-point decoder), and **Swadesh seed-dictionary constructors** (`shabda_from_lexicon`, `shabda_dict_spanish`/`hindi`/`german`/`sanskrit`).
 - **Feature**: WASM binding surface (`WasmDict`) and the static dictionary (`static_dict`) ported as `.cyr` modules.
 - **Feature**: base CMUdict data generated as checked-in `.cyr` shards (`gen_cmudict.cyr`, the `build.rs` port), sharded to stay under the distlib 256 KB per-module cap.
 - **Changed**: `phf` static dict → lazy cached singleton — CYRIUS has no compile-time perfect hash; surface + lookup preserved, one-time ~9.6 ms load instead of a compile-time-baked table.

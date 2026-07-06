@@ -5,7 +5,7 @@ description = "shabdakosh — pronunciation dictionary for AGNOS (ARPABET/IPA↔
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/shabdakosh"
 language = "cyrius"
-cyrius = "6.4.9"
+cyrius = "6.4.10"
 
 [build]
 entry = "src/main.cyr"
@@ -41,6 +41,7 @@ modules = [
     "src/dictionary/lazy.cyr",
     "src/dictionary/detect.cyr",
     "src/dictionary/validate.cyr",
+    "src/dictionary/lexicon.cyr",
     "src/wasm.cyr",
 ]
 

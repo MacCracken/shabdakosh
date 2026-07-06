@@ -9,10 +9,9 @@
 # the loaded base dict) — the entry file orders it.
 #
 # Cross-tier surface (defined in other modules): with_fallback -> g2p (L4),
-# prefix_search -> trie (L4), validate -> validate (L6), JSON serde -> format (L5).
-# KNOWN PARITY GAP: the varna-lexicon dict constructors (from_lexicon / spanish /
-# hindi / german / sanskrit, Rust mod.rs) are NOT ported — tracked in
-# docs/development/backlog.md. The Rust v0.1->v0.2 serde compat shim is dropped
+# prefix_search -> trie (L4), validate -> validate (L6), JSON serde -> format (L5),
+# the varna-lexicon constructors (from_lexicon / spanish / hindi / german /
+# sanskrit) -> lexicon.cyr (L6). The Rust v0.1->v0.2 serde compat shim is dropped
 # for the 3.0.0 major.
 #
 # NAMING: shabda_/SHABDA_ prefixes (flat namespace).
@@ -174,7 +173,7 @@ fn shabda_dict_remove_user(d, word): i64 {
 
 # ---- language ----------------------------------------------------------------
 #must_use
-fn shabda_dict_language(d): i64 {
+fn shabda_dict_language(d): cstring {
     return load64(d + 16);
 }
 

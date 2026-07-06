@@ -1,0 +1,55 @@
+# lexicon.tcyr — tests for src/dictionary/lexicon.cyr
+# (ports rust-old/src/dictionary/mod.rs from_lexicon / spanish / hindi / german / sanskrit).
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "lib/varna.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data_0.cyr"
+include "src/dictionary/_cmudict_data_1.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/lexicon.cyr"
+
+alloc_init();
+
+# ================================================================
+# spanish(): seeded from varna's Swadesh list — language-tagged, non-empty, and
+# every entry carries a frequency (from the Swadesh rank).
+test_group("spanish Swadesh seed dict");
+var es = shabda_dict_spanish();
+assert_streq(shabda_dict_language(es), "es", "language es");
+assert_gt(shabda_dict_len(es), 0, "has entries");
+# "tú" (IPA "tu") parses to phonemes and lands in the dict, lowercased.
+var tu = shabda_dict_lookup_entry(es, "tú");
+assert_neq(tu, 0, "'tú' present");
+assert_eq(shabda_pronunciation_has_frequency(shabda_dict_entry_primary(tu)), 1, "entry has a Swadesh-rank frequency");
+
+# ================================================================
+test_group("hindi / german seed dicts");
+assert_streq(shabda_dict_language(shabda_dict_hindi()), "hi", "hindi language hi");
+assert_gt(shabda_dict_len(shabda_dict_hindi()), 0, "hindi has entries");
+assert_streq(shabda_dict_language(shabda_dict_german()), "de", "german language de");
+assert_gt(shabda_dict_len(shabda_dict_german()), 0, "german has entries");
+
+# ================================================================
+# sanskrit(): language-tagged but empty (no Swadesh data in varna).
+test_group("sanskrit (empty, language-tagged)");
+var sa = shabda_dict_sanskrit();
+assert_streq(shabda_dict_language(sa), "sa", "language sa");
+assert_eq(shabda_dict_len(sa), 0, "empty");
+
+# ================================================================
+# from_lexicon directly over a varna lexicon == the language wrapper.
+test_group("from_lexicon direct");
+var direct = shabda_from_lexicon(swadesh_by_code("es"));
+assert_streq(shabda_dict_language(direct), "es", "from_lexicon sets language");
+assert_eq(shabda_dict_len(direct), shabda_dict_len(es), "same entry count as spanish()");
+
+var rc = assert_summary();
+syscall(60, rc);

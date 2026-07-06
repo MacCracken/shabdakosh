@@ -6,10 +6,6 @@ release gates are all met (see [state.md](state.md)); these are tracked for a fo
 
 ## Parity gaps (vs `rust-old/`)
 
-- **[high/medium] Six varna-lexicon dict constructors are not ported.** `from_lexicon`, `spanish`,
-  `hindi`, `german`, `sanskrit` (and the lexicon-backed builder) exist in `rust-old/src/dictionary/mod.rs`
-  but have no `shabda_dict_*` twin. A consumer expecting the Rust surface to seed a language dict from
-  a varna lexicon will not find them. (Comment at `src/dictionary/mod.cyr:11` now flags this.)
 - **[medium/small] `merge` / `merge_conservative` share entry pointers where Rust deep-clones.**
   `src/dictionary/mod.cyr:263`/`284` do `map_set(dst, k, map_get(src, k))` (shared `ShDictEntry*`);
   Rust inserts `entry.clone()`. Observable: after `A.merge(B)`, mutating a shared entry affects both.
@@ -47,6 +43,14 @@ release gates are all met (see [state.md](state.md)); these are tracked for a fo
 - **[low/small] Magic buffer sizes / `SHBD` magic bytes are unnamed literals** — `8388608`/`8388607`
   (three sites), `2097152` (now the size fn), and `83/72/66/68` in `to_binary`. Name them consts.
 
+## Build / tooling
+
+- **[low/small] cmudict data sharding could be reverted.** The distlib 256 KB → 1 MB per-module
+  cap fix shipped in toolchain **6.4.10** (from our proposal `2026-07-05-distlib-per-module-read-cap.md`).
+  The 283 KB `_cmudict_data` now fits in one module, so `gen_cmudict.cyr` + the 16 shard-includers +
+  `[lib].modules` could collapse back to a single `_cmudict_data.cyr`. Works fine sharded; reverting
+  is churn for a modest simplification.
+
 ## Docs
 
 - **[medium/medium] `docs/examples/` is empty** (`.gitkeep` only) despite CLAUDE.md advertising runnable
@@ -57,6 +61,9 @@ release gates are all met (see [state.md](state.md)); these are tracked for a fo
 
 ## Resolved during the review (not open)
 
+- ~~Six varna-lexicon dict constructors unported~~ — **ported** (`src/dictionary/lexicon.cyr`):
+  `shabda_from_lexicon` + `shabda_dict_spanish/hindi/german/sanskrit` over varna's Swadesh API
+  (12 assertions in `tests/lexicon.tcyr`). Was the top parity gap.
 - ~~`to_binary` fixed-2 MB write buffer (heap overflow)~~ — **fixed** this pass (`_shabda_bin_total_size`
   sizes the buffer to the dict). See [audit addendum](../audit/2026-07-05-audit.md).
 - `bench` in `[deps].stdlib` — **intentional, not debt**: `cyrius bench` resolves `bench_*` from the

@@ -79,6 +79,7 @@ formats → gated/optional.
 | L5 | dictionary/format/binary.rs | src/dictionary/format/binary.cyr | ✅ ported | 20 | hand-rolled compact binary format (SHBD magic+version, LE, 1-byte phonemes); to/from_binary + file I/O |
 | L6 | dictionary/validate.rs | src/dictionary/validate.cyr | ✅ ported | 36 | inventory + phonotactics validation vs varna; 4 report structs w/ hand-written bayan JSON codecs; ː length-normalization; is_consonant parity quirk (omits VOWEL_LONG_I); dict.validate[_phonotactics] convenience |
 | L6 | dictionary/detect.rs | src/dictionary/detect.cyr | ✅ ported | 24 | script + language detection vs varna script ranges; UTF-8 code-point decoder; majority vote; language-hint filter+sort; script-name out-params |
+| L6 | dictionary/mod.rs (varna ctors) | src/dictionary/lexicon.cyr | ✅ ported | 12 | from_lexicon + dict.spanish/hindi/german/sanskrit over varna's Swadesh API (IPA→phonemes, rank→1/(1+rank) freq); own module (mod.cyr's non-varna consumers can't link varna) |
 | L6 | dictionary/lazy.rs | src/dictionary/lazy.cyr | ✅ ported | 16 | LazyDict: mmap-open a binary dict (lib/mmap.cyr, real mmap on linux) + file_read_all fallback (AGNOS); eager decode like Rust; handle IS a dict; debug string |
 | L6 | ffi.rs | — | ❌ dropped | — | FFI is dead in the CYRIUS stack (no C-ABI consumers) — not ported, by decision 2026-07-05 |
 | L6 | wasm.rs | src/wasm.cyr | ✅ ported | 23 | WasmDict handle over inner dict; 12 methods; lookup/prefix_search/coverage cross as JSON (bayan); JSON IPA roundtrip test |
@@ -212,7 +213,14 @@ prints 10617/Latn verbatim), [ADR 004](../adr/004-cyrius-port-decisions.md) capt
 decisions + fixed ADR index. The 16 track items are recorded in [backlog.md](backlog.md) (notably:
 6 varna-lexicon constructors unported, merge shares-vs-clones divergence).
 
-**Release state (v3.0.0) — ALL GATES MET**: full tree **25 suites / 677 assertions** green; every
+**Parity gap closed (2026-07-06)**: the 6 varna-lexicon dict constructors (from_lexicon +
+spanish/hindi/german/sanskrit) — the top backlog parity item — are now ported in
+`src/dictionary/lexicon.cyr` (a varna-gated module; they can't live in mod.cyr, which non-varna
+tests link) over varna's Swadesh API. 12 assertions. Also fixed `shabda_dict_language` return
+annotation (`i64`→`cstring`). Toolchain now 6.4.10 (which shipped the distlib 256KB→1MB cap fix
+from our proposal — the cmudict sharding could be reverted, tracked in backlog).
+
+**Release state (v3.0.0) — ALL GATES MET**: full tree **26 suites / 689 assertions** green; every
 Rust module ported (ffi dropped, wasm/static_dict as `.cyr` surfaces) or tracked in backlog.md;
 distlib bundle built + consumer-verified; benchmarks captured; docs accurate for v3.0.0; CHANGELOG
 3.0.0; roadmap finalized; security audit (11 fixes) passed. Ready to tag. Git operations are the user's.

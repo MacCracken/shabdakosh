@@ -37,6 +37,7 @@ include "src/dictionary/format/binary.cyr"
 include "src/dictionary/lazy.cyr"
 include "src/dictionary/detect.cyr"
 include "src/dictionary/validate.cyr"
+include "src/dictionary/lexicon.cyr"
 include "src/wasm.cyr"
 
 fn main() {
@@ -121,6 +122,9 @@ fn main() {
     println_int(shabda_validation_report_invalid_count(shabda_validate_inventory(vds, phoneme_spanish())));
     # L4 smoke — static dict (cached singleton) entry count (>10k)
     println_int(shabda_static_len());
+    # L6 smoke — varna-lexicon: Spanish Swadesh seed dict language + entry count
+    println(shabda_dict_language(shabda_dict_spanish()));
+    println_int(shabda_dict_len(shabda_dict_spanish()));
     return 0;
 }
 
