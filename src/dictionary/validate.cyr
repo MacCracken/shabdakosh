@@ -9,13 +9,13 @@
 # (the Rust `varna` feature gate is dropped).
 #
 # Requires: lib/varna.cyr (phoneme_*/phonotactics_*/registry_*), src/ipa.cyr
-# (shabda_phoneme_to_ipa), dictionary/entry.cyr + mod.cyr, bayan json_v_*.
+# (shbdk_phoneme_to_ipa), dictionary/entry.cyr + mod.cyr, bayan json_v_*.
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
 # ---- small helpers -----------------------------------------------------------
 # Owned NUL-terminated copy of a cstring (Rust String::from).
-fn _shabda_dupz(s): cstring {
+fn _shbdk_dupz(s): cstring {
     var n = strlen(s);
     var out = alloc(n + 1);
     var i = 0;
@@ -28,7 +28,7 @@ fn _shabda_dupz(s): cstring {
 }
 
 # Lexicographic byte compare: -1 if a<b, 0 if equal, 1 if a>b.
-fn _shabda_wordcmp(a, b): i64 {
+fn _shbdk_wordcmp(a, b): i64 {
     var i = 0;
     var ca = 0;
     var cb = 0;
@@ -46,7 +46,7 @@ fn _shabda_wordcmp(a, b): i64 {
 }
 
 # Is int x present in a vec of ints?
-fn _shabda_vec_has_int(v, x): i64 {
+fn _shbdk_vec_has_int(v, x): i64 {
     var n = vec_len(v);
     var i = 0;
     while (i < n) {
@@ -57,7 +57,7 @@ fn _shabda_vec_has_int(v, x): i64 {
 }
 
 # Concatenate two cstrings into a fresh cstring.
-fn _shabda_concat2(a, b): cstring {
+fn _shbdk_concat2(a, b): cstring {
     var sb = str_builder_new();
     str_builder_add_cstr(sb, a);
     str_builder_add_cstr(sb, b);
@@ -65,78 +65,78 @@ fn _shabda_concat2(a, b): cstring {
 }
 
 # ---- report structs: constructors + accessors --------------------------------
-# ShInvalidEntry (16B): [0]=word cstr, [8]=invalid_phonemes vec<i64>.
+# ShbdkInvalidEntry (16B): [0]=word cstr, [8]=invalid_phonemes vec<i64>.
 #must_use
-fn shabda_invalid_entry_new(word, invalid_phonemes): i64 {
+fn shbdk_invalid_entry_new(word, invalid_phonemes): i64 {
     var e = alloc(16);
-    store64(e + 0, _shabda_dupz(word));
+    store64(e + 0, _shbdk_dupz(word));
     store64(e + 8, invalid_phonemes);
     return e;
 }
 #must_use
-fn shabda_invalid_entry_word(e): cstring { return load64(e + 0); }
+fn shbdk_invalid_entry_word(e): cstring { return load64(e + 0); }
 #must_use
-fn shabda_invalid_entry_invalid_phonemes(e): i64 { return load64(e + 8); }
+fn shbdk_invalid_entry_invalid_phonemes(e): i64 { return load64(e + 8); }
 
-# ShValidationReport (16B): [0]=language cstr, [8]=invalid_entries vec<ShInvalidEntry*>.
+# ShbdkValidationReport (16B): [0]=language cstr, [8]=invalid_entries vec<ShbdkInvalidEntry*>.
 #must_use
-fn shabda_validation_report_new(language, invalid_entries): i64 {
+fn shbdk_validation_report_new(language, invalid_entries): i64 {
     var r = alloc(16);
-    store64(r + 0, _shabda_dupz(language));
+    store64(r + 0, _shbdk_dupz(language));
     store64(r + 8, invalid_entries);
     return r;
 }
 #must_use
-fn shabda_validation_report_language(r): cstring { return load64(r + 0); }
+fn shbdk_validation_report_language(r): cstring { return load64(r + 0); }
 #must_use
-fn shabda_validation_report_invalid_entries(r): i64 { return load64(r + 8); }
+fn shbdk_validation_report_invalid_entries(r): i64 { return load64(r + 8); }
 #must_use
-fn shabda_validation_report_is_valid(r): i64 {
+fn shbdk_validation_report_is_valid(r): i64 {
     if (vec_len(load64(r + 8)) == 0) { return 1; }
     return 0;
 }
 #must_use
-fn shabda_validation_report_invalid_count(r): i64 { return vec_len(load64(r + 8)); }
+fn shbdk_validation_report_invalid_count(r): i64 { return vec_len(load64(r + 8)); }
 
-# ShPhonotacticViolation (24B): [0]=word, [8]=description, [16]=sequence (all cstr).
+# ShbdkPhonotacticViolation (24B): [0]=word, [8]=description, [16]=sequence (all cstr).
 #must_use
-fn shabda_phonotactic_violation_new(word, description, sequence): i64 {
+fn shbdk_phonotactic_violation_new(word, description, sequence): i64 {
     var v = alloc(24);
-    store64(v + 0, _shabda_dupz(word));
-    store64(v + 8, _shabda_dupz(description));
-    store64(v + 16, _shabda_dupz(sequence));
+    store64(v + 0, _shbdk_dupz(word));
+    store64(v + 8, _shbdk_dupz(description));
+    store64(v + 16, _shbdk_dupz(sequence));
     return v;
 }
 #must_use
-fn shabda_phonotactic_violation_word(v): cstring { return load64(v + 0); }
+fn shbdk_phonotactic_violation_word(v): cstring { return load64(v + 0); }
 #must_use
-fn shabda_phonotactic_violation_description(v): cstring { return load64(v + 8); }
+fn shbdk_phonotactic_violation_description(v): cstring { return load64(v + 8); }
 #must_use
-fn shabda_phonotactic_violation_sequence(v): cstring { return load64(v + 16); }
+fn shbdk_phonotactic_violation_sequence(v): cstring { return load64(v + 16); }
 
-# ShPhonotacticReport (16B): [0]=language cstr, [8]=violations vec<ShPhonotacticViolation*>.
+# ShbdkPhonotacticReport (16B): [0]=language cstr, [8]=violations vec<ShbdkPhonotacticViolation*>.
 #must_use
-fn shabda_phonotactic_report_new(language, violations): i64 {
+fn shbdk_phonotactic_report_new(language, violations): i64 {
     var r = alloc(16);
-    store64(r + 0, _shabda_dupz(language));
+    store64(r + 0, _shbdk_dupz(language));
     store64(r + 8, violations);
     return r;
 }
 #must_use
-fn shabda_phonotactic_report_language(r): cstring { return load64(r + 0); }
+fn shbdk_phonotactic_report_language(r): cstring { return load64(r + 0); }
 #must_use
-fn shabda_phonotactic_report_violations(r): i64 { return load64(r + 8); }
+fn shbdk_phonotactic_report_violations(r): i64 { return load64(r + 8); }
 #must_use
-fn shabda_phonotactic_report_is_valid(r): i64 {
+fn shbdk_phonotactic_report_is_valid(r): i64 {
     if (vec_len(load64(r + 8)) == 0) { return 1; }
     return 0;
 }
 #must_use
-fn shabda_phonotactic_report_violation_count(r): i64 { return vec_len(load64(r + 8)); }
+fn shbdk_phonotactic_report_violation_count(r): i64 { return vec_len(load64(r + 8)); }
 
 # In-place stable ascending insertion sort of a vec whose elements carry their
-# `word` cstr at byte offset 0 (ShInvalidEntry / ShPhonotacticViolation).
-fn _shabda_sort_by_word(v): i64 {
+# `word` cstr at byte offset 0 (ShbdkInvalidEntry / ShbdkPhonotacticViolation).
+fn _shbdk_sort_by_word(v): i64 {
     var n = vec_len(v);
     var i = 1;
     var j = 0;
@@ -147,7 +147,7 @@ fn _shabda_sort_by_word(v): i64 {
         j = i - 1;
         placed = 0;
         while (j >= 0 && placed == 0) {
-            if (_shabda_wordcmp(load64(vec_get(v, j)), load64(key)) == 1) {
+            if (_shbdk_wordcmp(load64(vec_get(v, j)), load64(key)) == 1) {
                 vec_set(v, j + 1, vec_get(v, j));
                 j = j - 1;
             } else {
@@ -163,7 +163,7 @@ fn _shabda_sort_by_word(v): i64 {
 # ---- inventory validation ----------------------------------------------------
 # Membership with length-mark normalization: exact, then +ː, then strip trailing
 # ː (U+02D0 = bytes 0xCB 0x90). Matches Rust inventory_has_normalized.
-fn _shabda_inventory_has_normalized(inv, ipa): i64 {
+fn _shbdk_inventory_has_normalized(inv, ipa): i64 {
     var sb = 0;
     var with_long = 0;
     var n = 0;
@@ -193,12 +193,12 @@ fn _shabda_inventory_has_normalized(inv, ipa): i64 {
     return 0;
 }
 
-# Check one entry against an inventory; returns a ShInvalidEntry* if it has any
+# Check one entry against an inventory; returns a ShbdkInvalidEntry* if it has any
 # phonemes outside the inventory (deduped), else 0. Phonemes with no IPA are
 # silently skipped (Rust if let Some(ipa)).
-fn _shabda_check_entry(word, entry, inventory): i64 {
+fn _shbdk_check_entry(word, entry, inventory): i64 {
     var invalid_ph = vec_new();
-    var prons = shabda_dict_entry_all(entry);
+    var prons = shbdk_dict_entry_all(entry);
     var np = vec_len(prons);
     var i = 0;
     var phon = 0;
@@ -207,15 +207,15 @@ fn _shabda_check_entry(word, entry, inventory): i64 {
     var ph = 0;
     var ipa = 0;
     while (i < np) {
-        phon = shabda_pronunciation_phonemes(vec_get(prons, i));
+        phon = shbdk_pronunciation_phonemes(vec_get(prons, i));
         m = vec_len(phon);
         jj = 0;
         while (jj < m) {
             ph = vec_get(phon, jj);
-            ipa = shabda_phoneme_to_ipa(ph);
+            ipa = shbdk_phoneme_to_ipa(ph);
             if (ipa != 0) {
-                if (_shabda_inventory_has_normalized(inventory, ipa) == 0) {
-                    if (_shabda_vec_has_int(invalid_ph, ph) == 0) {
+                if (_shbdk_inventory_has_normalized(inventory, ipa) == 0) {
+                    if (_shbdk_vec_has_int(invalid_ph, ph) == 0) {
                         vec_push(invalid_ph, ph);
                     }
                 }
@@ -225,10 +225,10 @@ fn _shabda_check_entry(word, entry, inventory): i64 {
         i = i + 1;
     }
     if (vec_len(invalid_ph) == 0) { return 0; }
-    return shabda_invalid_entry_new(word, invalid_ph);
+    return shbdk_invalid_entry_new(word, invalid_ph);
 }
 
-fn _shabda_validate_collect(inventory, map, out): i64 {
+fn _shbdk_validate_collect(inventory, map, out): i64 {
     var keys = map_keys(map);
     var n = vec_len(keys);
     var i = 0;
@@ -236,7 +236,7 @@ fn _shabda_validate_collect(inventory, map, out): i64 {
     var ie = 0;
     while (i < n) {
         wk = vec_get(keys, i);
-        ie = _shabda_check_entry(str_data(wk), map_get(map, wk), inventory);
+        ie = _shbdk_check_entry(str_data(wk), map_get(map, wk), inventory);
         if (ie != 0) { vec_push(out, ie); }
         i = i + 1;
     }
@@ -244,14 +244,14 @@ fn _shabda_validate_collect(inventory, map, out): i64 {
 }
 
 # Validate every base + user entry against a varna PhonemeInventory; returns a
-# ShValidationReport (entries sorted by word). (Rust validate_inventory)
+# ShbdkValidationReport (entries sorted by word). (Rust validate_inventory)
 #must_use
-fn shabda_validate_inventory(dict, inventory): i64 {
+fn shbdk_validate_inventory(dict, inventory): i64 {
     var invalid = vec_new();
-    _shabda_validate_collect(inventory, shabda_dict_entries(dict), invalid);
-    _shabda_validate_collect(inventory, shabda_dict_user_entries(dict), invalid);
-    _shabda_sort_by_word(invalid);
-    return shabda_validation_report_new(phoneme_language_code(inventory), invalid);
+    _shbdk_validate_collect(inventory, shbdk_dict_entries(dict), invalid);
+    _shbdk_validate_collect(inventory, shbdk_dict_user_entries(dict), invalid);
+    _shbdk_sort_by_word(invalid);
+    return shbdk_validation_report_new(phoneme_language_code(inventory), invalid);
 }
 
 # ---- phonotactics validation -------------------------------------------------
@@ -259,7 +259,7 @@ fn shabda_validate_inventory(dict, inventory): i64 {
 # PARITY QUIRK: SVARA_PH_VOWEL_LONG_I (14) is deliberately NOT excluded — the Rust
 # list omits it, so it reads as a consonant. Do not "fix" this.
 #must_use
-fn _shabda_is_consonant(ph): i64 {
+fn _shbdk_is_consonant(ph): i64 {
     if (ph == SVARA_PH_VOWEL_A) { return 0; }
     if (ph == SVARA_PH_VOWEL_E) { return 0; }
     if (ph == SVARA_PH_VOWEL_I) { return 0; }
@@ -284,18 +284,18 @@ fn _shabda_is_consonant(ph): i64 {
 }
 
 # Build a forbidden-pair violation.
-fn _shabda_mk_pair_violation(word, position, sequence): i64 {
+fn _shbdk_mk_pair_violation(word, position, sequence): i64 {
     var sb = str_builder_new();
     str_builder_add_cstr(sb, "forbidden ");
     str_builder_add_cstr(sb, position);
     str_builder_add_cstr(sb, " sequence '");
     str_builder_add_cstr(sb, sequence);
     str_builder_add_cstr(sb, "'");
-    return shabda_phonotactic_violation_new(word, str_data(str_builder_build(sb)), sequence);
+    return shbdk_phonotactic_violation_new(word, str_data(str_builder_build(sb)), sequence);
 }
 
 # Build a consonant-run ceiling violation.
-fn _shabda_mk_run_violation(word, run, max_onset, max_coda): i64 {
+fn _shbdk_mk_run_violation(word, run, max_onset, max_coda): i64 {
     var sb = str_builder_new();
     var sb2 = 0;
     str_builder_add_cstr(sb, "consonant cluster of ");
@@ -309,13 +309,13 @@ fn _shabda_mk_run_violation(word, run, max_onset, max_coda): i64 {
     str_builder_add_cstr(sb2, "(");
     str_builder_add_int(sb2, run);
     str_builder_add_cstr(sb2, " consonants)");
-    return shabda_phonotactic_violation_new(word, str_data(str_builder_build(sb)), str_data(str_builder_build(sb2)));
+    return shbdk_phonotactic_violation_new(word, str_data(str_builder_build(sb)), str_data(str_builder_build(sb2)));
 }
 
 # Check one pronunciation's phonemes against a phonotactics profile, pushing any
 # violations. (Rust check_pronunciation) is_permitted is tri-state (1/0/-1);
 # forbidden == exactly 0, -1 (unspecified) is NOT forbidden.
-fn _shabda_check_pronunciation(word, phonemes, phonotactics, violations): i64 {
+fn _shbdk_check_pronunciation(word, phonemes, phonotactics, violations): i64 {
     var n = vec_len(phonemes);
     var i = 0;
     var a = 0;
@@ -331,21 +331,21 @@ fn _shabda_check_pronunciation(word, phonemes, phonotactics, violations): i64 {
     var done = 0;
     # Pass A — forbidden adjacent IPA pairs.
     while (i + 1 < n) {
-        a = shabda_phoneme_to_ipa(vec_get(phonemes, i));
-        b = shabda_phoneme_to_ipa(vec_get(phonemes, i + 1));
+        a = shbdk_phoneme_to_ipa(vec_get(phonemes, i));
+        b = shbdk_phoneme_to_ipa(vec_get(phonemes, i + 1));
         if (a != 0) {
             if (b != 0) {
-                seq = _shabda_concat2(a, b);
+                seq = _shbdk_concat2(a, b);
                 fon = 0;
                 fcoda = 0;
                 if (phonotactics_is_permitted(phonotactics, seq, 0) == 0) { fon = 1; }
                 if (phonotactics_is_permitted(phonotactics, seq, 1) == 0) { fcoda = 1; }
                 if (fon == 1) {
                     if (fcoda == 1) { pos = "onset/coda"; } else { pos = "onset"; }
-                    vec_push(violations, _shabda_mk_pair_violation(word, pos, seq));
+                    vec_push(violations, _shbdk_mk_pair_violation(word, pos, seq));
                 } else {
                     if (fcoda == 1) {
-                        vec_push(violations, _shabda_mk_pair_violation(word, "coda", seq));
+                        vec_push(violations, _shbdk_mk_pair_violation(word, "coda", seq));
                     }
                 }
             }
@@ -360,10 +360,10 @@ fn _shabda_check_pronunciation(word, phonemes, phonotactics, violations): i64 {
     done = 0;
     while (k < n) {
         if (done == 0) {
-            if (_shabda_is_consonant(vec_get(phonemes, k)) == 1) {
+            if (_shbdk_is_consonant(vec_get(phonemes, k)) == 1) {
                 run = run + 1;
                 if (run > max_onset + max_coda) {
-                    vec_push(violations, _shabda_mk_run_violation(word, run, max_onset, max_coda));
+                    vec_push(violations, _shbdk_mk_run_violation(word, run, max_onset, max_coda));
                     done = 1;
                 }
             } else {
@@ -375,7 +375,7 @@ fn _shabda_check_pronunciation(word, phonemes, phonotactics, violations): i64 {
     return 0;
 }
 
-fn _shabda_phono_collect(phonotactics, map, out): i64 {
+fn _shbdk_phono_collect(phonotactics, map, out): i64 {
     var keys = map_keys(map);
     var n = vec_len(keys);
     var i = 0;
@@ -386,12 +386,12 @@ fn _shabda_phono_collect(phonotactics, map, out): i64 {
     var phs = 0;
     while (i < n) {
         wk = vec_get(keys, i);
-        prons = shabda_dict_entry_all(map_get(map, wk));
+        prons = shbdk_dict_entry_all(map_get(map, wk));
         np = vec_len(prons);
         j = 0;
         while (j < np) {
-            phs = shabda_pronunciation_phonemes(vec_get(prons, j));
-            _shabda_check_pronunciation(str_data(wk), phs, phonotactics, out);
+            phs = shbdk_pronunciation_phonemes(vec_get(prons, j));
+            _shbdk_check_pronunciation(str_data(wk), phs, phonotactics, out);
             j = j + 1;
         }
         i = i + 1;
@@ -400,51 +400,51 @@ fn _shabda_phono_collect(phonotactics, map, out): i64 {
 }
 
 # Validate every base + user pronunciation against a varna Phonotactics profile;
-# returns a ShPhonotacticReport (violations sorted by word). (Rust validate_phonotactics)
+# returns a ShbdkPhonotacticReport (violations sorted by word). (Rust validate_phonotactics)
 #must_use
-fn shabda_validate_phonotactics(dict, phonotactics): i64 {
+fn shbdk_validate_phonotactics(dict, phonotactics): i64 {
     var violations = vec_new();
-    _shabda_phono_collect(phonotactics, shabda_dict_entries(dict), violations);
-    _shabda_phono_collect(phonotactics, shabda_dict_user_entries(dict), violations);
-    _shabda_sort_by_word(violations);
-    return shabda_phonotactic_report_new(phonotactics_language_code(phonotactics), violations);
+    _shbdk_phono_collect(phonotactics, shbdk_dict_entries(dict), violations);
+    _shbdk_phono_collect(phonotactics, shbdk_dict_user_entries(dict), violations);
+    _shbdk_sort_by_word(violations);
+    return shbdk_phonotactic_report_new(phonotactics_language_code(phonotactics), violations);
 }
 
 # ---- convenience methods (dict.language -> pick inventory / profile) ----------
 # Validate against the dict's language inventory (registry_phonemes), or 0 (None)
 # if the dict has no language or the code is unknown. (Rust PronunciationDict::validate)
 #must_use
-fn shabda_dict_validate(dict): i64 {
-    var code = shabda_dict_language(dict);
+fn shbdk_dict_validate(dict): i64 {
+    var code = shbdk_dict_language(dict);
     var inventory = 0;
     if (code == 0) { return 0; }
     inventory = registry_phonemes(code);
     if (inventory == 0) { return 0; }
-    return shabda_validate_inventory(dict, inventory);
+    return shbdk_validate_inventory(dict, inventory);
 }
 
 # Validate against the dict language's phonotactics ({en,sa,ja} only), or 0 (None).
 # (Rust PronunciationDict::validate_phonotactics)
 #must_use
-fn shabda_dict_validate_phonotactics(dict): i64 {
-    var code = shabda_dict_language(dict);
+fn shbdk_dict_validate_phonotactics(dict): i64 {
+    var code = shbdk_dict_language(dict);
     var phono = 0;
     if (code == 0) { return 0; }
     if (streq(code, "en") == 1) { phono = phonotactics_english(); }
     if (streq(code, "sa") == 1) { phono = phonotactics_sanskrit(); }
     if (streq(code, "ja") == 1) { phono = phonotactics_japanese(); }
     if (phono == 0) { return 0; }
-    return shabda_validate_phonotactics(dict, phono);
+    return shbdk_validate_phonotactics(dict, phono);
 }
 
 # ---- JSON codecs (hand-written, bayan DOM; mirrors format/json.cyr) -----------
-fn _shabda_invalid_entry_to_jsonv(e): i64 {
+fn _shbdk_invalid_entry_to_jsonv(e): i64 {
     var obj = json_v_obj_new();
     var arr = json_v_arr_new();
-    var ph = shabda_invalid_entry_invalid_phonemes(e);
+    var ph = shbdk_invalid_entry_invalid_phonemes(e);
     var n = vec_len(ph);
     var i = 0;
-    json_v_obj_set(obj, str_from("word"), json_v_str_new(str_from(shabda_invalid_entry_word(e))));
+    json_v_obj_set(obj, str_from("word"), json_v_str_new(str_from(shbdk_invalid_entry_word(e))));
     while (i < n) {
         json_v_arr_push(arr, json_v_int_new(vec_get(ph, i)));
         i = i + 1;
@@ -457,15 +457,15 @@ fn _shabda_invalid_entry_to_jsonv(e): i64 {
 # value isn't a string. Guards the null/typed deref — Rust serde would error on a
 # missing required field; this port defaults to empty rather than dereferencing a
 # null node (a malformed/partial JSON blob decodes leniently, never crashes).
-fn _shabda_json_field_str(obj, key): cstring {
+fn _shbdk_json_field_str(obj, key): cstring {
     var v = json_v_obj_get(obj, key);
     if (v == 0) { return ""; }
     if (json_v_is_str(v) == 0) { return ""; }
     return str_cstr(json_v_str(v));
 }
 
-fn _shabda_invalid_entry_from_jsonv(obj): i64 {
-    var word = _shabda_json_field_str(obj, "word");
+fn _shbdk_invalid_entry_from_jsonv(obj): i64 {
+    var word = _shbdk_json_field_str(obj, "word");
     var arr = json_v_obj_get(obj, "invalid_phonemes");
     var ph = vec_new();
     var n = 0;
@@ -475,90 +475,90 @@ fn _shabda_invalid_entry_from_jsonv(obj): i64 {
         vec_push(ph, json_v_int(json_v_arr_get(arr, i)));
         i = i + 1;
     }
-    return shabda_invalid_entry_new(word, ph);
+    return shbdk_invalid_entry_new(word, ph);
 }
 
-# Serialize a ShValidationReport to JSON. (serde roundtrip)
+# Serialize a ShbdkValidationReport to JSON. (serde roundtrip)
 #must_use
-fn shabda_validation_report_to_json(r): cstring {
+fn shbdk_validation_report_to_json(r): cstring {
     var root = json_v_obj_new();
     var arr = json_v_arr_new();
-    var ie = shabda_validation_report_invalid_entries(r);
+    var ie = shbdk_validation_report_invalid_entries(r);
     var n = vec_len(ie);
     var i = 0;
-    json_v_obj_set(root, str_from("language"), json_v_str_new(str_from(shabda_validation_report_language(r))));
+    json_v_obj_set(root, str_from("language"), json_v_str_new(str_from(shbdk_validation_report_language(r))));
     while (i < n) {
-        json_v_arr_push(arr, _shabda_invalid_entry_to_jsonv(vec_get(ie, i)));
+        json_v_arr_push(arr, _shbdk_invalid_entry_to_jsonv(vec_get(ie, i)));
         i = i + 1;
     }
     json_v_obj_set(root, str_from("invalid_entries"), arr);
     return str_data(json_v_build(root));
 }
 
-# Deserialize a ShValidationReport from JSON.
+# Deserialize a ShbdkValidationReport from JSON.
 #must_use
-fn shabda_validation_report_from_json(input): i64 {
+fn shbdk_validation_report_from_json(input): i64 {
     var root = json_v_parse_str(input, strlen(input));
     if (root == 0) { return 0; }
-    var lang = _shabda_json_field_str(root, "language");
+    var lang = _shbdk_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "invalid_entries");
     var ie = vec_new();
     var n = 0;
     var i = 0;
     if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
-        vec_push(ie, _shabda_invalid_entry_from_jsonv(json_v_arr_get(arr, i)));
+        vec_push(ie, _shbdk_invalid_entry_from_jsonv(json_v_arr_get(arr, i)));
         i = i + 1;
     }
-    return shabda_validation_report_new(lang, ie);
+    return shbdk_validation_report_new(lang, ie);
 }
 
-fn _shabda_phonotactic_violation_to_jsonv(v): i64 {
+fn _shbdk_phonotactic_violation_to_jsonv(v): i64 {
     var obj = json_v_obj_new();
-    json_v_obj_set(obj, str_from("word"), json_v_str_new(str_from(shabda_phonotactic_violation_word(v))));
-    json_v_obj_set(obj, str_from("description"), json_v_str_new(str_from(shabda_phonotactic_violation_description(v))));
-    json_v_obj_set(obj, str_from("sequence"), json_v_str_new(str_from(shabda_phonotactic_violation_sequence(v))));
+    json_v_obj_set(obj, str_from("word"), json_v_str_new(str_from(shbdk_phonotactic_violation_word(v))));
+    json_v_obj_set(obj, str_from("description"), json_v_str_new(str_from(shbdk_phonotactic_violation_description(v))));
+    json_v_obj_set(obj, str_from("sequence"), json_v_str_new(str_from(shbdk_phonotactic_violation_sequence(v))));
     return obj;
 }
 
-fn _shabda_phonotactic_violation_from_jsonv(obj): i64 {
-    var word = _shabda_json_field_str(obj, "word");
-    var desc = _shabda_json_field_str(obj, "description");
-    var seq = _shabda_json_field_str(obj, "sequence");
-    return shabda_phonotactic_violation_new(word, desc, seq);
+fn _shbdk_phonotactic_violation_from_jsonv(obj): i64 {
+    var word = _shbdk_json_field_str(obj, "word");
+    var desc = _shbdk_json_field_str(obj, "description");
+    var seq = _shbdk_json_field_str(obj, "sequence");
+    return shbdk_phonotactic_violation_new(word, desc, seq);
 }
 
-# Serialize a ShPhonotacticReport to JSON. (serde roundtrip)
+# Serialize a ShbdkPhonotacticReport to JSON. (serde roundtrip)
 #must_use
-fn shabda_phonotactic_report_to_json(r): cstring {
+fn shbdk_phonotactic_report_to_json(r): cstring {
     var root = json_v_obj_new();
     var arr = json_v_arr_new();
-    var vs = shabda_phonotactic_report_violations(r);
+    var vs = shbdk_phonotactic_report_violations(r);
     var n = vec_len(vs);
     var i = 0;
-    json_v_obj_set(root, str_from("language"), json_v_str_new(str_from(shabda_phonotactic_report_language(r))));
+    json_v_obj_set(root, str_from("language"), json_v_str_new(str_from(shbdk_phonotactic_report_language(r))));
     while (i < n) {
-        json_v_arr_push(arr, _shabda_phonotactic_violation_to_jsonv(vec_get(vs, i)));
+        json_v_arr_push(arr, _shbdk_phonotactic_violation_to_jsonv(vec_get(vs, i)));
         i = i + 1;
     }
     json_v_obj_set(root, str_from("violations"), arr);
     return str_data(json_v_build(root));
 }
 
-# Deserialize a ShPhonotacticReport from JSON.
+# Deserialize a ShbdkPhonotacticReport from JSON.
 #must_use
-fn shabda_phonotactic_report_from_json(input): i64 {
+fn shbdk_phonotactic_report_from_json(input): i64 {
     var root = json_v_parse_str(input, strlen(input));
     if (root == 0) { return 0; }
-    var lang = _shabda_json_field_str(root, "language");
+    var lang = _shbdk_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "violations");
     var vs = vec_new();
     var n = 0;
     var i = 0;
     if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
-        vec_push(vs, _shabda_phonotactic_violation_from_jsonv(json_v_arr_get(arr, i)));
+        vec_push(vs, _shbdk_phonotactic_violation_from_jsonv(json_v_arr_get(arr, i)));
         i = i + 1;
     }
-    return shabda_phonotactic_report_new(lang, vs);
+    return shbdk_phonotactic_report_new(lang, vs);
 }

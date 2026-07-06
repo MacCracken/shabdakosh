@@ -31,7 +31,7 @@ cyrius bench            # auto-discovers benches/
 
 - **Dictionary lookup is the headline** and meets the O(1) design goal: **~135 ns per hit**,
   ~162 ns per miss — a single `lib/hashmap` probe with **no per-call allocation** (the
-  lowercase fast-path, `_shabda_is_lower_cstr`, skips the lowercase copy for already-lowercase
+  lowercase fast-path, `_shbdk_is_lower_cstr`, skips the lowercase copy for already-lowercase
   words). shabdakosh is dictionary-first: this is the path that matters.
 - **Construction is a one-time ~9.6 ms** (load the ~10.6k entries into a fresh hashmap).
   `dictionary/static_dict.cyr` amortizes this to once-per-process via a cached singleton.

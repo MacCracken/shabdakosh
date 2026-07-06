@@ -8,28 +8,28 @@ alloc_init();
 
 # ================================================================
 test_group("construction + packing");
-var e_parse = shabda_err_dict_parse();
-assert_eq(sakshi_err_code(e_parse), SHABDA_ERR_DICT_PARSE, "dict_parse code");
+var e_parse = shbdk_err_dict_parse();
+assert_eq(sakshi_err_code(e_parse), SHBDK_ERR_DICT_PARSE, "dict_parse code");
 assert_eq(sakshi_err_category(e_parse), ERR_CAT_PARSE, "dict_parse category");
-assert_eq(sakshi_err_code(shabda_err_unknown_symbol()), SHABDA_ERR_UNKNOWN_SYMBOL, "unknown_symbol code");
-assert_eq(sakshi_err_code(shabda_err_unknown_language()), SHABDA_ERR_UNKNOWN_LANGUAGE, "unknown_language code");
-assert_eq(sakshi_err_code(shabda_err_phoneme_not_in_inventory()), SHABDA_ERR_PHONEME_NOT_IN_INV, "phoneme_not_in_inventory code");
-assert_eq(sakshi_err_category(shabda_err_unknown_language()), ERR_CAT_CONFIG, "unknown_language category");
+assert_eq(sakshi_err_code(shbdk_err_unknown_symbol()), SHBDK_ERR_UNKNOWN_SYMBOL, "unknown_symbol code");
+assert_eq(sakshi_err_code(shbdk_err_unknown_language()), SHBDK_ERR_UNKNOWN_LANGUAGE, "unknown_language code");
+assert_eq(sakshi_err_code(shbdk_err_phoneme_not_in_inventory()), SHBDK_ERR_PHONEME_NOT_IN_INV, "phoneme_not_in_inventory code");
+assert_eq(sakshi_err_category(shbdk_err_unknown_language()), ERR_CAT_CONFIG, "unknown_language category");
 
 # ================================================================
 test_group("predicates");
-assert_eq(shabda_is_err(shabda_err_dict_parse()), 1, "dict_parse is an error");
-assert_eq(shabda_is_ok(shabda_err_dict_parse()), 0, "dict_parse is not ok");
-assert_eq(shabda_is_err(0), 0, "0 is not an error");
-assert_eq(shabda_is_ok(0), 1, "0 is ok");
+assert_eq(shbdk_is_err(shbdk_err_dict_parse()), 1, "dict_parse is an error");
+assert_eq(shbdk_is_ok(shbdk_err_dict_parse()), 0, "dict_parse is not ok");
+assert_eq(shbdk_is_err(0), 0, "0 is not an error");
+assert_eq(shbdk_is_ok(0), 1, "0 is ok");
 
 # ================================================================
-test_group("diagnostics (shabda_err_name)");
-assert_streq(shabda_err_name(shabda_err_dict_parse()), "dictionary parse error", "dict parse name");
-assert_streq(shabda_err_name(shabda_err_unknown_symbol()), "unknown ARPABET symbol", "unknown symbol name");
-assert_streq(shabda_err_name(shabda_err_phoneme_not_in_inventory()), "phoneme not in inventory", "phoneme name");
-assert_streq(shabda_err_name(shabda_err_unknown_language()), "unknown language", "unknown language name");
-assert_streq(shabda_err_name(0), "ok", "ok name");
+test_group("diagnostics (shbdk_err_name)");
+assert_streq(shbdk_err_name(shbdk_err_dict_parse()), "dictionary parse error", "dict parse name");
+assert_streq(shbdk_err_name(shbdk_err_unknown_symbol()), "unknown ARPABET symbol", "unknown symbol name");
+assert_streq(shbdk_err_name(shbdk_err_phoneme_not_in_inventory()), "phoneme not in inventory", "phoneme name");
+assert_streq(shbdk_err_name(shbdk_err_unknown_language()), "unknown language", "unknown language name");
+assert_streq(shbdk_err_name(0), "ok", "ok name");
 
 var rc = assert_summary();
 syscall(60, rc);

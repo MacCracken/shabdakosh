@@ -6,54 +6,54 @@ include "src/dictionary/detect.cyr"
 
 alloc_init();
 
-fn _has(v, s): i64 { return _shabda_vec_has_cstr(v, s); }
+fn _has(v, s): i64 { return _shbdk_vec_has_cstr(v, s); }
 
 # ================================================================
 test_group("detect_script — Latin");
-assert_streq(shabda_detect_script("hello"), "Latn", "hello -> Latn");
-assert_streq(shabda_detect_script("world"), "Latn", "world -> Latn");
+assert_streq(shbdk_detect_script("hello"), "Latn", "hello -> Latn");
+assert_streq(shbdk_detect_script("world"), "Latn", "world -> Latn");
 
 # ================================================================
 test_group("detect_script — other scripts");
-assert_streq(shabda_detect_script("नमस्ते"), "Deva", "devanagari -> Deva");
-assert_streq(shabda_detect_script("مرحبا"), "Arab", "arabic -> Arab");
-assert_streq(shabda_detect_script("привет"), "Cyrl", "cyrillic -> Cyrl");
-assert_streq(shabda_detect_script("你好"), "Hani", "cjk -> Hani");
-assert_streq(shabda_detect_script("γεια"), "Grek", "greek -> Grek");
+assert_streq(shbdk_detect_script("नमस्ते"), "Deva", "devanagari -> Deva");
+assert_streq(shbdk_detect_script("مرحبا"), "Arab", "arabic -> Arab");
+assert_streq(shbdk_detect_script("привет"), "Cyrl", "cyrillic -> Cyrl");
+assert_streq(shbdk_detect_script("你好"), "Hani", "cjk -> Hani");
+assert_streq(shbdk_detect_script("γεια"), "Grek", "greek -> Grek");
 
 # ================================================================
 test_group("detect_script — none");
-assert_eq(shabda_detect_script(""), 0, "empty -> 0 (None)");
-assert_eq(shabda_detect_script("12345"), 0, "digits only -> 0 (None)");
+assert_eq(shbdk_detect_script(""), 0, "empty -> 0 (None)");
+assert_eq(shbdk_detect_script("12345"), 0, "digits only -> 0 (None)");
 
 # ================================================================
 test_group("detect_language_hint — Latin (membership)");
-var hl = shabda_detect_language_hint("hello");
+var hl = shbdk_detect_language_hint("hello");
 assert_eq(_has(hl, "en"), 1, "latin hints include en");
 assert_eq(_has(hl, "es"), 1, "latin hints include es");
 assert_eq(_has(hl, "fr"), 1, "latin hints include fr");
 assert_eq(_has(hl, "de"), 1, "latin hints include de");
 # sorted ascending: first code <= second
-assert_eq(_shabda_cstr_cmp(vec_get(hl, 0), vec_get(hl, 1)), (0 - 1), "hints sorted ascending");
+assert_eq(_shbdk_cstr_cmp(vec_get(hl, 0), vec_get(hl, 1)), (0 - 1), "hints sorted ascending");
 
 # ================================================================
 test_group("detect_language_hint — Devanagari + empty");
-var hd = shabda_detect_language_hint("नमस्ते");
+var hd = shbdk_detect_language_hint("नमस्ते");
 assert_eq(_has(hd, "hi"), 1, "deva hints include hi");
 assert_eq(_has(hd, "sa"), 1, "deva hints include sa");
-assert_eq(vec_len(shabda_detect_language_hint("")), 0, "empty -> no hints");
+assert_eq(vec_len(shbdk_detect_language_hint("")), 0, "empty -> no hints");
 
 # ================================================================
 test_group("detect_script_name");
 var oc = alloc(8);
 var on = alloc(8);
-assert_eq(shabda_detect_script_name("hello", oc, on), 1, "hello detected");
+assert_eq(shbdk_detect_script_name("hello", oc, on), 1, "hello detected");
 assert_streq(load64(oc), "Latn", "code Latn");
 assert_streq(load64(on), "Latin", "name Latin");
-assert_eq(shabda_detect_script_name("नमस्ते", oc, on), 1, "deva detected");
+assert_eq(shbdk_detect_script_name("नमस्ते", oc, on), 1, "deva detected");
 assert_streq(load64(oc), "Deva", "code Deva");
 assert_streq(load64(on), "Devanagari", "name Devanagari");
-assert_eq(shabda_detect_script_name("12345", oc, on), 0, "digits -> 0 (None)");
+assert_eq(shbdk_detect_script_name("12345", oc, on), 0, "digits -> 0 (None)");
 
 # ================================================================
 # SECURITY regression (audit 2026-07-05): a truncated multibyte UTF-8 lead byte
@@ -62,10 +62,10 @@ assert_eq(shabda_detect_script_name("12345", oc, on), 0, "digits -> 0 (None)");
 test_group("truncated UTF-8 lead (no OOB read)");
 var t4 = alloc(4);
 store8(t4 + 0, 240); store8(t4 + 1, 0);   # lone 4-byte lead 0xF0, then NUL
-assert_streq(shabda_detect_script(t4), "Latn", "lone 4-byte lead -> opaque byte, no crash");
+assert_streq(shbdk_detect_script(t4), "Latn", "lone 4-byte lead -> opaque byte, no crash");
 var t2 = alloc(4);
 store8(t2 + 0, 195); store8(t2 + 1, 0);   # lone 2-byte lead 0xC3, then NUL
-assert_streq(shabda_detect_script(t2), "Latn", "lone 2-byte lead -> opaque byte, no crash");
+assert_streq(shbdk_detect_script(t2), "Latn", "lone 2-byte lead -> opaque byte, no crash");
 
 var rc = assert_summary();
 syscall(60, rc);

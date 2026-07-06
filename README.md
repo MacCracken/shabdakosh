@@ -11,8 +11,8 @@ dictionary-first grapheme→phoneme store mapping words to sequences of
 ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
 
 > v3.0.0 is a full-parity **CYRIUS port** of a 7,085-line Rust library. It is no
-> longer a Rust crate: the API is flat, `shabda_`-prefixed C-style functions
-> (`shabda_dict_lookup`, `shabda_parse_cmudict`, …) — no methods, traits,
+> longer a Rust crate: the API is flat, `shbdk_`-prefixed C-style functions
+> (`shbdk_dict_lookup`, `shbdk_parse_cmudict`, …) — no methods, traits,
 > generics, `Cargo.toml`, or crates.io. Consumers pull `dist/shabdakosh.cyr`.
 
 ## Features
@@ -22,7 +22,7 @@ ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
 - **Validation & detection** — varna-backed phoneme-inventory and phonotactics validation, plus script/language detection over a UTF-8 code-point decoder.
 - **WASM + static dict** — a `WasmDict` binding surface and a lazily-cached static dictionary singleton.
 - **Generated data** — the base CMUdict is checked-in as a single `.cyr` module (`src/dictionary/_cmudict_data.cyr`, from `gen_cmudict.cyr`, the port of the Rust `build.rs`); it fits under the distlib 1 MB per-module cap (toolchain 6.4.10).
-- **Sakshi errors** — no panics; fallible functions return a sakshi packed-i64 code (`0 == ok`, test with `shabda_is_err`) or a payload pointer (`0` == none).
+- **Sakshi errors** — no panics; fallible functions return a sakshi packed-i64 code (`0 == ok`, test with `shbdk_is_err`) or a payload pointer (`0` == none).
 
 ## Quick Start
 
@@ -34,16 +34,16 @@ cyrius tests tests                           # run all .tcyr suites
 
 ## Usage
 
-Names are flat and `shabda_`-prefixed. A pronunciation is a `vec` of svara
-`SVARA_PH_*` integer ordinals; `shabda_dict_lookup` returns that vec, or `0`
+Names are flat and `shbdk_`-prefixed. A pronunciation is a `vec` of svara
+`SVARA_PH_*` integer ordinals; `shbdk_dict_lookup` returns that vec, or `0`
 when the word is absent.
 
 ```cyrius
 # Load the base English dictionary (10k+ entries).
-var d = shabda_dict_english();
+var d = shbdk_dict_english();
 
 # Look up a word -> vec of SVARA_PH_* phonemes, or 0 if not found.
-var ph = shabda_dict_lookup(d, "hello");
+var ph = shbdk_dict_lookup(d, "hello");
 if (ph == 0) {
     println("not found");
 } else {
@@ -57,11 +57,11 @@ vec_push(agnos, SVARA_PH_PLOSIVE_G);
 vec_push(agnos, SVARA_PH_NASAL_N);
 vec_push(agnos, SVARA_PH_VOWEL_O);
 vec_push(agnos, SVARA_PH_FRIC_S);
-shabda_dict_insert_user(d, "agnos", agnos);
+shbdk_dict_insert_user(d, "agnos", agnos);
 
 # Import CMUdict text; export JSON / binary.
-var parsed = shabda_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n");
-var json = shabda_to_json(parsed);
+var parsed = shbdk_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n");
+var json = shbdk_to_json(parsed);
 ```
 
 See [`docs/guides/getting-started.md`](docs/guides/getting-started.md) and
@@ -78,7 +78,7 @@ the `[lib].modules` list in [`cyrius.cyml`](cyrius.cyml).
 
 See [`docs/guides/consuming-the-distlib.md`](docs/guides/consuming-the-distlib.md)
 for a complete, runnable consumer example (declare the dep → `cyrius deps` →
-include the svara/varna chain + bundle → call `shabda_dict_english()`).
+include the svara/varna chain + bundle → call `shbdk_dict_english()`).
 
 ## Module Overview
 
@@ -87,7 +87,7 @@ orders them; stdlib + svara/varna auto-resolve from `cyrius.cyml`):
 
 ```text
 src/
-├── error.cyr                    sakshi-backed error surface (shabda_err_*, shabda_is_err)
+├── error.cyr                    sakshi-backed error surface (shbdk_err_*, shbdk_is_err)
 ├── arpabet.cyr                  ARPABET <-> svara SVARA_PH_* phonemes (with stress)
 ├── ipa.cyr                      IPA <-> phoneme; parse_ipa_word / phonemes_to_ipa
 ├── notation.cyr                 unified ARPABET / IPA / X-SAMPA render + parse

@@ -7,100 +7,100 @@
 #
 # Serialization of the container types (Pronunciation / DictEntry) is hand-written
 # in the format layer (permanent code), per the locked serde stance — not here.
-# Region (a scalar) round-trips via its code (shabda_region_from_code/_code).
+# Region (a scalar) round-trips via its code (shbdk_region_from_code/_code).
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 #
-# ShPronunciation layout (24 bytes): [0]=phonemes(vec of i64) [8]=frequency(f64
-#   bits, SHABDA_FREQ_NONE when absent) [16]=region(SHABDA_REGION_* or _NONE).
-# ShDictEntry layout (8 bytes): [0]=pronunciations(vec of ShPronunciation*).
+# ShbdkPronunciation layout (24 bytes): [0]=phonemes(vec of i64) [8]=frequency(f64
+#   bits, SHBDK_FREQ_NONE when absent) [16]=region(SHBDK_REGION_* or _NONE).
+# ShbdkDictEntry layout (8 bytes): [0]=pronunciations(vec of ShbdkPronunciation*).
 
 # ---- Region (#[non_exhaustive] enum) -----------------------------------------
-var SHABDA_REGION_GA   = 0;          # GeneralAmerican
-var SHABDA_REGION_RP   = 1;          # ReceivedPronunciation
-var SHABDA_REGION_NONE = (0 - 1);    # Option<Region>::None
+var SHBDK_REGION_GA   = 0;          # GeneralAmerican
+var SHBDK_REGION_RP   = 1;          # ReceivedPronunciation
+var SHBDK_REGION_NONE = (0 - 1);    # Option<Region>::None
 
-# Parse a region short code -> SHABDA_REGION_* or SHABDA_REGION_NONE.
+# Parse a region short code -> SHBDK_REGION_* or SHBDK_REGION_NONE.
 #must_use
-fn shabda_region_from_code(code): i64 {
-    if (streq(code, "GA") == 1) { return SHABDA_REGION_GA; }
-    if (streq(code, "RP") == 1) { return SHABDA_REGION_RP; }
-    return SHABDA_REGION_NONE;
+fn shbdk_region_from_code(code): i64 {
+    if (streq(code, "GA") == 1) { return SHBDK_REGION_GA; }
+    if (streq(code, "RP") == 1) { return SHBDK_REGION_RP; }
+    return SHBDK_REGION_NONE;
 }
 
 # Region -> short code cstr ("GA"/"RP"), or 0 for NONE/unknown. (Also Display.)
 #must_use
-fn shabda_region_code(region): cstring {
-    if (region == SHABDA_REGION_GA) { return "GA"; }
-    if (region == SHABDA_REGION_RP) { return "RP"; }
+fn shbdk_region_code(region): cstring {
+    if (region == SHBDK_REGION_GA) { return "GA"; }
+    if (region == SHBDK_REGION_RP) { return "RP"; }
     return 0;
 }
 
 # ---- Pronunciation -----------------------------------------------------------
 # f64 -1.0 bit pattern: Option<f32>::None sentinel AND the value the frequency
 # sort treats None as (matches Rust's unwrap_or(-1.0)).
-var SHABDA_FREQ_NONE = 0xBFF0000000000000;
+var SHBDK_FREQ_NONE = 0xBFF0000000000000;
 
 # new(phonemes) — no frequency / region metadata.
 #must_use
-fn shabda_pronunciation_new(phonemes): i64 {
+fn shbdk_pronunciation_new(phonemes): i64 {
     var p = alloc(24);
     store64(p + 0, phonemes);
-    store64(p + 8, SHABDA_FREQ_NONE);
-    store64(p + 16, SHABDA_REGION_NONE);
+    store64(p + 8, SHBDK_FREQ_NONE);
+    store64(p + 16, SHBDK_REGION_NONE);
     return p;
 }
 
 # Builder: set relative frequency (f64 bits, 0.0-1.0). Mutates + returns self.
 #must_use
-fn shabda_pronunciation_with_frequency(p, frequency): i64 {
+fn shbdk_pronunciation_with_frequency(p, frequency): i64 {
     store64(p + 8, frequency);
     return p;
 }
 
 # Builder: set regional variant. Mutates + returns self.
 #must_use
-fn shabda_pronunciation_with_region(p, region): i64 {
+fn shbdk_pronunciation_with_region(p, region): i64 {
     store64(p + 16, region);
     return p;
 }
 
 # Phoneme sequence (vec of i64 ordinals).
 #must_use
-fn shabda_pronunciation_phonemes(p): i64 {
+fn shbdk_pronunciation_phonemes(p): i64 {
     return load64(p + 0);
 }
 
-# Relative frequency (f64 bits); SHABDA_FREQ_NONE if unset.
+# Relative frequency (f64 bits); SHBDK_FREQ_NONE if unset.
 #must_use
-fn shabda_pronunciation_frequency(p): i64 {
+fn shbdk_pronunciation_frequency(p): i64 {
     return load64(p + 8);
 }
 
 # 1 if a frequency is set, 0 otherwise (Option::is_some).
 #must_use
-fn shabda_pronunciation_has_frequency(p): i64 {
-    if (load64(p + 8) != SHABDA_FREQ_NONE) { return 1; }
+fn shbdk_pronunciation_has_frequency(p): i64 {
+    if (load64(p + 8) != SHBDK_FREQ_NONE) { return 1; }
     return 0;
 }
 
-# Regional variant (SHABDA_REGION_*); SHABDA_REGION_NONE if unset.
+# Regional variant (SHBDK_REGION_*); SHBDK_REGION_NONE if unset.
 #must_use
-fn shabda_pronunciation_region(p): i64 {
+fn shbdk_pronunciation_region(p): i64 {
     return load64(p + 16);
 }
 
 # 1 if a region is set, 0 otherwise.
 #must_use
-fn shabda_pronunciation_has_region(p): i64 {
-    if (load64(p + 16) != SHABDA_REGION_NONE) { return 1; }
+fn shbdk_pronunciation_has_region(p): i64 {
+    if (load64(p + 16) != SHBDK_REGION_NONE) { return 1; }
     return 0;
 }
 
 # ---- DictEntry ---------------------------------------------------------------
 # Insertion sort of a pronunciation vec by frequency DESC (None = -1.0 sorts
 # last). Stable (equal frequencies keep insertion order), matching Rust sort_by.
-fn _shabda_sort_by_frequency(prons): i64 {
+fn _shbdk_sort_by_frequency(prons): i64 {
     var n = vec_len(prons);
     var i = 1;
     var cur = 0;
@@ -148,7 +148,7 @@ fn _shabda_sort_by_frequency(prons): i64 {
 
 # Entry with a single pronunciation.
 #must_use
-fn shabda_dict_entry_new(pronunciation): i64 {
+fn shbdk_dict_entry_new(pronunciation): i64 {
     var e = alloc(8);
     var prons = vec_new();
     vec_push(prons, pronunciation);
@@ -158,50 +158,50 @@ fn shabda_dict_entry_new(pronunciation): i64 {
 
 # Entry from a phoneme vec (single pronunciation, no metadata).
 #must_use
-fn shabda_dict_entry_from_phonemes(phonemes): i64 {
-    return shabda_dict_entry_new(shabda_pronunciation_new(phonemes));
+fn shbdk_dict_entry_from_phonemes(phonemes): i64 {
+    return shbdk_dict_entry_new(shbdk_pronunciation_new(phonemes));
 }
 
 # Entry from a vec of pronunciations. Returns 0 (None) if empty; else sorts by
 # frequency descending.
 #must_use
-fn shabda_dict_entry_from_pronunciations(prons): i64 {
+fn shbdk_dict_entry_from_pronunciations(prons): i64 {
     if (vec_len(prons) == 0) { return 0; }
-    _shabda_sort_by_frequency(prons);
+    _shbdk_sort_by_frequency(prons);
     var e = alloc(8);
     store64(e + 0, prons);
     return e;
 }
 
 # Add a pronunciation variant; re-sorts by frequency.
-fn shabda_dict_entry_add_pronunciation(e, pronunciation): i64 {
+fn shbdk_dict_entry_add_pronunciation(e, pronunciation): i64 {
     var prons = load64(e + 0);
     vec_push(prons, pronunciation);
-    _shabda_sort_by_frequency(prons);
+    _shbdk_sort_by_frequency(prons);
     return 0;
 }
 
 # Primary (highest-frequency) pronunciation. Invariant: entry is non-empty.
 #must_use
-fn shabda_dict_entry_primary(e): i64 {
+fn shbdk_dict_entry_primary(e): i64 {
     return vec_get(load64(e + 0), 0);
 }
 
 # Phonemes of the primary pronunciation.
 #must_use
-fn shabda_dict_entry_primary_phonemes(e): i64 {
-    return shabda_pronunciation_phonemes(shabda_dict_entry_primary(e));
+fn shbdk_dict_entry_primary_phonemes(e): i64 {
+    return shbdk_pronunciation_phonemes(shbdk_dict_entry_primary(e));
 }
 
 # All pronunciations (the vec).
 #must_use
-fn shabda_dict_entry_all(e): i64 {
+fn shbdk_dict_entry_all(e): i64 {
     return load64(e + 0);
 }
 
 # First pronunciation matching `region`, or 0 (None).
 #must_use
-fn shabda_dict_entry_for_region(e, region): i64 {
+fn shbdk_dict_entry_for_region(e, region): i64 {
     var prons = load64(e + 0);
     var n = vec_len(prons);
     var i = 0;
@@ -216,12 +216,12 @@ fn shabda_dict_entry_for_region(e, region): i64 {
 
 # Number of pronunciation variants.
 #must_use
-fn shabda_dict_entry_len(e): i64 {
+fn shbdk_dict_entry_len(e): i64 {
     return vec_len(load64(e + 0));
 }
 
 # Always 0 (entries are guaranteed non-empty).
 #must_use
-fn shabda_dict_entry_is_empty(e): i64 {
+fn shbdk_dict_entry_is_empty(e): i64 {
     return 0;
 }

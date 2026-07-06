@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.0.1] — 2026-07-06
+
+Symbol-prefix correction ahead of the first downstream consumer (**shabda**, the G2P engine).
+The whole public surface was renamed off the `shabda_` namespace so shabda — which links flat
+against this distlib — can own it; the dictionary *shabda-kosh* now owns `shbdk_`. Purely
+mechanical: the 689-assertion suite passes unchanged and the distlib is regenerated.
+
+- **Breaking**: public prefix renamed `shabda_` → `shbdk_`, `SHABDA_` → `SHBDK_`, and `Sh<Name>` structs → `Shbdk<Name>` (269 exported symbols). API shape and semantics are unchanged. Done before any external consumer existed, so no real-world break — hence a patch, not a major.
+- **Changed**: `dist/shabdakosh.cyr` regenerated with the new prefix; the `_cmudict_data.cyr` codegen symbols became `_shbdk_cmudict_piece` / `_SHBDK_CMUDICT_PIECE_*` (generator + checked-in data + consumer kept in lockstep).
+
 ## [3.0.0] — 2026-07-05
 
 Complete port of shabdakosh from Rust to the **CYRIUS** language (AGNOS toolchain). A

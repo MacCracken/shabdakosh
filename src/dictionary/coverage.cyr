@@ -2,15 +2,15 @@
 #
 # Ports rust-old/src/dictionary/coverage.rs. Extends the keystone: tokenizes
 # text, strips punctuation, lowercases, and checks each token against the dict.
-# Included after src/dictionary/mod.cyr (uses shabda_dict_lookup_entry +
-# _shabda_sort_strs). Phoneme-agnostic.
+# Included after src/dictionary/mod.cyr (uses shbdk_dict_lookup_entry +
+# _shbdk_sort_strs). Phoneme-agnostic.
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 #
-# ShCoverageReport layout (24 bytes): [0]=total_tokens [8]=covered_tokens
+# ShbdkCoverageReport layout (24 bytes): [0]=total_tokens [8]=covered_tokens
 #   [16]=uncovered_words(vec of Str, sorted, unique).
 
-fn _shabda_cov_is_ws(b): i64 {
+fn _shbdk_cov_is_ws(b): i64 {
     if (b == 32) { return 1; }
     if (b == 9) { return 1; }
     if (b == 10) { return 1; }
@@ -20,7 +20,7 @@ fn _shabda_cov_is_ws(b): i64 {
     return 0;
 }
 
-fn _shabda_is_ascii_punct(c): i64 {
+fn _shbdk_is_ascii_punct(c): i64 {
     if (c >= 33) { if (c <= 47) { return 1; } }    # ! " # $ % & ' ( ) * + , - . /
     if (c >= 58) { if (c <= 64) { return 1; } }    # : ; < = > ? @
     if (c >= 91) { if (c <= 96) { return 1; } }    # [ \ ] ^ _ `
@@ -30,15 +30,15 @@ fn _shabda_is_ascii_punct(c): i64 {
 
 # Normalize text[start..end]: strip leading/trailing ASCII punctuation and
 # lowercase. Returns a fresh NUL-terminated cstr (empty if all punctuation).
-fn _shabda_normalize_token(text, start, end): i64 {
+fn _shbdk_normalize_token(text, start, end): i64 {
     var s = start;
     while (s < end) {
-        if (_shabda_is_ascii_punct(load8(text + s)) == 0) { break; }
+        if (_shbdk_is_ascii_punct(load8(text + s)) == 0) { break; }
         s = s + 1;
     }
     var e = end;
     while (e > s) {
-        if (_shabda_is_ascii_punct(load8(text + e - 1)) == 0) { break; }
+        if (_shbdk_is_ascii_punct(load8(text + e - 1)) == 0) { break; }
         e = e - 1;
     }
     var n = e - s;
@@ -58,7 +58,7 @@ fn _shabda_normalize_token(text, start, end): i64 {
 }
 
 # ---- CoverageReport ----------------------------------------------------------
-fn _shabda_coverage_report_new(total, covered, uncovered): i64 {
+fn _shbdk_coverage_report_new(total, covered, uncovered): i64 {
     var r = alloc(24);
     store64(r + 0, total);
     store64(r + 8, covered);
@@ -67,34 +67,34 @@ fn _shabda_coverage_report_new(total, covered, uncovered): i64 {
 }
 
 #must_use
-fn shabda_coverage_total_tokens(r): i64 {
+fn shbdk_coverage_total_tokens(r): i64 {
     return load64(r + 0);
 }
 
 #must_use
-fn shabda_coverage_covered_tokens(r): i64 {
+fn shbdk_coverage_covered_tokens(r): i64 {
     return load64(r + 8);
 }
 
 #must_use
-fn shabda_coverage_uncovered_words(r): i64 {
+fn shbdk_coverage_uncovered_words(r): i64 {
     return load64(r + 16);
 }
 
 #must_use
-fn shabda_coverage_uncovered_count(r): i64 {
+fn shbdk_coverage_uncovered_count(r): i64 {
     return vec_len(load64(r + 16));
 }
 
 #must_use
-fn shabda_coverage_is_fully_covered(r): i64 {
+fn shbdk_coverage_is_fully_covered(r): i64 {
     if (vec_len(load64(r + 16)) == 0) { return 1; }
     return 0;
 }
 
 # Coverage percentage (0.0-100.0) as f64 bits; 0.0 if the corpus is empty.
 #must_use
-fn shabda_coverage_pct(r): i64 {
+fn shbdk_coverage_pct(r): i64 {
     var total = load64(r + 0);
     if (total == 0) { return 0; }
     return f64_mul(f64_div(f64_from(load64(r + 8)), f64_from(total)), f64_from(100));
@@ -103,7 +103,7 @@ fn shabda_coverage_pct(r): i64 {
 # ---- coverage() --------------------------------------------------------------
 # Analyze how well dict `d` covers `text` (a cstr). Returns a CoverageReport.
 #must_use
-fn shabda_dict_coverage(d, text): i64 {
+fn shbdk_dict_coverage(d, text): i64 {
     var total = 0;
     var covered = 0;
     var uncovered_set = map_new_str();
@@ -115,12 +115,12 @@ fn shabda_dict_coverage(d, text): i64 {
     var norm = 0;
     while (i < len) {
         b = load8(text + i);
-        if (_shabda_cov_is_ws(b) == 1) {
+        if (_shbdk_cov_is_ws(b) == 1) {
             if (in_tok == 1) {
-                norm = _shabda_normalize_token(text, ts, i);
+                norm = _shbdk_normalize_token(text, ts, i);
                 if (load8(norm) != 0) {
                     total = total + 1;
-                    if (shabda_dict_lookup_entry(d, norm) != 0) {
+                    if (shbdk_dict_lookup_entry(d, norm) != 0) {
                         covered = covered + 1;
                     } else {
                         map_set(uncovered_set, str_from(norm), 1);
@@ -137,10 +137,10 @@ fn shabda_dict_coverage(d, text): i64 {
         i = i + 1;
     }
     if (in_tok == 1) {
-        norm = _shabda_normalize_token(text, ts, len);
+        norm = _shbdk_normalize_token(text, ts, len);
         if (load8(norm) != 0) {
             total = total + 1;
-            if (shabda_dict_lookup_entry(d, norm) != 0) {
+            if (shbdk_dict_lookup_entry(d, norm) != 0) {
                 covered = covered + 1;
             } else {
                 map_set(uncovered_set, str_from(norm), 1);
@@ -148,6 +148,6 @@ fn shabda_dict_coverage(d, text): i64 {
         }
     }
     var uncovered = map_keys(uncovered_set);
-    _shabda_sort_strs(uncovered);
-    return _shabda_coverage_report_new(total, covered, uncovered);
+    _shbdk_sort_strs(uncovered);
+    return _shbdk_coverage_report_new(total, covered, uncovered);
 }

@@ -3,48 +3,48 @@
 #
 # The Rust used a compile-time phf::Map (a perfect hash baked into the binary by
 # build.rs). CYRIUS has no phf / const-eval, so the "static" dict is a LAZILY
-# built, cached singleton over the same generated data (shabda_dict_english()):
+# built, cached singleton over the same generated data (shbdk_dict_english()):
 # built once on first use, then every lookup/len/is_empty hits the cached dict
 # with no per-call construction. Observable surface + semantics match Rust; the
 # one property we cannot match is phf's zero-runtime-load (we do a single lazy
 # load instead of a compile-time-baked table). StaticEntry / StaticPronunciation
-# collapse onto the existing ShDictEntry / ShPronunciation — their accessors
-# (shabda_dict_entry_primary_phonemes / _all / _len) already provide the surface.
+# collapse onto the existing ShbdkDictEntry / ShbdkPronunciation — their accessors
+# (shbdk_dict_entry_primary_phonemes / _all / _len) already provide the surface.
 #
-# Requires: dictionary/mod.cyr + the cmudict loader (shabda_dict_english).
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# Requires: dictionary/mod.cyr + the cmudict loader (shbdk_dict_english).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
-var _SHABDA_STATIC_DICT = 0;   # cached singleton (0 = unbuilt; built on first use)
+var _SHBDK_STATIC_DICT = 0;   # cached singleton (0 = unbuilt; built on first use)
 
 # The cached static English dictionary — built once, reused thereafter.
 #must_use
-fn shabda_static_dict(): i64 {
-    if (_SHABDA_STATIC_DICT == 0) {
-        _SHABDA_STATIC_DICT = shabda_dict_english();
+fn shbdk_static_dict(): i64 {
+    if (_SHBDK_STATIC_DICT == 0) {
+        _SHBDK_STATIC_DICT = shbdk_dict_english();
     }
-    return _SHABDA_STATIC_DICT;
+    return _SHBDK_STATIC_DICT;
 }
 
 # Look up a word's primary pronunciation phonemes, or 0 (None). (Rust static_dict::lookup)
 #must_use
-fn shabda_static_lookup(word): i64 {
-    return shabda_dict_lookup(shabda_static_dict(), word);
+fn shbdk_static_lookup(word): i64 {
+    return shbdk_dict_lookup(shbdk_static_dict(), word);
 }
 
 # Look up a word's full static entry, or 0 (None). (Rust static_dict::lookup_entry)
 #must_use
-fn shabda_static_lookup_entry(word): i64 {
-    return shabda_dict_lookup_entry(shabda_static_dict(), word);
+fn shbdk_static_lookup_entry(word): i64 {
+    return shbdk_dict_lookup_entry(shbdk_static_dict(), word);
 }
 
 # Number of entries in the static dictionary. (Rust static_dict::len)
 #must_use
-fn shabda_static_len(): i64 {
-    return shabda_dict_len(shabda_static_dict());
+fn shbdk_static_len(): i64 {
+    return shbdk_dict_len(shbdk_static_dict());
 }
 
 # Whether the static dictionary is empty. (Rust static_dict::is_empty)
 #must_use
-fn shabda_static_is_empty(): i64 {
-    return shabda_dict_is_empty(shabda_static_dict());
+fn shbdk_static_is_empty(): i64 {
+    return shbdk_dict_is_empty(shbdk_static_dict());
 }

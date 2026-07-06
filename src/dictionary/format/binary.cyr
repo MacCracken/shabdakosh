@@ -11,19 +11,19 @@
 # to_binary returns a Str (blob may contain NULs); from_binary takes a Str.
 # Included after src/dictionary/mod.cyr.
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
-var SHABDA_BIN_VERSION = 1;
-var SHABDA_BIN_HEADER  = 5;
+var SHBDK_BIN_VERSION = 1;
+var SHBDK_BIN_HEADER  = 5;
 
 # ---- little-endian put helpers (return bytes written) ------------------------
-fn _shabda_bin_put_u16(buf, off, v): i64 {
+fn _shbdk_bin_put_u16(buf, off, v): i64 {
     store8(buf + off + 0, v & 255);
     store8(buf + off + 1, (v >> 8) & 255);
     return 2;
 }
 
-fn _shabda_bin_put_u32(buf, off, v): i64 {
+fn _shbdk_bin_put_u32(buf, off, v): i64 {
     store8(buf + off + 0, v & 255);
     store8(buf + off + 1, (v >> 8) & 255);
     store8(buf + off + 2, (v >> 16) & 255);
@@ -31,7 +31,7 @@ fn _shabda_bin_put_u32(buf, off, v): i64 {
     return 4;
 }
 
-fn _shabda_bin_put_u64(buf, off, v): i64 {
+fn _shbdk_bin_put_u64(buf, off, v): i64 {
     store8(buf + off + 0, v & 255);
     store8(buf + off + 1, (v >> 8) & 255);
     store8(buf + off + 2, (v >> 16) & 255);
@@ -43,8 +43,8 @@ fn _shabda_bin_put_u64(buf, off, v): i64 {
     return 8;
 }
 
-fn _shabda_bin_put_strn(buf, off, data, len): i64 {
-    _shabda_bin_put_u16(buf, off, len);
+fn _shbdk_bin_put_strn(buf, off, data, len): i64 {
+    _shbdk_bin_put_u16(buf, off, len);
     var i = 0;
     while (i < len) {
         store8(buf + off + 2 + i, load8(data + i));
@@ -54,11 +54,11 @@ fn _shabda_bin_put_strn(buf, off, data, len): i64 {
 }
 
 # ---- little-endian get helpers -----------------------------------------------
-fn _shabda_bin_get_u16(buf, off): i64 {
+fn _shbdk_bin_get_u16(buf, off): i64 {
     return load8(buf + off) | (load8(buf + off + 1) << 8);
 }
 
-fn _shabda_bin_get_u32(buf, off): i64 {
+fn _shbdk_bin_get_u32(buf, off): i64 {
     var v = load8(buf + off);
     v = v | (load8(buf + off + 1) << 8);
     v = v | (load8(buf + off + 2) << 16);
@@ -66,7 +66,7 @@ fn _shabda_bin_get_u32(buf, off): i64 {
     return v;
 }
 
-fn _shabda_bin_get_u64(buf, off): i64 {
+fn _shbdk_bin_get_u64(buf, off): i64 {
     var v = load8(buf + off);
     v = v | (load8(buf + off + 1) << 8);
     v = v | (load8(buf + off + 2) << 16);
@@ -79,7 +79,7 @@ fn _shabda_bin_get_u64(buf, off): i64 {
 }
 
 # NUL-terminated cstr copy of buf[off..off+len).
-fn _shabda_bin_dup(buf, off, len): i64 {
+fn _shbdk_bin_dup(buf, off, len): i64 {
     var out = alloc(len + 1);
     var i = 0;
     while (i < len) {
@@ -91,29 +91,29 @@ fn _shabda_bin_dup(buf, off, len): i64 {
 }
 
 # ---- to_binary ---------------------------------------------------------------
-fn _shabda_bin_put_pron(buf, off, pron): i64 {
+fn _shbdk_bin_put_pron(buf, off, pron): i64 {
     var start = off;
-    var phon = shabda_pronunciation_phonemes(pron);
+    var phon = shbdk_pronunciation_phonemes(pron);
     var np = vec_len(phon);
-    off = off + _shabda_bin_put_u16(buf, off, np);
+    off = off + _shbdk_bin_put_u16(buf, off, np);
     var i = 0;
     while (i < np) {
         store8(buf + off, vec_get(phon, i));
         off = off + 1;
         i = i + 1;
     }
-    if (shabda_pronunciation_has_frequency(pron) == 1) {
+    if (shbdk_pronunciation_has_frequency(pron) == 1) {
         store8(buf + off, 1);
         off = off + 1;
-        off = off + _shabda_bin_put_u64(buf, off, shabda_pronunciation_frequency(pron));
+        off = off + _shbdk_bin_put_u64(buf, off, shbdk_pronunciation_frequency(pron));
     } else {
         store8(buf + off, 0);
         off = off + 1;
     }
-    if (shabda_pronunciation_has_region(pron) == 1) {
+    if (shbdk_pronunciation_has_region(pron) == 1) {
         store8(buf + off, 1);
         off = off + 1;
-        store8(buf + off, shabda_pronunciation_region(pron));
+        store8(buf + off, shbdk_pronunciation_region(pron));
         off = off + 1;
     } else {
         store8(buf + off, 0);
@@ -122,11 +122,11 @@ fn _shabda_bin_put_pron(buf, off, pron): i64 {
     return off - start;
 }
 
-fn _shabda_bin_put_map(buf, off, map): i64 {
+fn _shbdk_bin_put_map(buf, off, map): i64 {
     var start = off;
     var keys = map_keys(map);
     var n = vec_len(keys);
-    off = off + _shabda_bin_put_u32(buf, off, n);
+    off = off + _shbdk_bin_put_u32(buf, off, n);
     var i = 0;
     var wk = 0;
     var prons = 0;
@@ -134,13 +134,13 @@ fn _shabda_bin_put_map(buf, off, map): i64 {
     var j = 0;
     while (i < n) {
         wk = vec_get(keys, i);
-        off = off + _shabda_bin_put_strn(buf, off, str_data(wk), str_len(wk));
-        prons = shabda_dict_entry_all(map_get(map, wk));
+        off = off + _shbdk_bin_put_strn(buf, off, str_data(wk), str_len(wk));
+        prons = shbdk_dict_entry_all(map_get(map, wk));
         np = vec_len(prons);
-        off = off + _shabda_bin_put_u16(buf, off, np);
+        off = off + _shbdk_bin_put_u16(buf, off, np);
         j = 0;
         while (j < np) {
-            off = off + _shabda_bin_put_pron(buf, off, vec_get(prons, j));
+            off = off + _shbdk_bin_put_pron(buf, off, vec_get(prons, j));
             j = j + 1;
         }
         i = i + 1;
@@ -151,17 +151,17 @@ fn _shabda_bin_put_map(buf, off, map): i64 {
 # ---- exact serialized-size computation (mirrors the put_* layout) ------------
 # SECURITY: size the output buffer to the dict instead of a fixed 2 MB alloc, so a
 # large dict (many/long user entries) can never overflow the write buffer.
-fn _shabda_bin_pron_size(pron): i64 {
+fn _shbdk_bin_pron_size(pron): i64 {
     var sz = 2;   # u16 nphon
-    sz = sz + vec_len(shabda_pronunciation_phonemes(pron));   # nphon × u8
+    sz = sz + vec_len(shbdk_pronunciation_phonemes(pron));   # nphon × u8
     sz = sz + 1;   # freq flag
-    if (shabda_pronunciation_has_frequency(pron) == 1) { sz = sz + 8; }   # u64 freq
+    if (shbdk_pronunciation_has_frequency(pron) == 1) { sz = sz + 8; }   # u64 freq
     sz = sz + 1;   # region flag
-    if (shabda_pronunciation_has_region(pron) == 1) { sz = sz + 1; }      # u8 region
+    if (shbdk_pronunciation_has_region(pron) == 1) { sz = sz + 1; }      # u8 region
     return sz;
 }
 
-fn _shabda_bin_map_size(map): i64 {
+fn _shbdk_bin_map_size(map): i64 {
     var sz = 4;   # u32 count
     var keys = map_keys(map);
     var n = vec_len(keys);
@@ -173,12 +173,12 @@ fn _shabda_bin_map_size(map): i64 {
     while (i < n) {
         wk = vec_get(keys, i);
         sz = sz + 2 + str_len(wk);   # u16 wlen + word bytes
-        prons = shabda_dict_entry_all(map_get(map, wk));
+        prons = shbdk_dict_entry_all(map_get(map, wk));
         np = vec_len(prons);
         sz = sz + 2;   # u16 npron
         j = 0;
         while (j < np) {
-            sz = sz + _shabda_bin_pron_size(vec_get(prons, j));
+            sz = sz + _shbdk_bin_pron_size(vec_get(prons, j));
             j = j + 1;
         }
         i = i + 1;
@@ -186,37 +186,37 @@ fn _shabda_bin_map_size(map): i64 {
     return sz;
 }
 
-fn _shabda_bin_total_size(dict): i64 {
-    var sz = SHABDA_BIN_HEADER;   # magic(4) + version(1)
+fn _shbdk_bin_total_size(dict): i64 {
+    var sz = SHBDK_BIN_HEADER;   # magic(4) + version(1)
     sz = sz + 1;   # language flag
-    var lang = shabda_dict_language(dict);
+    var lang = shbdk_dict_language(dict);
     if (lang != 0) { sz = sz + 2 + strlen(lang); }   # u16 llen + lang bytes
-    sz = sz + _shabda_bin_map_size(shabda_dict_entries(dict));
-    sz = sz + _shabda_bin_map_size(shabda_dict_user_entries(dict));
+    sz = sz + _shbdk_bin_map_size(shbdk_dict_entries(dict));
+    sz = sz + _shbdk_bin_map_size(shbdk_dict_user_entries(dict));
     return sz;
 }
 
 # Serialize a PronunciationDict to a compact binary blob (a Str).
 #must_use
-fn shabda_to_binary(dict): i64 {
-    var buf = alloc(_shabda_bin_total_size(dict) + 16);
+fn shbdk_to_binary(dict): i64 {
+    var buf = alloc(_shbdk_bin_total_size(dict) + 16);
     store8(buf + 0, 83);   # 'S'
     store8(buf + 1, 72);   # 'H'
     store8(buf + 2, 66);   # 'B'
     store8(buf + 3, 68);   # 'D'
-    store8(buf + 4, SHABDA_BIN_VERSION);
+    store8(buf + 4, SHBDK_BIN_VERSION);
     var off = 5;
-    var lang = shabda_dict_language(dict);
+    var lang = shbdk_dict_language(dict);
     if (lang != 0) {
         store8(buf + off, 1);
         off = off + 1;
-        off = off + _shabda_bin_put_strn(buf, off, lang, strlen(lang));
+        off = off + _shbdk_bin_put_strn(buf, off, lang, strlen(lang));
     } else {
         store8(buf + off, 0);
         off = off + 1;
     }
-    off = off + _shabda_bin_put_map(buf, off, shabda_dict_entries(dict));
-    off = off + _shabda_bin_put_map(buf, off, shabda_dict_user_entries(dict));
+    off = off + _shbdk_bin_put_map(buf, off, shbdk_dict_entries(dict));
+    off = off + _shbdk_bin_put_map(buf, off, shbdk_dict_user_entries(dict));
     return str_new(buf, off);
 }
 
@@ -224,19 +224,19 @@ fn shabda_to_binary(dict): i64 {
 # SECURITY: every length/count field below is attacker-controlled (the blob may
 # be a corrupt or malicious .bin from disk/mmap). The Rust oracle got this bound
 # for free from postcard's bounds-checked reader; this port must enforce it by
-# hand. `_shabda_bin_oob(off, need, len)` returns 1 if reading `need` bytes at
+# hand. `_shbdk_bin_oob(off, need, len)` returns 1 if reading `need` bytes at
 # `off` would run past the blob end (`len`); the get helpers return -1 on any
-# overrun, which propagates up to shabda_from_binary → 0 (DeserializeUnexpectedEnd).
-fn _shabda_bin_oob(off, need, len): i64 {
+# overrun, which propagates up to shbdk_from_binary → 0 (DeserializeUnexpectedEnd).
+fn _shbdk_bin_oob(off, need, len): i64 {
     if (off + need > len) { return 1; }
     return 0;
 }
 
-fn _shabda_bin_get_pron(buf, off, prons, len): i64 {
-    if (_shabda_bin_oob(off, 2, len) == 1) { return (0 - 1); }
-    var np = _shabda_bin_get_u16(buf, off);
+fn _shbdk_bin_get_pron(buf, off, prons, len): i64 {
+    if (_shbdk_bin_oob(off, 2, len) == 1) { return (0 - 1); }
+    var np = _shbdk_bin_get_u16(buf, off);
     off = off + 2;
-    if (_shabda_bin_oob(off, np, len) == 1) { return (0 - 1); }
+    if (_shbdk_bin_oob(off, np, len) == 1) { return (0 - 1); }
     var phon = vec_new();
     var i = 0;
     while (i < np) {
@@ -244,21 +244,21 @@ fn _shabda_bin_get_pron(buf, off, prons, len): i64 {
         off = off + 1;
         i = i + 1;
     }
-    var pron = shabda_pronunciation_new(phon);
-    if (_shabda_bin_oob(off, 1, len) == 1) { return (0 - 1); }
+    var pron = shbdk_pronunciation_new(phon);
+    if (_shbdk_bin_oob(off, 1, len) == 1) { return (0 - 1); }
     if (load8(buf + off) == 1) {
         off = off + 1;
-        if (_shabda_bin_oob(off, 8, len) == 1) { return (0 - 1); }
-        pron = shabda_pronunciation_with_frequency(pron, _shabda_bin_get_u64(buf, off));
+        if (_shbdk_bin_oob(off, 8, len) == 1) { return (0 - 1); }
+        pron = shbdk_pronunciation_with_frequency(pron, _shbdk_bin_get_u64(buf, off));
         off = off + 8;
     } else {
         off = off + 1;
     }
-    if (_shabda_bin_oob(off, 1, len) == 1) { return (0 - 1); }
+    if (_shbdk_bin_oob(off, 1, len) == 1) { return (0 - 1); }
     if (load8(buf + off) == 1) {
         off = off + 1;
-        if (_shabda_bin_oob(off, 1, len) == 1) { return (0 - 1); }
-        pron = shabda_pronunciation_with_region(pron, load8(buf + off));
+        if (_shbdk_bin_oob(off, 1, len) == 1) { return (0 - 1); }
+        pron = shbdk_pronunciation_with_region(pron, load8(buf + off));
         off = off + 1;
     } else {
         off = off + 1;
@@ -267,9 +267,9 @@ fn _shabda_bin_get_pron(buf, off, prons, len): i64 {
     return off;
 }
 
-fn _shabda_bin_get_map(dict, buf, off, is_user, len): i64 {
-    if (_shabda_bin_oob(off, 4, len) == 1) { return (0 - 1); }
-    var n = _shabda_bin_get_u32(buf, off);
+fn _shbdk_bin_get_map(dict, buf, off, is_user, len): i64 {
+    if (_shbdk_bin_oob(off, 4, len) == 1) { return (0 - 1); }
+    var n = _shbdk_bin_get_u32(buf, off);
     off = off + 4;
     var i = 0;
     var wlen = 0;
@@ -279,28 +279,28 @@ fn _shabda_bin_get_map(dict, buf, off, is_user, len): i64 {
     var j = 0;
     var entry = 0;
     while (i < n) {
-        if (_shabda_bin_oob(off, 2, len) == 1) { return (0 - 1); }
-        wlen = _shabda_bin_get_u16(buf, off);
+        if (_shbdk_bin_oob(off, 2, len) == 1) { return (0 - 1); }
+        wlen = _shbdk_bin_get_u16(buf, off);
         off = off + 2;
-        if (_shabda_bin_oob(off, wlen, len) == 1) { return (0 - 1); }
-        word = _shabda_bin_dup(buf, off, wlen);
+        if (_shbdk_bin_oob(off, wlen, len) == 1) { return (0 - 1); }
+        word = _shbdk_bin_dup(buf, off, wlen);
         off = off + wlen;
-        if (_shabda_bin_oob(off, 2, len) == 1) { return (0 - 1); }
-        np = _shabda_bin_get_u16(buf, off);
+        if (_shbdk_bin_oob(off, 2, len) == 1) { return (0 - 1); }
+        np = _shbdk_bin_get_u16(buf, off);
         off = off + 2;
         prons = vec_new();
         j = 0;
         while (j < np) {
-            off = _shabda_bin_get_pron(buf, off, prons, len);
+            off = _shbdk_bin_get_pron(buf, off, prons, len);
             if (off < 0) { return (0 - 1); }
             j = j + 1;
         }
-        entry = shabda_dict_entry_from_pronunciations(prons);
+        entry = shbdk_dict_entry_from_pronunciations(prons);
         if (entry != 0) {
             if (is_user == 1) {
-                shabda_dict_insert_user_entry(dict, word, entry);
+                shbdk_dict_insert_user_entry(dict, word, entry);
             } else {
-                shabda_dict_insert_entry(dict, word, entry);
+                shbdk_dict_insert_entry(dict, word, entry);
             }
         }
         i = i + 1;
@@ -312,40 +312,40 @@ fn _shabda_bin_get_map(dict, buf, off, is_user, len): i64 {
 # (too short, bad magic, bad version, or any length/count field that overruns
 # the blob — a malformed/truncated blob decodes to 0, never an OOB read).
 #must_use
-fn shabda_from_binary(data): i64 {
+fn shbdk_from_binary(data): i64 {
     var buf = str_data(data);
     var len = str_len(data);
-    if (len < SHABDA_BIN_HEADER) { return 0; }
+    if (len < SHBDK_BIN_HEADER) { return 0; }
     if (load8(buf + 0) != 83) { return 0; }
     if (load8(buf + 1) != 72) { return 0; }
     if (load8(buf + 2) != 66) { return 0; }
     if (load8(buf + 3) != 68) { return 0; }
-    if (load8(buf + 4) != SHABDA_BIN_VERSION) { return 0; }
+    if (load8(buf + 4) != SHBDK_BIN_VERSION) { return 0; }
     var off = 5;
-    var dict = shabda_dict_new();
-    if (_shabda_bin_oob(off, 1, len) == 1) { return 0; }
+    var dict = shbdk_dict_new();
+    if (_shbdk_bin_oob(off, 1, len) == 1) { return 0; }
     if (load8(buf + off) == 1) {
         off = off + 1;
-        if (_shabda_bin_oob(off, 2, len) == 1) { return 0; }
-        var llen = _shabda_bin_get_u16(buf, off);
+        if (_shbdk_bin_oob(off, 2, len) == 1) { return 0; }
+        var llen = _shbdk_bin_get_u16(buf, off);
         off = off + 2;
-        if (_shabda_bin_oob(off, llen, len) == 1) { return 0; }
-        shabda_dict_set_language(dict, _shabda_bin_dup(buf, off, llen));
+        if (_shbdk_bin_oob(off, llen, len) == 1) { return 0; }
+        shbdk_dict_set_language(dict, _shbdk_bin_dup(buf, off, llen));
         off = off + llen;
     } else {
         off = off + 1;
     }
-    off = _shabda_bin_get_map(dict, buf, off, 0, len);
+    off = _shbdk_bin_get_map(dict, buf, off, 0, len);
     if (off < 0) { return 0; }
-    off = _shabda_bin_get_map(dict, buf, off, 1, len);
+    off = _shbdk_bin_get_map(dict, buf, off, 1, len);
     if (off < 0) { return 0; }
     return dict;
 }
 
 # ---- file I/O ----------------------------------------------------------------
 # Save a dict to a binary file. 0 on success, negative on error.
-fn shabda_save_binary_file(dict, path): i64 {
-    var blob = shabda_to_binary(dict);
+fn shbdk_save_binary_file(dict, path): i64 {
+    var blob = shbdk_to_binary(dict);
     var n = file_write_all(path, str_data(blob), str_len(blob));
     if (n < 0) { return (0 - 1); }
     return 0;
@@ -353,12 +353,12 @@ fn shabda_save_binary_file(dict, path): i64 {
 
 # Load a dict from a binary file, or 0 on read / decode error.
 #must_use
-fn shabda_load_binary_file(path): i64 {
+fn shbdk_load_binary_file(path): i64 {
     var buf = alloc(8388608);
     var n = file_read_all(path, buf, 8388607);
     if (n < 0) { return 0; }
     # SECURITY: a full-buffer read means the file is >= 8 MB — fail loud rather than
     # decode a truncated blob (from_binary is bounds-checked, but this is explicit).
     if (n >= 8388607) { return 0; }
-    return shabda_from_binary(str_new(buf, n));
+    return shbdk_from_binary(str_new(buf, n));
 }

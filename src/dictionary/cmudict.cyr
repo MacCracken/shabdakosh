@@ -2,15 +2,15 @@
 #
 # The runtime counterpart to programs/gen_cmudict.cyr: parses the packed pieces
 # from _cmudict_data.cyr (entry = word|o,o,o[~freq][^RR]; ) into a lib/hashmap
-# of word(Str) -> ShDictEntry*. Hand-written (stable); the DATA is generated.
+# of word(Str) -> ShbdkDictEntry*. Hand-written (stable); the DATA is generated.
 #
 # Included after _cmudict_data.cyr (piece globals) and src/dictionary/entry.cyr
-# (ShDictEntry / ShPronunciation / region). Keys share the static piece bytes.
+# (ShbdkDictEntry / ShbdkPronunciation / region). Keys share the static piece bytes.
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
 # Parse one packed entry piece[s..e) and insert it into map `m`.
-fn _shabda_cmudict_parse_entry(m, piece, s, e): i64 {
+fn _shbdk_cmudict_parse_entry(m, piece, s, e): i64 {
     # word = [s .. wsep), wsep at the first '|'
     var wsep = s;
     while (wsep < e) {
@@ -33,8 +33,8 @@ fn _shabda_cmudict_parse_entry(m, piece, s, e): i64 {
 
         # phonemes: comma-separated ordinals until '~' / '^' / pe
         var phon = vec_new();
-        var freq = SHABDA_FREQ_NONE;
-        var region = SHABDA_REGION_NONE;
+        var freq = SHBDK_FREQ_NONE;
+        var region = SHBDK_REGION_NONE;
         var q = ps;
         var cur = 0;
         var indig = 0;
@@ -79,49 +79,49 @@ fn _shabda_cmudict_parse_entry(m, piece, s, e): i64 {
                     store8(rbuf + 0, load8(piece + q));
                     store8(rbuf + 1, load8(piece + q + 1));
                     store8(rbuf + 2, 0);
-                    region = shabda_region_from_code(rbuf);
+                    region = shbdk_region_from_code(rbuf);
                 }
             }
         }
 
-        var pron = shabda_pronunciation_new(phon);
-        if (freq != SHABDA_FREQ_NONE) { pron = shabda_pronunciation_with_frequency(pron, freq); }
-        if (region != SHABDA_REGION_NONE) { pron = shabda_pronunciation_with_region(pron, region); }
+        var pron = shbdk_pronunciation_new(phon);
+        if (freq != SHBDK_FREQ_NONE) { pron = shbdk_pronunciation_with_frequency(pron, freq); }
+        if (region != SHBDK_REGION_NONE) { pron = shbdk_pronunciation_with_region(pron, region); }
         vec_push(prons, pron);
     }
 
     # 1 pron -> DictEntry::new; >1 -> from_pronunciations (sorts by freq), as build.rs did.
     var entry = 0;
     if (vec_len(prons) == 1) {
-        entry = shabda_dict_entry_new(vec_get(prons, 0));
+        entry = shbdk_dict_entry_new(vec_get(prons, 0));
     } else {
-        entry = shabda_dict_entry_from_pronunciations(prons);
+        entry = shbdk_dict_entry_from_pronunciations(prons);
     }
     map_set(m, wkey, entry);
     return 0;
 }
 
-# Load every packed piece into `m` (word Str -> ShDictEntry*). Returns map size.
-fn shabda_cmudict_load(m): i64 {
-    var np = _SHABDA_CMUDICT_PIECE_COUNT;
+# Load every packed piece into `m` (word Str -> ShbdkDictEntry*). Returns map size.
+fn shbdk_cmudict_load(m): i64 {
+    var np = _SHBDK_CMUDICT_PIECE_COUNT;
     var pi = 0;
     var piece = 0;
     var len = 0;
     var s = 0;
     var i = 0;
     while (pi < np) {
-        piece = _shabda_cmudict_piece(pi);
+        piece = _shbdk_cmudict_piece(pi);
         len = strlen(piece);
         s = 0;
         i = 0;
         while (i < len) {
             if (load8(piece + i) == 59) {   # ';' entry boundary
-                if (i > s) { _shabda_cmudict_parse_entry(m, piece, s, i); }
+                if (i > s) { _shbdk_cmudict_parse_entry(m, piece, s, i); }
                 s = i + 1;
             }
             i = i + 1;
         }
-        if (s < len) { _shabda_cmudict_parse_entry(m, piece, s, len); }
+        if (s < len) { _shbdk_cmudict_parse_entry(m, piece, s, len); }
         pi = pi + 1;
     }
     return map_size(m);
@@ -129,8 +129,8 @@ fn shabda_cmudict_load(m): i64 {
 
 # Convenience: a fresh map populated with the base English dictionary.
 #must_use
-fn shabda_cmudict_english(): i64 {
+fn shbdk_cmudict_english(): i64 {
     var m = map_new_str();
-    shabda_cmudict_load(m);
+    shbdk_cmudict_load(m);
     return m;
 }

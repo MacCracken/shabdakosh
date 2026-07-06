@@ -8,7 +8,7 @@ its pronunciation API from your own `.cyr` source.
 shabdakosh ships as a **Cyrius distlib bundle** (`dist/shabdakosh.cyr`) — a single
 concatenation of its modules in dependency order. You pull that bundle; you do
 **not** build from `src/`. There is no Cargo crate, no `use`, no crates.io — the
-distlib links flat, C-style, with every public symbol `shabda_`-prefixed.
+distlib links flat, C-style, with every public symbol `shbdk_`-prefixed.
 
 ## 1. Declare the dependency
 
@@ -31,7 +31,7 @@ bundle links. shabdakosh is built on two sibling AGNOS crates:
   svara itself has a small backend prefix-chain (`hisab` → `goonj` → `naad`),
   surfaced by the `dist/shabdakosh.deps` sidecar (see §4).
 - **varna** — phoneme inventories, phonotactics, and script/registry metadata.
-  Used by `shabda_validate_inventory` and `shabda_detect_script`.
+  Used by `shbdk_validate_inventory` and `shbdk_detect_script`.
 
 ```toml
 [deps.svara]
@@ -56,8 +56,8 @@ stdlib = [
     "syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args",
     "assert", "fnptr", "atomic", "sakshi", "math", "ganita", "tagged",
     "hashmap",   # base-dictionary store (the hashbrown replacement)
-    "bayan",     # JSON codecs (shabda_to_json / shabda_from_json)
-    "mmap",      # memory-mapped lazy dictionary (shabda_lazy_open)
+    "bayan",     # JSON codecs (shbdk_to_json / shbdk_from_json)
+    "mmap",      # memory-mapped lazy dictionary (shbdk_lazy_open)
 ]
 ```
 
@@ -85,7 +85,7 @@ includes explicitly, deps before dependents. The order that links:
 3. the shabdakosh bundle
 
 Then call `alloc_init()` once at the top of `main()` before any allocating call
-(every dictionary constructor allocates), and use the `shabda_*` API.
+(every dictionary constructor allocates), and use the `shbdk_*` API.
 
 ### Complete minimal example
 
@@ -107,11 +107,11 @@ fn main(): i64 {
     alloc_init();
 
     # Built-in English dictionary — 10,617 generated entries.
-    var dict = shabda_dict_english();
-    println_int(shabda_dict_len(dict));          # -> 10617
+    var dict = shbdk_dict_english();
+    println_int(shbdk_dict_len(dict));          # -> 10617
 
     # Script detection (varna-backed): "hello" is Latin script.
-    println(shabda_detect_script("hello"));       # -> Latn
+    println(shbdk_detect_script("hello"));       # -> Latn
 
     return 0;
 }
@@ -132,18 +132,18 @@ cyrius build src/main.cyr build/myapp
 
 ### Looking up a pronunciation
 
-`shabda_dict_lookup(dict, word)` returns the **primary pronunciation** as a `vec`
+`shbdk_dict_lookup(dict, word)` returns the **primary pronunciation** as a `vec`
 of svara `SVARA_PH_*` ordinals — or `0` when the word is unknown (see the calling
-convention below). Render an ordinal with `shabda_phoneme_to_ipa` /
-`shabda_phoneme_to_arpabet`, or the whole vec with `shabda_phonemes_to_ipa`:
+convention below). Render an ordinal with `shbdk_phoneme_to_ipa` /
+`shbdk_phoneme_to_arpabet`, or the whole vec with `shbdk_phonemes_to_ipa`:
 
 ```cyrius
-var phonemes = shabda_dict_lookup(dict, "hello");
+var phonemes = shbdk_dict_lookup(dict, "hello");
 if (phonemes == 0) {
     println("unknown word");
 } else {
     println_int(vec_len(phonemes));               # phoneme count
-    println(shabda_phonemes_to_ipa(phonemes));    # e.g. "hɛloʊ"
+    println(shbdk_phonemes_to_ipa(phonemes));    # e.g. "hɛloʊ"
 }
 ```
 
@@ -151,41 +151,41 @@ Other core dictionary entry points (all in `src/dictionary/mod.cyr`):
 
 | Function | Returns |
 |---|---|
-| `shabda_dict_new()` | empty dictionary handle |
-| `shabda_dict_english()` | full English dict (10,617 entries) |
-| `shabda_dict_english_minimal()` | small built-in dict (fast, for tests) |
-| `shabda_dict_len(d)` | base entry count |
-| `shabda_dict_user_len(d)` | user-overlay entry count |
-| `shabda_dict_lookup(d, word)` | primary phonemes vec, or `0` |
-| `shabda_dict_lookup_entry(d, word)` | full `DictEntry` handle, or `0` |
-| `shabda_dict_lookup_all(d, word)` | vec of all pronunciations, or `0` |
-| `shabda_dict_insert(d, word, phonemes)` | insert into base map |
-| `shabda_dict_insert_user(d, word, phonemes)` | insert into the user overlay |
-| `shabda_dict_language(d)` | language code (0 if unset) |
-| `shabda_detect_script(word)` | ISO-15924 script code cstring (e.g. `"Latn"`) |
+| `shbdk_dict_new()` | empty dictionary handle |
+| `shbdk_dict_english()` | full English dict (10,617 entries) |
+| `shbdk_dict_english_minimal()` | small built-in dict (fast, for tests) |
+| `shbdk_dict_len(d)` | base entry count |
+| `shbdk_dict_user_len(d)` | user-overlay entry count |
+| `shbdk_dict_lookup(d, word)` | primary phonemes vec, or `0` |
+| `shbdk_dict_lookup_entry(d, word)` | full `DictEntry` handle, or `0` |
+| `shbdk_dict_lookup_all(d, word)` | vec of all pronunciations, or `0` |
+| `shbdk_dict_insert(d, word, phonemes)` | insert into base map |
+| `shbdk_dict_insert_user(d, word, phonemes)` | insert into the user overlay |
+| `shbdk_dict_language(d)` | language code (0 if unset) |
+| `shbdk_detect_script(word)` | ISO-15924 script code cstring (e.g. `"Latn"`) |
 
-## Calling convention: pointer-or-0 and `shabda_is_err`
+## Calling convention: pointer-or-0 and `shbdk_is_err`
 
 shabdakosh is a Cyrius port of a Rust library, so Rust's `Option`/`Result` map to
 two flat conventions. Know which one a function uses before you branch on it:
 
 - **`Option<T>` → sentinel.** A function that "returns a payload or nothing"
-  returns a **payload pointer, with `0` meaning none**. `shabda_dict_lookup`
+  returns a **payload pointer, with `0` meaning none**. `shbdk_dict_lookup`
   returns the phonemes vec, or `0` for an unknown word — always guard with
   `if (result == 0)` before dereferencing. (The phoneme-sentinel for a *single*
-  missing phoneme is `SHABDA_PH_NONE`, i.e. `-1`, not `0`.)
+  missing phoneme is `SHBDK_PH_NONE`, i.e. `-1`, not `0`.)
 
 - **`Result<(), E>` → packed sakshi error.** A fallible operation returns a
   **packed i64 error** where `0 == ok` and non-zero is an error, and writes any
-  payload to an out-param. Test the return with `shabda_is_err(err)` (1 if error)
-  or `shabda_is_ok(err)` (1 if ok). Get diagnostic text with
-  `shabda_err_name(err)`. There is no `Display`/`thiserror` — sakshi (the AGNOS
+  payload to an out-param. Test the return with `shbdk_is_err(err)` (1 if error)
+  or `shbdk_is_ok(err)` (1 if ok). Get diagnostic text with
+  `shbdk_err_name(err)`. There is no `Display`/`thiserror` — sakshi (the AGNOS
   error substrate) packs `[ctx][category][code]` into the i64.
 
 ```cyrius
-var err = /* some fallible shabda_* call */;
-if (shabda_is_err(err) == 1) {
-    println(shabda_err_name(err));                # human-readable diagnostic
+var err = /* some fallible shbdk_* call */;
+if (shbdk_is_err(err) == 1) {
+    println(shbdk_err_name(err));                # human-readable diagnostic
 }
 ```
 

@@ -20,62 +20,62 @@ fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 
 # ================================================================
 test_group("to_json / from_json roundtrip");
-var d = shabda_parse_cmudict(";;; @freq=0.5\ncat  K AE1 T\ndog  D AO1 G\n");
-shabda_dict_set_language(d, "en");
-shabda_dict_insert_user(d, "custom", _v1(SVARA_PH_VOWEL_A));
+var d = shbdk_parse_cmudict(";;; @freq=0.5\ncat  K AE1 T\ndog  D AO1 G\n");
+shbdk_dict_set_language(d, "en");
+shbdk_dict_insert_user(d, "custom", _v1(SVARA_PH_VOWEL_A));
 
-var json = shabda_to_json(d);
+var json = shbdk_to_json(d);
 assert_neq(json, 0, "to_json produced output");
 
-var d2 = shabda_from_json(json);
+var d2 = shbdk_from_json(json);
 assert_neq(d2, 0, "from_json parsed");
-assert_streq(shabda_dict_language(d2), "en", "language preserved");
-assert_eq(shabda_dict_len(d2), 2, "2 base entries");
-assert_eq(shabda_dict_user_len(d2), 1, "1 user entry");
+assert_streq(shbdk_dict_language(d2), "en", "language preserved");
+assert_eq(shbdk_dict_len(d2), 2, "2 base entries");
+assert_eq(shbdk_dict_user_len(d2), 1, "1 user entry");
 
-var catp = shabda_dict_lookup(d2, "cat");
+var catp = shbdk_dict_lookup(d2, "cat");
 assert_neq(catp, 0, "cat present");
 assert_eq(vec_len(catp), 3, "cat 3 phonemes");
 assert_eq(vec_get(catp, 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
 assert_eq(vec_get(catp, 2), SVARA_PH_PLOSIVE_T, "cat[2] T");
 
 # frequency survives the roundtrip
-var ce = shabda_dict_lookup_entry(d2, "cat");
-assert_eq(shabda_pronunciation_has_frequency(shabda_dict_entry_primary(ce)), 1, "freq present");
-assert_eq(shabda_pronunciation_frequency(shabda_dict_entry_primary(ce)), 0.5, "freq 0.5 preserved");
+var ce = shbdk_dict_lookup_entry(d2, "cat");
+assert_eq(shbdk_pronunciation_has_frequency(shbdk_dict_entry_primary(ce)), 1, "freq present");
+assert_eq(shbdk_pronunciation_frequency(shbdk_dict_entry_primary(ce)), 0.5, "freq 0.5 preserved");
 
 # user overlay entry survives + takes precedence
-assert_eq(vec_get(shabda_dict_lookup(d2, "custom"), 0), SVARA_PH_VOWEL_A, "user 'custom' preserved");
+assert_eq(vec_get(shbdk_dict_lookup(d2, "custom"), 0), SVARA_PH_VOWEL_A, "user 'custom' preserved");
 
 # ================================================================
 test_group("region survives roundtrip");
-var dr = shabda_parse_cmudict(";;; @region=GA\npat  P AE1 T\n");
-var dr2 = shabda_from_json(shabda_to_json(dr));
+var dr = shbdk_parse_cmudict(";;; @region=GA\npat  P AE1 T\n");
+var dr2 = shbdk_from_json(shbdk_to_json(dr));
 assert_neq(dr2, 0, "region dict roundtrip");
-var pe = shabda_dict_entry_primary(shabda_dict_lookup_entry(dr2, "pat"));
-assert_eq(shabda_pronunciation_has_region(pe), 1, "region present");
-assert_eq(shabda_pronunciation_region(pe), SHABDA_REGION_GA, "region GA preserved");
+var pe = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(dr2, "pat"));
+assert_eq(shbdk_pronunciation_has_region(pe), 1, "region present");
+assert_eq(shbdk_pronunciation_region(pe), SHBDK_REGION_GA, "region GA preserved");
 
 # ================================================================
 test_group("empty dict + no language");
-var de = shabda_dict_new();
-var de2 = shabda_from_json(shabda_to_json(de));
+var de = shbdk_dict_new();
+var de2 = shbdk_from_json(shbdk_to_json(de));
 assert_neq(de2, 0, "empty dict roundtrip");
-assert_eq(shabda_dict_len(de2), 0, "0 entries");
-assert_eq(shabda_dict_language(de2), 0, "no language");
+assert_eq(shbdk_dict_len(de2), 0, "0 entries");
+assert_eq(shbdk_dict_language(de2), 0, "no language");
 
 # ================================================================
 test_group("from_json error");
-assert_eq(shabda_from_json("not valid json {{{"), 0, "invalid JSON -> 0");
+assert_eq(shbdk_from_json("not valid json {{{"), 0, "invalid JSON -> 0");
 
 # ================================================================
 # SECURITY regression (audit follow-up 2026-07-05): a present-but-wrong-typed
 # language/region must not null-deref (json_v_str on a non-string returns a 0 Str,
 # and str_cstr(0) would crash). Now gated on json_v_is_str.
 test_group("wrong-typed JSON fields (no null deref)");
-assert_neq(shabda_from_json("{\"language\":42,\"entries\":{}}"), 0, "int language -> dict (no crash)");
-assert_eq(shabda_dict_language(shabda_from_json("{\"language\":42}")), 0, "int language ignored -> no language");
-assert_neq(shabda_from_json("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"region\":[]}]}}}"), 0, "array region -> dict (no crash)");
+assert_neq(shbdk_from_json("{\"language\":42,\"entries\":{}}"), 0, "int language -> dict (no crash)");
+assert_eq(shbdk_dict_language(shbdk_from_json("{\"language\":42}")), 0, "int language ignored -> no language");
+assert_neq(shbdk_from_json("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"region\":[]}]}}}"), 0, "array region -> dict (no crash)");
 
 var rc = assert_summary();
 syscall(60, rc);

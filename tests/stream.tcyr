@@ -17,44 +17,44 @@ alloc_init();
 fn _w2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
 fn _w3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
 
-var dict = shabda_dict_english_minimal();
+var dict = shbdk_dict_english_minimal();
 
 # ================================================================
 test_group("stream basic (both found)");
-var s = shabda_dict_lookup_stream(dict, _w2("hello", "world"));
-assert_eq(shabda_lookup_stream_next(s), 1, "item 1");
-assert_neq(shabda_stream_phonemes(s), 0, "hello found");
-assert_eq(shabda_lookup_stream_next(s), 1, "item 2");
-assert_neq(shabda_stream_phonemes(s), 0, "world found");
-assert_eq(shabda_lookup_stream_next(s), 0, "exhausted");
+var s = shbdk_dict_lookup_stream(dict, _w2("hello", "world"));
+assert_eq(shbdk_lookup_stream_next(s), 1, "item 1");
+assert_neq(shbdk_stream_phonemes(s), 0, "hello found");
+assert_eq(shbdk_lookup_stream_next(s), 1, "item 2");
+assert_neq(shbdk_stream_phonemes(s), 0, "world found");
+assert_eq(shbdk_lookup_stream_next(s), 0, "exhausted");
 
 # ================================================================
 test_group("stream with miss");
-var s2 = shabda_dict_lookup_stream(dict, _w2("hello", "xyzzy"));
-shabda_lookup_stream_next(s2);
-assert_neq(shabda_stream_phonemes(s2), 0, "hello found");
-shabda_lookup_stream_next(s2);
-assert_eq(shabda_stream_phonemes(s2), 0, "xyzzy not found (None)");
+var s2 = shbdk_dict_lookup_stream(dict, _w2("hello", "xyzzy"));
+shbdk_lookup_stream_next(s2);
+assert_neq(shbdk_stream_phonemes(s2), 0, "hello found");
+shbdk_lookup_stream_next(s2);
+assert_eq(shbdk_stream_phonemes(s2), 0, "xyzzy not found (None)");
 
 # ================================================================
 test_group("stream empty");
-var s3 = shabda_dict_lookup_stream(dict, vec_new());
-assert_eq(shabda_lookup_stream_next(s3), 0, "empty -> done immediately");
+var s3 = shbdk_dict_lookup_stream(dict, vec_new());
+assert_eq(shbdk_lookup_stream_next(s3), 0, "empty -> done immediately");
 
 # ================================================================
 test_group("stream preserves words");
-var s4 = shabda_dict_lookup_stream(dict, _w2("hello", "world"));
-shabda_lookup_stream_next(s4);
-assert_streq(shabda_stream_word(s4), "hello", "word 0 = hello");
-shabda_lookup_stream_next(s4);
-assert_streq(shabda_stream_word(s4), "world", "word 1 = world");
+var s4 = shbdk_dict_lookup_stream(dict, _w2("hello", "world"));
+shbdk_lookup_stream_next(s4);
+assert_streq(shbdk_stream_word(s4), "hello", "word 0 = hello");
+shbdk_lookup_stream_next(s4);
+assert_streq(shbdk_stream_word(s4), "world", "word 1 = world");
 
 # ================================================================
 test_group("stream size_hint");
-var s5 = shabda_dict_lookup_stream(dict, _w3("a", "b", "c"));
-assert_eq(shabda_lookup_stream_size_hint(s5), 3, "3 remaining at start");
-shabda_lookup_stream_next(s5);
-assert_eq(shabda_lookup_stream_size_hint(s5), 2, "2 remaining after 1");
+var s5 = shbdk_dict_lookup_stream(dict, _w3("a", "b", "c"));
+assert_eq(shbdk_lookup_stream_size_hint(s5), 3, "3 remaining at start");
+shbdk_lookup_stream_next(s5);
+assert_eq(shbdk_lookup_stream_size_hint(s5), 2, "2 remaining after 1");
 
 var rc = assert_summary();
 syscall(60, rc);

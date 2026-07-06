@@ -18,7 +18,7 @@ alloc_init();
 fn _mock_predict(word, state): i64 {
     var phon = vec_new();
     vec_push(phon, SVARA_PH_VOWEL_SCHWA);
-    return shabda_g2p_result_new(phon, state);
+    return shbdk_g2p_result_new(phon, state);
 }
 # NoopModel: always None.
 fn _noop_predict(word, state): i64 { return 0; }
@@ -28,77 +28,77 @@ fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v;
 
 # ================================================================
 test_group("G2PResult");
-var gr = shabda_g2p_result_new(_v1(SVARA_PH_PLOSIVE_K), 0.85);
-assert_eq(vec_get(shabda_g2p_result_phonemes(gr), 0), SVARA_PH_PLOSIVE_K, "phonemes[0] K");
-assert_eq(shabda_g2p_result_confidence(gr), 0.85, "confidence 0.85");
-var gr2 = shabda_g2p_result_new(_v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH), 0.9);
-assert_eq(vec_len(shabda_g2p_result_into_phonemes(gr2)), 2, "into_phonemes len 2");
+var gr = shbdk_g2p_result_new(_v1(SVARA_PH_PLOSIVE_K), 0.85);
+assert_eq(vec_get(shbdk_g2p_result_phonemes(gr), 0), SVARA_PH_PLOSIVE_K, "phonemes[0] K");
+assert_eq(shbdk_g2p_result_confidence(gr), 0.85, "confidence 0.85");
+var gr2 = shbdk_g2p_result_new(_v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH), 0.9);
+assert_eq(vec_len(shbdk_g2p_result_into_phonemes(gr2)), 2, "into_phonemes len 2");
 
 # ================================================================
 test_group("fallback lookup: dict then g2p");
-var fb = shabda_dict_with_fallback(shabda_dict_english_minimal(), &_mock_predict, 0.5);
-assert_neq(shabda_fallback_dict_lookup(fb, "hello"), 0, "hello from dict");
-var xz = shabda_fallback_dict_lookup(fb, "xyzzy");
+var fb = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &_mock_predict, 0.5);
+assert_neq(shbdk_fallback_dict_lookup(fb, "hello"), 0, "hello from dict");
+var xz = shbdk_fallback_dict_lookup(fb, "xyzzy");
 assert_neq(xz, 0, "xyzzy from g2p");
 assert_eq(vec_get(xz, 0), SVARA_PH_VOWEL_SCHWA, "g2p -> [schwa]");
 # noop model -> None
-var fbn = shabda_dict_with_fallback(shabda_dict_english_minimal(), &_noop_predict, 0);
-assert_eq(shabda_fallback_dict_lookup(fbn, "xyzzy"), 0, "noop -> None");
+var fbn = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &_noop_predict, 0);
+assert_eq(shbdk_fallback_dict_lookup(fbn, "xyzzy"), 0, "noop -> None");
 
 # ================================================================
 test_group("lookup_with_source");
-var lm = shabda_dict_english_minimal();
-shabda_dict_insert_user(lm, "custom", _v1(SVARA_PH_VOWEL_A));
-var fbs = shabda_dict_with_fallback(lm, &_mock_predict, 0.75);
-assert_eq(shabda_lookup_result_source(shabda_fallback_dict_lookup_with_source(fbs, "custom")), SHABDA_SOURCE_USER_OVERLAY, "custom -> UserOverlay");
-assert_eq(shabda_lookup_result_source(shabda_fallback_dict_lookup_with_source(fbs, "hello")), SHABDA_SOURCE_BASE_DICTIONARY, "hello -> BaseDictionary");
-var g2ps = shabda_fallback_dict_lookup_with_source(fbs, "xyzzy");
-assert_eq(shabda_lookup_result_source(g2ps), SHABDA_SOURCE_G2P_MODEL, "xyzzy -> G2PModel");
-assert_eq(vec_get(shabda_lookup_result_phonemes(g2ps), 0), SVARA_PH_VOWEL_SCHWA, "g2p phonemes [schwa]");
-assert_eq(shabda_lookup_result_confidence(g2ps), 0.75, "g2p confidence 0.75");
+var lm = shbdk_dict_english_minimal();
+shbdk_dict_insert_user(lm, "custom", _v1(SVARA_PH_VOWEL_A));
+var fbs = shbdk_dict_with_fallback(lm, &_mock_predict, 0.75);
+assert_eq(shbdk_lookup_result_source(shbdk_fallback_dict_lookup_with_source(fbs, "custom")), SHBDK_SOURCE_USER_OVERLAY, "custom -> UserOverlay");
+assert_eq(shbdk_lookup_result_source(shbdk_fallback_dict_lookup_with_source(fbs, "hello")), SHBDK_SOURCE_BASE_DICTIONARY, "hello -> BaseDictionary");
+var g2ps = shbdk_fallback_dict_lookup_with_source(fbs, "xyzzy");
+assert_eq(shbdk_lookup_result_source(g2ps), SHBDK_SOURCE_G2P_MODEL, "xyzzy -> G2PModel");
+assert_eq(vec_get(shbdk_lookup_result_phonemes(g2ps), 0), SVARA_PH_VOWEL_SCHWA, "g2p phonemes [schwa]");
+assert_eq(shbdk_lookup_result_confidence(g2ps), 0.75, "g2p confidence 0.75");
 
 # ================================================================
 test_group("user overlay precedence over g2p");
-var up = shabda_dict_new();
-shabda_dict_insert_user(up, "test", _v1(SVARA_PH_PLOSIVE_T));
-var fbu = shabda_dict_with_fallback(up, &_mock_predict, 0.9);
-var ur = shabda_fallback_dict_lookup_with_source(fbu, "test");
-assert_eq(vec_get(shabda_lookup_result_phonemes(ur), 0), SVARA_PH_PLOSIVE_T, "test -> [T]");
-assert_eq(shabda_lookup_result_source(ur), SHABDA_SOURCE_USER_OVERLAY, "test -> UserOverlay (not g2p)");
+var up = shbdk_dict_new();
+shbdk_dict_insert_user(up, "test", _v1(SVARA_PH_PLOSIVE_T));
+var fbu = shbdk_dict_with_fallback(up, &_mock_predict, 0.9);
+var ur = shbdk_fallback_dict_lookup_with_source(fbu, "test");
+assert_eq(vec_get(shbdk_lookup_result_phonemes(ur), 0), SVARA_PH_PLOSIVE_T, "test -> [T]");
+assert_eq(shbdk_lookup_result_source(ur), SHBDK_SOURCE_USER_OVERLAY, "test -> UserOverlay (not g2p)");
 
 # ================================================================
 test_group("promote_prediction");
-var fbp = shabda_dict_with_fallback(shabda_dict_english_minimal(), &_mock_predict, 0.8);
-assert_eq(shabda_fallback_dict_promote_prediction(fbp, "newword"), 1, "promoted");
-assert_eq(shabda_fallback_dict_promote_prediction(fbp, "newword"), 0, "already in overlay -> no-op");
-assert_eq(shabda_dict_user_len(shabda_fallback_dict_dict(fbp)), 1, "user_len 1");
-assert_eq(shabda_fallback_dict_promote_prediction(fbp, "hello"), 0, "existing base word not promoted");
+var fbp = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &_mock_predict, 0.8);
+assert_eq(shbdk_fallback_dict_promote_prediction(fbp, "newword"), 1, "promoted");
+assert_eq(shbdk_fallback_dict_promote_prediction(fbp, "newword"), 0, "already in overlay -> no-op");
+assert_eq(shbdk_dict_user_len(shbdk_fallback_dict_dict(fbp)), 1, "user_len 1");
+assert_eq(shbdk_fallback_dict_promote_prediction(fbp, "hello"), 0, "existing base word not promoted");
 
 # ================================================================
 test_group("promote_if_confident");
-var fbc = shabda_dict_with_fallback(shabda_dict_english_minimal(), &_mock_predict, 0.8);
-assert_eq(shabda_fallback_dict_promote_if_confident(fbc, "newword", 0.7), 1, "0.8 >= 0.7 -> promoted");
-assert_eq(shabda_dict_user_len(shabda_fallback_dict_dict(fbc)), 1, "user_len 1");
-var fbc2 = shabda_dict_with_fallback(shabda_dict_english_minimal(), &_mock_predict, 0.5);
-assert_eq(shabda_fallback_dict_promote_if_confident(fbc2, "newword", 0.7), 0, "0.5 < 0.7 -> not promoted");
-assert_eq(shabda_dict_user_len(shabda_fallback_dict_dict(fbc2)), 0, "user_len 0");
+var fbc = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &_mock_predict, 0.8);
+assert_eq(shbdk_fallback_dict_promote_if_confident(fbc, "newword", 0.7), 1, "0.8 >= 0.7 -> promoted");
+assert_eq(shbdk_dict_user_len(shbdk_fallback_dict_dict(fbc)), 1, "user_len 1");
+var fbc2 = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &_mock_predict, 0.5);
+assert_eq(shbdk_fallback_dict_promote_if_confident(fbc2, "newword", 0.7), 0, "0.5 < 0.7 -> not promoted");
+assert_eq(shbdk_dict_user_len(shbdk_fallback_dict_dict(fbc2)), 0, "user_len 0");
 
 # ================================================================
 test_group("lookup_entry (dict layers only) / into_parts");
-var fbe = shabda_dict_with_fallback(shabda_dict_english_minimal(), &_mock_predict, 0.5);
-assert_neq(shabda_fallback_dict_lookup_entry(fbe, "hello"), 0, "hello entry present");
-assert_eq(shabda_fallback_dict_lookup_entry(fbe, "xyzzy"), 0, "xyzzy entry absent (no g2p)");
-assert_eq(shabda_dict_len(shabda_fallback_dict_dict(fbe)), 29, "into_parts dict.len == 29");
+var fbe = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &_mock_predict, 0.5);
+assert_neq(shbdk_fallback_dict_lookup_entry(fbe, "hello"), 0, "hello entry present");
+assert_eq(shbdk_fallback_dict_lookup_entry(fbe, "xyzzy"), 0, "xyzzy entry absent (no g2p)");
+assert_eq(shbdk_dict_len(shbdk_fallback_dict_dict(fbe)), 29, "into_parts dict.len == 29");
 
 # ================================================================
 test_group("FstModel (stub) + notation");
-var fst = shabda_fst_model_new("/path/to/model.fst", SHABDA_FST_NOTATION_ARPABET);
-assert_streq(shabda_fst_model_path(fst), "/path/to/model.fst", "model_path");
-assert_eq(shabda_fst_model_notation(fst), SHABDA_FST_NOTATION_ARPABET, "notation ARPABET");
+var fst = shbdk_fst_model_new("/path/to/model.fst", SHBDK_FST_NOTATION_ARPABET);
+assert_streq(shbdk_fst_model_path(fst), "/path/to/model.fst", "model_path");
+assert_eq(shbdk_fst_model_notation(fst), SHBDK_FST_NOTATION_ARPABET, "notation ARPABET");
 # FstModel as a model: predict is a stub -> None
-var fbf = shabda_dict_with_fallback(shabda_dict_english_minimal(), &shabda_fst_model_predict, fst);
-assert_eq(shabda_fallback_dict_lookup(fbf, "xyzzy"), 0, "FstModel stub -> None for unknown");
-assert_neq(shabda_fallback_dict_lookup(fbf, "hello"), 0, "hello still from dict");
+var fbf = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &shbdk_fst_model_predict, fst);
+assert_eq(shbdk_fallback_dict_lookup(fbf, "xyzzy"), 0, "FstModel stub -> None for unknown");
+assert_neq(shbdk_fallback_dict_lookup(fbf, "hello"), 0, "hello still from dict");
 
 var rc = assert_summary();
 syscall(60, rc);

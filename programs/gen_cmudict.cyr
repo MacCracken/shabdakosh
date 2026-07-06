@@ -7,7 +7,7 @@
 # since 6.4.10, so the ~283 KB data no longer needs sharding). Unlike build.rs
 # (which had to DUPLICATE the ARPABET table
 # because build scripts can't import the crate), this generator INCLUDES the
-# ported src/arpabet.cyr and reuses shabda_arpabet_to_phoneme_with_stress — one
+# ported src/arpabet.cyr and reuses shbdk_arpabet_to_phoneme_with_stress — one
 # source of truth.
 #
 # Packed format (one entry): word|o,o,o[~freq][^RR];  (o = svara phoneme ordinal;
@@ -211,8 +211,8 @@ fn main() {
                 k = k + 1;
             }
             store8(symbuf + k, 0);
-            ph = shabda_arpabet_to_phoneme_with_stress(symbuf);
-            if (ph == SHABDA_PH_NONE) {
+            ph = shbdk_arpabet_to_phoneme_with_stress(symbuf);
+            if (ph == SHBDK_PH_NONE) {
                 unknown = unknown + 1;
             } else {
                 vec_push(phon, ph);
@@ -272,7 +272,7 @@ fn main() {
     while (wi < nwords) {
         # open a new piece if needed
         if (piece_open == 0) {
-            oo = oo + _gc_emit_cstr(out, oo, "var _SHABDA_CMUDICT_PIECE_");
+            oo = oo + _gc_emit_cstr(out, oo, "var _SHBDK_CMUDICT_PIECE_");
             oo = oo + _gc_emit_dec(out, oo, piece_count);
             oo = oo + _gc_emit_cstr(out, oo, " = \"");
             piece_open = 1;
@@ -340,15 +340,15 @@ fn main() {
     }
 
     # piece count + accessor
-    oo = oo + _gc_emit_cstr(out, oo, "\nvar _SHABDA_CMUDICT_PIECE_COUNT = ");
+    oo = oo + _gc_emit_cstr(out, oo, "\nvar _SHBDK_CMUDICT_PIECE_COUNT = ");
     oo = oo + _gc_emit_dec(out, oo, piece_count);
     oo = oo + _gc_emit_cstr(out, oo, ";\n\n");
-    oo = oo + _gc_emit_cstr(out, oo, "fn _shabda_cmudict_piece(i): cstring {\n");
+    oo = oo + _gc_emit_cstr(out, oo, "fn _shbdk_cmudict_piece(i): cstring {\n");
     var ai = 0;
     while (ai < piece_count) {
         oo = oo + _gc_emit_cstr(out, oo, "    if (i == ");
         oo = oo + _gc_emit_dec(out, oo, ai);
-        oo = oo + _gc_emit_cstr(out, oo, ") { return _SHABDA_CMUDICT_PIECE_");
+        oo = oo + _gc_emit_cstr(out, oo, ") { return _SHBDK_CMUDICT_PIECE_");
         oo = oo + _gc_emit_dec(out, oo, ai);
         oo = oo + _gc_emit_cstr(out, oo, "; }\n");
         ai = ai + 1;

@@ -7,7 +7,7 @@
 > CMUdict/PLS/SSML/JSON/binary I/O.
 
 This is a Cyrius port of a 7,085-line Rust library (preserved at `rust-old/` as
-the parity oracle). The surface is **flat, C-style, `shabda_`-prefixed
+the parity oracle). The surface is **flat, C-style, `shbdk_`-prefixed
 functions** — no methods, traits, generics, `use`, `Cargo.toml`, or crates.io.
 Consumers pull the bundled `dist/shabdakosh.cyr`.
 
@@ -28,7 +28,7 @@ shabdakosh/
 │   ├── main.cyr                    — smoke entry: include order + real-usage smoke calls
 │   │
 │   │  ── L0 error ──
-│   ├── error.cyr                   — sakshi-packed error codes + shabda_err_name; SHABDA_PH_NONE sentinel
+│   ├── error.cyr                   — sakshi-packed error codes + shbdk_err_name; SHBDK_PH_NONE sentinel
 │   │
 │   │  ── L1 leaves (notation bridges + record types) ──
 │   ├── arpabet.cyr                 — ARPABET ↔ SVARA_PH_* (with/without stress)
@@ -89,41 +89,41 @@ the base map, both are `lib/hashmap` for O(1) access.
 ```
 word ("hello")
   │
-  └─→ shabda_dict_lookup(d, word)            (overlay → base, lowercase fast-path)
+  └─→ shbdk_dict_lookup(d, word)            (overlay → base, lowercase fast-path)
         │
         ├─ user overlay  (lib/hashmap)       ← application overrides, checked first
         └─ base dict     (lib/hashmap)        ← 10,617 generated entries
               │
-              └─→ ShDictEntry
+              └─→ ShbdkDictEntry
                     └─→ Pronunciation[]        (freq-desc, NaN-safe insertion sort)
-                          ├── phonemes: vec<SVARA_PH_*>   → shabda_dict_entry_primary_phonemes
+                          ├── phonemes: vec<SVARA_PH_*>   → shbdk_dict_entry_primary_phonemes
                           ├── frequency: f64 (sentinel = none)
                           └── region:    code (sentinel = none)
                     │
-  notation out ─────┴─→ shabda_notation_render(SHABDA_NOTATION_XSAMPA, phonemes)  → "k { t"
-                       shabda_phonemes_to_ipa(phonemes)          → "hɛloʊ"
-                       shabda_phoneme_to_arpabet(ph)             → "AH0"
+  notation out ─────┴─→ shbdk_notation_render(SHBDK_NOTATION_XSAMPA, phonemes)  → "k { t"
+                       shbdk_phonemes_to_ipa(phonemes)          → "hɛloʊ"
+                       shbdk_phoneme_to_arpabet(ph)             → "AH0"
 
 Fallible calls return a payload pointer (0 == none) or write to an out-param;
-packed-error returns are tested with shabda_is_err / shabda_is_ok.
+packed-error returns are tested with shbdk_is_err / shbdk_is_ok.
 
 import paths (all return a PronunciationDict handle, 0 on parse failure):
-  shabda_parse_cmudict(text)                  ← CMUdict text
-  shabda_parse_ipa(text) / shabda_parse_ipa_word
-  shabda_parse_pls(xml)                       ← W3C PLS
-  shabda_parse_ssml_phoneme(xml)              ← SSML <phoneme>
-  shabda_from_json(text) / shabda_from_binary(bytes)
+  shbdk_parse_cmudict(text)                  ← CMUdict text
+  shbdk_parse_ipa(text) / shbdk_parse_ipa_word
+  shbdk_parse_pls(xml)                       ← W3C PLS
+  shbdk_parse_ssml_phoneme(xml)              ← SSML <phoneme>
+  shbdk_from_json(text) / shbdk_from_binary(bytes)
 
 extension surface (on a dict handle):
-  shabda_dict_coverage(d, text)               → coverage report
-  shabda_dict_lookup_stream(d, words)         → streaming cursor
-  shabda_dict_prefix_search(d, "he")          → ["he","hello"]   (via trie)
-  shabda_dict_lookup_with_context(...)        → heteronym resolution
-  shabda_dict_with_fallback(d, &predict_fp, model)  → G2P fallback chain
+  shbdk_dict_coverage(d, text)               → coverage report
+  shbdk_dict_lookup_stream(d, words)         → streaming cursor
+  shbdk_dict_prefix_search(d, "he")          → ["he","hello"]   (via trie)
+  shbdk_dict_lookup_with_context(...)        → heteronym resolution
+  shbdk_dict_with_fallback(d, &predict_fp, model)  → G2P fallback chain
 
 varna-gated:
-  shabda_detect_script("hello")               → "Latn"
-  shabda_validate_inventory(d, phoneme_spanish())   → validation report
+  shbdk_detect_script("hello")               → "Latn"
+  shbdk_validate_inventory(d, phoneme_spanish())   → validation report
 ```
 
 ## Generated-Data Pipeline (the `build.rs` port)
@@ -144,10 +144,10 @@ programs/gen_cmudict.cyr     includes src/arpabet.cyr and REUSES its mapping —
   └─→ src/dictionary/_cmudict_data.cyr    packed string globals + word count + accessor
         │
         └─→ src/dictionary/cmudict.cyr
-              ├─ shabda_cmudict_load(map)   → parses the pieces into a lib/hashmap (returns count)
-              └─ shabda_cmudict_english()   → the loaded 10,617-word base map
+              ├─ shbdk_cmudict_load(map)   → parses the pieces into a lib/hashmap (returns count)
+              └─ shbdk_cmudict_english()   → the loaded 10,617-word base map
                     │
-                    └─→ shabda_dict_english()   (the L3 keystone reads this)
+                    └─→ shbdk_dict_english()   (the L3 keystone reads this)
 ```
 
 Regenerate after editing the data:
@@ -171,7 +171,7 @@ shabdakosh
   │     lib/varna.cyr — phoneme inventories + phonotactics + script ranges.
   │     Self-contained bundle; bare module-prefixed symbols (phoneme_*/script_*),
   │     NOT varna_-prefixed — links cleanly alongside svara, no collision.
-  │     Bridged: SVARA_PH_* ordinals → varna IPA strings via shabda_phoneme_to_ipa.
+  │     Bridged: SVARA_PH_* ordinals → varna IPA strings via shbdk_phoneme_to_ipa.
   │
   └── stdlib folds ([deps].stdlib):
         syscalls, string, alloc, str, fmt, vec, io, args, assert, fnptr, atomic,
@@ -200,33 +200,33 @@ distlib's per-module read cap to 1 MB, retiring the earlier sharding). The auto-
 only the hisab/goonj/naad leaves (a distlib heuristic); consumers therefore
 declare `shabdakosh + svara + varna` deps plus the stdlib folds explicitly. A
 consumer-side smoke (svara chain + varna + `dist/shabdakosh.cyr`) links and runs:
-`shabda_dict_english()` loads all 10,617 entries, detect → `Latn`, wasm lookup →
+`shbdk_dict_english()` loads all 10,617 entries, detect → `Latn`, wasm lookup →
 JSON IPA.
 
 ## Design Principles (CYRIUS port invariants)
 
-- **Flat prefixed namespace** — every symbol is `shabda_`/`SHABDA_`/`SH_`/`Sh`.
+- **Flat prefixed namespace** — every symbol is `shbdk_`/`SHBDK_`/`SH_`/`Sh`.
   The distlib links flat, so shabdakosh coexists with svara and varna without
   collision. No modules, no `use`, no re-exports.
 - **sakshi errors, not `thiserror`** — errors are packed-i64 codes
   (`[ctx][category][code]`, `0 == ok`). The Rust `ShabdakoshError` variants map to
-  `SHABDA_ERR_DICT_PARSE` / `SHABDA_ERR_UNKNOWN_SYMBOL` /
-  `SHABDA_ERR_PHONEME_NOT_IN_INV` / `SHABDA_ERR_UNKNOWN_LANGUAGE`, with
-  `shabda_err_name()` for diagnostic text. **Zero unwrap/panic** in library code.
+  `SHBDK_ERR_DICT_PARSE` / `SHBDK_ERR_UNKNOWN_SYMBOL` /
+  `SHBDK_ERR_PHONEME_NOT_IN_INV` / `SHBDK_ERR_UNKNOWN_LANGUAGE`, with
+  `shbdk_err_name()` for diagnostic text. **Zero unwrap/panic** in library code.
 - **Result / Option → sentinels & pointers** — `Result<T>` becomes a payload
   pointer (`0` == error/none) or a packed error written to an out-param, tested
-  with `shabda_is_err` / `shabda_is_ok`. `Option<T>` becomes a sentinel value
-  (e.g. `SHABDA_PH_NONE`, a `0` cstr, or a NaN/none frequency).
+  with `shbdk_is_err` / `shbdk_is_ok`. `Option<T>` becomes a sentinel value
+  (e.g. `SHBDK_PH_NONE`, a `0` cstr, or a NaN/none frequency).
 - **Fn-pointer & enum-tag dispatch instead of traits** — Rust's
-  `PhonemeNotation` trait is a `SHABDA_NOTATION_*` tag switched inside
-  `shabda_notation_render` / `shabda_notation_parse`. Rust's `G2PModel` trait and
-  heteronym resolver are **function pointers** (`&shabda_fst_model_predict` passed
-  to `shabda_dict_with_fallback`); the fallback model is a `(predict_fp, state)`
+  `PhonemeNotation` trait is a `SHBDK_NOTATION_*` tag switched inside
+  `shbdk_notation_render` / `shbdk_notation_parse`. Rust's `G2PModel` trait and
+  heteronym resolver are **function pointers** (`&shbdk_fst_model_predict` passed
+  to `shbdk_dict_with_fallback`); the fallback model is a `(predict_fp, state)`
   pair. Lookup provenance is a `LookupSource` tag, not a trait object.
 - **Hand-written codecs, no serde** — text formats (CMUdict/IPA/PLS/SSML) are
   permanent hand-written code; the PronunciationDict JSON codec
-  (`shabda_to_json` / `shabda_from_json`) is hand-written over the bayan JSON DOM;
-  the binary format (`shabda_to_binary` / `shabda_from_binary`) is a hand-rolled
+  (`shbdk_to_json` / `shbdk_from_json`) is hand-written over the bayan JSON DOM;
+  the binary format (`shbdk_to_binary` / `shbdk_from_binary`) is a hand-rolled
   `SHBD`-magic little-endian layout replacing Rust's postcard. Every type
   round-trips; the binary deserializer bounds-checks all attacker-controlled
   length/count fields.
@@ -244,14 +244,14 @@ JSON IPA.
 
 | Name | Module | Purpose |
 |------|--------|---------|
-| `ShPronunciationDict` (24-byte handle) | `dictionary/mod.cyr` | base map + user overlay + language code |
-| `ShDictEntry` | `dictionary/entry.cyr` | one or more pronunciations of a word |
+| `ShbdkPronunciationDict` (24-byte handle) | `dictionary/mod.cyr` | base map + user overlay + language code |
+| `ShbdkDictEntry` | `dictionary/entry.cyr` | one or more pronunciations of a word |
 | `Pronunciation` | `dictionary/entry.cyr` | `vec<SVARA_PH_*>` + frequency + region |
-| `SHABDA_NOTATION_ARPABET/IPA/XSAMPA` | `notation.cyr` | notation-tag dispatch |
-| `SHABDA_MORPH_PREFIX/ROOT/SUFFIX/INFIX` | `dictionary/morphology.cyr` | morpheme-kind tags |
-| `SHABDA_FST_NOTATION_ARPABET/IPA` | `dictionary/g2p.cyr` | FST model notation tag |
-| `SHABDA_ERR_*`, `shabda_err_name()` | `error.cyr` | sakshi error codes + text |
-| `SHABDA_PH_NONE` | `error.cyr` | phoneme Option sentinel (L0 base) |
+| `SHBDK_NOTATION_ARPABET/IPA/XSAMPA` | `notation.cyr` | notation-tag dispatch |
+| `SHBDK_MORPH_PREFIX/ROOT/SUFFIX/INFIX` | `dictionary/morphology.cyr` | morpheme-kind tags |
+| `SHBDK_FST_NOTATION_ARPABET/IPA` | `dictionary/g2p.cyr` | FST model notation tag |
+| `SHBDK_ERR_*`, `shbdk_err_name()` | `error.cyr` | sakshi error codes + text |
+| `SHBDK_PH_NONE` | `error.cyr` | phoneme Option sentinel (L0 base) |
 
 ## Downstream Consumers
 

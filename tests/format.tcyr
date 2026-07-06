@@ -23,7 +23,7 @@ fn _find(s, sub): i64 {
     var pl = strlen(sub);
     var i = 0;
     while (i + pl <= sl) {
-        if (_shabda_starts_at(s, i, sub) == 1) { return 1; }
+        if (_shbdk_starts_at(s, i, sub) == 1) { return 1; }
         i = i + 1;
     }
     return 0;
@@ -31,16 +31,16 @@ fn _find(s, sub): i64 {
 
 # ================================================================
 test_group("xml escape / unescape");
-assert_streq(shabda_xml_escape("a<b>&c\"d'e"), "a&lt;b&gt;&amp;c&quot;d&apos;e", "escape");
-assert_streq(shabda_xml_unescape("a&lt;b&gt;&amp;c&quot;d&apos;e"), "a<b>&c\"d'e", "unescape");
-assert_streq(shabda_xml_unescape(shabda_xml_escape("<x a=\"1\">&")), "<x a=\"1\">&", "roundtrip");
+assert_streq(shbdk_xml_escape("a<b>&c\"d'e"), "a&lt;b&gt;&amp;c&quot;d&apos;e", "escape");
+assert_streq(shbdk_xml_unescape("a&lt;b&gt;&amp;c&quot;d&apos;e"), "a<b>&c\"d'e", "unescape");
+assert_streq(shbdk_xml_unescape(shbdk_xml_escape("<x a=\"1\">&")), "<x a=\"1\">&", "roundtrip");
 
 # ================================================================
 test_group("parse_cmudict");
-var d = shabda_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n");
+var d = shbdk_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n");
 assert_neq(d, 0, "parsed ok");
-assert_eq(shabda_dict_len(d), 2, "2 entries");
-var catp = shabda_dict_lookup(d, "cat");
+assert_eq(shbdk_dict_len(d), 2, "2 entries");
+var catp = shbdk_dict_lookup(d, "cat");
 assert_neq(catp, 0, "cat present");
 assert_eq(vec_get(catp, 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
 assert_eq(vec_get(catp, 1), SVARA_PH_VOWEL_ASH, "cat[1] AE");
@@ -48,90 +48,90 @@ assert_eq(vec_get(catp, 2), SVARA_PH_PLOSIVE_T, "cat[2] T");
 
 # ================================================================
 test_group("cmudict roundtrip");
-var d2 = shabda_parse_cmudict(shabda_to_cmudict(d));
+var d2 = shbdk_parse_cmudict(shbdk_to_cmudict(d));
 assert_neq(d2, 0, "re-parsed ok");
-assert_eq(shabda_dict_len(d2), 2, "2 entries after roundtrip");
-assert_eq(vec_get(shabda_dict_lookup(d2, "dog"), 0), SVARA_PH_PLOSIVE_D, "dog[0] D");
+assert_eq(shbdk_dict_len(d2), 2, "2 entries after roundtrip");
+assert_eq(vec_get(shbdk_dict_lookup(d2, "dog"), 0), SVARA_PH_PLOSIVE_D, "dog[0] D");
 
 # ================================================================
 test_group("cmudict heteronym + @freq");
-var df = shabda_parse_cmudict(";;; @freq=0.5\nread  R IY1 D\n;;; @freq=0.5\nread(2)  R EH1 D\n");
+var df = shbdk_parse_cmudict(";;; @freq=0.5\nread  R IY1 D\n;;; @freq=0.5\nread(2)  R EH1 D\n");
 assert_neq(df, 0, "parsed heteronym");
-var re = shabda_dict_lookup_entry(df, "read");
-assert_eq(shabda_dict_entry_len(re), 2, "read has 2 pronunciations");
-assert_eq(shabda_pronunciation_has_frequency(shabda_dict_entry_primary(re)), 1, "freq set");
-assert_eq(shabda_pronunciation_frequency(shabda_dict_entry_primary(re)), 0.5, "freq 0.5");
+var re = shbdk_dict_lookup_entry(df, "read");
+assert_eq(shbdk_dict_entry_len(re), 2, "read has 2 pronunciations");
+assert_eq(shbdk_pronunciation_has_frequency(shbdk_dict_entry_primary(re)), 1, "freq set");
+assert_eq(shbdk_pronunciation_frequency(shbdk_dict_entry_primary(re)), 0.5, "freq 0.5");
 
 # ================================================================
 test_group("parse_cmudict errors");
-assert_eq(shabda_parse_cmudict("catNOSEP K AE1 T\n"), 0, "missing two-space -> 0");
-assert_eq(shabda_parse_cmudict("cat  K ZZZ T\n"), 0, "unknown ARPABET symbol -> 0");
+assert_eq(shbdk_parse_cmudict("catNOSEP K AE1 T\n"), 0, "missing two-space -> 0");
+assert_eq(shbdk_parse_cmudict("cat  K ZZZ T\n"), 0, "unknown ARPABET symbol -> 0");
 # parity audit: malformed @freq / unknown @region must abort the parse
-assert_eq(shabda_parse_cmudict(";;; @freq=abc\nhello  HH EH L OW\n"), 0, "malformed @freq -> 0");
-assert_eq(shabda_parse_cmudict(";;; @region=XX\nhello  HH EH L OW\n"), 0, "unknown @region -> 0");
+assert_eq(shbdk_parse_cmudict(";;; @freq=abc\nhello  HH EH L OW\n"), 0, "malformed @freq -> 0");
+assert_eq(shbdk_parse_cmudict(";;; @region=XX\nhello  HH EH L OW\n"), 0, "unknown @region -> 0");
 
 # ================================================================
 test_group("parse_ipa / to_ipa");
-var di = shabda_parse_ipa("cat /kæt/\ndog /dɔɡ/\n");
+var di = shbdk_parse_ipa("cat /kæt/\ndog /dɔɡ/\n");
 assert_neq(di, 0, "parsed ipa");
-assert_eq(shabda_dict_len(di), 2, "2 entries");
-assert_eq(vec_get(shabda_dict_lookup(di, "cat"), 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
-var di2 = shabda_parse_ipa(shabda_to_ipa(di));
+assert_eq(shbdk_dict_len(di), 2, "2 entries");
+assert_eq(vec_get(shbdk_dict_lookup(di, "cat"), 0), SVARA_PH_PLOSIVE_K, "cat[0] K");
+var di2 = shbdk_parse_ipa(shbdk_to_ipa(di));
 assert_neq(di2, 0, "ipa roundtrip parse");
-assert_eq(shabda_dict_len(di2), 2, "2 after roundtrip");
-assert_eq(vec_get(shabda_dict_lookup(di2, "cat"), 0), SVARA_PH_PLOSIVE_K, "roundtrip cat[0] K");
+assert_eq(shbdk_dict_len(di2), 2, "2 after roundtrip");
+assert_eq(vec_get(shbdk_dict_lookup(di2, "cat"), 0), SVARA_PH_PLOSIVE_K, "roundtrip cat[0] K");
 
 # ================================================================
 test_group("parse_ipa: 'word IPA' (no slashes) + comments");
-var di3 = shabda_parse_ipa("# a comment\ncat kæt\n");
+var di3 = shbdk_parse_ipa("# a comment\ncat kæt\n");
 assert_neq(di3, 0, "word IPA form");
-assert_neq(shabda_dict_lookup(di3, "cat"), 0, "cat present (comment skipped)");
+assert_neq(shbdk_dict_lookup(di3, "cat"), 0, "cat present (comment skipped)");
 
 # ================================================================
 # parity audit: to_cmudict must drop phonemes with no ARPABET equivalent WITHOUT
 # leaving a stray leading/double space (VowelA has no ARPABET mapping).
 test_group("to_cmudict drops unmapped phonemes cleanly");
-var jd = shabda_dict_new();
-shabda_dict_insert(jd, "test", _v2(SVARA_PH_VOWEL_A, SVARA_PH_PLOSIVE_K));
-assert_eq(_find(shabda_to_cmudict(jd), "test  K\n"), 1, "VowelA dropped -> 'test  K' (no stray space)");
+var jd = shbdk_dict_new();
+shbdk_dict_insert(jd, "test", _v2(SVARA_PH_VOWEL_A, SVARA_PH_PLOSIVE_K));
+assert_eq(_find(shbdk_to_cmudict(jd), "test  K\n"), 1, "VowelA dropped -> 'test  K' (no stray space)");
 
 # ================================================================
 # SECURITY regression (audit 2026-07-05): a @freq token with trailing non-float
 # junk must be rejected whole (Rust f32::parse over the whitespace token errors),
 # not silently accept the numeric prefix.
 test_group("@freq trailing junk rejected");
-assert_eq(shabda_parse_cmudict(";;; @freq=1e5xyz\nhello  HH EH L OW\n"), 0, "@freq=1e5xyz -> 0");
-assert_neq(shabda_parse_cmudict(";;; @freq=0.85\nhello  HH EH L OW\n"), 0, "@freq=0.85 still valid");
+assert_eq(shbdk_parse_cmudict(";;; @freq=1e5xyz\nhello  HH EH L OW\n"), 0, "@freq=1e5xyz -> 0");
+assert_neq(shbdk_parse_cmudict(";;; @freq=0.85\nhello  HH EH L OW\n"), 0, "@freq=0.85 still valid");
 
 # ================================================================
 # backlog 2026-07-05: with_user exporters merge the overlay over the base (override
 # wins); the base exporters ignore the overlay. Previously untested.
 test_group("to_cmudict_with_user overlay merge");
-var ud = shabda_dict_new();
-shabda_dict_insert(ud, "cat", _v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH));   # base cat
-shabda_dict_insert_user(ud, "cat", _v1(SVARA_PH_PLOSIVE_T));                  # overlay overrides
-shabda_dict_insert_user(ud, "dog", _v1(SVARA_PH_PLOSIVE_D));                  # overlay-only word
-var wu = shabda_to_cmudict_with_user(ud);
+var ud = shbdk_dict_new();
+shbdk_dict_insert(ud, "cat", _v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH));   # base cat
+shbdk_dict_insert_user(ud, "cat", _v1(SVARA_PH_PLOSIVE_T));                  # overlay overrides
+shbdk_dict_insert_user(ud, "dog", _v1(SVARA_PH_PLOSIVE_D));                  # overlay-only word
+var wu = shbdk_to_cmudict_with_user(ud);
 assert_eq(_find(wu, "dog  D\n"), 1, "with_user includes overlay-only 'dog'");
 assert_eq(_find(wu, "cat  T\n"), 1, "with_user 'cat' shows overlay pronunciation (T)");
-assert_eq(_find(shabda_to_cmudict(ud), "dog"), 0, "base to_cmudict omits overlay-only 'dog'");
+assert_eq(_find(shbdk_to_cmudict(ud), "dog"), 0, "base to_cmudict omits overlay-only 'dog'");
 
 # ================================================================
 # backlog 2026-07-05: save_cmudict_file / load_cmudict_file round-trip.
 test_group("save/load cmudict file roundtrip");
-var sd = shabda_dict_new();
-shabda_dict_insert(sd, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
-assert_eq(shabda_save_cmudict_file(sd, "/tmp/shabdakosh_test_cmudict.txt"), 0, "saved");
-var ldf = shabda_load_cmudict_file("/tmp/shabdakosh_test_cmudict.txt");
+var sd = shbdk_dict_new();
+shbdk_dict_insert(sd, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+assert_eq(shbdk_save_cmudict_file(sd, "/tmp/shabdakosh_test_cmudict.txt"), 0, "saved");
+var ldf = shbdk_load_cmudict_file("/tmp/shabdakosh_test_cmudict.txt");
 assert_neq(ldf, 0, "loaded");
-assert_eq(vec_get(shabda_dict_lookup(ldf, "cat"), 0), SVARA_PH_PLOSIVE_K, "roundtrip cat[0] K");
-assert_eq(shabda_load_cmudict_file("/tmp/nonexistent_shabdakosh_xyz.txt"), 0, "missing file -> 0");
+assert_eq(vec_get(shbdk_dict_lookup(ldf, "cat"), 0), SVARA_PH_PLOSIVE_K, "roundtrip cat[0] K");
+assert_eq(shbdk_load_cmudict_file("/tmp/nonexistent_shabdakosh_xyz.txt"), 0, "missing file -> 0");
 
 # ================================================================
 # backlog 2026-07-05: parse_ipa error paths (missing / empty transcription).
 test_group("parse_ipa error paths");
-assert_eq(shabda_parse_ipa("cat\n"), 0, "missing IPA transcription -> 0");
-assert_eq(shabda_parse_ipa("cat //\n"), 0, "empty transcription between slashes -> 0");
+assert_eq(shbdk_parse_ipa("cat\n"), 0, "missing IPA transcription -> 0");
+assert_eq(shbdk_parse_ipa("cat //\n"), 0, "empty transcription between slashes -> 0");
 
 var rc = assert_summary();
 syscall(60, rc);

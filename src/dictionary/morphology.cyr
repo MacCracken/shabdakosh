@@ -4,23 +4,23 @@
 # ordinals in vecs) — stdlib only, no svara. Container serde (Morpheme /
 # Decomposition) is handled by the format layer (L5) per the serde stance.
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 #
-# ShMorpheme layout (24 bytes): [0]=text(cstr) [8]=kind(SHABDA_MORPH_*)
+# ShbdkMorpheme layout (24 bytes): [0]=text(cstr) [8]=kind(SHBDK_MORPH_*)
 #   [16]=phonemes(vec of i64).
-# ShDecomposition layout (8 bytes): [0]=morphemes(vec of ShMorpheme*).
+# ShbdkDecomposition layout (8 bytes): [0]=morphemes(vec of ShbdkMorpheme*).
 
 # ---- MorphemeKind (#[non_exhaustive] enum) -----------------------------------
-var SHABDA_MORPH_PREFIX = 0;
-var SHABDA_MORPH_ROOT   = 1;
-var SHABDA_MORPH_SUFFIX = 2;
-var SHABDA_MORPH_INFIX  = 3;
+var SHBDK_MORPH_PREFIX = 0;
+var SHBDK_MORPH_ROOT   = 1;
+var SHBDK_MORPH_SUFFIX = 2;
+var SHBDK_MORPH_INFIX  = 3;
 
 # ---- Morpheme ----------------------------------------------------------------
 # new(text, kind, phonemes). The text cstr is stored by reference (caller owns it
 # — in practice a string literal or an interned word).
 #must_use
-fn shabda_morpheme_new(text, kind, phonemes): i64 {
+fn shbdk_morpheme_new(text, kind, phonemes): i64 {
     var m = alloc(24);
     store64(m + 0, text);
     store64(m + 8, kind);
@@ -30,39 +30,39 @@ fn shabda_morpheme_new(text, kind, phonemes): i64 {
 
 # Written form (cstr).
 #must_use
-fn shabda_morpheme_text(m): cstring {
+fn shbdk_morpheme_text(m): cstring {
     return load64(m + 0);
 }
 
-# Morpheme kind (SHABDA_MORPH_*).
+# Morpheme kind (SHBDK_MORPH_*).
 #must_use
-fn shabda_morpheme_kind(m): i64 {
+fn shbdk_morpheme_kind(m): i64 {
     return load64(m + 8);
 }
 
 # Isolated pronunciation (vec of phoneme ordinals).
 #must_use
-fn shabda_morpheme_phonemes(m): i64 {
+fn shbdk_morpheme_phonemes(m): i64 {
     return load64(m + 16);
 }
 
 # ---- Decomposition -----------------------------------------------------------
 #must_use
-fn shabda_decomposition_new(morphemes): i64 {
+fn shbdk_decomposition_new(morphemes): i64 {
     var d = alloc(8);
     store64(d + 0, morphemes);
     return d;
 }
 
-# The morphemes in order (vec of ShMorpheme*).
+# The morphemes in order (vec of ShbdkMorpheme*).
 #must_use
-fn shabda_decomposition_morphemes(d): i64 {
+fn shbdk_decomposition_morphemes(d): i64 {
     return load64(d + 0);
 }
 
 # Composite pronunciation: concatenation of every morpheme's phonemes (flat_map).
 #must_use
-fn shabda_decomposition_composite_phonemes(d): i64 {
+fn shbdk_decomposition_composite_phonemes(d): i64 {
     var out = vec_new();
     var ms = load64(d + 0);
     var n = vec_len(ms);
@@ -85,7 +85,7 @@ fn shabda_decomposition_composite_phonemes(d): i64 {
 
 # Full written form: concatenation of every morpheme's text.
 #must_use
-fn shabda_decomposition_text(d): cstring {
+fn shbdk_decomposition_text(d): cstring {
     var sb = str_builder_new();
     var ms = load64(d + 0);
     var n = vec_len(ms);
@@ -99,34 +99,34 @@ fn shabda_decomposition_text(d): cstring {
 
 # Number of morphemes.
 #must_use
-fn shabda_decomposition_len(d): i64 {
+fn shbdk_decomposition_len(d): i64 {
     return vec_len(load64(d + 0));
 }
 
 # 1 if the decomposition has no morphemes.
 #must_use
-fn shabda_decomposition_is_empty(d): i64 {
+fn shbdk_decomposition_is_empty(d): i64 {
     if (vec_len(load64(d + 0)) == 0) { return 1; }
     return 0;
 }
 
 # Root morpheme, or 0 (None).
 #must_use
-fn shabda_decomposition_root(d): i64 {
+fn shbdk_decomposition_root(d): i64 {
     var ms = load64(d + 0);
     var n = vec_len(ms);
     var i = 0;
     var m = 0;
     while (i < n) {
         m = vec_get(ms, i);
-        if (load64(m + 8) == SHABDA_MORPH_ROOT) { return m; }
+        if (load64(m + 8) == SHBDK_MORPH_ROOT) { return m; }
         i = i + 1;
     }
     return 0;
 }
 
 # Morphemes of a given kind (backs prefixes / suffixes).
-fn _shabda_decomposition_by_kind(d, kind): i64 {
+fn _shbdk_decomposition_by_kind(d, kind): i64 {
     var out = vec_new();
     var ms = load64(d + 0);
     var n = vec_len(ms);
@@ -140,14 +140,14 @@ fn _shabda_decomposition_by_kind(d, kind): i64 {
     return out;
 }
 
-# All prefix morphemes (vec of ShMorpheme*).
+# All prefix morphemes (vec of ShbdkMorpheme*).
 #must_use
-fn shabda_decomposition_prefixes(d): i64 {
-    return _shabda_decomposition_by_kind(d, SHABDA_MORPH_PREFIX);
+fn shbdk_decomposition_prefixes(d): i64 {
+    return _shbdk_decomposition_by_kind(d, SHBDK_MORPH_PREFIX);
 }
 
-# All suffix morphemes (vec of ShMorpheme*).
+# All suffix morphemes (vec of ShbdkMorpheme*).
 #must_use
-fn shabda_decomposition_suffixes(d): i64 {
-    return _shabda_decomposition_by_kind(d, SHABDA_MORPH_SUFFIX);
+fn shbdk_decomposition_suffixes(d): i64 {
+    return _shbdk_decomposition_by_kind(d, SHBDK_MORPH_SUFFIX);
 }

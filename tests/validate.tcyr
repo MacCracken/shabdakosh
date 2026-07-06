@@ -19,21 +19,21 @@ alloc_init();
 
 fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
-fn _has_int(v, x): i64 { return _shabda_vec_has_int(v, x); }
-fn _e0(r): i64 { return vec_get(shabda_validation_report_invalid_entries(r), 0); }
-fn _inv_valid(d, inv): i64 { return shabda_validation_report_is_valid(shabda_validate_inventory(d, inv)); }
-fn _pho_valid(d, p): i64 { return shabda_phonotactic_report_is_valid(shabda_validate_phonotactics(d, p)); }
+fn _has_int(v, x): i64 { return _shbdk_vec_has_int(v, x); }
+fn _e0(r): i64 { return vec_get(shbdk_validation_report_invalid_entries(r), 0); }
+fn _inv_valid(d, inv): i64 { return shbdk_validation_report_is_valid(shbdk_validate_inventory(d, inv)); }
+fn _pho_valid(d, p): i64 { return shbdk_phonotactic_report_is_valid(shbdk_validate_phonotactics(d, p)); }
 
 # ================================================================
 # length normalization: VowelOpenO -> "ɔ"; english stores "ɔː" -> +ː branch valid.
 test_group("length normalization (ɔ -> ɔː)");
-var d1 = shabda_dict_new();
-shabda_dict_insert(d1, "caught", _v1(SVARA_PH_VOWEL_OPEN_O));
+var d1 = shbdk_dict_new();
+shbdk_dict_insert(d1, "caught", _v1(SVARA_PH_VOWEL_OPEN_O));
 assert_eq(_inv_valid(d1, phoneme_english()), 1, "caught valid in english");
 
 # ================================================================
 test_group("all english consonants validate");
-var dc = shabda_dict_new();
+var dc = shbdk_dict_new();
 var cs = vec_new();
 vec_push(cs, SVARA_PH_PLOSIVE_P); vec_push(cs, SVARA_PH_PLOSIVE_B); vec_push(cs, SVARA_PH_PLOSIVE_T);
 vec_push(cs, SVARA_PH_PLOSIVE_D); vec_push(cs, SVARA_PH_PLOSIVE_K); vec_push(cs, SVARA_PH_PLOSIVE_G);
@@ -42,114 +42,114 @@ vec_push(cs, SVARA_PH_FRIC_Z); vec_push(cs, SVARA_PH_FRIC_SH); vec_push(cs, SVAR
 vec_push(cs, SVARA_PH_FRIC_TH); vec_push(cs, SVARA_PH_FRIC_DH); vec_push(cs, SVARA_PH_FRIC_H);
 vec_push(cs, SVARA_PH_NASAL_M); vec_push(cs, SVARA_PH_NASAL_N); vec_push(cs, SVARA_PH_NASAL_NG);
 vec_push(cs, SVARA_PH_LATERAL_L); vec_push(cs, SVARA_PH_APPROX_W); vec_push(cs, SVARA_PH_APPROX_J);
-shabda_dict_insert(dc, "test", cs);
+shbdk_dict_insert(dc, "test", cs);
 assert_eq(_inv_valid(dc, phoneme_english()), 1, "all consonants valid in english");
 
 # ================================================================
 # ŋ (NASAL_NG) is not in Spanish -> invalid.
 test_group("invalid phoneme detected (ŋ not in spanish)");
-var ds = shabda_dict_new();
-shabda_dict_insert(ds, "sing", _v1(SVARA_PH_NASAL_NG));
-var rs = shabda_validate_inventory(ds, phoneme_spanish());
-assert_eq(shabda_validation_report_is_valid(rs), 0, "not valid");
-assert_eq(shabda_validation_report_invalid_count(rs), 1, "1 invalid entry");
-assert_streq(shabda_invalid_entry_word(_e0(rs)), "sing", "word 'sing'");
-assert_eq(_has_int(shabda_invalid_entry_invalid_phonemes(_e0(rs)), SVARA_PH_NASAL_NG), 1, "NG flagged");
+var ds = shbdk_dict_new();
+shbdk_dict_insert(ds, "sing", _v1(SVARA_PH_NASAL_NG));
+var rs = shbdk_validate_inventory(ds, phoneme_spanish());
+assert_eq(shbdk_validation_report_is_valid(rs), 0, "not valid");
+assert_eq(shbdk_validation_report_invalid_count(rs), 1, "1 invalid entry");
+assert_streq(shbdk_invalid_entry_word(_e0(rs)), "sing", "word 'sing'");
+assert_eq(_has_int(shbdk_invalid_entry_invalid_phonemes(_e0(rs)), SVARA_PH_NASAL_NG), 1, "NG flagged");
 
 # ================================================================
 test_group("empty dict is valid");
-var re = shabda_validate_inventory(shabda_dict_new(), phoneme_english());
-assert_eq(shabda_validation_report_is_valid(re), 1, "empty valid");
-assert_eq(shabda_validation_report_invalid_count(re), 0, "0 invalid");
+var re = shbdk_validate_inventory(shbdk_dict_new(), phoneme_english());
+assert_eq(shbdk_validation_report_is_valid(re), 1, "empty valid");
+assert_eq(shbdk_validation_report_invalid_count(re), 0, "0 invalid");
 
 # ================================================================
 test_group("user overlay is validated");
-var du = shabda_dict_new();
-shabda_dict_insert_user(du, "test", _v1(SVARA_PH_NASAL_NG));
+var du = shbdk_dict_new();
+shbdk_dict_insert_user(du, "test", _v1(SVARA_PH_NASAL_NG));
 assert_eq(_inv_valid(du, phoneme_spanish()), 0, "overlay checked -> invalid");
 
 # ================================================================
 test_group("ValidationReport serde roundtrip");
-var ent = shabda_invalid_entry_new("sing", _v1(SVARA_PH_NASAL_NG));
-var vr = shabda_validation_report_new("es", _v1(ent));
-var vrt = shabda_validation_report_from_json(shabda_validation_report_to_json(vr));
-assert_streq(shabda_validation_report_language(vrt), "es", "lang es");
-assert_eq(shabda_validation_report_invalid_count(vrt), 1, "1 entry");
-assert_streq(shabda_invalid_entry_word(_e0(vrt)), "sing", "entry word sing");
-assert_eq(vec_len(shabda_invalid_entry_invalid_phonemes(_e0(vrt))), 1, "1 phoneme");
-assert_eq(vec_get(shabda_invalid_entry_invalid_phonemes(_e0(vrt)), 0), SVARA_PH_NASAL_NG, "phoneme NG");
+var ent = shbdk_invalid_entry_new("sing", _v1(SVARA_PH_NASAL_NG));
+var vr = shbdk_validation_report_new("es", _v1(ent));
+var vrt = shbdk_validation_report_from_json(shbdk_validation_report_to_json(vr));
+assert_streq(shbdk_validation_report_language(vrt), "es", "lang es");
+assert_eq(shbdk_validation_report_invalid_count(vrt), 1, "1 entry");
+assert_streq(shbdk_invalid_entry_word(_e0(vrt)), "sing", "entry word sing");
+assert_eq(vec_len(shbdk_invalid_entry_invalid_phonemes(_e0(vrt))), 1, "1 phoneme");
+assert_eq(vec_get(shbdk_invalid_entry_invalid_phonemes(_e0(vrt)), 0), SVARA_PH_NASAL_NG, "phoneme NG");
 
 # ================================================================
 test_group("dict.validate convenience (with / without language)");
-var dv = shabda_dict_with_language(shabda_dict_new(), "en");
-shabda_dict_insert(dv, "pat", _v3(SVARA_PH_PLOSIVE_P, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
-var rv = shabda_dict_validate(dv);
+var dv = shbdk_dict_with_language(shbdk_dict_new(), "en");
+shbdk_dict_insert(dv, "pat", _v3(SVARA_PH_PLOSIVE_P, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+var rv = shbdk_dict_validate(dv);
 assert_neq(rv, 0, "validate returns a report (Some)");
-assert_eq(shabda_validation_report_is_valid(rv), 1, "pat valid in english");
-assert_eq(shabda_dict_validate(shabda_dict_new()), 0, "no language -> 0 (None)");
+assert_eq(shbdk_validation_report_is_valid(rv), 1, "pat valid in english");
+assert_eq(shbdk_dict_validate(shbdk_dict_new()), 0, "no language -> 0 (None)");
 
 # ================================================================
 # multiple pronunciations: [NG] invalid, [P] valid -> 1 invalid entry, 1 phoneme.
 test_group("multiple pronunciations checked");
-var dm = shabda_dict_new();
+var dm = shbdk_dict_new();
 var prons = vec_new();
-vec_push(prons, shabda_pronunciation_new(_v1(SVARA_PH_NASAL_NG)));
-vec_push(prons, shabda_pronunciation_new(_v1(SVARA_PH_PLOSIVE_P)));
-shabda_dict_insert_entry(dm, "test", shabda_dict_entry_from_pronunciations(prons));
-var rm = shabda_validate_inventory(dm, phoneme_spanish());
-assert_eq(shabda_validation_report_invalid_count(rm), 1, "1 invalid entry");
-assert_eq(vec_len(shabda_invalid_entry_invalid_phonemes(_e0(rm))), 1, "only NG invalid (p valid)");
+vec_push(prons, shbdk_pronunciation_new(_v1(SVARA_PH_NASAL_NG)));
+vec_push(prons, shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_P)));
+shbdk_dict_insert_entry(dm, "test", shbdk_dict_entry_from_pronunciations(prons));
+var rm = shbdk_validate_inventory(dm, phoneme_spanish());
+assert_eq(shbdk_validation_report_invalid_count(rm), 1, "1 invalid entry");
+assert_eq(vec_len(shbdk_invalid_entry_invalid_phonemes(_e0(rm))), 1, "only NG invalid (p valid)");
 
 # ================================================================
 test_group("phonotactics: empty + valid english");
-assert_eq(_pho_valid(shabda_dict_new(), phonotactics_english()), 1, "empty -> valid");
-var dp = shabda_dict_new();
-shabda_dict_insert(dp, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+assert_eq(_pho_valid(shbdk_dict_new(), phonotactics_english()), 1, "empty -> valid");
+var dp = shbdk_dict_new();
+shbdk_dict_insert(dp, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
 assert_eq(_pho_valid(dp, phonotactics_english()), 1, "cat valid english phonotactics");
 
 # ================================================================
 test_group("phonotactics convenience (en / none / unknown)");
-var dpc = shabda_dict_with_language(shabda_dict_new(), "en");
-shabda_dict_insert(dpc, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
-var rpc = shabda_dict_validate_phonotactics(dpc);
+var dpc = shbdk_dict_with_language(shbdk_dict_new(), "en");
+shbdk_dict_insert(dpc, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+var rpc = shbdk_dict_validate_phonotactics(dpc);
 assert_neq(rpc, 0, "returns a report (Some)");
-assert_eq(shabda_phonotactic_report_is_valid(rpc), 1, "cat valid");
-assert_eq(shabda_dict_validate_phonotactics(shabda_dict_new()), 0, "no language -> 0");
-var dxx = shabda_dict_with_language(shabda_dict_new(), "xx");
-assert_eq(shabda_dict_validate_phonotactics(dxx), 0, "unknown language -> 0");
+assert_eq(shbdk_phonotactic_report_is_valid(rpc), 1, "cat valid");
+assert_eq(shbdk_dict_validate_phonotactics(shbdk_dict_new()), 0, "no language -> 0");
+var dxx = shbdk_dict_with_language(shbdk_dict_new(), "xx");
+assert_eq(shbdk_dict_validate_phonotactics(dxx), 0, "unknown language -> 0");
 
 # ================================================================
 test_group("PhonotacticReport serde roundtrip");
-var viol = shabda_phonotactic_violation_new("test", "forbidden onset", "tl");
-var pr = shabda_phonotactic_report_new("en", _v1(viol));
-var prt = shabda_phonotactic_report_from_json(shabda_phonotactic_report_to_json(pr));
-assert_streq(shabda_phonotactic_report_language(prt), "en", "lang en");
-assert_eq(shabda_phonotactic_report_violation_count(prt), 1, "1 violation");
-var v0 = vec_get(shabda_phonotactic_report_violations(prt), 0);
-assert_streq(shabda_phonotactic_violation_word(v0), "test", "viol word");
-assert_streq(shabda_phonotactic_violation_description(v0), "forbidden onset", "viol desc");
-assert_streq(shabda_phonotactic_violation_sequence(v0), "tl", "viol seq");
+var viol = shbdk_phonotactic_violation_new("test", "forbidden onset", "tl");
+var pr = shbdk_phonotactic_report_new("en", _v1(viol));
+var prt = shbdk_phonotactic_report_from_json(shbdk_phonotactic_report_to_json(pr));
+assert_streq(shbdk_phonotactic_report_language(prt), "en", "lang en");
+assert_eq(shbdk_phonotactic_report_violation_count(prt), 1, "1 violation");
+var v0 = vec_get(shbdk_phonotactic_report_violations(prt), 0);
+assert_streq(shbdk_phonotactic_violation_word(v0), "test", "viol word");
+assert_streq(shbdk_phonotactic_violation_description(v0), "forbidden onset", "viol desc");
+assert_streq(shbdk_phonotactic_violation_sequence(v0), "tl", "viol seq");
 
 # ================================================================
 # is_consonant: consonants -> 1, vowels/diphthongs -> 0.
 test_group("is_consonant");
-assert_eq(_shabda_is_consonant(SVARA_PH_PLOSIVE_K), 1, "K consonant");
-assert_eq(_shabda_is_consonant(SVARA_PH_FRIC_S), 1, "S consonant");
-assert_eq(_shabda_is_consonant(SVARA_PH_NASAL_M), 1, "M consonant");
-assert_eq(_shabda_is_consonant(SVARA_PH_VOWEL_A), 0, "A vowel");
-assert_eq(_shabda_is_consonant(SVARA_PH_DIPH_AI), 0, "AI diphthong");
-assert_eq(_shabda_is_consonant(SVARA_PH_VOWEL_SCHWA), 0, "schwa vowel");
+assert_eq(_shbdk_is_consonant(SVARA_PH_PLOSIVE_K), 1, "K consonant");
+assert_eq(_shbdk_is_consonant(SVARA_PH_FRIC_S), 1, "S consonant");
+assert_eq(_shbdk_is_consonant(SVARA_PH_NASAL_M), 1, "M consonant");
+assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_A), 0, "A vowel");
+assert_eq(_shbdk_is_consonant(SVARA_PH_DIPH_AI), 0, "AI diphthong");
+assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_SCHWA), 0, "schwa vowel");
 
 # ================================================================
 # SECURITY regression (audit 2026-07-05): malformed JSON must not null-deref on a
 # missing/mistyped required field (Rust serde errored; this port defaults empty /
 # returns 0 on an unparseable root).
 test_group("malformed JSON (no null deref)");
-assert_neq(shabda_validation_report_from_json("{}"), 0, "empty object -> report (missing language ok)");
-assert_streq(shabda_validation_report_language(shabda_validation_report_from_json("{}")), "", "missing language -> empty");
-assert_eq(shabda_validation_report_from_json("not valid json"), 0, "unparseable -> 0");
-assert_neq(shabda_phonotactic_report_from_json("{\"violations\":[]}"), 0, "missing language -> report (no crash)");
-assert_neq(shabda_validation_report_from_json("{\"language\":123}"), 0, "mistyped language -> report (no crash)");
+assert_neq(shbdk_validation_report_from_json("{}"), 0, "empty object -> report (missing language ok)");
+assert_streq(shbdk_validation_report_language(shbdk_validation_report_from_json("{}")), "", "missing language -> empty");
+assert_eq(shbdk_validation_report_from_json("not valid json"), 0, "unparseable -> 0");
+assert_neq(shbdk_phonotactic_report_from_json("{\"violations\":[]}"), 0, "missing language -> report (no crash)");
+assert_neq(shbdk_validation_report_from_json("{\"language\":123}"), 0, "mistyped language -> report (no crash)");
 
 var rc = assert_summary();
 syscall(60, rc);

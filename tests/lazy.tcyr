@@ -43,38 +43,38 @@ fn _find(s, sub): i64 {
 # ================================================================
 # roundtrip: save english_minimal, mmap-open it, compare against the original.
 test_group("lazy roundtrip");
-var dict = shabda_dict_english_minimal();
-assert_eq(shabda_save_binary_file(dict, "/tmp/shabdakosh_test_lazy.bin"), 0, "saved");
-var lazy = shabda_lazy_open("/tmp/shabdakosh_test_lazy.bin");
+var dict = shbdk_dict_english_minimal();
+assert_eq(shbdk_save_binary_file(dict, "/tmp/shabdakosh_test_lazy.bin"), 0, "saved");
+var lazy = shbdk_lazy_open("/tmp/shabdakosh_test_lazy.bin");
 assert_neq(lazy, 0, "opened");
-assert_eq(shabda_lazy_len(lazy), shabda_dict_len(dict), "same len");
-assert_eq(shabda_lazy_is_empty(lazy), 0, "not empty");
-var lh = shabda_lazy_lookup(lazy, "hello");
-var dh = shabda_dict_lookup(dict, "hello");
+assert_eq(shbdk_lazy_len(lazy), shbdk_dict_len(dict), "same len");
+assert_eq(shbdk_lazy_is_empty(lazy), 0, "not empty");
+var lh = shbdk_lazy_lookup(lazy, "hello");
+var dh = shbdk_dict_lookup(dict, "hello");
 assert_neq(lh, 0, "hello present");
 assert_eq(vec_len(lh), vec_len(dh), "hello same count");
 assert_eq(vec_get(lh, 0), vec_get(dh, 0), "hello[0] matches");
-var lt = shabda_lazy_lookup(lazy, "the");
+var lt = shbdk_lazy_lookup(lazy, "the");
 assert_neq(lt, 0, "the present");
-assert_eq(vec_len(lt), vec_len(shabda_dict_lookup(dict, "the")), "the same count");
-assert_eq(shabda_lazy_lookup(lazy, "xyzzy"), 0, "xyzzy absent -> 0");
-assert_eq(shabda_lazy_lookup_entry(lazy, "xyzzy"), 0, "xyzzy entry absent -> 0");
+assert_eq(vec_len(lt), vec_len(shbdk_dict_lookup(dict, "the")), "the same count");
+assert_eq(shbdk_lazy_lookup(lazy, "xyzzy"), 0, "xyzzy absent -> 0");
+assert_eq(shbdk_lazy_lookup_entry(lazy, "xyzzy"), 0, "xyzzy entry absent -> 0");
 
 # ================================================================
 # into_dict / dict are identity: the handle IS the owned dict.
 test_group("lazy into_dict / dict");
-var lazy2 = shabda_lazy_open("/tmp/shabdakosh_test_lazy.bin");
-var recovered = shabda_lazy_into_dict(lazy2);
-assert_eq(shabda_dict_len(recovered), shabda_dict_len(dict), "into_dict recovers full dict");
-assert_eq(shabda_lazy_dict(lazy2), lazy2, "dict() is the handle itself");
+var lazy2 = shbdk_lazy_open("/tmp/shabdakosh_test_lazy.bin");
+var recovered = shbdk_lazy_into_dict(lazy2);
+assert_eq(shbdk_dict_len(recovered), shbdk_dict_len(dict), "into_dict recovers full dict");
+assert_eq(shbdk_lazy_dict(lazy2), lazy2, "dict() is the handle itself");
 
 # ================================================================
 test_group("lazy open nonexistent -> 0");
-assert_eq(shabda_lazy_open("/tmp/nonexistent_shabdakosh_xyz.bin"), 0, "missing file -> 0 (Err)");
+assert_eq(shbdk_lazy_open("/tmp/nonexistent_shabdakosh_xyz.bin"), 0, "missing file -> 0 (Err)");
 
 # ================================================================
 test_group("lazy debug contains 'LazyDict'");
-var dbg = shabda_lazy_debug(lazy);
+var dbg = shbdk_lazy_debug(lazy);
 assert_eq(_find(dbg, "LazyDict"), 1, "debug contains LazyDict");
 assert_eq(_find(dbg, "entries: 29"), 1, "debug reports 29 entries");
 

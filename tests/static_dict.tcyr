@@ -17,38 +17,38 @@ alloc_init();
 
 # ================================================================
 test_group("static lookup hit / miss");
-var h = shabda_static_lookup("hello");
+var h = shbdk_static_lookup("hello");
 assert_neq(h, 0, "hello present");
 assert_gt(vec_len(h), 0, "hello has phonemes");
-assert_neq(shabda_static_lookup("the"), 0, "the present");
-assert_eq(shabda_static_lookup("zxqvbnm"), 0, "miss -> 0 (None)");
+assert_neq(shbdk_static_lookup("the"), 0, "the present");
+assert_eq(shbdk_static_lookup("zxqvbnm"), 0, "miss -> 0 (None)");
 
 # ================================================================
 # case-insensitive: "Hello" lowercases to "hello" -> same entry -> same vec.
 test_group("static lookup case-insensitive");
-assert_eq(shabda_static_lookup("Hello"), shabda_static_lookup("hello"), "Hello == hello");
+assert_eq(shbdk_static_lookup("Hello"), shbdk_static_lookup("hello"), "Hello == hello");
 
 # ================================================================
 test_group("static len / is_empty");
-assert_gt(shabda_static_len(), 10000, "len >= 10k");
-assert_eq(shabda_static_is_empty(), 0, "not empty");
+assert_gt(shbdk_static_len(), 10000, "len >= 10k");
+assert_eq(shbdk_static_is_empty(), 0, "not empty");
 
 # ================================================================
 test_group("static entry variants");
-var eh = shabda_static_lookup_entry("hello");
+var eh = shbdk_static_lookup_entry("hello");
 assert_neq(eh, 0, "hello entry present");
-assert_eq(shabda_dict_entry_len(eh), 1, "hello has 1 pronunciation");
-var er = shabda_static_lookup_entry("read");
+assert_eq(shbdk_dict_entry_len(eh), 1, "hello has 1 pronunciation");
+var er = shbdk_static_lookup_entry("read");
 assert_neq(er, 0, "read entry present");
-assert_gt(shabda_dict_entry_len(er), 1, "read has 2+ variants");
+assert_gt(shbdk_dict_entry_len(er), 1, "read has 2+ variants");
 
 # ================================================================
 # static matches dynamic: same phonemes for the same words (element-wise, since
 # the two dicts are separately-built and hold distinct vec pointers).
 test_group("static matches dynamic");
-var dyn = shabda_dict_english();
-var sp = shabda_static_lookup("computer");
-var dp = shabda_dict_lookup(dyn, "computer");
+var dyn = shbdk_dict_english();
+var sp = shbdk_static_lookup("computer");
+var dp = shbdk_dict_lookup(dyn, "computer");
 assert_neq(sp, 0, "computer in static");
 assert_eq(vec_len(sp), vec_len(dp), "computer same phoneme count");
 var ci = 0;

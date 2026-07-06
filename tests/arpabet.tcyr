@@ -12,85 +12,85 @@ alloc_init();
 
 # ================================================================
 test_group("vowel mappings");
-assert_eq(shabda_arpabet_to_phoneme("AA"), SVARA_PH_VOWEL_OPEN_A, "AA");
-assert_eq(shabda_arpabet_to_phoneme("AE"), SVARA_PH_VOWEL_ASH, "AE");
-assert_eq(shabda_arpabet_to_phoneme("AH"), SVARA_PH_VOWEL_CUP_V, "AH");
-assert_eq(shabda_arpabet_to_phoneme("AO"), SVARA_PH_VOWEL_OPEN_O, "AO");
-assert_eq(shabda_arpabet_to_phoneme("AW"), SVARA_PH_DIPH_AU, "AW");
-assert_eq(shabda_arpabet_to_phoneme("AY"), SVARA_PH_DIPH_AI, "AY");
-assert_eq(shabda_arpabet_to_phoneme("EH"), SVARA_PH_VOWEL_OPEN_E, "EH");
-assert_eq(shabda_arpabet_to_phoneme("ER"), SVARA_PH_VOWEL_BIRD, "ER");
-assert_eq(shabda_arpabet_to_phoneme("EY"), SVARA_PH_DIPH_EI, "EY");
-assert_eq(shabda_arpabet_to_phoneme("IH"), SVARA_PH_VOWEL_NEAR_I, "IH");
-assert_eq(shabda_arpabet_to_phoneme("IY"), SVARA_PH_VOWEL_E, "IY");
-assert_eq(shabda_arpabet_to_phoneme("OW"), SVARA_PH_DIPH_OU, "OW");
-assert_eq(shabda_arpabet_to_phoneme("OY"), SVARA_PH_DIPH_OI, "OY");
-assert_eq(shabda_arpabet_to_phoneme("UH"), SVARA_PH_VOWEL_NEAR_U, "UH");
-assert_eq(shabda_arpabet_to_phoneme("UW"), SVARA_PH_VOWEL_U, "UW");
+assert_eq(shbdk_arpabet_to_phoneme("AA"), SVARA_PH_VOWEL_OPEN_A, "AA");
+assert_eq(shbdk_arpabet_to_phoneme("AE"), SVARA_PH_VOWEL_ASH, "AE");
+assert_eq(shbdk_arpabet_to_phoneme("AH"), SVARA_PH_VOWEL_CUP_V, "AH");
+assert_eq(shbdk_arpabet_to_phoneme("AO"), SVARA_PH_VOWEL_OPEN_O, "AO");
+assert_eq(shbdk_arpabet_to_phoneme("AW"), SVARA_PH_DIPH_AU, "AW");
+assert_eq(shbdk_arpabet_to_phoneme("AY"), SVARA_PH_DIPH_AI, "AY");
+assert_eq(shbdk_arpabet_to_phoneme("EH"), SVARA_PH_VOWEL_OPEN_E, "EH");
+assert_eq(shbdk_arpabet_to_phoneme("ER"), SVARA_PH_VOWEL_BIRD, "ER");
+assert_eq(shbdk_arpabet_to_phoneme("EY"), SVARA_PH_DIPH_EI, "EY");
+assert_eq(shbdk_arpabet_to_phoneme("IH"), SVARA_PH_VOWEL_NEAR_I, "IH");
+assert_eq(shbdk_arpabet_to_phoneme("IY"), SVARA_PH_VOWEL_E, "IY");
+assert_eq(shbdk_arpabet_to_phoneme("OW"), SVARA_PH_DIPH_OU, "OW");
+assert_eq(shbdk_arpabet_to_phoneme("OY"), SVARA_PH_DIPH_OI, "OY");
+assert_eq(shbdk_arpabet_to_phoneme("UH"), SVARA_PH_VOWEL_NEAR_U, "UH");
+assert_eq(shbdk_arpabet_to_phoneme("UW"), SVARA_PH_VOWEL_U, "UW");
 
 # ================================================================
 test_group("consonant mappings");
-assert_eq(shabda_arpabet_to_phoneme("B"), SVARA_PH_PLOSIVE_B, "B");
-assert_eq(shabda_arpabet_to_phoneme("CH"), SVARA_PH_AFFR_CH, "CH");
-assert_eq(shabda_arpabet_to_phoneme("D"), SVARA_PH_PLOSIVE_D, "D");
-assert_eq(shabda_arpabet_to_phoneme("DH"), SVARA_PH_FRIC_DH, "DH");
-assert_eq(shabda_arpabet_to_phoneme("F"), SVARA_PH_FRIC_F, "F");
-assert_eq(shabda_arpabet_to_phoneme("G"), SVARA_PH_PLOSIVE_G, "G");
-assert_eq(shabda_arpabet_to_phoneme("HH"), SVARA_PH_FRIC_H, "HH");
-assert_eq(shabda_arpabet_to_phoneme("JH"), SVARA_PH_AFFR_J, "JH");
-assert_eq(shabda_arpabet_to_phoneme("K"), SVARA_PH_PLOSIVE_K, "K");
-assert_eq(shabda_arpabet_to_phoneme("L"), SVARA_PH_LATERAL_L, "L");
-assert_eq(shabda_arpabet_to_phoneme("M"), SVARA_PH_NASAL_M, "M");
-assert_eq(shabda_arpabet_to_phoneme("N"), SVARA_PH_NASAL_N, "N");
-assert_eq(shabda_arpabet_to_phoneme("NG"), SVARA_PH_NASAL_NG, "NG");
-assert_eq(shabda_arpabet_to_phoneme("P"), SVARA_PH_PLOSIVE_P, "P");
-assert_eq(shabda_arpabet_to_phoneme("R"), SVARA_PH_APPROX_R, "R");
-assert_eq(shabda_arpabet_to_phoneme("S"), SVARA_PH_FRIC_S, "S");
-assert_eq(shabda_arpabet_to_phoneme("SH"), SVARA_PH_FRIC_SH, "SH");
-assert_eq(shabda_arpabet_to_phoneme("T"), SVARA_PH_PLOSIVE_T, "T");
-assert_eq(shabda_arpabet_to_phoneme("TH"), SVARA_PH_FRIC_TH, "TH");
-assert_eq(shabda_arpabet_to_phoneme("V"), SVARA_PH_FRIC_V, "V");
-assert_eq(shabda_arpabet_to_phoneme("W"), SVARA_PH_APPROX_W, "W");
-assert_eq(shabda_arpabet_to_phoneme("Y"), SVARA_PH_APPROX_J, "Y");
-assert_eq(shabda_arpabet_to_phoneme("Z"), SVARA_PH_FRIC_Z, "Z");
-assert_eq(shabda_arpabet_to_phoneme("ZH"), SVARA_PH_FRIC_ZH, "ZH");
+assert_eq(shbdk_arpabet_to_phoneme("B"), SVARA_PH_PLOSIVE_B, "B");
+assert_eq(shbdk_arpabet_to_phoneme("CH"), SVARA_PH_AFFR_CH, "CH");
+assert_eq(shbdk_arpabet_to_phoneme("D"), SVARA_PH_PLOSIVE_D, "D");
+assert_eq(shbdk_arpabet_to_phoneme("DH"), SVARA_PH_FRIC_DH, "DH");
+assert_eq(shbdk_arpabet_to_phoneme("F"), SVARA_PH_FRIC_F, "F");
+assert_eq(shbdk_arpabet_to_phoneme("G"), SVARA_PH_PLOSIVE_G, "G");
+assert_eq(shbdk_arpabet_to_phoneme("HH"), SVARA_PH_FRIC_H, "HH");
+assert_eq(shbdk_arpabet_to_phoneme("JH"), SVARA_PH_AFFR_J, "JH");
+assert_eq(shbdk_arpabet_to_phoneme("K"), SVARA_PH_PLOSIVE_K, "K");
+assert_eq(shbdk_arpabet_to_phoneme("L"), SVARA_PH_LATERAL_L, "L");
+assert_eq(shbdk_arpabet_to_phoneme("M"), SVARA_PH_NASAL_M, "M");
+assert_eq(shbdk_arpabet_to_phoneme("N"), SVARA_PH_NASAL_N, "N");
+assert_eq(shbdk_arpabet_to_phoneme("NG"), SVARA_PH_NASAL_NG, "NG");
+assert_eq(shbdk_arpabet_to_phoneme("P"), SVARA_PH_PLOSIVE_P, "P");
+assert_eq(shbdk_arpabet_to_phoneme("R"), SVARA_PH_APPROX_R, "R");
+assert_eq(shbdk_arpabet_to_phoneme("S"), SVARA_PH_FRIC_S, "S");
+assert_eq(shbdk_arpabet_to_phoneme("SH"), SVARA_PH_FRIC_SH, "SH");
+assert_eq(shbdk_arpabet_to_phoneme("T"), SVARA_PH_PLOSIVE_T, "T");
+assert_eq(shbdk_arpabet_to_phoneme("TH"), SVARA_PH_FRIC_TH, "TH");
+assert_eq(shbdk_arpabet_to_phoneme("V"), SVARA_PH_FRIC_V, "V");
+assert_eq(shbdk_arpabet_to_phoneme("W"), SVARA_PH_APPROX_W, "W");
+assert_eq(shbdk_arpabet_to_phoneme("Y"), SVARA_PH_APPROX_J, "Y");
+assert_eq(shbdk_arpabet_to_phoneme("Z"), SVARA_PH_FRIC_Z, "Z");
+assert_eq(shbdk_arpabet_to_phoneme("ZH"), SVARA_PH_FRIC_ZH, "ZH");
 
 # ================================================================
 test_group("unknown symbol");
-assert_eq(shabda_arpabet_to_phoneme("XX"), SHABDA_PH_NONE, "XX unknown");
-assert_eq(shabda_arpabet_to_phoneme(""), SHABDA_PH_NONE, "empty unknown");
+assert_eq(shbdk_arpabet_to_phoneme("XX"), SHBDK_PH_NONE, "XX unknown");
+assert_eq(shbdk_arpabet_to_phoneme(""), SHBDK_PH_NONE, "empty unknown");
 
 # ================================================================
 test_group("stress strip helpers");
-assert_eq(shabda_arpabet_base_len("AH0"), 2, "AH0 base len");
-assert_eq(shabda_arpabet_stress("AH0"), 0, "AH0 stress 0");
-assert_eq(shabda_arpabet_stress("AH1"), 1, "AH1 stress 1");
-assert_eq(shabda_arpabet_stress("AH2"), 2, "AH2 stress 2");
-assert_eq(shabda_arpabet_stress("B"), SHABDA_PH_NONE, "B no stress");
-assert_eq(shabda_arpabet_base_len("B"), 1, "B base len");
-assert_eq(shabda_arpabet_stress(""), SHABDA_PH_NONE, "empty no stress");
+assert_eq(shbdk_arpabet_base_len("AH0"), 2, "AH0 base len");
+assert_eq(shbdk_arpabet_stress("AH0"), 0, "AH0 stress 0");
+assert_eq(shbdk_arpabet_stress("AH1"), 1, "AH1 stress 1");
+assert_eq(shbdk_arpabet_stress("AH2"), 2, "AH2 stress 2");
+assert_eq(shbdk_arpabet_stress("B"), SHBDK_PH_NONE, "B no stress");
+assert_eq(shbdk_arpabet_base_len("B"), 1, "B base len");
+assert_eq(shbdk_arpabet_stress(""), SHBDK_PH_NONE, "empty no stress");
 
 # ================================================================
 test_group("AH/schwa distinction");
-assert_eq(shabda_arpabet_to_phoneme_with_stress("AH0"), SVARA_PH_VOWEL_SCHWA, "AH0 -> schwa");
-assert_eq(shabda_arpabet_to_phoneme_with_stress("AH1"), SVARA_PH_VOWEL_CUP_V, "AH1 -> cup-v");
-assert_eq(shabda_arpabet_to_phoneme_with_stress("AH2"), SVARA_PH_VOWEL_CUP_V, "AH2 -> cup-v");
+assert_eq(shbdk_arpabet_to_phoneme_with_stress("AH0"), SVARA_PH_VOWEL_SCHWA, "AH0 -> schwa");
+assert_eq(shbdk_arpabet_to_phoneme_with_stress("AH1"), SVARA_PH_VOWEL_CUP_V, "AH1 -> cup-v");
+assert_eq(shbdk_arpabet_to_phoneme_with_stress("AH2"), SVARA_PH_VOWEL_CUP_V, "AH2 -> cup-v");
 
 # ================================================================
 test_group("with_stress strips digits");
-assert_eq(shabda_arpabet_to_phoneme_with_stress("AA1"), SVARA_PH_VOWEL_OPEN_A, "AA1 -> open-a");
-assert_eq(shabda_arpabet_to_phoneme_with_stress("IY0"), SVARA_PH_VOWEL_E, "IY0 -> vowel-e");
-assert_eq(shabda_arpabet_to_phoneme_with_stress("B"), SVARA_PH_PLOSIVE_B, "B -> plosive-b");
+assert_eq(shbdk_arpabet_to_phoneme_with_stress("AA1"), SVARA_PH_VOWEL_OPEN_A, "AA1 -> open-a");
+assert_eq(shbdk_arpabet_to_phoneme_with_stress("IY0"), SVARA_PH_VOWEL_E, "IY0 -> vowel-e");
+assert_eq(shbdk_arpabet_to_phoneme_with_stress("B"), SVARA_PH_PLOSIVE_B, "B -> plosive-b");
 
 # ================================================================
 test_group("phoneme -> arpabet (reverse)");
-assert_streq(shabda_phoneme_to_arpabet(SVARA_PH_VOWEL_OPEN_A), "AA1", "open-a -> AA1");
-assert_streq(shabda_phoneme_to_arpabet(SVARA_PH_VOWEL_SCHWA), "AH0", "schwa -> AH0");
-assert_streq(shabda_phoneme_to_arpabet(SVARA_PH_VOWEL_CUP_V), "AH1", "cup-v -> AH1");
-assert_streq(shabda_phoneme_to_arpabet(SVARA_PH_PLOSIVE_K), "K", "plosive-k -> K");
-assert_streq(shabda_phoneme_to_arpabet(SVARA_PH_NASAL_NG), "NG", "nasal-ng -> NG");
-assert_streq(shabda_phoneme_to_arpabet(SVARA_PH_APPROX_J), "Y", "approx-j -> Y");
-assert_eq(shabda_phoneme_to_arpabet(SVARA_PH_SILENCE), 0, "silence has no arpabet");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_VOWEL_OPEN_A), "AA1", "open-a -> AA1");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_VOWEL_SCHWA), "AH0", "schwa -> AH0");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_VOWEL_CUP_V), "AH1", "cup-v -> AH1");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_PLOSIVE_K), "K", "plosive-k -> K");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_NASAL_NG), "NG", "nasal-ng -> NG");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_APPROX_J), "Y", "approx-j -> Y");
+assert_eq(shbdk_phoneme_to_arpabet(SVARA_PH_SILENCE), 0, "silence has no arpabet");
 
 var rc = assert_summary();
 syscall(60, rc);

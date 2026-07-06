@@ -26,45 +26,45 @@ fn _w3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_pu
 
 # ================================================================
 test_group("context new");
-var ctx = shabda_heteronym_context_new(_w3("I", "read", "books"), 1);
-assert_streq(shabda_heteronym_target_word(ctx), "read", "target = read");
-assert_eq(vec_len(shabda_heteronym_preceding_words(ctx)), 1, "1 preceding");
-assert_streq(vec_get(shabda_heteronym_preceding_words(ctx), 0), "I", "preceding = I");
-assert_eq(vec_len(shabda_heteronym_following_words(ctx)), 1, "1 following");
-assert_streq(vec_get(shabda_heteronym_following_words(ctx), 0), "books", "following = books");
+var ctx = shbdk_heteronym_context_new(_w3("I", "read", "books"), 1);
+assert_streq(shbdk_heteronym_target_word(ctx), "read", "target = read");
+assert_eq(vec_len(shbdk_heteronym_preceding_words(ctx)), 1, "1 preceding");
+assert_streq(vec_get(shbdk_heteronym_preceding_words(ctx), 0), "I", "preceding = I");
+assert_eq(vec_len(shbdk_heteronym_following_words(ctx)), 1, "1 following");
+assert_streq(vec_get(shbdk_heteronym_following_words(ctx), 0), "books", "following = books");
 
 # ================================================================
 test_group("context first / last word");
-var ctxf = shabda_heteronym_context_new(_w2("read", "this"), 0);
-assert_eq(vec_len(shabda_heteronym_preceding_words(ctxf)), 0, "first: no preceding");
-assert_eq(vec_len(shabda_heteronym_following_words(ctxf)), 1, "first: 1 following");
-var ctxl = shabda_heteronym_context_new(_w2("I", "read"), 1);
-assert_eq(vec_len(shabda_heteronym_preceding_words(ctxl)), 1, "last: 1 preceding");
-assert_eq(vec_len(shabda_heteronym_following_words(ctxl)), 0, "last: no following");
+var ctxf = shbdk_heteronym_context_new(_w2("read", "this"), 0);
+assert_eq(vec_len(shbdk_heteronym_preceding_words(ctxf)), 0, "first: no preceding");
+assert_eq(vec_len(shbdk_heteronym_following_words(ctxf)), 1, "first: 1 following");
+var ctxl = shbdk_heteronym_context_new(_w2("I", "read"), 1);
+assert_eq(vec_len(shbdk_heteronym_preceding_words(ctxl)), 1, "last: 1 preceding");
+assert_eq(vec_len(shbdk_heteronym_following_words(ctxl)), 0, "last: no following");
 
 # ================================================================
 test_group("lookup_with_context: single pronunciation ignores resolver");
-var em = shabda_dict_english_minimal();
-var sctx = shabda_heteronym_context_new(_w1("the"), 0);
-assert_eq(shabda_dict_lookup_with_context(em, "the", &_second_resolver, sctx), shabda_dict_lookup(em, "the"), "the (1 pron) -> primary");
+var em = shbdk_dict_english_minimal();
+var sctx = shbdk_heteronym_context_new(_w1("the"), 0);
+assert_eq(shbdk_dict_lookup_with_context(em, "the", &_second_resolver, sctx), shbdk_dict_lookup(em, "the"), "the (1 pron) -> primary");
 
 # ================================================================
 test_group("lookup_with_context: heteronym variant selection");
-var eng = shabda_dict_english();
-var re = shabda_dict_lookup_entry(eng, "read");
+var eng = shbdk_dict_english();
+var re = shbdk_dict_lookup_entry(eng, "read");
 assert_neq(re, 0, "read present");
-assert_gte(shabda_dict_entry_len(re), 2, "read has >= 2 pronunciations");
-var rall = shabda_dict_entry_all(re);
-var rctx = shabda_heteronym_context_new(_w3("I", "read", "books"), 1);
-assert_eq(shabda_dict_lookup_with_context(eng, "read", &_primary_resolver, rctx), shabda_pronunciation_phonemes(vec_get(rall, 0)), "primary -> variant 0");
-assert_eq(shabda_dict_lookup_with_context(eng, "read", &_second_resolver, rctx), shabda_pronunciation_phonemes(vec_get(rall, 1)), "second -> variant 1");
-assert_eq(shabda_dict_lookup_with_context(eng, "read", &_none_resolver, rctx), shabda_dict_lookup(eng, "read"), "none -> primary");
-assert_eq(shabda_dict_lookup_with_context(eng, "read", &_bad_resolver, rctx), shabda_dict_lookup(eng, "read"), "out-of-bounds idx -> primary");
+assert_gte(shbdk_dict_entry_len(re), 2, "read has >= 2 pronunciations");
+var rall = shbdk_dict_entry_all(re);
+var rctx = shbdk_heteronym_context_new(_w3("I", "read", "books"), 1);
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_primary_resolver, rctx), shbdk_pronunciation_phonemes(vec_get(rall, 0)), "primary -> variant 0");
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_second_resolver, rctx), shbdk_pronunciation_phonemes(vec_get(rall, 1)), "second -> variant 1");
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_none_resolver, rctx), shbdk_dict_lookup(eng, "read"), "none -> primary");
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_bad_resolver, rctx), shbdk_dict_lookup(eng, "read"), "out-of-bounds idx -> primary");
 
 # ================================================================
 test_group("lookup_with_context: missing word");
-var mctx = shabda_heteronym_context_new(_w1("xyzzy"), 0);
-assert_eq(shabda_dict_lookup_with_context(em, "xyzzy", &_primary_resolver, mctx), 0, "missing -> 0 (None)");
+var mctx = shbdk_heteronym_context_new(_w1("xyzzy"), 0);
+assert_eq(shbdk_dict_lookup_with_context(em, "xyzzy", &_primary_resolver, mctx), 0, "missing -> 0 (None)");
 
 var rc = assert_summary();
 syscall(60, rc);

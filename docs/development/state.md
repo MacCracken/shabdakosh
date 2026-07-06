@@ -29,7 +29,7 @@ preserved at `rust-old/` as the parity oracle.
   support first — shabdakosh's G2P fallback uses fn-pointers, which the cx backend
   currently rejects; the language author is adding cx support later. **wasm**
   (verified 2026-07-05): the WasmDict binding surface is
-  ported as a normal `.cyr` module (`src/wasm.cyr`, `shabda_wasm_dict_*`), thin
+  ported as a normal `.cyr` module (`src/wasm.cyr`, `shbdk_wasm_dict_*`), thin
   wrappers over the dict with the same 12 methods and the same JSON boundary
   shapes. How that surface reaches a browser is the toolchain's concern, not this
   crate's — not a "gap" to design around here. (Toolchain note for reference:
@@ -44,10 +44,10 @@ preserved at `rust-old/` as the parity oracle.
   No per-type `#derive` on container types.
 - **Errors** (locked 2026-07-05): built on **sakshi** (`lib/sakshi.cyr`, the AGNOS
   error/tracing substrate) — packed i64 `[ctx][category][code]`, `0 == ok`. The Rust
-  `ShabdakoshError` variants → `SHABDA_ERR_*` codes + `shabda_err_name()`.
+  `ShabdakoshError` variants → `SHBDK_ERR_*` codes + `shbdk_err_name()`.
 - **Collections**: base dict → `lib/hashmap.cyr` (hashbrown replacement). User overlay
   BTreeMap → hashmap + sort-on-export (no Cyrius BTreeMap).
-- **Naming**: every symbol prefixed `shabda_`/`SHABDA_`/`SH_`/`Sh` (flat link
+- **Naming**: every symbol prefixed `shbdk_`/`SHBDK_`/`SH_`/`Sh` (flat link
   namespace, coexists with svara/varna).
 
 ## Port progress (module by module)
@@ -58,7 +58,7 @@ formats → gated/optional.
 | Tier | Rust module | Cyrius | Status | Tests | Notes |
 |------|-------------|--------|--------|-------|-------|
 | — | (scaffold) | src/main.cyr | ✅ green | 2 | `cyrius build` OK; smoke 2/2 |
-| L0 | error.rs | src/error.cyr | ✅ ported | 15 | ShabdakoshError → sakshi packed codes + `shabda_err_name`; fmt/lint clean |
+| L0 | error.rs | src/error.cyr | ✅ ported | 15 | ShabdakoshError → sakshi packed codes + `shbdk_err_name`; fmt/lint clean |
 | L1 | arpabet.rs | src/arpabet.cyr | ✅ ported | 61 | ARPABET ↔ `SVARA_PH_*`; svara dep wired; fmt/lint clean |
 | L1 | ipa.rs | src/ipa.cyr | ✅ ported | 74 | IPA ↔ `SVARA_PH_*`; greedy longest-byte-match parser (tie-bar affricates), phonemes↔string; fmt/lint clean |
 | L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 27 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; NaN-safe freq-desc insertion sort (parity-audited); container serde in L5 |
@@ -72,7 +72,7 @@ formats → gated/optional.
 | L4 | dictionary/trie.rs | src/dictionary/trie.cyr | ✅ ported | 30 | PrefixTrie (byte-keyed vec-of-pairs nodes, recursive collect); from_dict; wires keystone prefix_search |
 | L4 | dictionary/heteronym.rs | src/dictionary/heteronym.cyr | ✅ ported | 17 | HeteronymContext + resolver as fn-ptr (fncall2); lookup_with_context variant selection |
 | L4 | dictionary/g2p.rs | src/dictionary/g2p.cyr | ✅ ported | 29 | G2PResult, LookupSource, FallbackDict (model = (predict_fp,state) pair), promote*, FstModel stub; wires with_fallback |
-| L4 | dictionary/static_dict.rs | src/dictionary/static_dict.cyr | ✅ ported | 21 | phf→lazy cached singleton over shabda_dict_english (no const-eval for compile-time perfect hash); lookup/lookup_entry/len/is_empty; StaticEntry collapses onto ShDictEntry |
+| L4 | dictionary/static_dict.rs | src/dictionary/static_dict.cyr | ✅ ported | 21 | phf→lazy cached singleton over shbdk_dict_english (no const-eval for compile-time perfect hash); lookup/lookup_entry/len/is_empty; StaticEntry collapses onto ShbdkDictEntry |
 | L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr | ✅ ported | 45 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec** (bayan DOM both ways) — the serde-stance deliverable |
 | L5 | dictionary/format/pls.rs | src/dictionary/format/pls.cyr | ✅ ported | 10 | W3C PLS XML parse/emit (ipa alphabet), hand-rolled scan; to_pls/to_pls_with_user |
 | L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ✅ ported | 13 | SSML <phoneme alphabet ph>word</phoneme> parse/emit; reuses pls XML scan helpers |
@@ -86,7 +86,7 @@ formats → gated/optional.
 
 **7 of ~24 modules ported** — L1 leaf tier + L2 notation complete (L0 error; L1 arpabet, ipa,
 entry, morphology, syllable; L2 notation). Build + smoke + tests green (273 assertions across
-8 suites). `SHABDA_PH_NONE` sentinel lives in `error.cyr` (L0 base).
+8 suites). `SHBDK_PH_NONE` sentinel lives in `error.cyr` (L0 base).
 
 **Parity audit (7 auditors + adversarial verify) — 5 modules clean, 2 low-severity divergences
 found & fixed + regression-tested:** (a) entry's freq sort bubbled a NaN frequency to primary
@@ -98,7 +98,7 @@ found & fixed + regression-tested:** (a) entry's freq sort bubbled a NaN frequen
 `src/dictionary/_cmudict_data.cyr` (283 KB, 12 packed-string pieces, 10,617 words, 0 unknown
 symbols) — reusing the ported `arpabet.cyr` mapping (no Rust-style table duplication).
 `src/dictionary/cmudict.cyr` parses the pieces into a `lib/hashmap` map at load. Verified:
-`shabda_cmudict_english()` loads 10,617 words; `cat`→[K,AE,T], `a`→[schwa], heteronym `bass`→2
+`shbdk_cmudict_english()` loads 10,617 words; `cat`→[K,AE,T], `a`→[schwa], heteronym `bass`→2
 prons. Regen: `cyrius build programs/gen_cmudict.cyr build/gen_cmudict && ./build/gen_cmudict`.
 Total 327 assertions / 10 suites, all green.
 
@@ -170,7 +170,7 @@ note): the binding is just another `.cyr` surface; browser delivery is the toolc
   VOWEL_LONG_I → reads as consonant); dict.validate / dict.validate_phonotactics convenience.
 - **varna** wired as a git+tag dep (`dist/varna.cyr`, self-contained bundle, bare `phoneme_*`/`script_*`
   symbols — links cleanly alongside svara, no collision); phonemes bridge svara SVARA_PH_* ordinals
-  → varna IPA strings via shabda_phoneme_to_ipa.
+  → varna IPA strings via shbdk_phoneme_to_ipa.
 
 Full tree now **24 suites / 632 assertions** green. All Rust modules are ported (ffi dropped;
 wasm ported as a `.cyr` surface).
@@ -181,13 +181,13 @@ because distlib capped per-module reads at 256 KB and the data was 283 KB — bu
 raised that cap to 1 MB (our proposal), so the data was **reverted to a single
 `_cmudict_data.cyr`** on 2026-07-06 (see [backlog.md](backlog.md) Resolved). Verified
 consumer-side: a smoke including the svara chain + varna +
-`dist/shabdakosh.cyr` (stdlib from cyrius.cyml) links and runs — `shabda_dict_english()` loads
+`dist/shabdakosh.cyr` (stdlib from cyrius.cyml) links and runs — `shbdk_dict_english()` loads
 all 10617 entries, detect→Latn, wasm lookup→JSON IPA. (Note: the auto-generated `.deps` sidecar
 lists only hisab/goonj/naad, not the stdlib/svara/varna leaves — a distlib-tool heuristic;
 consumers declare shabdakosh+svara+varna deps + stdlib folds explicitly, so consumption works.)
 
 **static_dict done (2026-07-05)**: the last unported Rust module — `static_dict.rs` (phf-gated) —
-ported as a lazy cached singleton over `shabda_dict_english()` (CYRIUS has no compile-time perfect
+ported as a lazy cached singleton over `shbdk_dict_english()` (CYRIUS has no compile-time perfect
 hash; surface + lookup preserved, one-time ~9.6 ms load). Filed a cyrius const-eval proposal
 (`2026-07-05-const-eval-comptime.md`) for the residual phf gap. 21 assertions.
 
@@ -217,7 +217,7 @@ decisions + fixed ADR index. The 16 track items are recorded in [backlog.md](bac
 **Parity gap closed (2026-07-06)**: the 6 varna-lexicon dict constructors (from_lexicon +
 spanish/hindi/german/sanskrit) — the top backlog parity item — are now ported in
 `src/dictionary/lexicon.cyr` (a varna-gated module; they can't live in mod.cyr, which non-varna
-tests link) over varna's Swadesh API. 12 assertions. Also fixed `shabda_dict_language` return
+tests link) over varna's Swadesh API. 12 assertions. Also fixed `shbdk_dict_language` return
 annotation (`i64`→`cstring`). Toolchain now 6.4.10, which shipped the distlib 256KB→1MB cap fix
 from our proposal — so the cmudict data was reverted from 2 shards back to a single
 `_cmudict_data.cyr` (generator + 19 includers + `[lib].modules` collapsed).

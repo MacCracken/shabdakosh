@@ -18,40 +18,40 @@ alloc_init();
 
 fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
-fn _contains(s, sub): i64 { return _shabda_pls_find(s, 0, strlen(s), sub); }
+fn _contains(s, sub): i64 { return _shbdk_pls_find(s, 0, strlen(s), sub); }
 
 # ================================================================
 test_group("parse minimal PLS");
-var d = shabda_parse_pls("<?xml version=\"1.0\"?>\n<lexicon alphabet=\"ipa\" xml:lang=\"en-US\">\n  <lexeme>\n    <grapheme>hello</grapheme>\n    <phoneme>hɛloʊ</phoneme>\n  </lexeme>\n</lexicon>");
+var d = shbdk_parse_pls("<?xml version=\"1.0\"?>\n<lexicon alphabet=\"ipa\" xml:lang=\"en-US\">\n  <lexeme>\n    <grapheme>hello</grapheme>\n    <phoneme>hɛloʊ</phoneme>\n  </lexeme>\n</lexicon>");
 assert_neq(d, 0, "parsed");
-assert_eq(shabda_dict_len(d), 1, "1 entry");
-assert_neq(shabda_dict_lookup(d, "hello"), 0, "hello present");
+assert_eq(shbdk_dict_len(d), 1, "1 entry");
+assert_neq(shbdk_dict_lookup(d, "hello"), 0, "hello present");
 
 # ================================================================
 test_group("parse multi-phoneme (heteronym)");
-var d2 = shabda_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>read</grapheme><phoneme>ɹid</phoneme><phoneme>ɹɛd</phoneme></lexeme></lexicon>");
+var d2 = shbdk_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>read</grapheme><phoneme>ɹid</phoneme><phoneme>ɹɛd</phoneme></lexeme></lexicon>");
 assert_neq(d2, 0, "parsed");
-var all = shabda_dict_lookup_all(d2, "read");
+var all = shbdk_dict_lookup_all(d2, "read");
 assert_neq(all, 0, "read present");
 assert_eq(vec_len(all), 2, "2 pronunciations");
 
 # ================================================================
 test_group("wrong alphabet -> error");
-assert_eq(shabda_parse_pls("<lexicon alphabet=\"x-sampa\" xml:lang=\"en-US\"></lexicon>"), 0, "x-sampa -> 0");
+assert_eq(shbdk_parse_pls("<lexicon alphabet=\"x-sampa\" xml:lang=\"en-US\"></lexicon>"), 0, "x-sampa -> 0");
 
 # ================================================================
 test_group("roundtrip");
-var rd = shabda_dict_new();
-shabda_dict_insert(rd, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
-var rd2 = shabda_parse_pls(shabda_to_pls(rd, "en-US"));
+var rd = shbdk_dict_new();
+shbdk_dict_insert(rd, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+var rd2 = shbdk_parse_pls(shbdk_to_pls(rd, "en-US"));
 assert_neq(rd2, 0, "roundtrip parsed");
-assert_neq(shabda_dict_lookup(rd2, "cat"), 0, "cat present after roundtrip");
+assert_neq(shbdk_dict_lookup(rd2, "cat"), 0, "cat present after roundtrip");
 
 # ================================================================
 test_group("xml escape in output");
-var ed = shabda_dict_new();
-shabda_dict_insert(ed, "a&b", _v1(SVARA_PH_VOWEL_A));
-assert_gte(_contains(shabda_to_pls(ed, "en-US"), "a&amp;b"), 0, "grapheme escaped as a&amp;b");
+var ed = shbdk_dict_new();
+shbdk_dict_insert(ed, "a&b", _v1(SVARA_PH_VOWEL_A));
+assert_gte(_contains(shbdk_to_pls(ed, "en-US"), "a&amp;b"), 0, "grapheme escaped as a&amp;b");
 
 var rc = assert_summary();
 syscall(60, rc);

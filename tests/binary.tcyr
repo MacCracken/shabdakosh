@@ -18,34 +18,34 @@ fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 
 # ================================================================
 test_group("roundtrip minimal");
-var d = shabda_dict_english_minimal();
-var d2 = shabda_from_binary(shabda_to_binary(d));
+var d = shbdk_dict_english_minimal();
+var d2 = shbdk_from_binary(shbdk_to_binary(d));
 assert_neq(d2, 0, "decoded");
-assert_eq(shabda_dict_len(d2), shabda_dict_len(d), "same len (29)");
-assert_streq(shabda_dict_language(d2), "en", "language preserved");
-var h1 = shabda_dict_lookup(d, "hello");
-var h2 = shabda_dict_lookup(d2, "hello");
+assert_eq(shbdk_dict_len(d2), shbdk_dict_len(d), "same len (29)");
+assert_streq(shbdk_dict_language(d2), "en", "language preserved");
+var h1 = shbdk_dict_lookup(d, "hello");
+var h2 = shbdk_dict_lookup(d2, "hello");
 assert_eq(vec_len(h2), vec_len(h1), "hello same phoneme count");
 assert_eq(vec_get(h2, 0), vec_get(h1, 0), "hello[0] same");
 assert_eq(vec_get(h2, 3), vec_get(h1, 3), "hello[3] same");
 
 # ================================================================
 test_group("roundtrip with user overlay");
-var du = shabda_dict_english_minimal();
-shabda_dict_insert_user(du, "custom", _v1(SVARA_PH_VOWEL_A));
-var du2 = shabda_from_binary(shabda_to_binary(du));
-assert_eq(shabda_dict_user_len(du2), 1, "user_len 1");
-assert_eq(vec_get(shabda_dict_lookup(du2, "custom"), 0), SVARA_PH_VOWEL_A, "custom preserved");
+var du = shbdk_dict_english_minimal();
+shbdk_dict_insert_user(du, "custom", _v1(SVARA_PH_VOWEL_A));
+var du2 = shbdk_from_binary(shbdk_to_binary(du));
+assert_eq(shbdk_dict_user_len(du2), 1, "user_len 1");
+assert_eq(vec_get(shbdk_dict_lookup(du2, "custom"), 0), SVARA_PH_VOWEL_A, "custom preserved");
 
 # ================================================================
 test_group("roundtrip empty");
-var de2 = shabda_from_binary(shabda_to_binary(shabda_dict_new()));
+var de2 = shbdk_from_binary(shbdk_to_binary(shbdk_dict_new()));
 assert_neq(de2, 0, "empty decoded");
-assert_eq(shabda_dict_is_empty(de2), 1, "is_empty");
+assert_eq(shbdk_dict_is_empty(de2), 1, "is_empty");
 
 # ================================================================
 test_group("header");
-var hb = shabda_to_binary(shabda_dict_new());
+var hb = shbdk_to_binary(shbdk_dict_new());
 assert_gte(str_len(hb), 5, "len >= header");
 assert_eq(load8(str_data(hb) + 0), 83, "magic S");
 assert_eq(load8(str_data(hb) + 1), 72, "magic H");
@@ -59,22 +59,22 @@ var shortbuf = alloc(3);
 store8(shortbuf + 0, 0);
 store8(shortbuf + 1, 1);
 store8(shortbuf + 2, 2);
-assert_eq(shabda_from_binary(str_new(shortbuf, 3)), 0, "too short -> 0");
+assert_eq(shbdk_from_binary(str_new(shortbuf, 3)), 0, "too short -> 0");
 var badbuf = alloc(5);
 store8(badbuf + 0, 0);
 store8(badbuf + 1, 0);
 store8(badbuf + 2, 0);
 store8(badbuf + 3, 0);
 store8(badbuf + 4, 1);
-assert_eq(shabda_from_binary(str_new(badbuf, 5)), 0, "bad magic -> 0");
-var bv = shabda_to_binary(shabda_dict_new());
+assert_eq(shbdk_from_binary(str_new(badbuf, 5)), 0, "bad magic -> 0");
+var bv = shbdk_to_binary(shbdk_dict_new());
 store8(str_data(bv) + 4, 99);
-assert_eq(shabda_from_binary(bv), 0, "bad version -> 0");
+assert_eq(shbdk_from_binary(bv), 0, "bad version -> 0");
 
 # ================================================================
 test_group("smaller than json");
-var sd = shabda_dict_english_minimal();
-assert_lt(str_len(shabda_to_binary(sd)), strlen(shabda_to_json(sd)), "binary smaller than JSON");
+var sd = shbdk_dict_english_minimal();
+assert_lt(str_len(shbdk_to_binary(sd)), strlen(shbdk_to_json(sd)), "binary smaller than JSON");
 
 # ================================================================
 # SECURITY regression (audit 2026-07-05): malformed blobs with attacker-controlled
@@ -85,18 +85,18 @@ var mb = alloc(16);
 store8(mb + 0, 83); store8(mb + 1, 72); store8(mb + 2, 66); store8(mb + 3, 68); store8(mb + 4, 1);
 store8(mb + 5, 0);
 store8(mb + 6, 255); store8(mb + 7, 255); store8(mb + 8, 255); store8(mb + 9, 255);
-assert_eq(shabda_from_binary(str_new(mb, 10)), 0, "huge u32 entry count -> 0");
+assert_eq(shbdk_from_binary(str_new(mb, 10)), 0, "huge u32 entry count -> 0");
 # valid header + no-language + count 1 + huge u16 word length 0xFFFF, then EOF
 var mw = alloc(16);
 store8(mw + 0, 83); store8(mw + 1, 72); store8(mw + 2, 66); store8(mw + 3, 68); store8(mw + 4, 1);
 store8(mw + 5, 0);
 store8(mw + 6, 1); store8(mw + 7, 0); store8(mw + 8, 0); store8(mw + 9, 0);
 store8(mw + 10, 255); store8(mw + 11, 255);
-assert_eq(shabda_from_binary(str_new(mw, 12)), 0, "huge u16 word length -> 0");
+assert_eq(shbdk_from_binary(str_new(mw, 12)), 0, "huge u16 word length -> 0");
 # truncated: valid 5-byte header, nothing after
 var mt = alloc(8);
 store8(mt + 0, 83); store8(mt + 1, 72); store8(mt + 2, 66); store8(mt + 3, 68); store8(mt + 4, 1);
-assert_eq(shabda_from_binary(str_new(mt, 5)), 0, "truncated (header only) -> 0");
+assert_eq(shbdk_from_binary(str_new(mt, 5)), 0, "truncated (header only) -> 0");
 
 var rc = assert_summary();
 syscall(60, rc);

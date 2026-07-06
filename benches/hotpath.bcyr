@@ -30,13 +30,13 @@ var _dict = 0;   # the english dictionary (~10.6k entries)
 var _blob = 0;   # a binary-serialized english dict (Str)
 
 # --- benched hot paths (0-arg wrappers over global fixtures) ---
-fn b_dict_construct() { return shabda_dict_english(); }
-fn b_lookup_hit() { return shabda_dict_lookup(_dict, "the"); }
-fn b_lookup_miss() { return shabda_dict_lookup(_dict, "zzzznotword"); }
-fn b_trie_construct() { return shabda_trie_from_dict(_dict); }
-fn b_prefix_search() { return shabda_dict_prefix_search(_dict, "pre"); }
-fn b_binary_serialize() { return shabda_to_binary(_dict); }
-fn b_binary_deserialize() { return shabda_from_binary(_blob); }
+fn b_dict_construct() { return shbdk_dict_english(); }
+fn b_lookup_hit() { return shbdk_dict_lookup(_dict, "the"); }
+fn b_lookup_miss() { return shbdk_dict_lookup(_dict, "zzzznotword"); }
+fn b_trie_construct() { return shbdk_trie_from_dict(_dict); }
+fn b_prefix_search() { return shbdk_dict_prefix_search(_dict, "pre"); }
+fn b_binary_serialize() { return shbdk_to_binary(_dict); }
+fn b_binary_deserialize() { return shbdk_from_binary(_blob); }
 
 fn bench(name, fp, n) {
     var b = bench_new(name);
@@ -55,8 +55,8 @@ fn bench_batch(name, fp, batch, rounds) {
 
 fn main() {
     alloc_init();
-    _dict = shabda_dict_english();
-    _blob = shabda_to_binary(_dict);
+    _dict = shbdk_dict_english();
+    _blob = shbdk_to_binary(_dict);
 
     # construction (each call rebuilds the full ~10.6k-entry dict — allocates)
     bench("dict english construction", &b_dict_construct, 10);

@@ -8,11 +8,11 @@
 # CYRIUS strings are cstr byte pointers, so this adds a UTF-8 code-point decoder
 # (Rust got char scalars free from `str::chars()`).
 #
-# Requires: lib/varna.cyr (script_*/registry_*). NAMING: shabda_/SHABDA_ prefixes.
+# Requires: lib/varna.cyr (script_*/registry_*). NAMING: shbdk_/SHBDK_ prefixes.
 
 # Decode one UTF-8 code point at byte pointer p; writes the scalar to *out_cp and
 # returns bytes consumed (1..4), or 0 at the NUL terminator.
-fn _shabda_utf8_next(p, out_cp): i64 {
+fn _shbdk_utf8_next(p, out_cp): i64 {
     var b0 = load8(p);
     var b1 = 0;
     var b2 = 0;
@@ -49,21 +49,21 @@ fn _shabda_utf8_next(p, out_cp): i64 {
 }
 
 # Count how many of a word's code points fall inside a varna script's ranges.
-fn _shabda_count_cp_in_script(word, script): i64 {
+fn _shbdk_count_cp_in_script(word, script): i64 {
     var cnt = 0;
     var p = word;
     var cp = alloc(8);
-    var adv = _shabda_utf8_next(p, cp);
+    var adv = _shbdk_utf8_next(p, cp);
     while (adv > 0) {
         if (script_contains_codepoint(script, load64(cp)) == 1) { cnt = cnt + 1; }
         p = p + adv;
-        adv = _shabda_utf8_next(p, cp);
+        adv = _shbdk_utf8_next(p, cp);
     }
     return cnt;
 }
 
 # Lexicographic byte compare of two cstrings: -1 if a<b, 0 if equal, 1 if a>b.
-fn _shabda_cstr_cmp(a, b): i64 {
+fn _shbdk_cstr_cmp(a, b): i64 {
     var i = 0;
     var ca = 0;
     var cb = 0;
@@ -81,7 +81,7 @@ fn _shabda_cstr_cmp(a, b): i64 {
 }
 
 # Membership test: is cstring s present in a vec of cstrings?
-fn _shabda_vec_has_cstr(v, s): i64 {
+fn _shbdk_vec_has_cstr(v, s): i64 {
     var n = vec_len(v);
     var i = 0;
     while (i < n) {
@@ -93,7 +93,7 @@ fn _shabda_vec_has_cstr(v, s): i64 {
 
 # In-place ascending insertion sort of a vec of cstrings (matches Rust
 # Vec::sort_unstable() lexicographic order for the ASCII language codes).
-fn _shabda_sort_cstrs(v): i64 {
+fn _shbdk_sort_cstrs(v): i64 {
     var n = vec_len(v);
     var i = 1;
     var j = 0;
@@ -104,7 +104,7 @@ fn _shabda_sort_cstrs(v): i64 {
         j = i - 1;
         placed = 0;
         while (j >= 0 && placed == 0) {
-            if (_shabda_cstr_cmp(vec_get(v, j), key) == 1) {
+            if (_shbdk_cstr_cmp(vec_get(v, j), key) == 1) {
                 vec_set(v, j + 1, vec_get(v, j));
                 j = j - 1;
             } else {
@@ -121,7 +121,7 @@ fn _shabda_sort_cstrs(v): i64 {
 # 0 if none match. Historical scripts (Xsux/Egyp) are skipped; ties keep the
 # earlier code (script_all_codes order); strict-greater update. (Rust detect_script)
 #must_use
-fn shabda_detect_script(word): cstring {
+fn shbdk_detect_script(word): cstring {
     var codes = script_all_codes();
     var n = vec_len(codes);
     var best = 0;
@@ -137,7 +137,7 @@ fn shabda_detect_script(word): cstring {
         if (streq(code, "Egyp") == 1) { continue; }
         script = script_by_code(code);
         if (script == 0) { continue; }
-        cnt = _shabda_count_cp_in_script(word, script);
+        cnt = _shbdk_count_cp_in_script(word, script);
         if (cnt > best_cnt) {
             best_cnt = cnt;
             best = code;
@@ -151,9 +151,9 @@ fn shabda_detect_script(word): cstring {
 # using the detected script, sorted ascending. Empty vec if no script detected.
 # (Rust detect_language_hint)
 #must_use
-fn shabda_detect_language_hint(word): i64 {
+fn shbdk_detect_language_hint(word): i64 {
     var out = vec_new();
-    var sc = shabda_detect_script(word);
+    var sc = shbdk_detect_script(word);
     if (sc == 0) { return out; }
     var langs = registry_languages();
     var n = vec_len(langs);
@@ -161,20 +161,20 @@ fn shabda_detect_language_hint(word): i64 {
     var li = 0;
     while (i < n) {
         li = vec_get(langs, i);
-        if (_shabda_vec_has_cstr(registry_info_scripts(li), sc) == 1) {
+        if (_shbdk_vec_has_cstr(registry_info_scripts(li), sc) == 1) {
             vec_push(out, registry_info_code(li));
         }
         i = i + 1;
     }
-    _shabda_sort_cstrs(out);
+    _shbdk_sort_cstrs(out);
     return out;
 }
 
 # Detect script and return its (code, name) via out-params; returns 1 on success,
 # 0 if no script detected. Both out values are static cstrings. (Rust detect_script_name)
 #must_use
-fn shabda_detect_script_name(word, out_code, out_name): i64 {
-    var code = shabda_detect_script(word);
+fn shbdk_detect_script_name(word, out_code, out_name): i64 {
+    var code = shbdk_detect_script(word);
     if (code == 0) { return 0; }
     var script = script_by_code(code);
     if (script == 0) { return 0; }

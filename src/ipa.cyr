@@ -4,13 +4,13 @@
 # parser sliced on Unicode chars this works on BYTES: exact lookups compare whole
 # cstrs (streq), and the parser does greedy LONGEST-BYTE-PREFIX matching
 # (5-byte tie-bar affricates down to 1-byte ASCII). svara phonemes are SVARA_PH_*
-# ordinals; "no phoneme" is SHABDA_PH_NONE (from error.cyr).
+# ordinals; "no phoneme" is SHBDK_PH_NONE (from error.cyr).
 #
 # Included after lib/svara.cyr (SVARA_PH_*) and src/error.cyr — the entry orders it.
 
 # 1 if the bytes of cstr `ipa` starting at `pos` begin with cstr `lit` (whole of
 # `lit`). Stops at the first mismatch, so it never reads past `ipa`'s NUL.
-fn _shabda_ipa_starts_with(ipa, pos, lit): i64 {
+fn _shbdk_ipa_starts_with(ipa, pos, lit): i64 {
     var n = strlen(lit);
     var j = 0;
     while (j < n) {
@@ -20,11 +20,11 @@ fn _shabda_ipa_starts_with(ipa, pos, lit): i64 {
     return 1;
 }
 
-# Exact whole-string IPA symbol -> svara phoneme ordinal, or SHABDA_PH_NONE.
+# Exact whole-string IPA symbol -> svara phoneme ordinal, or SHBDK_PH_NONE.
 # (Rust ipa_to_phoneme.) Includes the accepted alternates (ɜ|ɝ, ɡ|g, ɹ|r,
 # tʃ|t͡ʃ, dʒ|d͡ʒ).
 #must_use
-fn shabda_ipa_to_phoneme(ipa): i64 {
+fn shbdk_ipa_to_phoneme(ipa): i64 {
     # Vowels
     if (streq(ipa, "a") == 1) { return SVARA_PH_VOWEL_A; }
     if (streq(ipa, "e") == 1) { return SVARA_PH_VOWEL_E; }
@@ -84,13 +84,13 @@ fn shabda_ipa_to_phoneme(ipa): i64 {
     if (streq(ipa, "r") == 1) { return SVARA_PH_APPROX_R; }
     if (streq(ipa, "w") == 1) { return SVARA_PH_APPROX_W; }
     if (streq(ipa, "j") == 1) { return SVARA_PH_APPROX_J; }
-    return SHABDA_PH_NONE;
+    return SHBDK_PH_NONE;
 }
 
 # svara phoneme ordinal -> IPA cstr (canonical form), or 0 (null cstr) for
 # phonemes with no IPA equivalent. (Rust phoneme_to_ipa.)
 #must_use
-fn shabda_phoneme_to_ipa(ph): cstring {
+fn shbdk_phoneme_to_ipa(ph): cstring {
     # Vowels
     if (ph == SVARA_PH_VOWEL_A)       { return "a"; }
     if (ph == SVARA_PH_VOWEL_E)       { return "e"; }
@@ -151,95 +151,95 @@ fn shabda_phoneme_to_ipa(ph): cstring {
 # Longest phoneme match at byte `pos`. Returns (byte_len << 8) | phoneme on a
 # match (phoneme is 0..100, fits the low byte), or 0 if nothing matches. Ordered
 # longest byte-sequence first so greedy matching prefers multi-symbol units.
-fn _shabda_ipa_match_at(ipa, pos): i64 {
+fn _shbdk_ipa_match_at(ipa, pos): i64 {
     # 5-byte tie-bar affricates
-    if (_shabda_ipa_starts_with(ipa, pos, "t͡ʃ") == 1) { return (5 << 8) | SVARA_PH_AFFR_CH; }
-    if (_shabda_ipa_starts_with(ipa, pos, "d͡ʒ") == 1) { return (5 << 8) | SVARA_PH_AFFR_J; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "t͡ʃ") == 1) { return (5 << 8) | SVARA_PH_AFFR_CH; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "d͡ʒ") == 1) { return (5 << 8) | SVARA_PH_AFFR_J; }
     # 4-byte diphthong
-    if (_shabda_ipa_starts_with(ipa, pos, "ɔɪ") == 1) { return (4 << 8) | SVARA_PH_DIPH_OI; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɔɪ") == 1) { return (4 << 8) | SVARA_PH_DIPH_OI; }
     # 3-byte diphthongs / long vowel / 2-char affricates
-    if (_shabda_ipa_starts_with(ipa, pos, "aɪ") == 1) { return (3 << 8) | SVARA_PH_DIPH_AI; }
-    if (_shabda_ipa_starts_with(ipa, pos, "aʊ") == 1) { return (3 << 8) | SVARA_PH_DIPH_AU; }
-    if (_shabda_ipa_starts_with(ipa, pos, "eɪ") == 1) { return (3 << 8) | SVARA_PH_DIPH_EI; }
-    if (_shabda_ipa_starts_with(ipa, pos, "oʊ") == 1) { return (3 << 8) | SVARA_PH_DIPH_OU; }
-    if (_shabda_ipa_starts_with(ipa, pos, "iː") == 1) { return (3 << 8) | SVARA_PH_VOWEL_LONG_I; }
-    if (_shabda_ipa_starts_with(ipa, pos, "tʃ") == 1) { return (3 << 8) | SVARA_PH_AFFR_CH; }
-    if (_shabda_ipa_starts_with(ipa, pos, "dʒ") == 1) { return (3 << 8) | SVARA_PH_AFFR_J; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "aɪ") == 1) { return (3 << 8) | SVARA_PH_DIPH_AI; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "aʊ") == 1) { return (3 << 8) | SVARA_PH_DIPH_AU; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "eɪ") == 1) { return (3 << 8) | SVARA_PH_DIPH_EI; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "oʊ") == 1) { return (3 << 8) | SVARA_PH_DIPH_OU; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "iː") == 1) { return (3 << 8) | SVARA_PH_VOWEL_LONG_I; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "tʃ") == 1) { return (3 << 8) | SVARA_PH_AFFR_CH; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "dʒ") == 1) { return (3 << 8) | SVARA_PH_AFFR_J; }
     # 2-byte single symbols
-    if (_shabda_ipa_starts_with(ipa, pos, "ə") == 1) { return (2 << 8) | SVARA_PH_VOWEL_SCHWA; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɔ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_O; }
-    if (_shabda_ipa_starts_with(ipa, pos, "æ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_ASH; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɪ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_NEAR_I; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ʊ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_NEAR_U; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɑ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_A; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɛ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_E; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ʌ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_CUP_V; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɜ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_BIRD; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɝ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_BIRD; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ŋ") == 1) { return (2 << 8) | SVARA_PH_NASAL_NG; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ʃ") == 1) { return (2 << 8) | SVARA_PH_FRIC_SH; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ʒ") == 1) { return (2 << 8) | SVARA_PH_FRIC_ZH; }
-    if (_shabda_ipa_starts_with(ipa, pos, "θ") == 1) { return (2 << 8) | SVARA_PH_FRIC_TH; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ð") == 1) { return (2 << 8) | SVARA_PH_FRIC_DH; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɡ") == 1) { return (2 << 8) | SVARA_PH_PLOSIVE_G; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ʔ") == 1) { return (2 << 8) | SVARA_PH_GLOTTAL_STOP; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɾ") == 1) { return (2 << 8) | SVARA_PH_TAP_FLAP; }
-    if (_shabda_ipa_starts_with(ipa, pos, "ɹ") == 1) { return (2 << 8) | SVARA_PH_APPROX_R; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ə") == 1) { return (2 << 8) | SVARA_PH_VOWEL_SCHWA; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɔ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_O; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "æ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_ASH; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɪ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_NEAR_I; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ʊ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_NEAR_U; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɑ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_A; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɛ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_E; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ʌ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_CUP_V; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɜ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_BIRD; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɝ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_BIRD; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ŋ") == 1) { return (2 << 8) | SVARA_PH_NASAL_NG; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ʃ") == 1) { return (2 << 8) | SVARA_PH_FRIC_SH; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ʒ") == 1) { return (2 << 8) | SVARA_PH_FRIC_ZH; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "θ") == 1) { return (2 << 8) | SVARA_PH_FRIC_TH; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ð") == 1) { return (2 << 8) | SVARA_PH_FRIC_DH; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɡ") == 1) { return (2 << 8) | SVARA_PH_PLOSIVE_G; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ʔ") == 1) { return (2 << 8) | SVARA_PH_GLOTTAL_STOP; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɾ") == 1) { return (2 << 8) | SVARA_PH_TAP_FLAP; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "ɹ") == 1) { return (2 << 8) | SVARA_PH_APPROX_R; }
     # 1-byte ASCII single symbols
-    if (_shabda_ipa_starts_with(ipa, pos, "a") == 1) { return (1 << 8) | SVARA_PH_VOWEL_A; }
-    if (_shabda_ipa_starts_with(ipa, pos, "e") == 1) { return (1 << 8) | SVARA_PH_VOWEL_E; }
-    if (_shabda_ipa_starts_with(ipa, pos, "i") == 1) { return (1 << 8) | SVARA_PH_VOWEL_I; }
-    if (_shabda_ipa_starts_with(ipa, pos, "o") == 1) { return (1 << 8) | SVARA_PH_VOWEL_O; }
-    if (_shabda_ipa_starts_with(ipa, pos, "u") == 1) { return (1 << 8) | SVARA_PH_VOWEL_U; }
-    if (_shabda_ipa_starts_with(ipa, pos, "p") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_P; }
-    if (_shabda_ipa_starts_with(ipa, pos, "b") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_B; }
-    if (_shabda_ipa_starts_with(ipa, pos, "t") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_T; }
-    if (_shabda_ipa_starts_with(ipa, pos, "d") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_D; }
-    if (_shabda_ipa_starts_with(ipa, pos, "k") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_K; }
-    if (_shabda_ipa_starts_with(ipa, pos, "g") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_G; }
-    if (_shabda_ipa_starts_with(ipa, pos, "f") == 1) { return (1 << 8) | SVARA_PH_FRIC_F; }
-    if (_shabda_ipa_starts_with(ipa, pos, "v") == 1) { return (1 << 8) | SVARA_PH_FRIC_V; }
-    if (_shabda_ipa_starts_with(ipa, pos, "s") == 1) { return (1 << 8) | SVARA_PH_FRIC_S; }
-    if (_shabda_ipa_starts_with(ipa, pos, "z") == 1) { return (1 << 8) | SVARA_PH_FRIC_Z; }
-    if (_shabda_ipa_starts_with(ipa, pos, "h") == 1) { return (1 << 8) | SVARA_PH_FRIC_H; }
-    if (_shabda_ipa_starts_with(ipa, pos, "m") == 1) { return (1 << 8) | SVARA_PH_NASAL_M; }
-    if (_shabda_ipa_starts_with(ipa, pos, "n") == 1) { return (1 << 8) | SVARA_PH_NASAL_N; }
-    if (_shabda_ipa_starts_with(ipa, pos, "l") == 1) { return (1 << 8) | SVARA_PH_LATERAL_L; }
-    if (_shabda_ipa_starts_with(ipa, pos, "r") == 1) { return (1 << 8) | SVARA_PH_APPROX_R; }
-    if (_shabda_ipa_starts_with(ipa, pos, "w") == 1) { return (1 << 8) | SVARA_PH_APPROX_W; }
-    if (_shabda_ipa_starts_with(ipa, pos, "j") == 1) { return (1 << 8) | SVARA_PH_APPROX_J; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "a") == 1) { return (1 << 8) | SVARA_PH_VOWEL_A; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "e") == 1) { return (1 << 8) | SVARA_PH_VOWEL_E; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "i") == 1) { return (1 << 8) | SVARA_PH_VOWEL_I; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "o") == 1) { return (1 << 8) | SVARA_PH_VOWEL_O; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "u") == 1) { return (1 << 8) | SVARA_PH_VOWEL_U; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "p") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_P; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "b") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_B; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "t") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_T; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "d") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_D; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "k") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_K; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "g") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_G; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "f") == 1) { return (1 << 8) | SVARA_PH_FRIC_F; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "v") == 1) { return (1 << 8) | SVARA_PH_FRIC_V; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "s") == 1) { return (1 << 8) | SVARA_PH_FRIC_S; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "z") == 1) { return (1 << 8) | SVARA_PH_FRIC_Z; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "h") == 1) { return (1 << 8) | SVARA_PH_FRIC_H; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "m") == 1) { return (1 << 8) | SVARA_PH_NASAL_M; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "n") == 1) { return (1 << 8) | SVARA_PH_NASAL_N; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "l") == 1) { return (1 << 8) | SVARA_PH_LATERAL_L; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "r") == 1) { return (1 << 8) | SVARA_PH_APPROX_R; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "w") == 1) { return (1 << 8) | SVARA_PH_APPROX_W; }
+    if (_shbdk_ipa_starts_with(ipa, pos, "j") == 1) { return (1 << 8) | SVARA_PH_APPROX_J; }
     return 0;
 }
 
 # Byte length of an IPA marker at `pos` (stress ˈ ˌ, length ː, syllable/enclosing
 # . / [ ] and space), or 0 if `pos` isn't a marker.
-fn _shabda_ipa_marker_len(ipa, pos): i64 {
+fn _shbdk_ipa_marker_len(ipa, pos): i64 {
     var b = load8(ipa + pos);
     if (b == 46) { return 1; }   # '.'
     if (b == 47) { return 1; }   # '/'
     if (b == 91) { return 1; }   # '['
     if (b == 93) { return 1; }   # ']'
     if (b == 32) { return 1; }   # ' '
-    if (_shabda_ipa_starts_with(ipa, pos, "ˈ") == 1) { return 2; }   # primary stress
-    if (_shabda_ipa_starts_with(ipa, pos, "ˌ") == 1) { return 2; }   # secondary stress
-    if (_shabda_ipa_starts_with(ipa, pos, "ː") == 1) { return 2; }   # standalone length mark
+    if (_shbdk_ipa_starts_with(ipa, pos, "ˈ") == 1) { return 2; }   # primary stress
+    if (_shbdk_ipa_starts_with(ipa, pos, "ˌ") == 1) { return 2; }   # secondary stress
+    if (_shbdk_ipa_starts_with(ipa, pos, "ː") == 1) { return 2; }   # standalone length mark
     return 0;
 }
 
 # Parse a full IPA transcription into a vec of svara phoneme ordinals (greedy
 # longest-match; strips markers; skips unrecognized bytes). (Rust parse_ipa_word.)
 #must_use
-fn shabda_parse_ipa_word(ipa): i64 {
+fn shbdk_parse_ipa_word(ipa): i64 {
     var out = vec_new();
     var n = strlen(ipa);
     var i = 0;
     while (i < n) {
-        var m = _shabda_ipa_match_at(ipa, i);
+        var m = _shbdk_ipa_match_at(ipa, i);
         if (m != 0) {
             vec_push(out, m & 255);
             i = i + (m >> 8);
         } else {
-            var skip = _shabda_ipa_marker_len(ipa, i);
+            var skip = _shbdk_ipa_marker_len(ipa, i);
             if (skip > 0) {
                 i = i + skip;
             } else {
@@ -252,12 +252,12 @@ fn shabda_parse_ipa_word(ipa): i64 {
 
 # Convert a vec of svara phoneme ordinals to an IPA cstr. (Rust phonemes_to_ipa.)
 #must_use
-fn shabda_phonemes_to_ipa(phonemes): cstring {
+fn shbdk_phonemes_to_ipa(phonemes): cstring {
     var sb = str_builder_new();
     var n = vec_len(phonemes);
     var i = 0;
     while (i < n) {
-        var s = shabda_phoneme_to_ipa(vec_get(phonemes, i));
+        var s = shbdk_phoneme_to_ipa(vec_get(phonemes, i));
         if (s != 0) { str_builder_add_cstr(sb, s); }
         i = i + 1;
     }

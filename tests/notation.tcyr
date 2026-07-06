@@ -1,5 +1,5 @@
 # notation.tcyr — tests for src/notation.cyr (ports rust-old/src/notation.rs).
-# Needs svara + error (SHABDA_PH_NONE) + arpabet + ipa (notation delegates to them).
+# Needs svara + error (SHBDK_PH_NONE) + arpabet + ipa (notation delegates to them).
 
 include "lib/hisab.cyr"
 include "lib/goonj.cyr"
@@ -14,88 +14,88 @@ alloc_init();
 
 # round-trip a notation symbol through phoneme and back to a symbol.
 fn _rt(n, sym): cstring {
-    return shabda_notation_phoneme_to_str(n, shabda_notation_str_to_phoneme(n, sym));
+    return shbdk_notation_phoneme_to_str(n, shbdk_notation_str_to_phoneme(n, sym));
 }
 fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
 
 # ================================================================
 test_group("arpabet roundtrip consonants");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "P"), "P", "P");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "B"), "B", "B");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "T"), "T", "T");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "D"), "D", "D");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "K"), "K", "K");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "F"), "F", "F");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "S"), "S", "S");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "M"), "M", "M");
-assert_streq(_rt(SHABDA_NOTATION_ARPABET, "N"), "N", "N");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "P"), "P", "P");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "B"), "B", "B");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "T"), "T", "T");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "D"), "D", "D");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "K"), "K", "K");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "F"), "F", "F");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "S"), "S", "S");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "M"), "M", "M");
+assert_streq(_rt(SHBDK_NOTATION_ARPABET, "N"), "N", "N");
 
 # ================================================================
 test_group("arpabet vowel mapping");
-assert_eq(shabda_notation_str_to_phoneme(SHABDA_NOTATION_ARPABET, "AE"), SVARA_PH_VOWEL_ASH, "AE -> ash");
-assert_streq(shabda_notation_phoneme_to_str(SHABDA_NOTATION_ARPABET, SVARA_PH_VOWEL_ASH), "AE1", "ash -> AE1 (with stress)");
+assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_ARPABET, "AE"), SVARA_PH_VOWEL_ASH, "AE -> ash");
+assert_streq(shbdk_notation_phoneme_to_str(SHBDK_NOTATION_ARPABET, SVARA_PH_VOWEL_ASH), "AE1", "ash -> AE1 (with stress)");
 
 # ================================================================
 test_group("ipa roundtrip");
-assert_streq(_rt(SHABDA_NOTATION_IPA, "p"), "p", "p");
-assert_streq(_rt(SHABDA_NOTATION_IPA, "b"), "b", "b");
-assert_streq(_rt(SHABDA_NOTATION_IPA, "t"), "t", "t");
-assert_streq(_rt(SHABDA_NOTATION_IPA, "k"), "k", "k");
-assert_streq(_rt(SHABDA_NOTATION_IPA, "æ"), "æ", "ash");
-assert_streq(_rt(SHABDA_NOTATION_IPA, "ə"), "ə", "schwa");
-assert_streq(_rt(SHABDA_NOTATION_IPA, "ʃ"), "ʃ", "sh");
+assert_streq(_rt(SHBDK_NOTATION_IPA, "p"), "p", "p");
+assert_streq(_rt(SHBDK_NOTATION_IPA, "b"), "b", "b");
+assert_streq(_rt(SHBDK_NOTATION_IPA, "t"), "t", "t");
+assert_streq(_rt(SHBDK_NOTATION_IPA, "k"), "k", "k");
+assert_streq(_rt(SHBDK_NOTATION_IPA, "æ"), "æ", "ash");
+assert_streq(_rt(SHBDK_NOTATION_IPA, "ə"), "ə", "schwa");
+assert_streq(_rt(SHBDK_NOTATION_IPA, "ʃ"), "ʃ", "sh");
 
 # ================================================================
 test_group("xsampa roundtrip");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "p"), "p", "p");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "b"), "b", "b");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "t"), "t", "t");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "k"), "k", "k");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "{"), "{", "ash");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "@"), "@", "schwa");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "S"), "S", "sh");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "N"), "N", "ng");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "tS"), "tS", "ch");
-assert_streq(_rt(SHABDA_NOTATION_XSAMPA, "dZ"), "dZ", "j");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "p"), "p", "p");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "b"), "b", "b");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "t"), "t", "t");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "k"), "k", "k");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "{"), "{", "ash");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "@"), "@", "schwa");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "S"), "S", "sh");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "N"), "N", "ng");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "tS"), "tS", "ch");
+assert_streq(_rt(SHBDK_NOTATION_XSAMPA, "dZ"), "dZ", "j");
 
 # ================================================================
 test_group("cross-notation equivalence (VowelAsh)");
-assert_streq(shabda_notation_phoneme_to_str(SHABDA_NOTATION_ARPABET, SVARA_PH_VOWEL_ASH), "AE1", "arpabet AE1");
-assert_streq(shabda_notation_phoneme_to_str(SHABDA_NOTATION_IPA, SVARA_PH_VOWEL_ASH), "æ", "ipa æ");
-assert_streq(shabda_notation_phoneme_to_str(SHABDA_NOTATION_XSAMPA, SVARA_PH_VOWEL_ASH), "{", "xsampa {");
+assert_streq(shbdk_notation_phoneme_to_str(SHBDK_NOTATION_ARPABET, SVARA_PH_VOWEL_ASH), "AE1", "arpabet AE1");
+assert_streq(shbdk_notation_phoneme_to_str(SHBDK_NOTATION_IPA, SVARA_PH_VOWEL_ASH), "æ", "ipa æ");
+assert_streq(shbdk_notation_phoneme_to_str(SHBDK_NOTATION_XSAMPA, SVARA_PH_VOWEL_ASH), "{", "xsampa {");
 
 # ================================================================
 test_group("parse (K AE T)");
-var ap = shabda_notation_parse(SHABDA_NOTATION_ARPABET, "K AE T");
+var ap = shbdk_notation_parse(SHBDK_NOTATION_ARPABET, "K AE T");
 assert_eq(vec_len(ap), 3, "arpabet 3 tokens");
 assert_eq(vec_get(ap, 0), SVARA_PH_PLOSIVE_K, "arpabet[0] K");
 assert_eq(vec_get(ap, 1), SVARA_PH_VOWEL_ASH, "arpabet[1] AE");
 assert_eq(vec_get(ap, 2), SVARA_PH_PLOSIVE_T, "arpabet[2] T");
-var ip = shabda_notation_parse(SHABDA_NOTATION_IPA, "kæt");
+var ip = shbdk_notation_parse(SHBDK_NOTATION_IPA, "kæt");
 assert_eq(vec_len(ip), 3, "ipa 3 phonemes");
 assert_eq(vec_get(ip, 1), SVARA_PH_VOWEL_ASH, "ipa[1] æ");
-var xp = shabda_notation_parse(SHABDA_NOTATION_XSAMPA, "k { t");
+var xp = shbdk_notation_parse(SHBDK_NOTATION_XSAMPA, "k { t");
 assert_eq(vec_len(xp), 3, "xsampa 3 tokens");
 assert_eq(vec_get(xp, 1), SVARA_PH_VOWEL_ASH, "xsampa[1] {");
 
 # ================================================================
 test_group("render (K AE T)");
 var cat = _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T);
-assert_streq(shabda_notation_render(SHABDA_NOTATION_ARPABET, cat), "K AE1 T", "arpabet render");
-assert_streq(shabda_notation_render(SHABDA_NOTATION_IPA, cat), "kæt", "ipa render (no spaces)");
-assert_streq(shabda_notation_render(SHABDA_NOTATION_XSAMPA, cat), "k { t", "xsampa render");
+assert_streq(shbdk_notation_render(SHBDK_NOTATION_ARPABET, cat), "K AE1 T", "arpabet render");
+assert_streq(shbdk_notation_render(SHBDK_NOTATION_IPA, cat), "kæt", "ipa render (no spaces)");
+assert_streq(shbdk_notation_render(SHBDK_NOTATION_XSAMPA, cat), "k { t", "xsampa render");
 
 # ================================================================
 test_group("names");
-assert_streq(shabda_notation_name(SHABDA_NOTATION_ARPABET), "arpabet", "arpabet");
-assert_streq(shabda_notation_name(SHABDA_NOTATION_IPA), "ipa", "ipa");
-assert_streq(shabda_notation_name(SHABDA_NOTATION_XSAMPA), "x-sampa", "x-sampa");
+assert_streq(shbdk_notation_name(SHBDK_NOTATION_ARPABET), "arpabet", "arpabet");
+assert_streq(shbdk_notation_name(SHBDK_NOTATION_IPA), "ipa", "ipa");
+assert_streq(shbdk_notation_name(SHBDK_NOTATION_XSAMPA), "x-sampa", "x-sampa");
 
 # ================================================================
 test_group("unknown symbols");
-assert_eq(shabda_notation_str_to_phoneme(SHABDA_NOTATION_ARPABET, "ZZZZZ"), SHABDA_PH_NONE, "arpabet unknown");
-assert_eq(shabda_notation_str_to_phoneme(SHABDA_NOTATION_IPA, "🎵"), SHABDA_PH_NONE, "ipa unknown");
-assert_eq(shabda_notation_str_to_phoneme(SHABDA_NOTATION_XSAMPA, "!!!"), SHABDA_PH_NONE, "xsampa unknown");
+assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_ARPABET, "ZZZZZ"), SHBDK_PH_NONE, "arpabet unknown");
+assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_IPA, "🎵"), SHBDK_PH_NONE, "ipa unknown");
+assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_XSAMPA, "!!!"), SHBDK_PH_NONE, "xsampa unknown");
 
 # ================================================================
 # Regression (parity audit): vertical-tab (0x0B) must split tokens like Rust's
@@ -107,7 +107,7 @@ store8(vtbuf + 1, 11);   # vertical tab
 store8(vtbuf + 2, 65);   # 'A'
 store8(vtbuf + 3, 69);   # 'E'
 store8(vtbuf + 4, 0);    # NUL
-var vtp = shabda_notation_parse(SHABDA_NOTATION_ARPABET, vtbuf);
+var vtp = shbdk_notation_parse(SHBDK_NOTATION_ARPABET, vtbuf);
 assert_eq(vec_len(vtp), 2, "VT splits into K, AE");
 assert_eq(vec_get(vtp, 0), SVARA_PH_PLOSIVE_K, "vt[0] K");
 assert_eq(vec_get(vtp, 1), SVARA_PH_VOWEL_ASH, "vt[1] AE");

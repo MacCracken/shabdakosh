@@ -60,7 +60,7 @@ cyrius tests tests                             # run all .tcyr
 - Build with `cyrius build` (the manifest auto-resolves deps), not `cat | cc5`.
 - Source files only need project `include`s — stdlib auto-resolves from `cyrius.cyml`.
 - `var buf[N]` = N **bytes**, not N entries.
-- **Prefix everything** `shabda_`/`SHABDA_`/`SH_`/`Sh` — the distlib links flat (coexists with svara/varna).
+- **Prefix everything** `shbdk_`/`SHBDK_`/`SHBDK_`/`Shbdk` — the distlib links flat (coexists with svara/varna, and with **shabda** which owns `shabda_`). shabdakosh must NOT use the `shabda_` prefix — that belongs to the G2P engine **shabda**, its first downstream consumer.
 
 ## Port Invariants (carried from the Rust crate)
 

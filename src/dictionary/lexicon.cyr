@@ -11,13 +11,13 @@
 # Requires: lib/varna.cyr (lexicon_*/swadesh_*), src/ipa.cyr (parse_ipa_word),
 # dictionary/mod.cyr + entry.cyr; f64_from/f64_div (stdlib).
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
 # Build a dict from a varna Lexicon: IPA -> phonemes, Swadesh rank -> 1/(1+rank)
 # frequency, lowercased native word as the key. (Rust from_lexicon)
 #must_use
-fn shabda_from_lexicon(lexicon): i64 {
-    var dict = shabda_dict_new();
+fn shbdk_from_lexicon(lexicon): i64 {
+    var dict = shbdk_dict_new();
     var entries = lexicon_entries(lexicon);
     var n = vec_len(entries);
     var i = 0;
@@ -25,15 +25,15 @@ fn shabda_from_lexicon(lexicon): i64 {
     var phon = 0;
     var pron = 0;
     var rank = 0;
-    shabda_dict_set_language(dict, lexicon_language_code(lexicon));
+    shbdk_dict_set_language(dict, lexicon_language_code(lexicon));
     while (i < n) {
         e = vec_get(entries, i);
-        phon = shabda_parse_ipa_word(swadesh_entry_ipa(e));
+        phon = shbdk_parse_ipa_word(swadesh_entry_ipa(e));
         if (vec_len(phon) > 0) {
-            pron = shabda_pronunciation_new(phon);
+            pron = shbdk_pronunciation_new(phon);
             rank = swadesh_entry_index(e);
-            pron = shabda_pronunciation_with_frequency(pron, f64_div(f64_from(1), f64_from(1 + rank)));
-            shabda_dict_insert_entry(dict, swadesh_entry_word(e), shabda_dict_entry_new(pron));
+            pron = shbdk_pronunciation_with_frequency(pron, f64_div(f64_from(1), f64_from(1 + rank)));
+            shbdk_dict_insert_entry(dict, swadesh_entry_word(e), shbdk_dict_entry_new(pron));
         }
         i = i + 1;
     }
@@ -43,24 +43,24 @@ fn shabda_from_lexicon(lexicon): i64 {
 # Seed dict from varna's Swadesh list for a language code, or an empty
 # language-tagged dict if the code has no Swadesh data (mirrors Rust's
 # unwrap_or_else(empty Lexicon)).
-fn _shabda_dict_from_swadesh(code): i64 {
+fn _shbdk_dict_from_swadesh(code): i64 {
     var lex = swadesh_by_code(code);
-    if (lex == 0) { return shabda_dict_with_language(shabda_dict_new(), code); }
-    return shabda_from_lexicon(lex);
+    if (lex == 0) { return shbdk_dict_with_language(shbdk_dict_new(), code); }
+    return shbdk_from_lexicon(lex);
 }
 
 # Seed Spanish dictionary from varna's Swadesh list (~core vocabulary). (Rust spanish)
 #must_use
-fn shabda_dict_spanish(): i64 { return _shabda_dict_from_swadesh("es"); }
+fn shbdk_dict_spanish(): i64 { return _shbdk_dict_from_swadesh("es"); }
 
 # Seed Hindi dictionary from varna's Swadesh list. (Rust hindi)
 #must_use
-fn shabda_dict_hindi(): i64 { return _shabda_dict_from_swadesh("hi"); }
+fn shbdk_dict_hindi(): i64 { return _shbdk_dict_from_swadesh("hi"); }
 
 # Seed German dictionary from varna's Swadesh list. (Rust german)
 #must_use
-fn shabda_dict_german(): i64 { return _shabda_dict_from_swadesh("de"); }
+fn shbdk_dict_german(): i64 { return _shbdk_dict_from_swadesh("de"); }
 
 # Seed Sanskrit dictionary — language-tagged, empty (no Swadesh data in varna). (Rust sanskrit)
 #must_use
-fn shabda_dict_sanskrit(): i64 { return shabda_dict_with_language(shabda_dict_new(), "sa"); }
+fn shbdk_dict_sanskrit(): i64 { return shbdk_dict_with_language(shbdk_dict_new(), "sa"); }

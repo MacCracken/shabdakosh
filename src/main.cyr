@@ -43,87 +43,87 @@ fn main() {
     alloc_init();
     println("shabdakosh ready");
     # L0 smoke — sakshi-backed error surface
-    println(shabda_err_name(shabda_err_dict_parse()));
+    println(shbdk_err_name(shbdk_err_dict_parse()));
     # L1 smoke — ARPABET round-trip: "AH0" -> schwa -> "AH0"
-    println(shabda_phoneme_to_arpabet(shabda_arpabet_to_phoneme_with_stress("AH0")));
+    println(shbdk_phoneme_to_arpabet(shbdk_arpabet_to_phoneme_with_stress("AH0")));
     # L1 smoke — IPA parse + render round-trip: "hɛˈloʊ" -> "hɛloʊ"
-    println(shabda_phonemes_to_ipa(shabda_parse_ipa_word("hɛˈloʊ")));
+    println(shbdk_phonemes_to_ipa(shbdk_parse_ipa_word("hɛˈloʊ")));
     # L1 smoke — DictEntry "K AE T" -> primary pronunciation phoneme count (3)
     var kat = vec_new();
     vec_push(kat, SVARA_PH_PLOSIVE_K);
     vec_push(kat, SVARA_PH_VOWEL_ASH);
     vec_push(kat, SVARA_PH_PLOSIVE_T);
-    println_int(vec_len(shabda_dict_entry_primary_phonemes(shabda_dict_entry_from_phonemes(kat))));
+    println_int(vec_len(shbdk_dict_entry_primary_phonemes(shbdk_dict_entry_from_phonemes(kat))));
     # L1 smoke — morphology: "un" + "lock" -> "unlock"
     var msm = vec_new();
-    vec_push(msm, shabda_morpheme_new("un", SHABDA_MORPH_PREFIX, vec_new()));
-    vec_push(msm, shabda_morpheme_new("lock", SHABDA_MORPH_ROOT, vec_new()));
-    println(shabda_decomposition_text(shabda_decomposition_new(msm)));
+    vec_push(msm, shbdk_morpheme_new("un", SHBDK_MORPH_PREFIX, vec_new()));
+    vec_push(msm, shbdk_morpheme_new("lock", SHBDK_MORPH_ROOT, vec_new()));
+    println(shbdk_decomposition_text(shbdk_decomposition_new(msm)));
     # L1 smoke — syllabify "hɛloʊ" phonemes -> syllable count (2)
     var hello_ph = vec_new();
     vec_push(hello_ph, SVARA_PH_FRIC_H);
     vec_push(hello_ph, SVARA_PH_VOWEL_OPEN_E);
     vec_push(hello_ph, SVARA_PH_LATERAL_L);
     vec_push(hello_ph, SVARA_PH_DIPH_OU);
-    println_int(vec_len(shabda_syllabify(hello_ph)));
+    println_int(vec_len(shbdk_syllabify(hello_ph)));
     # L2 smoke — notation: render cat [K AE T] in X-SAMPA -> "k { t"
     var catx = vec_new();
     vec_push(catx, SVARA_PH_PLOSIVE_K);
     vec_push(catx, SVARA_PH_VOWEL_ASH);
     vec_push(catx, SVARA_PH_PLOSIVE_T);
-    println(shabda_notation_render(SHABDA_NOTATION_XSAMPA, catx));
+    println(shbdk_notation_render(SHBDK_NOTATION_XSAMPA, catx));
     # L2 smoke — load the generated base English dictionary, print word count
-    println_int(shabda_cmudict_load(map_new_str()));
+    println_int(shbdk_cmudict_load(map_new_str()));
     # L3 smoke — dictionary keystone: english_minimal entry count
-    println_int(shabda_dict_len(shabda_dict_english_minimal()));
+    println_int(shbdk_dict_len(shbdk_dict_english_minimal()));
     # L4 smoke — coverage of "the hello world xyz" (3 of 4 covered)
-    println_int(shabda_coverage_covered_tokens(shabda_dict_coverage(shabda_dict_english_minimal(), "the hello world xyz")));
+    println_int(shbdk_coverage_covered_tokens(shbdk_dict_coverage(shbdk_dict_english_minimal(), "the hello world xyz")));
     # L4 smoke — streaming lookup over 2 words -> remaining size hint
     var sw = vec_new();
     vec_push(sw, "hello");
     vec_push(sw, "xyz");
-    println_int(shabda_lookup_stream_size_hint(shabda_dict_lookup_stream(shabda_dict_english_minimal(), sw)));
+    println_int(shbdk_lookup_stream_size_hint(shbdk_dict_lookup_stream(shbdk_dict_english_minimal(), sw)));
     # L4 smoke — prefix_search "he" over english_minimal (he, hello)
-    println_int(vec_len(shabda_dict_prefix_search(shabda_dict_english_minimal(), "he")));
+    println_int(vec_len(shbdk_dict_prefix_search(shbdk_dict_english_minimal(), "he")));
     # L4 smoke — heteronym context: preceding-word count for "I [read] books"
     var hw = vec_new();
     vec_push(hw, "I");
     vec_push(hw, "read");
     vec_push(hw, "books");
-    println_int(vec_len(shabda_heteronym_preceding_words(shabda_heteronym_context_new(hw, 1))));
+    println_int(vec_len(shbdk_heteronym_preceding_words(shbdk_heteronym_context_new(hw, 1))));
     # L4 smoke — fallback dict (FstModel stub) still serves "hello" from base (4 phonemes)
-    var fbm = shabda_dict_with_fallback(shabda_dict_english_minimal(), &shabda_fst_model_predict, shabda_fst_model_new("/x", SHABDA_FST_NOTATION_ARPABET));
-    println_int(vec_len(shabda_fallback_dict_lookup(fbm, "hello")));
+    var fbm = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &shbdk_fst_model_predict, shbdk_fst_model_new("/x", SHBDK_FST_NOTATION_ARPABET));
+    println_int(vec_len(shbdk_fallback_dict_lookup(fbm, "hello")));
     # L5 smoke — parse a 2-line CMUdict string -> entry count
-    println_int(shabda_dict_len(shabda_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n")));
+    println_int(shbdk_dict_len(shbdk_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n")));
     # L5 smoke — JSON codec roundtrip: parse -> to_json -> from_json -> entry count
-    println_int(shabda_dict_len(shabda_from_json(shabda_to_json(shabda_parse_cmudict("cat  K AE1 T\n")))));
+    println_int(shbdk_dict_len(shbdk_from_json(shbdk_to_json(shbdk_parse_cmudict("cat  K AE1 T\n")))));
     # L5 smoke — parse a PLS lexeme -> entry count
-    println_int(shabda_dict_len(shabda_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>hi</grapheme><phoneme>haɪ</phoneme></lexeme></lexicon>")));
+    println_int(shbdk_dict_len(shbdk_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>hi</grapheme><phoneme>haɪ</phoneme></lexeme></lexicon>")));
     # L5 smoke — parse an SSML <phoneme> tag -> phoneme count for "cat"
-    println_int(vec_len(shabda_ssml_result_phonemes(shabda_parse_ssml_phoneme("<phoneme alphabet=\"ipa\" ph=\"kæt\">cat</phoneme>"))));
+    println_int(vec_len(shbdk_ssml_result_phonemes(shbdk_parse_ssml_phoneme("<phoneme alphabet=\"ipa\" ph=\"kæt\">cat</phoneme>"))));
     # L5 smoke — binary roundtrip of english_minimal -> entry count (29)
-    println_int(shabda_dict_len(shabda_from_binary(shabda_to_binary(shabda_dict_english_minimal()))));
+    println_int(shbdk_dict_len(shbdk_from_binary(shbdk_to_binary(shbdk_dict_english_minimal()))));
     # L6 smoke — WasmDict: insert_user_ipa "kæt" then lookup -> JSON IPA array
-    var wd = shabda_wasm_dict_new();
-    shabda_wasm_dict_insert_user_ipa(wd, "foo", "kæt");
-    println(shabda_wasm_dict_lookup(wd, "foo"));
+    var wd = shbdk_wasm_dict_new();
+    shbdk_wasm_dict_insert_user_ipa(wd, "foo", "kæt");
+    println(shbdk_wasm_dict_lookup(wd, "foo"));
     # L6 smoke — LazyDict: save english_minimal, mmap-open it back -> Debug string
-    shabda_save_binary_file(shabda_dict_english_minimal(), "/tmp/shabdakosh_smoke_lazy.bin");
-    println(shabda_lazy_debug(shabda_lazy_open("/tmp/shabdakosh_smoke_lazy.bin")));
+    shbdk_save_binary_file(shbdk_dict_english_minimal(), "/tmp/shabdakosh_smoke_lazy.bin");
+    println(shbdk_lazy_debug(shbdk_lazy_open("/tmp/shabdakosh_smoke_lazy.bin")));
     # L6 smoke — detect script of "hello" (varna) -> Latn
-    println(shabda_detect_script("hello"));
+    println(shbdk_detect_script("hello"));
     # L6 smoke — validate "sing" [ŋ] against Spanish (no ŋ) -> 1 invalid entry
-    var vds = shabda_dict_new();
+    var vds = shbdk_dict_new();
     var vsv = vec_new();
     vec_push(vsv, SVARA_PH_NASAL_NG);
-    shabda_dict_insert(vds, "sing", vsv);
-    println_int(shabda_validation_report_invalid_count(shabda_validate_inventory(vds, phoneme_spanish())));
+    shbdk_dict_insert(vds, "sing", vsv);
+    println_int(shbdk_validation_report_invalid_count(shbdk_validate_inventory(vds, phoneme_spanish())));
     # L4 smoke — static dict (cached singleton) entry count (>10k)
-    println_int(shabda_static_len());
+    println_int(shbdk_static_len());
     # L6 smoke — varna-lexicon: Spanish Swadesh seed dict language + entry count
-    println(shabda_dict_language(shabda_dict_spanish()));
-    println_int(shabda_dict_len(shabda_dict_spanish()));
+    println(shbdk_dict_language(shbdk_dict_spanish()));
+    println_int(shbdk_dict_len(shbdk_dict_spanish()));
     return 0;
 }
 

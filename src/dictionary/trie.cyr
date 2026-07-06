@@ -6,13 +6,13 @@
 # small vec of (byte, node) pairs (sparse fan-out; linear scan is fine). Extends
 # the keystone (from_dict / prefix_search); included after src/dictionary/mod.cyr.
 #
-# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 #
 # TrieNode layout (16 bytes): [0]=children(vec of pair*) [8]=is_word(0/1).
 # child pair (16 bytes): [0]=byte [8]=child node.
 # PrefixTrie layout (16 bytes): [0]=root(node) [8]=word_count.
 
-fn _shabda_trie_node_new(): i64 {
+fn _shbdk_trie_node_new(): i64 {
     var n = alloc(16);
     store64(n + 0, vec_new());
     store64(n + 8, 0);
@@ -20,7 +20,7 @@ fn _shabda_trie_node_new(): i64 {
 }
 
 # Child node for `byte`, or 0.
-fn _shabda_trie_get_child(node, byte): i64 {
+fn _shbdk_trie_get_child(node, byte): i64 {
     var ch = load64(node + 0);
     var n = vec_len(ch);
     var i = 0;
@@ -34,10 +34,10 @@ fn _shabda_trie_get_child(node, byte): i64 {
 }
 
 # Child node for `byte`, creating it if absent.
-fn _shabda_trie_get_or_add_child(node, byte): i64 {
-    var existing = _shabda_trie_get_child(node, byte);
+fn _shbdk_trie_get_or_add_child(node, byte): i64 {
+    var existing = _shbdk_trie_get_child(node, byte);
     if (existing != 0) { return existing; }
-    var child = _shabda_trie_node_new();
+    var child = _shbdk_trie_node_new();
     var pair = alloc(16);
     store64(pair + 0, byte);
     store64(pair + 8, child);
@@ -46,7 +46,7 @@ fn _shabda_trie_get_or_add_child(node, byte): i64 {
 }
 
 # Copy buf[0..n) into a fresh NUL-terminated cstr.
-fn _shabda_trie_dup_n(buf, n): i64 {
+fn _shbdk_trie_dup_n(buf, n): i64 {
     var out = alloc(n + 1);
     var i = 0;
     while (i < n) {
@@ -58,19 +58,19 @@ fn _shabda_trie_dup_n(buf, n): i64 {
 }
 
 #must_use
-fn shabda_trie_new(): i64 {
+fn shbdk_trie_new(): i64 {
     var t = alloc(16);
-    store64(t + 0, _shabda_trie_node_new());
+    store64(t + 0, _shbdk_trie_node_new());
     store64(t + 8, 0);
     return t;
 }
 
 # Insert the `len` bytes at `data` (internal — used for both cstr and Str inserts).
-fn _shabda_trie_insert_bytes(t, data, len): i64 {
+fn _shbdk_trie_insert_bytes(t, data, len): i64 {
     var node = load64(t + 0);
     var i = 0;
     while (i < len) {
-        node = _shabda_trie_get_or_add_child(node, load8(data + i));
+        node = _shbdk_trie_get_or_add_child(node, load8(data + i));
         i = i + 1;
     }
     if (load64(node + 8) == 0) {
@@ -81,30 +81,30 @@ fn _shabda_trie_insert_bytes(t, data, len): i64 {
 }
 
 # Insert a word (cstr).
-fn shabda_trie_insert(t, word): i64 {
-    return _shabda_trie_insert_bytes(t, word, strlen(word));
+fn shbdk_trie_insert(t, word): i64 {
+    return _shbdk_trie_insert_bytes(t, word, strlen(word));
 }
 
 # Build a trie from all dictionary words (base + user overlay). Keys may be
 # non-NUL-terminated Str (cmudict), so insert by (data, len).
 #must_use
-fn shabda_trie_from_dict(dict): i64 {
-    var t = shabda_trie_new();
-    var bkeys = map_keys(shabda_dict_entries(dict));
+fn shbdk_trie_from_dict(dict): i64 {
+    var t = shbdk_trie_new();
+    var bkeys = map_keys(shbdk_dict_entries(dict));
     var n = vec_len(bkeys);
     var i = 0;
     var k = 0;
     while (i < n) {
         k = vec_get(bkeys, i);
-        _shabda_trie_insert_bytes(t, str_data(k), str_len(k));
+        _shbdk_trie_insert_bytes(t, str_data(k), str_len(k));
         i = i + 1;
     }
-    var ukeys = map_keys(shabda_dict_user_entries(dict));
+    var ukeys = map_keys(shbdk_dict_user_entries(dict));
     var un = vec_len(ukeys);
     i = 0;
     while (i < un) {
         k = vec_get(ukeys, i);
-        _shabda_trie_insert_bytes(t, str_data(k), str_len(k));
+        _shbdk_trie_insert_bytes(t, str_data(k), str_len(k));
         i = i + 1;
     }
     return t;
@@ -112,11 +112,11 @@ fn shabda_trie_from_dict(dict): i64 {
 
 # 1 if the trie contains the exact word (cstr).
 #must_use
-fn shabda_trie_contains(t, word): i64 {
+fn shbdk_trie_contains(t, word): i64 {
     var node = load64(t + 0);
     var i = 0;
     while (load8(word + i) != 0) {
-        node = _shabda_trie_get_child(node, load8(word + i));
+        node = _shbdk_trie_get_child(node, load8(word + i));
         if (node == 0) { return 0; }
         i = i + 1;
     }
@@ -124,12 +124,12 @@ fn shabda_trie_contains(t, word): i64 {
 }
 
 #must_use
-fn shabda_trie_len(t): i64 {
+fn shbdk_trie_len(t): i64 {
     return load64(t + 8);
 }
 
 #must_use
-fn shabda_trie_is_empty(t): i64 {
+fn shbdk_trie_is_empty(t): i64 {
     if (load64(t + 8) == 0) { return 1; }
     return 0;
 }
@@ -137,9 +137,9 @@ fn shabda_trie_is_empty(t): i64 {
 # Recursively collect all words under `node`; `buf[0..depth)` is the path so far.
 # `cap` bounds the buffer (defensive — a pathological word longer than the buffer
 # is not written past the allocation; real words are tiny).
-fn _shabda_trie_collect(node, buf, depth, cap, results): i64 {
+fn _shbdk_trie_collect(node, buf, depth, cap, results): i64 {
     if (load64(node + 8) == 1) {
-        vec_push(results, str_from(_shabda_trie_dup_n(buf, depth)));
+        vec_push(results, str_from(_shbdk_trie_dup_n(buf, depth)));
     }
     var ch = load64(node + 0);
     var nc = vec_len(ch);
@@ -149,7 +149,7 @@ fn _shabda_trie_collect(node, buf, depth, cap, results): i64 {
         pair = vec_get(ch, i);
         if (depth < cap) {
             store8(buf + depth, load64(pair + 0));
-            _shabda_trie_collect(load64(pair + 8), buf, depth + 1, cap, results);
+            _shbdk_trie_collect(load64(pair + 8), buf, depth + 1, cap, results);
         }
         i = i + 1;
     }
@@ -158,12 +158,12 @@ fn _shabda_trie_collect(node, buf, depth, cap, results): i64 {
 
 # All words starting with `prefix` (cstr), sorted alphabetically (by byte).
 #must_use
-fn shabda_trie_search_prefix(t, prefix): i64 {
+fn shbdk_trie_search_prefix(t, prefix): i64 {
     var results = vec_new();
     var node = load64(t + 0);
     var i = 0;
     while (load8(prefix + i) != 0) {
-        node = _shabda_trie_get_child(node, load8(prefix + i));
+        node = _shbdk_trie_get_child(node, load8(prefix + i));
         if (node == 0) { return results; }
         i = i + 1;
     }
@@ -175,8 +175,8 @@ fn shabda_trie_search_prefix(t, prefix): i64 {
         store8(buf + k, load8(prefix + k));
         k = k + 1;
     }
-    _shabda_trie_collect(node, buf, plen, cap, results);
-    _shabda_sort_strs(results);
+    _shbdk_trie_collect(node, buf, plen, cap, results);
+    _shbdk_sort_strs(results);
     return results;
 }
 
@@ -184,6 +184,6 @@ fn shabda_trie_search_prefix(t, prefix): i64 {
 # words starting with `prefix` (cstr), sorted. Builds a trie per call — reuse a
 # from_dict trie for repeated searches.
 #must_use
-fn shabda_dict_prefix_search(d, prefix): i64 {
-    return shabda_trie_search_prefix(shabda_trie_from_dict(d), prefix);
+fn shbdk_dict_prefix_search(d, prefix): i64 {
+    return shbdk_trie_search_prefix(shbdk_trie_from_dict(d), prefix);
 }

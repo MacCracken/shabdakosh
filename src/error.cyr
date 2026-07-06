@@ -8,14 +8,14 @@
 # 4 variants). Rust carried a String payload per variant + a thiserror Display;
 # the Cyrius port drops the payloads and builds on sakshi (साक्षी — the AGNOS
 # error/tracing substrate): each error is a packed i64 `[ctx][category][code]`.
-# 0 == ok, non-zero == error. Diagnostic text lives in shabda_err_name().
+# 0 == ok, non-zero == error. Diagnostic text lives in shbdk_err_name().
 #
 # CONVENTION: a fallible fn returns a packed shabda error (0 == ok) and writes
 # any payload to an out-param, OR returns a payload pointer with 0 meaning
-# "none" — disambiguate with shabda_is_err(). No thiserror/Display; sakshi does
+# "none" — disambiguate with shbdk_is_err(). No thiserror/Display; sakshi does
 # the packing (sakshi_err_new / sakshi_err_code / sakshi_err_category).
 #
-# NAMING: every top-level symbol is `shabda_`/`SHABDA_`-prefixed (flat link
+# NAMING: every top-level symbol is `shbdk_`/`SHBDK_`-prefixed (flat link
 # namespace; coexists with svara / varna / sakshi).
 
 # ================================================================
@@ -23,39 +23,39 @@
 # Stored in bits 0-15 of a sakshi packed error; kept above sakshi's common
 # ErrCode block (0..7) to avoid collision.
 # ================================================================
-var SHABDA_ERR_DICT_PARSE         = 0x0101;   # DictParseError(String)
-var SHABDA_ERR_UNKNOWN_SYMBOL     = 0x0102;   # UnknownSymbol(String)
-var SHABDA_ERR_PHONEME_NOT_IN_INV = 0x0103;   # PhonemeNotInInventory { phoneme, language }
-var SHABDA_ERR_UNKNOWN_LANGUAGE   = 0x0104;   # UnknownLanguage(String)
+var SHBDK_ERR_DICT_PARSE         = 0x0101;   # DictParseError(String)
+var SHBDK_ERR_UNKNOWN_SYMBOL     = 0x0102;   # UnknownSymbol(String)
+var SHBDK_ERR_PHONEME_NOT_IN_INV = 0x0103;   # PhonemeNotInInventory { phoneme, language }
+var SHBDK_ERR_UNKNOWN_LANGUAGE   = 0x0104;   # UnknownLanguage(String)
 
 # ================================================================
 # Shared phoneme sentinel. A svara phoneme is an ordinal 0..100; this is the
 # "no phoneme" value (Rust's Option::None on a phoneme lookup). Lives in the L0
 # base so every module (arpabet, ipa, ...) shares ONE definition (flat namespace).
 # ================================================================
-var SHABDA_PH_NONE = (0 - 1);
+var SHBDK_PH_NONE = (0 - 1);
 
 # ================================================================
 # Constructors — pack the shabda code + a sakshi category into an i64 error.
 # ================================================================
 #must_use
-fn shabda_err_dict_parse(): i64 {
-    return sakshi_err_new(SHABDA_ERR_DICT_PARSE, ERR_CAT_PARSE);
+fn shbdk_err_dict_parse(): i64 {
+    return sakshi_err_new(SHBDK_ERR_DICT_PARSE, ERR_CAT_PARSE);
 }
 
 #must_use
-fn shabda_err_unknown_symbol(): i64 {
-    return sakshi_err_new(SHABDA_ERR_UNKNOWN_SYMBOL, ERR_CAT_PARSE);
+fn shbdk_err_unknown_symbol(): i64 {
+    return sakshi_err_new(SHBDK_ERR_UNKNOWN_SYMBOL, ERR_CAT_PARSE);
 }
 
 #must_use
-fn shabda_err_phoneme_not_in_inventory(): i64 {
-    return sakshi_err_new(SHABDA_ERR_PHONEME_NOT_IN_INV, ERR_CAT_RUNTIME);
+fn shbdk_err_phoneme_not_in_inventory(): i64 {
+    return sakshi_err_new(SHBDK_ERR_PHONEME_NOT_IN_INV, ERR_CAT_RUNTIME);
 }
 
 #must_use
-fn shabda_err_unknown_language(): i64 {
-    return sakshi_err_new(SHABDA_ERR_UNKNOWN_LANGUAGE, ERR_CAT_CONFIG);
+fn shbdk_err_unknown_language(): i64 {
+    return sakshi_err_new(SHBDK_ERR_UNKNOWN_LANGUAGE, ERR_CAT_CONFIG);
 }
 
 # ================================================================
@@ -63,13 +63,13 @@ fn shabda_err_unknown_language(): i64 {
 # ================================================================
 # 1 if `err` is an error (non-zero), 0 otherwise.
 #must_use
-fn shabda_is_err(err): i64 {
+fn shbdk_is_err(err): i64 {
     return sakshi_is_err(err);
 }
 
 # 1 if `err` is ok (zero), 0 otherwise.
 #must_use
-fn shabda_is_ok(err): i64 {
+fn shbdk_is_ok(err): i64 {
     return sakshi_is_ok(err);
 }
 
@@ -78,12 +78,12 @@ fn shabda_is_ok(err): i64 {
 # #[non_exhaustive] fallback. Returns `cstring` (not `i64`) so println/fmt
 # dispatch on the pointer type and print the text, not the address.
 #must_use
-fn shabda_err_name(err): cstring {
+fn shbdk_err_name(err): cstring {
     var code = sakshi_err_code(err);
-    if (code == SHABDA_ERR_DICT_PARSE)         { return "dictionary parse error"; }
-    if (code == SHABDA_ERR_UNKNOWN_SYMBOL)     { return "unknown ARPABET symbol"; }
-    if (code == SHABDA_ERR_PHONEME_NOT_IN_INV) { return "phoneme not in inventory"; }
-    if (code == SHABDA_ERR_UNKNOWN_LANGUAGE)   { return "unknown language"; }
+    if (code == SHBDK_ERR_DICT_PARSE)         { return "dictionary parse error"; }
+    if (code == SHBDK_ERR_UNKNOWN_SYMBOL)     { return "unknown ARPABET symbol"; }
+    if (code == SHBDK_ERR_PHONEME_NOT_IN_INV) { return "phoneme not in inventory"; }
+    if (code == SHBDK_ERR_UNKNOWN_LANGUAGE)   { return "unknown language"; }
     if (code == 0)                             { return "ok"; }
     return "unknown error";
 }

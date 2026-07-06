@@ -11,7 +11,7 @@ Sequencing (owner: the CYRIUS author): **(1)** finish the remaining SIMD work fo
 const-eval lands:
 
 - **[high/medium] Bring `static_dict` up to a true compile-time perfect hash (phf).** Today it's a
-  lazy cached singleton over `shabda_dict_english()` (no const-eval to bake the table — one-time
+  lazy cached singleton over `shbdk_dict_english()` (no const-eval to bake the table — one-time
   ~9.6 ms load; surface + lookup already match Rust). Once const-eval exists, replace the singleton
   with a compile-time-baked perfect hash to reclaim the zero-load property the Rust `phf` had. This
   is the **only** feature the port intentionally left at a lesser fidelity; everything else is at
@@ -23,9 +23,9 @@ const-eval lands:
 ## Parity gaps (vs `rust-old/`)
 
 - **[medium/small] `merge` / `merge_conservative` share entry pointers where Rust deep-clones.**
-  `src/dictionary/mod.cyr:263`/`284` do `map_set(dst, k, map_get(src, k))` (shared `ShDictEntry*`);
+  `src/dictionary/mod.cyr:263`/`284` do `map_set(dst, k, map_get(src, k))` (shared `ShbdkDictEntry*`);
   Rust inserts `entry.clone()`. Observable: after `A.merge(B)`, mutating a shared entry affects both.
-  Fix needs a `shabda_dict_entry_clone` on the merge path.
+  Fix needs a `shbdk_dict_entry_clone` on the merge path.
 - **[low/small] `to_cmudict` emits `@freq` with 6 fixed decimals** vs Rust's shortest round-trip f32
   (`0.5` → `0.500000`). Re-parses identically; cosmetic (`src/dictionary/format/mod.cyr:332`).
 - **[low/small] `parse_cmudict` scans `@freq`/`@region` anywhere on the comment line**, not only at
@@ -52,15 +52,15 @@ Rust crate's output:
   always takes the mmap branch there, so the `file_read_all` fallback (`binary.cyr:308`) is untested.
   Needs an AGNOS run or a direct `load_binary_file` test.
 - **[low/small] `from_simple_entries` constructor untested** (`src/dictionary/mod.cyr:132`).
-- **[low/small] Unknown-notation fallthrough arms untested** — `shabda_notation_name` /
-  `shabda_notation_phoneme_to_str` return 0 for an out-of-range notation tag (`src/notation.cyr:146`).
+- **[low/small] Unknown-notation fallthrough arms untested** — `shbdk_notation_name` /
+  `shbdk_notation_phoneme_to_str` return 0 for an out-of-range notation tag (`src/notation.cyr:146`).
 
 ## Code quality / tech-debt
 
-- **[low/small] Duplicated cstr-compare helper** — `_shabda_cstr_cmp` (`detect.cyr:66`) and
-  `_shabda_wordcmp` (`validate.cyr:31`) are byte-identical. Coexist only because they're differently
+- **[low/small] Duplicated cstr-compare helper** — `_shbdk_cstr_cmp` (`detect.cyr:66`) and
+  `_shbdk_wordcmp` (`validate.cyr:31`) are byte-identical. Coexist only because they're differently
   named; consolidating would couple the two modules (low value).
-- **[low/medium] Scattered NUL-terminated byte-copy helpers** — `_shabda_dupz`, `_shabda_bin_dup`, and
+- **[low/medium] Scattered NUL-terminated byte-copy helpers** — `_shbdk_dupz`, `_shbdk_bin_dup`, and
   two range-copy variants in `format/mod.cyr` differ only in source addressing. Candidate for one shared
   primitive.
 - **[low/small] Magic buffer sizes / `SHBD` magic bytes are unnamed literals** — `8388608`/`8388607`
@@ -82,9 +82,9 @@ Rust crate's output:
   256 KB → 1 MB cap fix shipped in toolchain 6.4.10 (from our proposal), so the 283 KB module fits
   again. Generator, 19 includers, and `[lib].modules` collapsed back to one file.
 - ~~Six varna-lexicon dict constructors unported~~ — **ported** (`src/dictionary/lexicon.cyr`):
-  `shabda_from_lexicon` + `shabda_dict_spanish/hindi/german/sanskrit` over varna's Swadesh API
+  `shbdk_from_lexicon` + `shbdk_dict_spanish/hindi/german/sanskrit` over varna's Swadesh API
   (12 assertions in `tests/lexicon.tcyr`). Was the top parity gap.
-- ~~`to_binary` fixed-2 MB write buffer (heap overflow)~~ — **fixed** this pass (`_shabda_bin_total_size`
+- ~~`to_binary` fixed-2 MB write buffer (heap overflow)~~ — **fixed** this pass (`_shbdk_bin_total_size`
   sizes the buffer to the dict). See [audit addendum](../audit/2026-07-05-audit.md).
 - `bench` in `[deps].stdlib` — **intentional, not debt**: `cyrius bench` resolves `bench_*` from the
   project stdlib list, so `benches/hotpath.bcyr` needs it. It does not leak into the shipped bundle
