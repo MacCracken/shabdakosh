@@ -37,8 +37,12 @@ port against `rust-old/`; the correctness bar is "matches what Rust did."
 6. **WASM: `wasm-bindgen` → plain `.cyr` surface.** `WasmDict` is ported as a normal `.cyr` module
    (`shabda_wasm_dict_*`) with JSON at the boundary. Browser delivery is a toolchain concern, not
    this crate's — the binding is just another `.cyr` surface.
-7. **C FFI dropped.** `ffi.rs` is **not ported** — FFI is dead in the CYRIUS/AGNOS stack (no
-   C-ABI consumers). It is the one module consciously excluded from the parity port.
+7. **C FFI dropped.** `ffi.rs` is **not ported** — but not because FFI is impossible: CYRIUS
+   interops with C directly (and there's a backdoor to add a shim if ever needed). That native
+   C interop makes a shabdakosh-specific FFI surface **redundant**, and there are no C-ABI
+   consumers in the AGNOS stack today — so dropping it now (rather than maintaining a redundant
+   shim) is the better call. It is the one module consciously excluded from the parity port; it
+   can be revisited if a real C consumer appears.
 
 ## Consequences
 
@@ -58,6 +62,7 @@ port against `rust-old/`; the correctness bar is "matches what Rust did."
   varna / cyrius-unicode precedent.
 - **A single unsharded data module** — rejected under the old 256 KB distlib cap; now the chosen
   approach after toolchain 6.4.10 raised the cap to 1 MB.
-- **Keeping a C FFI surface** — rejected: no consumer, and it would carry an unused C-ABI layer.
+- **Keeping a C FFI surface** — rejected: CYRIUS↔C interop makes it redundant, there's no consumer,
+  and it would carry an unused C-ABI layer. (A backdoor exists to add one later if a consumer appears.)
 - **Separate ADRs per decision** — deferred: the load-bearing ones (errors, binary, phf, sharding)
   may be split out later; a single consolidated record closes the gap while the rationale is fresh.

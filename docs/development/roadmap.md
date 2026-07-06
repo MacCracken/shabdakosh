@@ -34,7 +34,8 @@ distlib bundle built + consumer-verified. See [`state.md`](state.md) for the per
 
 ## Out of scope (v3.0.0)
 
-- **C FFI** (`ffi.rs`) — dropped; dead in the CYRIUS/AGNOS stack (no C-ABI consumers).
+- **C FFI** (`ffi.rs`) — dropped as redundant: CYRIUS interops with C directly, so a dedicated FFI
+  shim buys nothing, and there are no C-ABI consumers today. A backdoor exists to add one if needed.
 - **Compile-time `phf` perfect hash** — CYRIUS has no const-eval; `static_dict` ships as a lazy
   cached singleton instead (surface preserved). Tracked upstream in the cyrius proposal
   `2026-07-05-const-eval-comptime.md`.

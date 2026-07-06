@@ -4,6 +4,22 @@ Non-blocking improvements surfaced by the post-release backlog review (2026-07-0
 release gates are all met (see [state.md](state.md)); these are tracked for a follow-up. Format:
 **[value/effort]**.
 
+## Gated on upstream (cyrius const-eval) — the path to retiring `rust-old/`
+
+Sequencing (owner: the CYRIUS author): **(1)** finish the remaining SIMD work for aarch64 →
+**(2)** the **const-eval / comptime arc** (proposal `2026-07-05-const-eval-comptime.md`). When
+const-eval lands:
+
+- **[high/medium] Bring `static_dict` up to a true compile-time perfect hash (phf).** Today it's a
+  lazy cached singleton over `shabda_dict_english()` (no const-eval to bake the table — one-time
+  ~9.6 ms load; surface + lookup already match Rust). Once const-eval exists, replace the singleton
+  with a compile-time-baked perfect hash to reclaim the zero-load property the Rust `phf` had. This
+  is the **only** feature the port intentionally left at a lesser fidelity; everything else is at
+  parity or consciously dropped (ffi).
+- **[—] Final `rust-old/` parity sweep, then drop the oracle.** With phf closed, do one last
+  function-for-function review of the port against `rust-old/`, confirm nothing else diverges, then
+  **remove `rust-old/`** — the port becomes self-standing and the Rust source is retired.
+
 ## Parity gaps (vs `rust-old/`)
 
 - **[medium/small] `merge` / `merge_conservative` share entry pointers where Rust deep-clones.**
