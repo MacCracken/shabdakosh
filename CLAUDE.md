@@ -83,15 +83,12 @@ cyrius tests tests                             # run all .tcyr
 - `;;; @region=GA` — region annotation for the next entry
 
 `programs/gen_cmudict.cyr` reads it and emits the checked-in
-`src/dictionary/_cmudict_data_N.cyr` **shards** (packed-string pieces; the Cyrius replacement
-for the Rust `build.rs`). Sharded across multiple files so each stays under `cyrius distlib`'s
-256 KB per-module read cap; the last shard holds the piece-count + accessor, and CYRIUS links
-all shards into one flat unit. It `include`s `src/arpabet.cyr` and reuses that mapping — one
-source of truth (no Rust-style table duplication). `src/dictionary/cmudict.cyr` loads the pieces
-into a `lib/hashmap` at runtime. **Regenerate after editing the data:**
-`cyrius build programs/gen_cmudict.cyr build/gen_cmudict && ./build/gen_cmudict`. If the shard
-**count** changes, update every includer (`src/main.cyr` + `tests/*.tcyr`) and `[lib].modules`
-to list the new `_cmudict_data_N.cyr` set.
+`src/dictionary/_cmudict_data.cyr` (packed-string pieces; the Cyrius replacement for the Rust
+`build.rs`). One module — `cyrius distlib`'s per-module read cap is 1 MB since toolchain 6.4.10,
+so the ~283 KB data no longer needs sharding. It `include`s `src/arpabet.cyr` and reuses that
+mapping — one source of truth (no Rust-style table duplication). `src/dictionary/cmudict.cyr`
+loads the pieces into a `lib/hashmap` at runtime. **Regenerate after editing the data:**
+`cyrius build programs/gen_cmudict.cyr build/gen_cmudict && ./build/gen_cmudict`.
 
 ## Rules (Hard Constraints)
 

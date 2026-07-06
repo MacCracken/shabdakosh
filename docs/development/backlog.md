@@ -10,18 +10,25 @@ release gates are all met (see [state.md](state.md)); these are tracked for a fo
   `src/dictionary/mod.cyr:263`/`284` do `map_set(dst, k, map_get(src, k))` (shared `ShDictEntry*`);
   Rust inserts `entry.clone()`. Observable: after `A.merge(B)`, mutating a shared entry affects both.
   Fix needs a `shabda_dict_entry_clone` on the merge path.
-- **[medium/medium] JSON codec is a CYRIUS-native integer-ordinal schema, not `serde_json`-wire-compatible.**
-  Rust serializes phonemes as svara enum names ("PlosiveK"); the port uses `SVARA_PH_*` ints
-  (`src/dictionary/format/json.cyr:13`). Roundtrips within CYRIUS; does not interop with Rust JSON.
-  (Accepted — see [ADR 004](../adr/004-cyrius-port-decisions.md).)
-- **[medium/small] Binary format reuses `SHBD`+version-1 but the payload is not postcard.** Same magic,
-  incompatible wire encoding (`src/dictionary/format/binary.cyr:16`). Consider bumping the version byte
-  or a distinct magic to avoid a Rust blob being mis-accepted. (Accepted — ADR 004.)
 - **[low/small] `to_cmudict` emits `@freq` with 6 fixed decimals** vs Rust's shortest round-trip f32
   (`0.5` → `0.500000`). Re-parses identically; cosmetic (`src/dictionary/format/mod.cyr:332`).
 - **[low/small] `parse_cmudict` scans `@freq`/`@region` anywhere on the comment line**, not only at
   whitespace-token boundaries like Rust's `split_whitespace` (`src/dictionary/format/mod.cyr:189`).
   Slightly more lenient than the oracle.
+
+### NOT gaps — intentional AGNOS-native design (do not "fix")
+
+The review flagged the JSON and binary formats as "not wire-compatible with the Rust crate." That
+is **by design, not a defect** — the whole AGNOS stack is CYRIUS, and nothing consumes the old
+Rust crate's output:
+
+- **JSON is bayan.** The codec is built on **bayan** (`json_v_*`), the AGNOS-standard JSON DOM (a
+  `[deps].stdlib` fold). Phonemes serialize as `SVARA_PH_*` ints — the CYRIUS-native schema. It is
+  valid, standard JSON; it simply isn't the Rust crate's enum-string schema, and no AGNOS consumer
+  wants that. Recorded in [ADR 004](../adr/004-cyrius-port-decisions.md).
+- **Binary is the CYRIUS format** (hand-rolled, replacing postcard). Reuses the `SHBD` magic +
+  version 1 by design. There are no Rust `.bin` blobs in the AGNOS world to collide with; the
+  decoder is bounds-checked either way. Recorded in ADR 004.
 
 ## Test coverage
 
@@ -43,14 +50,6 @@ release gates are all met (see [state.md](state.md)); these are tracked for a fo
 - **[low/small] Magic buffer sizes / `SHBD` magic bytes are unnamed literals** — `8388608`/`8388607`
   (three sites), `2097152` (now the size fn), and `83/72/66/68` in `to_binary`. Name them consts.
 
-## Build / tooling
-
-- **[low/small] cmudict data sharding could be reverted.** The distlib 256 KB → 1 MB per-module
-  cap fix shipped in toolchain **6.4.10** (from our proposal `2026-07-05-distlib-per-module-read-cap.md`).
-  The 283 KB `_cmudict_data` now fits in one module, so `gen_cmudict.cyr` + the 16 shard-includers +
-  `[lib].modules` could collapse back to a single `_cmudict_data.cyr`. Works fine sharded; reverting
-  is churn for a modest simplification.
-
 ## Docs
 
 - **[medium/medium] `docs/examples/` is empty** (`.gitkeep` only) despite CLAUDE.md advertising runnable
@@ -61,6 +60,9 @@ release gates are all met (see [state.md](state.md)); these are tracked for a fo
 
 ## Resolved during the review (not open)
 
+- ~~cmudict data sharding~~ — **reverted to a single `_cmudict_data.cyr`** (2026-07-06): the distlib
+  256 KB → 1 MB cap fix shipped in toolchain 6.4.10 (from our proposal), so the 283 KB module fits
+  again. Generator, 19 includers, and `[lib].modules` collapsed back to one file.
 - ~~Six varna-lexicon dict constructors unported~~ — **ported** (`src/dictionary/lexicon.cyr`):
   `shabda_from_lexicon` + `shabda_dict_spanish/hindi/german/sanskrit` over varna's Swadesh API
   (12 assertions in `tests/lexicon.tcyr`). Was the top parity gap.
