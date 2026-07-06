@@ -10,6 +10,7 @@ include "lib/hisab.cyr"
 include "lib/goonj.cyr"
 include "lib/naad.cyr"
 include "lib/svara.cyr"
+include "lib/varna.cyr"
 
 include "src/error.cyr"
 include "src/arpabet.cyr"
@@ -31,6 +32,9 @@ include "src/dictionary/format/json.cyr"
 include "src/dictionary/format/pls.cyr"
 include "src/dictionary/format/ssml.cyr"
 include "src/dictionary/format/binary.cyr"
+include "src/dictionary/lazy.cyr"
+include "src/dictionary/detect.cyr"
+include "src/dictionary/validate.cyr"
 include "src/wasm.cyr"
 
 fn main() {
@@ -102,6 +106,17 @@ fn main() {
     var wd = shabda_wasm_dict_new();
     shabda_wasm_dict_insert_user_ipa(wd, "foo", "kæt");
     println(shabda_wasm_dict_lookup(wd, "foo"));
+    # L6 smoke — LazyDict: save english_minimal, mmap-open it back -> Debug string
+    shabda_save_binary_file(shabda_dict_english_minimal(), "/tmp/shabdakosh_smoke_lazy.bin");
+    println(shabda_lazy_debug(shabda_lazy_open("/tmp/shabdakosh_smoke_lazy.bin")));
+    # L6 smoke — detect script of "hello" (varna) -> Latn
+    println(shabda_detect_script("hello"));
+    # L6 smoke — validate "sing" [ŋ] against Spanish (no ŋ) -> 1 invalid entry
+    var vds = shabda_dict_new();
+    var vsv = vec_new();
+    vec_push(vsv, SVARA_PH_NASAL_NG);
+    shabda_dict_insert(vds, "sing", vsv);
+    println_int(shabda_validation_report_invalid_count(shabda_validate_inventory(vds, phoneme_spanish())));
     return 0;
 }
 

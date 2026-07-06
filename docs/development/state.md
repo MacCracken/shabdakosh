@@ -22,8 +22,13 @@ preserved at `rust-old/` as the parity oracle.
   phoneme ints), loaded into `lib/hashmap.cyr` at startup. Faithful port of the Rust
   `build.rs`; matches the varna & cyrius-unicode precedent. Runtime `.cyml`/`.txt`
   parse was rejected (256 KB / 256-entry parser caps, no asset-path story).
-- **Scope**: MAXIMAL — attempt phf / binary / mmap / ffi equivalents, not just
-  core+varna. **wasm** (verified 2026-07-05): the WasmDict binding surface is
+- **Scope**: MAXIMAL — attempt phf / binary / mmap equivalents, not just
+  core+varna. **FFI dropped** (2026-07-05): `ffi.rs` is NOT ported — FFI is dead
+  in the CYRIUS stack (no C-ABI consumers). **cx** (bytecode backend) is the
+  intended portable/browser target path, but it needs indirect-call (`callptr`)
+  support first — shabdakosh's G2P fallback uses fn-pointers, which the cx backend
+  currently rejects; the language author is adding cx support later. **wasm**
+  (verified 2026-07-05): the WasmDict binding surface is
   ported as a normal `.cyr` module (`src/wasm.cyr`, `shabda_wasm_dict_*`), thin
   wrappers over the dict with the same 12 methods and the same JSON boundary
   shapes. How that surface reaches a browser is the toolchain's concern, not this
@@ -72,10 +77,10 @@ formats → gated/optional.
 | L5 | dictionary/format/pls.rs | src/dictionary/format/pls.cyr | ✅ ported | 10 | W3C PLS XML parse/emit (ipa alphabet), hand-rolled scan; to_pls/to_pls_with_user |
 | L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ✅ ported | 13 | SSML <phoneme alphabet ph>word</phoneme> parse/emit; reuses pls XML scan helpers |
 | L5 | dictionary/format/binary.rs | src/dictionary/format/binary.cyr | ✅ ported | 20 | hand-rolled compact binary format (SHBD magic+version, LE, 1-byte phonemes); to/from_binary + file I/O |
-| L6 | dictionary/validate.rs | … | ⬜ | — | varna-gated |
-| L6 | dictionary/detect.rs | … | ⬜ | — | varna-gated |
-| L6 | dictionary/lazy.rs | … | ⬜ | — | mmap (lib/mmap.cyr) |
-| L6 | ffi.rs | … | ⬜ | — | C ABI via cyrius header |
+| L6 | dictionary/validate.rs | src/dictionary/validate.cyr | ✅ ported | 36 | inventory + phonotactics validation vs varna; 4 report structs w/ hand-written bayan JSON codecs; ː length-normalization; is_consonant parity quirk (omits VOWEL_LONG_I); dict.validate[_phonotactics] convenience |
+| L6 | dictionary/detect.rs | src/dictionary/detect.cyr | ✅ ported | 24 | script + language detection vs varna script ranges; UTF-8 code-point decoder; majority vote; language-hint filter+sort; script-name out-params |
+| L6 | dictionary/lazy.rs | src/dictionary/lazy.cyr | ✅ ported | 16 | LazyDict: mmap-open a binary dict (lib/mmap.cyr, real mmap on linux) + file_read_all fallback (AGNOS); eager decode like Rust; handle IS a dict; debug string |
+| L6 | ffi.rs | — | ❌ dropped | — | FFI is dead in the CYRIUS stack (no C-ABI consumers) — not ported, by decision 2026-07-05 |
 | L6 | wasm.rs | src/wasm.cyr | ✅ ported | 23 | WasmDict handle over inner dict; 12 methods; lookup/prefix_search/coverage cross as JSON (bayan); JSON IPA roundtrip test |
 
 **7 of ~24 modules ported** — L1 leaf tier + L2 notation complete (L0 error; L1 arpabet, ipa,
@@ -151,7 +156,24 @@ preserved). 23 assertions; full tree now **21 suites / 556 assertions** green. T
 "no wasm target — doc the gap" plan was corrected after verifying the toolchain (see Scope
 note): the binding is just another `.cyr` surface; browser delivery is the toolchain's job.
 
-Next: remaining **L6 gated tier** — validate + detect (varna), lazy (mmap), ffi (C ABI).
+**L6 complete (2026-07-05)**: lazy (16), detect (24), validate (36) all ported + green.
+- **lazy.cyr** — LazyDict mmap-opens a binary dict (real mmap on linux via lib/mmap.cyr, lseek
+  for size) with a file_read_all fallback for AGNOS; eager decode like Rust, so a lazy handle IS
+  a dict handle. varna NOT needed.
+- **detect.cyr** — script/language detection over varna's script ranges; adds a UTF-8 code-point
+  decoder (CYRIUS has cstr byte pointers, no `char` iterator); majority vote, language-hint
+  filter+sort, script-name out-params.
+- **validate.cyr** — inventory + phonotactics validation against varna; 4 report structs each
+  with a hand-written bayan JSON codec (serde-roundtrip invariant preserved); the ː
+  length-normalization membership check (ɔ↔ɔː); faithful `is_consonant` parity quirk (Rust omits
+  VOWEL_LONG_I → reads as consonant); dict.validate / dict.validate_phonotactics convenience.
+- **varna** wired as a path dep (`lib/varna.cyr`, self-contained bundle, bare `phoneme_*`/`script_*`
+  symbols — links cleanly alongside svara, no collision); phonemes bridge svara SVARA_PH_* ordinals
+  → varna IPA strings via shabda_phoneme_to_ipa.
+
+Full tree now **24 suites / 632 assertions** green. All Rust modules are ported (ffi dropped;
+wasm ported as a `.cyr` surface). **Next: release prep** — distlib bundle (`cyrius distlib` →
+dist/shabdakosh.cyr), benchmarks, CHANGELOG/roadmap finalization.
 
 ## Dependencies
 

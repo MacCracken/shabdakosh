@@ -1,0 +1,78 @@
+# lazy.cyr — lazy-loading dictionary (ports rust-old/src/dictionary/lazy.rs).
+#
+# PARITY NOTE: Rust's LazyDict mmap'd the binary file but decoded it EAGERLY in
+# open() (from_binary over the whole map), so every accessor read the owned dict
+# and the map itself bought nothing observable. This port keeps the mmap path
+# (MAXIMAL scope): open() maps the file read-only and decodes from the mapping,
+# but falls back to a plain file_read_all load when mmap is unavailable (the AGNOS
+# target — lib/mmap.cyr's cyr_mmap returns -1 there) or fails. Either way the
+# decoded dict is byte-identical, and a "lazy dict" handle IS a plain dict handle
+# usable with every shabda_dict_* accessor (the Rust accessors just delegate to
+# self.dict, so the shabda_lazy_* methods below are 1:1 aliases).
+#
+# Requires (entry include order): dictionary/mod.cyr + dictionary/format/binary.cyr
+# (shabda_from_binary / shabda_load_binary_file); mmap + syscalls (stdlib).
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+# File size via lseek(fd, 0, SEEK_END). Returns the size, or negative on error.
+fn _shabda_file_size(fd): i64 {
+    return syscall(8, fd, 0, 2);   # SYS_LSEEK, SEEK_END = 2
+}
+
+# Open a binary dictionary file, mmap-backed with a file_read_all fallback.
+# Returns a dict handle, or 0 on open / decode failure (Rust Err(DictParseError):
+# the open / mmap / decode failure modes all collapse to the single 0 sentinel).
+#must_use
+fn shabda_lazy_open(path): i64 {
+    var fd = file_open(path, 0, 0);           # O_RDONLY
+    if (fd < 0) { return 0; }                 # Rust: "failed to open file"
+    var len = _shabda_file_size(fd);
+    if (len <= 0) { file_close(fd); return 0; }
+    var addr = mmap_file_ro(fd, len);         # 0 on failure (incl. AGNOS)
+    file_close(fd);                           # the mapping outlives the fd
+    if (addr == 0) {
+        # mmap unavailable (AGNOS) or failed — fall back to a direct blob load.
+        return shabda_load_binary_file(path);
+    }
+    var dict = shabda_from_binary(str_new(addr, len));
+    cyr_munmap(addr, len);                    # eager decode done; unmap now
+    return dict;                              # 0 if decode failed
+}
+
+# Look up a word's primary pronunciation (phoneme vec), or 0 if absent.
+#must_use
+fn shabda_lazy_lookup(l, word): i64 { return shabda_dict_lookup(l, word); }
+
+# Look up a word's full entry, or 0 if absent.
+#must_use
+fn shabda_lazy_lookup_entry(l, word): i64 { return shabda_dict_lookup_entry(l, word); }
+
+# Number of base entries.
+#must_use
+fn shabda_lazy_len(l): i64 { return shabda_dict_len(l); }
+
+# Whether the dictionary is empty.
+#must_use
+fn shabda_lazy_is_empty(l): i64 { return shabda_dict_is_empty(l); }
+
+# Borrow the underlying dict (Rust dict()); the handle already IS the dict.
+#must_use
+fn shabda_lazy_dict(l): i64 { return l; }
+
+# Consume the lazy dict, yielding the owned dict (Rust into_dict()); identity —
+# releasing the mmap already happened in open().
+#must_use
+fn shabda_lazy_into_dict(l): i64 { return l; }
+
+# Debug string: "LazyDict { entries: N, user_entries: M }" (Rust Debug impl).
+#must_use
+fn shabda_lazy_debug(l): cstring {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "LazyDict { entries: ");
+    str_builder_add_int(sb, shabda_dict_len(l));
+    str_builder_add_cstr(sb, ", user_entries: ");
+    str_builder_add_int(sb, shabda_dict_user_len(l));
+    str_builder_add_cstr(sb, " }");
+    return str_data(str_builder_build(sb));
+}

@@ -1,0 +1,82 @@
+# lazy.tcyr — tests for src/dictionary/lazy.cyr (ports rust-old/src/dictionary/lazy.rs).
+# LazyDict mmap-opens a binary dict file (file_read_all fallback); a lazy handle
+# IS a dict handle. Mirrors the Rust #[cfg(test)] cases (roundtrip / into_dict /
+# open-nonexistent / debug).
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/format/json.cyr"
+include "src/dictionary/format/binary.cyr"
+include "src/dictionary/lazy.cyr"
+
+alloc_init();
+
+fn _sat(s, off, sub): i64 {
+    var i = 0;
+    var c = 0;
+    while (1 == 1) {
+        c = load8(sub + i);
+        if (c == 0) { return 1; }
+        if (load8(s + off + i) != c) { return 0; }
+        i = i + 1;
+    }
+    return 0;
+}
+fn _find(s, sub): i64 {
+    var sl = strlen(s);
+    var pl = strlen(sub);
+    var i = 0;
+    while (i + pl <= sl) {
+        if (_sat(s, i, sub) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# ================================================================
+# roundtrip: save english_minimal, mmap-open it, compare against the original.
+test_group("lazy roundtrip");
+var dict = shabda_dict_english_minimal();
+assert_eq(shabda_save_binary_file(dict, "/tmp/shabdakosh_test_lazy.bin"), 0, "saved");
+var lazy = shabda_lazy_open("/tmp/shabdakosh_test_lazy.bin");
+assert_neq(lazy, 0, "opened");
+assert_eq(shabda_lazy_len(lazy), shabda_dict_len(dict), "same len");
+assert_eq(shabda_lazy_is_empty(lazy), 0, "not empty");
+var lh = shabda_lazy_lookup(lazy, "hello");
+var dh = shabda_dict_lookup(dict, "hello");
+assert_neq(lh, 0, "hello present");
+assert_eq(vec_len(lh), vec_len(dh), "hello same count");
+assert_eq(vec_get(lh, 0), vec_get(dh, 0), "hello[0] matches");
+var lt = shabda_lazy_lookup(lazy, "the");
+assert_neq(lt, 0, "the present");
+assert_eq(vec_len(lt), vec_len(shabda_dict_lookup(dict, "the")), "the same count");
+assert_eq(shabda_lazy_lookup(lazy, "xyzzy"), 0, "xyzzy absent -> 0");
+assert_eq(shabda_lazy_lookup_entry(lazy, "xyzzy"), 0, "xyzzy entry absent -> 0");
+
+# ================================================================
+# into_dict / dict are identity: the handle IS the owned dict.
+test_group("lazy into_dict / dict");
+var lazy2 = shabda_lazy_open("/tmp/shabdakosh_test_lazy.bin");
+var recovered = shabda_lazy_into_dict(lazy2);
+assert_eq(shabda_dict_len(recovered), shabda_dict_len(dict), "into_dict recovers full dict");
+assert_eq(shabda_lazy_dict(lazy2), lazy2, "dict() is the handle itself");
+
+# ================================================================
+test_group("lazy open nonexistent -> 0");
+assert_eq(shabda_lazy_open("/tmp/nonexistent_shabdakosh_xyz.bin"), 0, "missing file -> 0 (Err)");
+
+# ================================================================
+test_group("lazy debug contains 'LazyDict'");
+var dbg = shabda_lazy_debug(lazy);
+assert_eq(_find(dbg, "LazyDict"), 1, "debug contains LazyDict");
+assert_eq(_find(dbg, "entries: 29"), 1, "debug reports 29 entries");
+
+var rc = assert_summary();
+syscall(60, rc);
