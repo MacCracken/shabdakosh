@@ -54,11 +54,12 @@ stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "ass
 
 # svara — SVARA_PH_* phoneme identities (the PhonemeEvent-compat contract) plus
 # the voice/synthesis surface shabdakosh maps to. Consumed from arpabet.cyr
-# onward. Local path dep for now (switch to git+tag for release). The dist
+# onward. git+tag dep (CI-resolvable; no local sibling checkout needed). The dist
 # bundle needs the `hashmap` + `bayan` folds in scope (declared above, per
 # svara's dist/svara.deps sidecar).
 [deps.svara]
-path = "../svara"
+git = "https://github.com/MacCracken/svara.git"
+tag = "3.0.1"
 modules = ["dist/svara.cyr"]
 
 # varna — phoneme inventories + phonotactics + script/registry metadata, consumed
@@ -69,5 +70,6 @@ modules = ["dist/svara.cyr"]
 # varna_-prefixed — shabdakosh bridges svara SVARA_PH_* ordinals to varna's IPA
 # strings via shabda_phoneme_to_ipa.
 [deps.varna]
-path = "../varna"
+git = "https://github.com/MacCracken/varna.git"
+tag = "2.0.0"
 modules = ["dist/varna.cyr"]
