@@ -117,11 +117,28 @@ user-overlay; invalid JSON → 0). Debugging it pinned down the **bayan cstr/Str
 
 **format/pls + format/ssml done** → 507 assertions / 19 suites.
 
-**L5 FORMAT TIER COMPLETE** (format/mod text I/O, JSON codec, pls, ssml, binary) → 527
-assertions / 20 suites. binary is a hand-rolled compact format (postcard has no CYRIUS analogue)
-— round-trips + smaller-than-JSON verified. **Next: a parity audit over the L3–L5 work**
-(~11 hand-ported modules since the L0–L2 audit), then the **L6 gated tier**: validate + detect
-(varna), lazy (mmap), ffi (C ABI), wasm (no target — surface + doc the gap).
+**L5 FORMAT TIER COMPLETE** (format/mod text I/O, JSON codec, pls, ssml, binary).
+
+**L3–L5 parity audit (11 auditors + adversarial verify) — 7 clean, 4 modules had issues; the
+real bugs are FIXED + regression-tested** (533 assertions / 20 suites):
+- parse_cmudict silently accepted a malformed `@freq` / unknown `@region` → now aborts
+  (returns 0), matching Rust's Err (`f64_parse_ok` validates the freq token).
+- to_cmudict emitted a stray leading/double space for phonemes with no ARPABET mapping →
+  separator now only BETWEEN emitted symbols (same class as the earlier notation-render fix).
+- diff resolved words by a direct map lookup → now routes through `lookup_entry` (re-lowercase)
+  so non-lowercased `from_entries` keys classify like Rust.
+- trie `search_prefix` collect buffer could overflow on a pathological >512-byte word →
+  bounded buffer (plen+64K) + depth clamp.
+- file-load buffers bumped 1–2 MB → 8 MB (no silent truncation for realistic dict files).
+- freq precision: 6 decimals in both JSON and CMUdict emit (ample for a 0–1 score).
+
+**Accepted divergences (documented, not "fixed"):** (a) case-folding is ASCII-only (like the
+whitespace tokenizers) — accented capitals aren't lowercased; English dict words are ASCII.
+(b) `xml_unescape` is single-pass — Rust's sequential `.replace()` OVER-decodes double-encoded
+entities (`"&amp;lt;"`→`"<"`); the single pass (`"&amp;lt;"`→`"&lt;"`) is the CORRECT behavior.
+
+Next: the **L6 gated tier** — validate + detect (varna), lazy (mmap), ffi (C ABI), wasm (no
+CYRIUS target — surface + doc the gap).
 
 ## Dependencies
 

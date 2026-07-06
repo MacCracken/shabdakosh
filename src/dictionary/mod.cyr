@@ -426,8 +426,10 @@ fn shabda_dict_diff(left, right): i64 {
     var r = 0;
     while (i < n) {
         w = vec_get(words, i);
-        l = _shabda_dict_lookup_entry_str(left, w);
-        r = _shabda_dict_lookup_entry_str(right, w);
+        # Route through lookup_entry (re-applies the lowercase gate) to match Rust's
+        # diff, so non-lowercased base keys (from from_entries) classify identically.
+        l = shabda_dict_lookup_entry(left, str_cstr(w));
+        r = shabda_dict_lookup_entry(right, str_cstr(w));
         if (l == 0) {
             if (r != 0) { vec_push(load64(dd + 0), w); }
         } else {

@@ -278,8 +278,8 @@ fn shabda_save_binary_file(dict, path): i64 {
 # Load a dict from a binary file, or 0 on read / decode error.
 #must_use
 fn shabda_load_binary_file(path): i64 {
-    var buf = alloc(2097152);
-    var n = file_read_all(path, buf, 2097151);
+    var buf = alloc(8388608);
+    var n = file_read_all(path, buf, 8388607);
     if (n < 0) { return 0; }
     return shabda_from_binary(str_new(buf, n));
 }

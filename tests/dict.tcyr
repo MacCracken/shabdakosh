@@ -111,5 +111,15 @@ assert_eq(shabda_dict_diff_len(dd), 3, "3 total diffs");
 assert_eq(shabda_dict_diff_is_empty(dd), 0, "not empty");
 assert_eq(shabda_dict_diff_is_empty(shabda_dict_diff(L, L)), 1, "L vs L is empty");
 
+# ================================================================
+# parity audit: diff routes words through lookup_entry (re-applies the lowercase
+# gate), so a non-lowercased base key (via from_entries) classifies like Rust
+# (which also re-lowercases and misses the raw uppercase key).
+test_group("diff with non-lowercased base key");
+var upmap = map_new_str();
+map_set(upmap, str_from("CAT"), shabda_dict_entry_from_phonemes(_v1(SVARA_PH_PLOSIVE_K)));
+var updiff = shabda_dict_diff(shabda_dict_from_entries(upmap), shabda_dict_new());
+assert_eq(vec_len(shabda_dict_diff_removed(updiff)), 0, "CAT (non-lowercased) not 'removed' (matches Rust)");
+
 var rc = assert_summary();
 syscall(60, rc);

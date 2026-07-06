@@ -135,7 +135,9 @@ fn shabda_trie_is_empty(t): i64 {
 }
 
 # Recursively collect all words under `node`; `buf[0..depth)` is the path so far.
-fn _shabda_trie_collect(node, buf, depth, results): i64 {
+# `cap` bounds the buffer (defensive — a pathological word longer than the buffer
+# is not written past the allocation; real words are tiny).
+fn _shabda_trie_collect(node, buf, depth, cap, results): i64 {
     if (load64(node + 8) == 1) {
         vec_push(results, str_from(_shabda_trie_dup_n(buf, depth)));
     }
@@ -145,8 +147,10 @@ fn _shabda_trie_collect(node, buf, depth, results): i64 {
     var pair = 0;
     while (i < nc) {
         pair = vec_get(ch, i);
-        store8(buf + depth, load64(pair + 0));
-        _shabda_trie_collect(load64(pair + 8), buf, depth + 1, results);
+        if (depth < cap) {
+            store8(buf + depth, load64(pair + 0));
+            _shabda_trie_collect(load64(pair + 8), buf, depth + 1, cap, results);
+        }
         i = i + 1;
     }
     return 0;
@@ -164,13 +168,14 @@ fn shabda_trie_search_prefix(t, prefix): i64 {
         i = i + 1;
     }
     var plen = strlen(prefix);
-    var buf = alloc(plen + 512);
+    var cap = plen + 65536;
+    var buf = alloc(cap);
     var k = 0;
     while (k < plen) {
         store8(buf + k, load8(prefix + k));
         k = k + 1;
     }
-    _shabda_trie_collect(node, buf, plen, results);
+    _shabda_trie_collect(node, buf, plen, cap, results);
     _shabda_sort_strs(results);
     return results;
 }

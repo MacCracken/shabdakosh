@@ -15,6 +15,18 @@ include "src/dictionary/format/mod.cyr"
 
 alloc_init();
 
+fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _find(s, sub): i64 {
+    var sl = strlen(s);
+    var pl = strlen(sub);
+    var i = 0;
+    while (i + pl <= sl) {
+        if (_shabda_starts_at(s, i, sub) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
 # ================================================================
 test_group("xml escape / unescape");
 assert_streq(shabda_xml_escape("a<b>&c\"d'e"), "a&lt;b&gt;&amp;c&quot;d&apos;e", "escape");
@@ -52,6 +64,9 @@ assert_eq(shabda_pronunciation_frequency(shabda_dict_entry_primary(re)), 0.5, "f
 test_group("parse_cmudict errors");
 assert_eq(shabda_parse_cmudict("catNOSEP K AE1 T\n"), 0, "missing two-space -> 0");
 assert_eq(shabda_parse_cmudict("cat  K ZZZ T\n"), 0, "unknown ARPABET symbol -> 0");
+# parity audit: malformed @freq / unknown @region must abort the parse
+assert_eq(shabda_parse_cmudict(";;; @freq=abc\nhello  HH EH L OW\n"), 0, "malformed @freq -> 0");
+assert_eq(shabda_parse_cmudict(";;; @region=XX\nhello  HH EH L OW\n"), 0, "unknown @region -> 0");
 
 # ================================================================
 test_group("parse_ipa / to_ipa");
@@ -69,6 +84,14 @@ test_group("parse_ipa: 'word IPA' (no slashes) + comments");
 var di3 = shabda_parse_ipa("# a comment\ncat kæt\n");
 assert_neq(di3, 0, "word IPA form");
 assert_neq(shabda_dict_lookup(di3, "cat"), 0, "cat present (comment skipped)");
+
+# ================================================================
+# parity audit: to_cmudict must drop phonemes with no ARPABET equivalent WITHOUT
+# leaving a stray leading/double space (VowelA has no ARPABET mapping).
+test_group("to_cmudict drops unmapped phonemes cleanly");
+var jd = shabda_dict_new();
+shabda_dict_insert(jd, "test", _v2(SVARA_PH_VOWEL_A, SVARA_PH_PLOSIVE_K));
+assert_eq(_find(shabda_to_cmudict(jd), "test  K\n"), 1, "VowelA dropped -> 'test  K' (no stray space)");
 
 var rc = assert_summary();
 syscall(60, rc);

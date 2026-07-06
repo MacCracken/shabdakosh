@@ -146,6 +146,7 @@ fn shabda_parse_cmudict(input): i64 {
     var ti = 0;
     var vs = 0;
     var ve = 0;
+    var fc = alloc(8);
     while (pos < len) {
         le = _shabda_fmt_line_end(input, pos, len);
         s = pos;
@@ -172,7 +173,9 @@ fn shabda_parse_cmudict(input): i64 {
                             if (_shabda_fmt_is_ws(load8(input + ve)) == 1) { break; }
                             ve = ve + 1;
                         }
-                        pending_freq = f64_parse(input + vs);
+                        # Rust returns Err on a malformed @freq — validate.
+                        if (f64_parse_ok(input + vs, fc) == 0) { return 0; }
+                        pending_freq = load64(fc);
                         ti = ve;
                     } else {
                         if (_shabda_starts_at(input, ti, "@region=") == 1) {
@@ -183,6 +186,8 @@ fn shabda_parse_cmudict(input): i64 {
                                 ve = ve + 1;
                             }
                             pending_region = shabda_region_from_code(_shabda_fmt_dup(input, vs, ve));
+                            # Rust returns Err on an unknown region code.
+                            if (pending_region == SHABDA_REGION_NONE) { return 0; }
                             ti = ve;
                         } else {
                             ti = ti + 1;
@@ -292,6 +297,7 @@ fn _shabda_write_entry_cmudict(sb, word, entry): i64 {
     var np = 0;
     var k = 0;
     var arp = 0;
+    var emitted = 0;
     while (i < n) {
         pron = vec_get(prons, i);
         hasf = shabda_pronunciation_has_frequency(pron);
@@ -299,7 +305,7 @@ fn _shabda_write_entry_cmudict(sb, word, entry): i64 {
         if (hasf == 1) {
             str_builder_add_cstr(sb, ";;; @freq=");
             fbuf = alloc(32);
-            flen = fmt_float_buf(shabda_pronunciation_frequency(pron), fbuf, 4);
+            flen = fmt_float_buf(shabda_pronunciation_frequency(pron), fbuf, 6);
             store8(fbuf + flen, 0);
             str_builder_add_cstr(sb, fbuf);
             if (hasr == 1) {
@@ -324,10 +330,15 @@ fn _shabda_write_entry_cmudict(sb, word, entry): i64 {
         phon = shabda_pronunciation_phonemes(pron);
         np = vec_len(phon);
         k = 0;
+        emitted = 0;
         while (k < np) {
-            if (k > 0) { str_builder_add_cstr(sb, " "); }
             arp = shabda_phoneme_to_arpabet(vec_get(phon, k));
-            if (arp != 0) { str_builder_add_cstr(sb, arp); }
+            if (arp != 0) {
+                # separator only BETWEEN emitted symbols (Rust filter_map + join(" "))
+                if (emitted > 0) { str_builder_add_cstr(sb, " "); }
+                str_builder_add_cstr(sb, arp);
+                emitted = emitted + 1;
+            }
             k = k + 1;
         }
         str_builder_add_cstr(sb, "\n");
@@ -481,8 +492,8 @@ fn shabda_to_ipa(dict): cstring {
 # Load + parse a CMUdict file, or 0 on read / parse error.
 #must_use
 fn shabda_load_cmudict_file(path): i64 {
-    var buf = alloc(1048576);
-    var n = file_read_all(path, buf, 1048575);
+    var buf = alloc(8388608);
+    var n = file_read_all(path, buf, 8388607);
     if (n < 0) { return 0; }
     store8(buf + n, 0);
     return shabda_parse_cmudict(buf);

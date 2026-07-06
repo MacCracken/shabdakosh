@@ -107,5 +107,22 @@ test_group("keystone prefix_search");
 var pr = shabda_dict_prefix_search(shabda_dict_english_minimal(), "he");
 assert_eq(_has(pr, "hello"), 1, "prefix_search 'he' includes hello");
 
+# ================================================================
+# parity audit: search_prefix must not overflow its collection buffer on a very
+# long word (was alloc(plen+512); a 601-byte word overflowed).
+test_group("long word (no buffer overflow)");
+var longw = alloc(602);
+store8(longw + 0, 97);
+var q = 1;
+while (q < 601) {
+    store8(longw + q, 120);
+    q = q + 1;
+}
+store8(longw + 601, 0);
+var lt = shabda_trie_new();
+shabda_trie_insert(lt, longw);
+assert_eq(shabda_trie_contains(lt, longw), 1, "601-byte word present");
+assert_eq(vec_len(shabda_trie_search_prefix(lt, "a")), 1, "prefix 'a' returns the long word (no overflow)");
+
 var rc = assert_summary();
 syscall(60, rc);
