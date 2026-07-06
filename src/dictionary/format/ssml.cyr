@@ -1,0 +1,77 @@
+# ssml.cyr — SSML <phoneme> tag parse / emit.
+#
+# Ports rust-old/src/dictionary/format/ssml.rs. Handles the SSML phoneme element
+# `<phoneme alphabet="ipa" ph="IPA">word</phoneme>`. Reuses the XML scan helpers
+# from pls.cyr (_shabda_pls_find / _shabda_pls_extract_attr / _shabda_pls_ws) and
+# xml_escape/unescape + _shabda_starts_at / _shabda_fmt_dup from format/mod.cyr.
+# Included after src/dictionary/format/pls.cyr.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+#
+# ShSsmlResult layout (16 bytes): [0]=word(cstr) [8]=phonemes(vec of ordinals).
+
+# Parse an SSML <phoneme> tag into a (word, phonemes) result, or 0 on error
+# (not a <phoneme> tag, unsupported alphabet, missing ph, or empty phonemes).
+#must_use
+fn shabda_parse_ssml_phoneme(tag): i64 {
+    var len = strlen(tag);
+    var s = 0;
+    while (s < len) {
+        if (_shabda_pls_ws(load8(tag + s)) == 0) { break; }
+        s = s + 1;
+    }
+    if (_shabda_starts_at(tag, s, "<phoneme") == 0) { return 0; }
+
+    var alpha = _shabda_pls_extract_attr(tag, "alphabet");
+    if (alpha != 0) {
+        if (streq(alpha, "ipa") == 0) { return 0; }
+    }
+    var ph = _shabda_pls_extract_attr(tag, "ph");
+    if (ph == 0) { return 0; }
+    var phon = shabda_parse_ipa_word(ph);
+    if (vec_len(phon) == 0) { return 0; }
+
+    # word = text between the first '>' and '</phoneme>'
+    var gt = _shabda_pls_find(tag, s, len, ">");
+    if (gt < 0) { return 0; }
+    var cs = gt + 1;
+    var ce = _shabda_pls_find(tag, cs, len, "</phoneme>");
+    if (ce < 0) { return 0; }
+    while (cs < ce) {
+        if (_shabda_pls_ws(load8(tag + cs)) == 0) { break; }
+        cs = cs + 1;
+    }
+    while (ce > cs) {
+        if (_shabda_pls_ws(load8(tag + ce - 1)) == 0) { break; }
+        ce = ce - 1;
+    }
+
+    var r = alloc(16);
+    store64(r + 0, shabda_xml_unescape(_shabda_fmt_dup(tag, cs, ce)));
+    store64(r + 8, phon);
+    return r;
+}
+
+# Word (cstr) from a parse_ssml_phoneme result.
+#must_use
+fn shabda_ssml_result_word(r): cstring {
+    return load64(r + 0);
+}
+
+# Phonemes (vec) from a parse_ssml_phoneme result.
+#must_use
+fn shabda_ssml_result_phonemes(r): i64 {
+    return load64(r + 8);
+}
+
+# Emit an SSML <phoneme> tag (IPA alphabet) for a word + phoneme sequence.
+#must_use
+fn shabda_to_ssml_phoneme(word, phonemes): cstring {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "<phoneme alphabet=\"ipa\" ph=\"");
+    str_builder_add_cstr(sb, shabda_phonemes_to_ipa(phonemes));
+    str_builder_add_cstr(sb, "\">");
+    str_builder_add_cstr(sb, shabda_xml_escape(word));
+    str_builder_add_cstr(sb, "</phoneme>");
+    return str_data(str_builder_build(sb));
+}

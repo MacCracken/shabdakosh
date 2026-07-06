@@ -1,0 +1,54 @@
+# ssml.tcyr — tests for src/dictionary/format/ssml.cyr (ports rust-old/src/dictionary/format/ssml.rs).
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/format/mod.cyr"
+include "src/dictionary/format/pls.cyr"
+include "src/dictionary/format/ssml.cyr"
+
+alloc_init();
+
+fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _contains(s, sub): i64 { return _shabda_pls_find(s, 0, strlen(s), sub); }
+
+# ================================================================
+test_group("parse SSML phoneme");
+var r = shabda_parse_ssml_phoneme("<phoneme alphabet=\"ipa\" ph=\"hɛloʊ\">hello</phoneme>");
+assert_neq(r, 0, "parsed");
+assert_streq(shabda_ssml_result_word(r), "hello", "word = hello");
+assert_eq(vec_len(shabda_ssml_result_phonemes(r)), 4, "4 phonemes");
+
+# ================================================================
+test_group("roundtrip");
+var tag = shabda_to_ssml_phoneme("cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+var r2 = shabda_parse_ssml_phoneme(tag);
+assert_neq(r2, 0, "roundtrip parsed");
+assert_streq(shabda_ssml_result_word(r2), "cat", "word = cat");
+var p = shabda_ssml_result_phonemes(r2);
+assert_eq(vec_len(p), 3, "3 phonemes");
+assert_eq(vec_get(p, 0), SVARA_PH_PLOSIVE_K, "p[0] K");
+assert_eq(vec_get(p, 1), SVARA_PH_VOWEL_ASH, "p[1] AE");
+assert_eq(vec_get(p, 2), SVARA_PH_PLOSIVE_T, "p[2] T");
+
+# ================================================================
+test_group("parse errors");
+assert_eq(shabda_parse_ssml_phoneme("<phoneme alphabet=\"ipa\">hello</phoneme>"), 0, "missing ph -> 0");
+assert_eq(shabda_parse_ssml_phoneme("<phoneme alphabet=\"x-sampa\" ph=\"hEloU\">hello</phoneme>"), 0, "wrong alphabet -> 0");
+assert_eq(shabda_parse_ssml_phoneme("not a phoneme tag"), 0, "not a <phoneme> tag -> 0");
+
+# ================================================================
+test_group("xml escape in output");
+assert_gte(_contains(shabda_to_ssml_phoneme("a&b", _v1(SVARA_PH_VOWEL_A)), "a&amp;b"), 0, "word escaped as a&amp;b");
+
+var rc = assert_summary();
+syscall(60, rc);

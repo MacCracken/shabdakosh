@@ -63,8 +63,8 @@ formats → gated/optional.
 | L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
 | L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr | ✅ ported | 45 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec** (bayan DOM both ways) — the serde-stance deliverable |
 | L5 | dictionary/format/pls.rs | src/dictionary/format/pls.cyr | ✅ ported | 10 | W3C PLS XML parse/emit (ipa alphabet), hand-rolled scan; to_pls/to_pls_with_user |
-| L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ⏳ next | — | SSML <phoneme> tag parse/emit |
-| L5 | dictionary/format/binary.rs | … | ⬜ | — | postcard equiv (maximal scope) |
+| L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ✅ ported | 13 | SSML <phoneme alphabet ph>word</phoneme> parse/emit; reuses pls XML scan helpers |
+| L5 | dictionary/format/binary.rs | src/dictionary/format/binary.cyr | ⏳ next | — | compact binary format (postcard equiv, maximal scope) |
 | L6 | dictionary/validate.rs | … | ⬜ | — | varna-gated |
 | L6 | dictionary/detect.rs | … | ⬜ | — | varna-gated |
 | L6 | dictionary/lazy.rs | … | ⬜ | — | mmap (lib/mmap.cyr) |
@@ -115,9 +115,10 @@ serde-replacement per the locked stance (round-trips words/phonemes/frequency/re
 user-overlay; invalid JSON → 0). Debugging it pinned down the **bayan cstr/Str contract**
 (see memory). Next L5: format/pls, format/ssml, format/binary.
 
-**format/pls done** (10 tests → 494 assertions / 18 suites): W3C PLS XML parse/emit (ipa
-alphabet only, hand-rolled bounded scan, XML escape). Remaining L5: format/ssml (next),
-format/binary.
+**format/pls + format/ssml done** → 507 assertions / 19 suites: W3C PLS XML + SSML
+`<phoneme>` tag parse/emit (hand-rolled bounded XML scan, escape). Remaining L5: format/binary
+(next — closes L5), a compact binary format (the Rust used postcard; no CYRIUS analogue, so a
+hand-rolled binary encoding under the maximal-scope decision).
 
 ## Dependencies
 
