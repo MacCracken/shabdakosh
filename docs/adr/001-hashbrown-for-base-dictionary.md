@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted (**pre-port** Rust-crate decision). The CYRIUS port uses `lib/hashmap` (the
+hashbrown replacement) and drops the `BTreeMap` user overlay for hashmap + sort-on-export; the
+`cargo`/criterion details below are Rust-era history. See [ADR-004](004-cyrius-port-decisions.md).
 
 ## Context
 

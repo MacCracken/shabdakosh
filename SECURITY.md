@@ -13,4 +13,4 @@ If you discover a security vulnerability, please report it responsibly:
 
 | Version | Supported |
 |---------|-----------|
-| 1.0.x   | Yes       |
+| 3.0.x   | Yes       |

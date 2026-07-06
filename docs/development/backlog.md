@@ -55,11 +55,13 @@ Rust crate's output:
 - **[medium/medium] `docs/examples/` is empty** (`.gitkeep` only) despite CLAUDE.md advertising runnable
   examples. Add an end-to-end CYRIUS example (build dict → lookup → user override → format roundtrip).
   Partially covered by [consuming-the-distlib.md](../guides/consuming-the-distlib.md).
-- **[medium/small] ADR-001/002/003 describe Rust-crate mechanics the port replaced.** The index note
-  ([adr/README.md](../adr/README.md)) flags this; a fuller reframe or `Superseded` status would be cleaner.
 
 ## Resolved during the review (not open)
 
+- ~~Docs / memories still described the Rust crate (Rustisms + stale sharding/path-deps)~~ —
+  **audited + cleaned** (2026-07-06): CONTRIBUTING rewritten to CYRIUS tooling, ADR-001/002/003
+  given pre-port banners, sharding/path-dep/count references corrected across README, docs/, and
+  memories (git+tag deps, single `_cmudict_data.cyr`, 26 suites / 689 assertions).
 - ~~cmudict data sharding~~ — **reverted to a single `_cmudict_data.cyr`** (2026-07-06): the distlib
   256 KB → 1 MB cap fix shipped in toolchain 6.4.10 (from our proposal), so the 283 KB module fits
   again. Generator, 19 includers, and `[lib].modules` collapsed back to one file.

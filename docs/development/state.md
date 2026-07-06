@@ -5,13 +5,13 @@
 
 ## Version
 
-**3.0.0** (in progress) — Rust→Cyrius port. Targeting full behavioral parity with
+**3.0.0** (RELEASED 2026-07-06) — Rust→Cyrius port. Full behavioral parity with
 the Rust 2.0.0 surface. Started 2026-07-05 via `cyrius port`. 7,085 lines of Rust
 preserved at `rust-old/` as the parity oracle.
 
 ## Toolchain
 
-- **Cyrius pin**: `6.4.7` (in `cyrius.cyml [package].cyrius`) — bumped 6.4.5→6.4.6→6.4.7 as
+- **Cyrius pin**: `6.4.10` (in `cyrius.cyml [package].cyrius`) — bumped 6.4.5→…6.4.10 as
   the installed cycc drifted; `lib/` re-synced each time, all suites stay green.
 
 ## Port decisions (locked 2026-07-05)
@@ -59,7 +59,7 @@ formats → gated/optional.
 |------|-------------|--------|--------|-------|-------|
 | — | (scaffold) | src/main.cyr | ✅ green | 2 | `cyrius build` OK; smoke 2/2 |
 | L0 | error.rs | src/error.cyr | ✅ ported | 15 | ShabdakoshError → sakshi packed codes + `shabda_err_name`; fmt/lint clean |
-| L1 | arpabet.rs | src/arpabet.cyr | ✅ ported | 61 | ARPABET ↔ `SVARA_PH_*`; svara path-dep wired; fmt/lint clean |
+| L1 | arpabet.rs | src/arpabet.cyr | ✅ ported | 61 | ARPABET ↔ `SVARA_PH_*`; svara dep wired; fmt/lint clean |
 | L1 | ipa.rs | src/ipa.cyr | ✅ ported | 74 | IPA ↔ `SVARA_PH_*`; greedy longest-byte-match parser (tie-bar affricates), phonemes↔string; fmt/lint clean |
 | L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 27 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; NaN-safe freq-desc insertion sort (parity-audited); container serde in L5 |
 | L1 | dictionary/morphology.rs | src/dictionary/morphology.cyr | ✅ ported | 20 | MorphemeKind/Morpheme/Decomposition; composite/root/prefixes/suffixes; self-contained |
@@ -168,7 +168,7 @@ note): the binding is just another `.cyr` surface; browser delivery is the toolc
   with a hand-written bayan JSON codec (serde-roundtrip invariant preserved); the ː
   length-normalization membership check (ɔ↔ɔː); faithful `is_consonant` parity quirk (Rust omits
   VOWEL_LONG_I → reads as consonant); dict.validate / dict.validate_phonotactics convenience.
-- **varna** wired as a path dep (`lib/varna.cyr`, self-contained bundle, bare `phoneme_*`/`script_*`
+- **varna** wired as a git+tag dep (`dist/varna.cyr`, self-contained bundle, bare `phoneme_*`/`script_*`
   symbols — links cleanly alongside svara, no collision); phonemes bridge svara SVARA_PH_* ordinals
   → varna IPA strings via shabda_phoneme_to_ipa.
 
@@ -232,12 +232,12 @@ distlib bundle built + consumer-verified; benchmarks captured; docs accurate for
 - **stdlib** (declared): syscalls, string, alloc, str, fmt, vec, io, args, assert.
   Grows: `hashmap` (dict), `bayan` (serde), `tagged` (Option), `math` at their tiers.
 - **svara** (2.0.0 Rust → 3.0.1 Cyrius, `dist/svara.cyr`) — `SVARA_PH_*` phoneme
-  source. **Wired** (L1) as a path dep (`[deps.svara] path = "../svara"`); pulls
+  source. **Wired** (L1) as a git+tag dep (`[deps.svara] git=…/svara.git, tag 3.0.1`); pulls
   the transitive stack (hisab/naad/goonj/sakshi). Entry includes
   `lib/{hisab,goonj,naad,svara}.cyr` before src modules. NOTE: the full bundle
   adds ~1 MB of unreachable code (DCE-eligible, `CYRIUS_DCE=1`) — a phoneme-only
   svara sub-bundle would lighten dictionary-only consumers; possible later.
-- **varna** (2.0.0 Cyrius, `dist/varna.cyr`) — optional validate/detect. Added at the
+- **varna** (2.0.0 Cyrius, git+tag dep, `dist/varna.cyr`) — validate/detect + lexicon ctors. Added at the
   varna-gated tier.
 
 ## Consumers

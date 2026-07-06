@@ -40,7 +40,7 @@ cyrius tests tests                            # run every .tcyr suite
 ```
 
 Consumers pull `dist/shabdakosh.cyr` and its `dist/shabdakosh.deps` sidecar, and
-declare the svara + varna path deps plus the stdlib folds (see `cyrius.cyml [deps]`).
+declare the svara + varna git deps plus the stdlib folds (see `cyrius.cyml [deps]`).
 The svara chain must be included before the shabda modules — the include order in
 `src/main.cyr` is the reference.
 
@@ -56,8 +56,8 @@ var d2 = shabda_dict_english();            # the full built-in dict (10,617 entr
 var d3 = shabda_dict_english_minimal();    # ~29 common function words, tagged "en"
 ```
 
-`shabda_dict_english()` loads the generated CMUdict data shards
-(`src/dictionary/_cmudict_data_*.cyr`) into a `lib/hashmap` on first construction.
+`shabda_dict_english()` loads the generated CMUdict data
+(`src/dictionary/_cmudict_data.cyr`) into a `lib/hashmap` on first construction.
 `shabda_dict_english_minimal()` is the memory-light dict for tests and constrained use.
 
 Size and emptiness:

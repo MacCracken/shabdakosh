@@ -10,7 +10,7 @@ original v0.x/v1.0 sequencing collapsed into a single parity milestone.
 ## Release criteria (v3.0.0)
 
 - [x] Rust → Cyrius surface parity verified (function-level against `rust-old/`; every module ✅ or consciously dropped)
-- [x] Test coverage adequate for the surface area (653 assertions / 25 suites, all green)
+- [x] Test coverage adequate for the surface area (689 assertions / 26 suites, all green)
 - [x] Benchmarks captured in [`docs/benchmarks.md`](../benchmarks.md)
 - [x] At least one downstream consumer green (`dist/shabdakosh.cyr` linked + exercised by a consumer smoke)
 - [x] CHANGELOG complete (3.0.0 entry)
@@ -29,7 +29,7 @@ original v0.x/v1.0 sequencing collapsed into a single parity milestone.
 Every Rust module ported function-for-function to CYRIUS and cross-checked against `rust-old/`:
 error/arpabet/ipa/entry/morphology/syllable/notation, the dictionary keystone + coverage/stream/
 trie/heteronym/g2p/static_dict, all format codecs (CMUdict/IPA/PLS/SSML/JSON/binary), lazy (mmap),
-detect + validate (varna), and the WASM surface. Base CMUdict data generated as `.cyr` shards.
+detect + validate (varna), and the WASM surface. Base CMUdict data generated as a single `.cyr` module (`_cmudict_data.cyr`).
 distlib bundle built + consumer-verified. See [`state.md`](state.md) for the per-module ledger.
 
 ## Out of scope (v3.0.0)

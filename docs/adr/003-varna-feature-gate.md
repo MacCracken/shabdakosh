@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted (**pre-port** Rust-crate decision). In the CYRIUS port varna is linked
+**unconditionally** (a git+tag dep, no feature gate); the `cargo test --features` details below
+are Rust-era history. See [ADR-004](004-cyrius-port-decisions.md).
 
 ## Context
 

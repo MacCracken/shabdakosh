@@ -24,10 +24,10 @@ port against `rust-old/`; the correctness bar is "matches what Rust did."
 2. **Traits → function-pointer + enum-tag dispatch.** `G2PModel`/`FallbackDict` and the heteronym
    resolver become function pointers (`fncall`); notation and lookup-source become enum-tag
    dispatch. `Option<T>` → sentinels (`SHABDA_PH_NONE` etc.); `Result<T>` → pointer-or-0.
-3. **Base dictionary: `build.rs` → generated `.cyr` shards.** `programs/gen_cmudict.cyr` reads
-   `data/cmudict-5k.txt` and emits checked-in `src/dictionary/_cmudict_data_N.cyr` packed-string
-   globals, loaded into `lib/hashmap` at startup. **Sharded** across files so each stays under
-   `cyrius distlib`'s 256 KB per-module read cap (the single file was 283 KB).
+3. **Base dictionary: `build.rs` → a generated `.cyr` module.** `programs/gen_cmudict.cyr` reads
+   `data/cmudict-5k.txt` and emits the checked-in `src/dictionary/_cmudict_data.cyr` packed-string
+   globals, loaded into `lib/hashmap` at startup. (Briefly sharded to fit `cyrius distlib`'s old
+   256 KB per-module read cap; reverted to one 283 KB file after toolchain 6.4.10 raised the cap to 1 MB.)
 4. **Binary format: `postcard` → hand-rolled.** A hand-written little-endian format (`"SHBD"`
    magic + version, u16/u32 length-prefixed) with bounds-checked decode. Not wire-compatible with
    the Rust postcard payload (see Consequences).
@@ -42,21 +42,22 @@ port against `rust-old/`; the correctness bar is "matches what Rust did."
 
 ## Consequences
 
-- **Positive**: the port keeps the full Rust surface behavior (verified by a 677-assertion suite)
+- **Positive**: the port keeps the full Rust surface behavior (verified by a 689-assertion suite across 26 test groups)
   while fitting CYRIUS's constraints; `dist/shabdakosh.cyr` links flat into AGNOS consumers.
 - **Negative / owned**: hand-written codecs and error plumbing we now maintain (no serde/thiserror
   to lean on); the binary + JSON formats are CYRIUS-native and **not wire-compatible** with the
   Rust crate's output; `static_dict` pays a one-time load that `phf` avoided.
 - **Neutral**: the phf gap is tracked upstream in the cyrius proposal
-  `2026-07-05-const-eval-comptime.md`; the 256 KB distlib cap is tracked in
-  `2026-07-05-distlib-per-module-read-cap.md` (raising it would retire the data sharding).
+  `2026-07-05-const-eval-comptime.md`. The distlib per-module read cap was raised 256 KB → 1 MB
+  in toolchain 6.4.10 (our proposal `2026-07-05-distlib-per-module-read-cap.md`), retiring the sharding.
 
 ## Alternatives considered
 
 - **Runtime data-file parsing** (instead of generated `.cyr`) — rejected: the toml/JSON loaders
   cap at 256 KB / 16 KB and there is no asset-path resolver. Generated `.cyr` matches the
   varna / cyrius-unicode precedent.
-- **A single unsharded data module** — rejected: exceeds the distlib 256 KB per-module read cap.
+- **A single unsharded data module** — rejected under the old 256 KB distlib cap; now the chosen
+  approach after toolchain 6.4.10 raised the cap to 1 MB.
 - **Keeping a C FFI surface** — rejected: no consumer, and it would carry an unused C-ABI layer.
 - **Separate ADRs per decision** — deferred: the load-bearing ones (errors, binary, phf, sharding)
   may be split out later; a single consolidated record closes the gap while the rationale is fresh.

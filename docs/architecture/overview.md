@@ -40,9 +40,8 @@ shabdakosh/
 │       ├── syllable.cyr            — Syllable / StressLevel + syllabify (Maximal Onset)
 │       │
 │       │  ── L2 generated base data ──
-│       ├── _cmudict_data_0.cyr     — packed-string shard, pieces 0–6 (172 KB)
-│       ├── _cmudict_data_1.cyr     — packed-string shard, pieces 7–11 + count + accessor (110 KB)
-│       ├── cmudict.cyr             — loads the shards into a lib/hashmap at runtime
+│       ├── _cmudict_data.cyr       — packed-string pieces + count + accessor (~276 KB)
+│       ├── cmudict.cyr             — loads the data into a lib/hashmap at runtime
 │       │
 │       │  ── L3 keystone ──
 │       ├── mod.cyr                 — PronunciationDict: base map + user overlay + language;
@@ -71,7 +70,7 @@ shabdakosh/
 │   └── wasm.cyr                    — WasmDict: 12 thin JSON-boundary wrappers over the dict
 │
 ├── data/cmudict-5k.txt            — base-dictionary source of truth (300 KB, 10,692 lines)
-├── programs/gen_cmudict.cyr        — codegen: data → _cmudict_data_N.cyr shards (the build.rs port)
+├── programs/gen_cmudict.cyr        — codegen: data → _cmudict_data.cyr (the build.rs port)
 ├── benches/hotpath.bcyr           — cyrius bench (criterion replacement)
 ├── tests/*.tcyr                    — per-module suites (cyrius tests)
 └── dist/shabdakosh.cyr (+ .deps)   — the shipped distlib bundle
@@ -142,9 +141,7 @@ programs/gen_cmudict.cyr     includes src/arpabet.cyr and REUSES its mapping —
   │                          one source of truth, no Rust-style table duplication.
   │                          Folds variants via a hashmap.
   │
-  ├─→ src/dictionary/_cmudict_data_0.cyr   pieces 0–6   (packed string globals)
-  └─→ src/dictionary/_cmudict_data_1.cyr   pieces 7–11 + word count + accessor
-        │                                  (sharded: distlib caps per-module reads at 256 KB)
+  └─→ src/dictionary/_cmudict_data.cyr    packed string globals + word count + accessor
         │
         └─→ src/dictionary/cmudict.cyr
               ├─ shabda_cmudict_load(map)   → parses the pieces into a lib/hashmap (returns count)
@@ -165,12 +162,12 @@ use them; stdlib folds (hashmap, bayan, sakshi, tagged, …) auto-resolve from
 ```
 shabdakosh
   │
-  ├── svara chain (path dep [deps.svara] = "../svara", pulls dist/svara.cyr)
+  ├── svara chain (git dep [deps.svara], tag 3.0.1, pulls dist/svara.cyr)
   │     lib/hisab.cyr → lib/goonj.cyr → lib/naad.cyr → lib/svara.cyr
   │     └── SVARA_PH_* phoneme identities (the PhonemeEvent-compat contract) +
   │         the transitive backend chain (sakshi rides along)
   │
-  ├── varna (path dep [deps.varna] = "../varna", pulls dist/varna.cyr)
+  ├── varna (git dep [deps.varna], tag 2.0.0, pulls dist/varna.cyr)
   │     lib/varna.cyr — phoneme inventories + phonotactics + script ranges.
   │     Self-contained bundle; bare module-prefixed symbols (phoneme_*/script_*),
   │     NOT varna_-prefixed — links cleanly alongside svara, no collision.
@@ -185,7 +182,7 @@ shabdakosh
 
 There are no Rust-style feature flags. What Rust gated behind `std` / `json` /
 `varna` / `phf` / `binary` / `mmap` features is here either always-on (`.cyr`
-modules in the bundle) or resolved by the presence of a path dep. Unreachable
+modules in the bundle) or resolved by the presence of a dep. Unreachable
 svara code is DCE-eligible (`CYRIUS_DCE=1`).
 
 ## Distlib Bundle
@@ -194,12 +191,12 @@ svara code is DCE-eligible (`CYRIUS_DCE=1`).
 into a single shipped artifact:
 
 ```
-dist/shabdakosh.cyr    458 KB, v3.0.0 — the whole library in one file
+dist/shabdakosh.cyr    ~460 KB, v3.0.0 — the whole library in one file
 dist/shabdakosh.deps   sidecar listing the stdlib folds this bundle needs (hisab/goonj/naad)
 ```
 
-Sharding the generated cmudict data into `_cmudict_data_0/1.cyr` was **required**
-by distlib's 256 KB per-module read cap. The auto-generated `.deps` sidecar lists
+The generated cmudict data is a single `_cmudict_data.cyr` (toolchain 6.4.10 raised
+distlib's per-module read cap to 1 MB, retiring the earlier sharding). The auto-generated `.deps` sidecar lists
 only the hisab/goonj/naad leaves (a distlib heuristic); consumers therefore
 declare `shabdakosh + svara + varna` deps plus the stdlib folds explicitly. A
 consumer-side smoke (svara chain + varna + `dist/shabdakosh.cyr`) links and runs:

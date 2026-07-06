@@ -21,7 +21,7 @@ ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
 - **I/O formats** — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format. `LazyDict` gives mmap-backed loading (with a `file_read_all` fallback).
 - **Validation & detection** — varna-backed phoneme-inventory and phonotactics validation, plus script/language detection over a UTF-8 code-point decoder.
 - **WASM + static dict** — a `WasmDict` binding surface and a lazily-cached static dictionary singleton.
-- **Generated data** — the base CMUdict is checked-in as `.cyr` shards (from `gen_cmudict.cyr`, the port of the Rust `build.rs`), sharded to stay under the distlib 256 KB per-module cap.
+- **Generated data** — the base CMUdict is checked-in as a single `.cyr` module (`src/dictionary/_cmudict_data.cyr`, from `gen_cmudict.cyr`, the port of the Rust `build.rs`); it fits under the distlib 1 MB per-module cap (toolchain 6.4.10).
 - **Sakshi errors** — no panics; fallible functions return a sakshi packed-i64 code (`0 == ok`, test with `shabda_is_err`) or a payload pointer (`0` == none).
 
 ## Quick Start
@@ -95,8 +95,8 @@ src/
     ├── entry.cyr                DictEntry, Pronunciation, Region
     ├── morphology.cyr           Morpheme / Decomposition tags
     ├── syllable.cyr             syllabify() via Maximal Onset Principle
-    ├── _cmudict_data_{0,1}.cyr  generated base-dictionary data shards
-    ├── cmudict.cyr              loads the shards into a hashmap
+    ├── _cmudict_data.cyr        generated base-dictionary data (single module)
+    ├── cmudict.cyr              loads the data into a hashmap
     ├── mod.cyr                  PronunciationDict core: new/english/lookup/insert_user/merge/diff/...
     ├── coverage.cyr             text-corpus coverage analysis
     ├── stream.cyr              zero-alloc streaming word->phoneme lookup

@@ -15,7 +15,7 @@ cyrius bench            # auto-discovers benches/
 - **Toolchain**: cyrius 6.4.8
 - **Revision**: `159ed0e`
 - **Platform**: Linux 7.0.14-arch1-1, x86_64
-- **Dictionary**: base English (`_cmudict_data_*` shards), ~10,617 entries
+- **Dictionary**: base English (`_cmudict_data.cyr`), ~10,617 entries
 
 | Benchmark | Avg | Min | Max | Iters |
 |---|---:|---:|---:|---:|

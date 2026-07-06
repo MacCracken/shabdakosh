@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted
+Accepted (**pre-port** Rust-crate decision, carried unchanged into the CYRIUS port —
+the base + user-overlay two-layer lookup is `src/dictionary/mod.cyr`).
 
 ## Context
 

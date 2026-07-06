@@ -12,12 +12,13 @@ distlib links flat, C-style, with every public symbol `shabda_`-prefixed.
 
 ## 1. Declare the dependency
 
-In your consumer crate's `cyrius.cyml`, add shabdakosh as a path (or git) dep and
+In your consumer crate's `cyrius.cyml`, add shabdakosh as a git (or path) dep and
 pull its bundle module:
 
 ```toml
 [deps.shabdakosh]
-path = "../shabdakosh"          # or: git = "https://github.com/MacCracken/shabdakosh", tag = "v3.0.0"
+git = "https://github.com/MacCracken/shabdakosh.git"   # or a local checkout: path = "../shabdakosh"
+tag = "3.0.0"
 modules = ["dist/shabdakosh.cyr"]
 ```
 
@@ -34,11 +35,13 @@ bundle links. shabdakosh is built on two sibling AGNOS crates:
 
 ```toml
 [deps.svara]
-path = "../svara"               # sibling AGNOS crate
+git = "https://github.com/MacCracken/svara.git"
+tag = "3.0.1"                   # sibling AGNOS crate
 modules = ["dist/svara.cyr"]
 
 [deps.varna]
-path = "../varna"               # sibling AGNOS crate
+git = "https://github.com/MacCracken/varna.git"
+tag = "2.0.0"                   # sibling AGNOS crate
 modules = ["dist/varna.cyr"]
 ```
 

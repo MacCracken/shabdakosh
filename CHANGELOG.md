@@ -4,7 +4,7 @@
 
 Complete port of shabdakosh from Rust to the **CYRIUS** language (AGNOS toolchain). A
 full-parity port: every Rust module reproduced against the preserved `rust-old/` oracle and
-cross-checked by a 653-assertion suite across 25 test groups, plus a consumer-verified distlib
+cross-checked by a 689-assertion suite across 26 test groups, plus a consumer-verified distlib
 bundle (`dist/shabdakosh.cyr`).
 
 - **Breaking**: Language change — shabdakosh is now a CYRIUS (`.cyr`) library, not a Rust crate. The API is flat, `shabda_`-prefixed C-style functions (`shabda_dict_lookup`, `shabda_parse_cmudict`, …) rather than Rust methods/traits/generics. Consumers pull `dist/shabdakosh.cyr`.
@@ -14,7 +14,7 @@ bundle (`dist/shabdakosh.cyr`).
 - **Feature**: I/O formats — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format (replacing postcard); `LazyDict` (mmap-backed with a `file_read_all` fallback).
 - **Feature**: varna-backed inventory + phonotactics **validation**, script/language **detection** (with a UTF-8 code-point decoder), and **Swadesh seed-dictionary constructors** (`shabda_from_lexicon`, `shabda_dict_spanish`/`hindi`/`german`/`sanskrit`).
 - **Feature**: WASM binding surface (`WasmDict`) and the static dictionary (`static_dict`) ported as `.cyr` modules.
-- **Feature**: base CMUdict data generated as checked-in `.cyr` shards (`gen_cmudict.cyr`, the `build.rs` port), sharded to stay under the distlib 256 KB per-module cap.
+- **Feature**: base CMUdict data generated as a single checked-in `.cyr` module (`gen_cmudict.cyr`, the `build.rs` port); it fits under the distlib 1 MB per-module cap.
 - **Changed**: `phf` static dict → lazy cached singleton — CYRIUS has no compile-time perfect hash; surface + lookup preserved, one-time ~9.6 ms load instead of a compile-time-baked table.
 - **Removed**: C FFI (`ffi.rs`) — dead in the CYRIUS/AGNOS stack (no C-ABI consumers).
 - **Removed**: the Rust `cli` binary and criterion harness — replaced by `.tcyr` tests and `benches/hotpath.bcyr` (see `docs/benchmarks.md`).

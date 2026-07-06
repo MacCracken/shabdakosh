@@ -5,13 +5,13 @@
 ```sh
 cyrius deps                              # resolve dependencies
 cyrius build src/main.cyr build/shabdakosh    # compile
-cyrius test                              # run tests/*.tcyr
+cyrius tests tests                       # run every .tcyr suite
 ```
 
 ## Layout
 
 - `src/main.cyr` — entry point. Top-level `var r = main(); syscall(SYS_EXIT, r);`.
-- `tests/` — test suite (`.tcyr` files, auto-discovered by `cyrius test`).
+- `tests/` — test suite (`.tcyr` files, auto-discovered by `cyrius tests`).
 - `rust-old/` — original Rust source preserved for parity checks. Do not modify; it's the reference oracle.
 
 ## Adding a feature
@@ -19,7 +19,7 @@ cyrius test                              # run tests/*.tcyr
 1. Edit `src/main.cyr` (or add a new module and `include` it).
 2. Cross-check parity against `rust-old/`.
 3. Add a test case to `tests/shabdakosh.tcyr`.
-4. Run `cyrius test`.
+4. Run `cyrius test tests/<suite>.tcyr` (one suite) or `cyrius tests tests` (all).
 5. Bump `VERSION` and add a CHANGELOG entry before tagging.
 
 See [`../adr/template.md`](../adr/template.md) when a non-trivial design choice deserves an ADR.
