@@ -172,8 +172,19 @@ note): the binding is just another `.cyr` surface; browser delivery is the toolc
   → varna IPA strings via shabda_phoneme_to_ipa.
 
 Full tree now **24 suites / 632 assertions** green. All Rust modules are ported (ffi dropped;
-wasm ported as a `.cyr` surface). **Next: release prep** — distlib bundle (`cyrius distlib` →
-dist/shabdakosh.cyr), benchmarks, CHANGELOG/roadmap finalization.
+wasm ported as a `.cyr` surface).
+
+**Distlib bundle done (2026-07-05)**: `cyrius distlib` → `dist/shabdakosh.cyr` (450 KB, 4747
+lines, v3.0.0) + `dist/shabdakosh.deps` sidecar. Required **sharding the generated cmudict data**
+— `gen_cmudict.cyr` now emits `_cmudict_data_0.cyr` (172 KB, pieces 0–6) + `_cmudict_data_1.cyr`
+(110 KB, pieces 7–11 + count + accessor) instead of one 283 KB file, because distlib caps
+per-module reads at 256 KB. Verified consumer-side: a smoke including the svara chain + varna +
+`dist/shabdakosh.cyr` (stdlib from cyrius.cyml) links and runs — `shabda_dict_english()` loads
+all 10617 entries, detect→Latn, wasm lookup→JSON IPA. (Note: the auto-generated `.deps` sidecar
+lists only hisab/goonj/naad, not the stdlib/svara/varna leaves — a distlib-tool heuristic;
+consumers declare shabdakosh+svara+varna deps + stdlib folds explicitly, so consumption works.)
+
+**Next: release prep** — benchmarks (never skip), CHANGELOG 3.0.0 entry, roadmap finalization.
 
 ## Dependencies
 

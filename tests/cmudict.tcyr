@@ -1,4 +1,4 @@
-# cmudict.tcyr — verifies the generated base dict (_cmudict_data.cyr) loads
+# cmudict.tcyr — verifies the generated base dict (_cmudict_data_N.cyr shards) loads
 # correctly via src/dictionary/cmudict.cyr. Needs svara (SVARA_PH_*) + error +
 # entry + the generated data.
 
@@ -8,7 +8,8 @@ include "lib/naad.cyr"
 include "lib/svara.cyr"
 include "src/error.cyr"
 include "src/dictionary/entry.cyr"
-include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/_cmudict_data_0.cyr"
+include "src/dictionary/_cmudict_data_1.cyr"
 include "src/dictionary/cmudict.cyr"
 
 alloc_init();

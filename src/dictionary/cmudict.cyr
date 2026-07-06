@@ -1,10 +1,10 @@
 # cmudict.cyr — loads the generated base English dictionary into a hashmap.
 #
 # The runtime counterpart to programs/gen_cmudict.cyr: parses the packed pieces
-# from _cmudict_data.cyr (entry = word|o,o,o[~freq][^RR]; ) into a lib/hashmap
-# map of word(Str) -> ShDictEntry*. Hand-written (stable); the DATA is generated.
+# from the _cmudict_data_N.cyr shards (entry = word|o,o,o[~freq][^RR]; ) into a
+# lib/hashmap of word(Str) -> ShDictEntry*. Hand-written (stable); DATA is generated.
 #
-# Included after _cmudict_data.cyr (piece globals) and src/dictionary/entry.cyr
+# Included after the _cmudict_data_N.cyr shards (piece globals) and src/dictionary/entry.cyr
 # (ShDictEntry / ShPronunciation / region). Keys share the static piece bytes.
 #
 # NAMING: shabda_/SHABDA_ prefixes (flat namespace).
