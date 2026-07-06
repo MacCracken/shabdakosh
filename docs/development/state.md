@@ -72,7 +72,7 @@ formats → gated/optional.
 | L4 | dictionary/trie.rs | src/dictionary/trie.cyr | ✅ ported | 30 | PrefixTrie (byte-keyed vec-of-pairs nodes, recursive collect); from_dict; wires keystone prefix_search |
 | L4 | dictionary/heteronym.rs | src/dictionary/heteronym.cyr | ✅ ported | 17 | HeteronymContext + resolver as fn-ptr (fncall2); lookup_with_context variant selection |
 | L4 | dictionary/g2p.rs | src/dictionary/g2p.cyr | ✅ ported | 29 | G2PResult, LookupSource, FallbackDict (model = (predict_fp,state) pair), promote*, FstModel stub; wires with_fallback |
-| L4 | dictionary/static_dict.rs | … | ⬜ | — | phf variant (maximal scope) |
+| L4 | dictionary/static_dict.rs | src/dictionary/static_dict.cyr | ✅ ported | 21 | phf→lazy cached singleton over shabda_dict_english (no const-eval for compile-time perfect hash); lookup/lookup_entry/len/is_empty; StaticEntry collapses onto ShDictEntry |
 | L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr | ✅ ported | 45 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec** (bayan DOM both ways) — the serde-stance deliverable |
 | L5 | dictionary/format/pls.rs | src/dictionary/format/pls.cyr | ✅ ported | 10 | W3C PLS XML parse/emit (ipa alphabet), hand-rolled scan; to_pls/to_pls_with_user |
 | L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ✅ ported | 13 | SSML <phoneme alphabet ph>word</phoneme> parse/emit; reuses pls XML scan helpers |
@@ -184,7 +184,38 @@ all 10617 entries, detect→Latn, wasm lookup→JSON IPA. (Note: the auto-genera
 lists only hisab/goonj/naad, not the stdlib/svara/varna leaves — a distlib-tool heuristic;
 consumers declare shabdakosh+svara+varna deps + stdlib folds explicitly, so consumption works.)
 
-**Next: release prep** — benchmarks (never skip), CHANGELOG 3.0.0 entry, roadmap finalization.
+**static_dict done (2026-07-05)**: the last unported Rust module — `static_dict.rs` (phf-gated) —
+ported as a lazy cached singleton over `shabda_dict_english()` (CYRIUS has no compile-time perfect
+hash; surface + lookup preserved, one-time ~9.6 ms load). Filed a cyrius const-eval proposal
+(`2026-07-05-const-eval-comptime.md`) for the residual phf gap. 21 assertions.
+
+**Benchmarks done (2026-07-05)**: `benches/hotpath.bcyr` ports the Rust criterion benches;
+`cyrius bench` green. Headline: **dict lookup hit ~135 ns** (O(1) goal met, alloc-free fast-path),
+miss ~162 ns; construction ~9.6 ms, binary ser/deser 2.4/10.7 ms. Captured in
+[docs/benchmarks.md](benchmarks.md) + `benches/history.csv`.
+
+**Security audit done (2026-07-05)**: adversarial 14-agent workflow (4 finders → per-finding
+verify) found 9 confirmed defects (6 HIGH), all in the untrusted-input paths — **all fixed +
+regression-tested** (12 new tests). Headline: the binary deserializer read attacker-controlled
+length/count fields with no bound (OOB/DoS, class of the Wasmtime CVEs) — now bounds-checked like
+the Rust/postcard original; plus UTF-8 truncated-multibyte OOB, validate-JSON null-deref, 8 MB
+file truncation, and @freq trailing-junk. Report: [docs/audit/2026-07-05-audit.md](../audit/2026-07-05-audit.md).
+
+**Backlog review done (2026-07-05)**: parallel 4-dimension review → 10 do-now, 16 track. Applied
+the do-now items: 2 more security fixes (json.cyr wrong-typed-field null-deref; to_binary
+write-side buffer overflow — both in the [audit addendum](../audit/2026-07-05-audit.md)), 4 new
+coverage tests (with_user exporters, save/load cmudict roundtrip, parse_ipa errors), and the docs:
+README / usage.md / architecture/overview.md rewritten from the stale Rust-crate content to the
+real CYRIUS surface (all function names cross-checked against src/ — 0 hallucinated), a new
+[consuming-the-distlib.md](../guides/consuming-the-distlib.md) guide (its runnable example builds +
+prints 10617/Latn verbatim), [ADR 004](../adr/004-cyrius-port-decisions.md) capturing the 7 port
+decisions + fixed ADR index. The 16 track items are recorded in [backlog.md](backlog.md) (notably:
+6 varna-lexicon constructors unported, merge shares-vs-clones divergence).
+
+**Release state (v3.0.0) — ALL GATES MET**: full tree **25 suites / 677 assertions** green; every
+Rust module ported (ffi dropped, wasm/static_dict as `.cyr` surfaces) or tracked in backlog.md;
+distlib bundle built + consumer-verified; benchmarks captured; docs accurate for v3.0.0; CHANGELOG
+3.0.0; roadmap finalized; security audit (11 fixes) passed. Ready to tag. Git operations are the user's.
 
 ## Dependencies
 

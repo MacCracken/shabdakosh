@@ -55,5 +55,17 @@ assert_streq(load64(oc), "Deva", "code Deva");
 assert_streq(load64(on), "Devanagari", "name Devanagari");
 assert_eq(shabda_detect_script_name("12345", oc, on), 0, "digits -> 0 (None)");
 
+# ================================================================
+# SECURITY regression (audit 2026-07-05): a truncated multibyte UTF-8 lead byte
+# followed by the NUL must be consumed as a single opaque byte — no read past the
+# terminator, no cursor advance past NUL. (0xF0/0xC3 land in Latin-1 -> Latn.)
+test_group("truncated UTF-8 lead (no OOB read)");
+var t4 = alloc(4);
+store8(t4 + 0, 240); store8(t4 + 1, 0);   # lone 4-byte lead 0xF0, then NUL
+assert_streq(shabda_detect_script(t4), "Latn", "lone 4-byte lead -> opaque byte, no crash");
+var t2 = alloc(4);
+store8(t2 + 0, 195); store8(t2 + 1, 0);   # lone 2-byte lead 0xC3, then NUL
+assert_streq(shabda_detect_script(t2), "Latn", "lone 2-byte lead -> opaque byte, no crash");
+
 var rc = assert_summary();
 syscall(60, rc);

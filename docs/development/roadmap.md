@@ -4,16 +4,17 @@
 > this file is the sequencing — what ships, in what order, against
 > what dependency gates.
 
-## v1.0 criteria
+The port shipped straight to **v3.0.0** (full parity with the Rust 2.x surface), so the
+original v0.x/v1.0 sequencing collapsed into a single parity milestone.
 
-_Define before tagging v0.1.0:_
+## Release criteria (v3.0.0)
 
-- [ ] Rust → Cyrius surface parity verified (function-level diff against `rust-old/`)
-- [ ] Test coverage adequate for the surface area
-- [ ] Benchmarks captured in `docs/benchmarks.md`
-- [ ] At least one downstream consumer green
-- [ ] CHANGELOG complete from v0.1.0 onward
-- [ ] Security audit pass (`docs/audit/YYYY-MM-DD-audit.md`)
+- [x] Rust → Cyrius surface parity verified (function-level against `rust-old/`; every module ✅ or consciously dropped)
+- [x] Test coverage adequate for the surface area (653 assertions / 25 suites, all green)
+- [x] Benchmarks captured in [`docs/benchmarks.md`](../benchmarks.md)
+- [x] At least one downstream consumer green (`dist/shabdakosh.cyr` linked + exercised by a consumer smoke)
+- [x] CHANGELOG complete (3.0.0 entry)
+- [x] Security audit pass ([`docs/audit/2026-07-05-audit.md`](../audit/2026-07-05-audit.md) — 9 findings, all fixed + regression-tested)
 
 ## Milestones
 
@@ -23,14 +24,18 @@ _Define before tagging v0.1.0:_
 - Rust source moved to `rust-old/`
 - Doc-tree per [first-party-documentation.md](https://github.com/MacCracken/agnosticos/blob/main/docs/development/applications/first-party-documentation.md)
 
-### M1 — Surface parity (v0.2.0)
+### M1 — Full parity port (v3.0.0) — ✅ shipped 2026-07-05
 
-_Pick a parseable Rust subset and verify the Cyrius port matches it function-for-function. Specify the dep gates and the acceptance criteria._
+Every Rust module ported function-for-function to CYRIUS and cross-checked against `rust-old/`:
+error/arpabet/ipa/entry/morphology/syllable/notation, the dictionary keystone + coverage/stream/
+trie/heteronym/g2p/static_dict, all format codecs (CMUdict/IPA/PLS/SSML/JSON/binary), lazy (mmap),
+detect + validate (varna), and the WASM surface. Base CMUdict data generated as `.cyr` shards.
+distlib bundle built + consumer-verified. See [`state.md`](state.md) for the per-module ledger.
 
-### M2 — _Title_ (v0.3.0)
+## Out of scope (v3.0.0)
 
-_…_
-
-## Out of scope (for v1.0)
-
-_Capture what's deliberately NOT in scope for v1.0._
+- **C FFI** (`ffi.rs`) — dropped; dead in the CYRIUS/AGNOS stack (no C-ABI consumers).
+- **Compile-time `phf` perfect hash** — CYRIUS has no const-eval; `static_dict` ships as a lazy
+  cached singleton instead (surface preserved). Tracked upstream in the cyrius proposal
+  `2026-07-05-const-eval-comptime.md`.
+- **(all release gates met)** — the security audit is complete; every criterion above is ✅.

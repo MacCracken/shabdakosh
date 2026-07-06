@@ -77,5 +77,27 @@ test_group("smaller than json");
 var sd = shabda_dict_english_minimal();
 assert_lt(str_len(shabda_to_binary(sd)), strlen(shabda_to_json(sd)), "binary smaller than JSON");
 
+# ================================================================
+# SECURITY regression (audit 2026-07-05): malformed blobs with attacker-controlled
+# length/count fields must decode to 0 — bounds-checked, never an OOB read.
+test_group("malformed binary -> 0 (bounds-checked)");
+# valid header + no-language + u32 entry count 0xFFFFFFFF, then EOF
+var mb = alloc(16);
+store8(mb + 0, 83); store8(mb + 1, 72); store8(mb + 2, 66); store8(mb + 3, 68); store8(mb + 4, 1);
+store8(mb + 5, 0);
+store8(mb + 6, 255); store8(mb + 7, 255); store8(mb + 8, 255); store8(mb + 9, 255);
+assert_eq(shabda_from_binary(str_new(mb, 10)), 0, "huge u32 entry count -> 0");
+# valid header + no-language + count 1 + huge u16 word length 0xFFFF, then EOF
+var mw = alloc(16);
+store8(mw + 0, 83); store8(mw + 1, 72); store8(mw + 2, 66); store8(mw + 3, 68); store8(mw + 4, 1);
+store8(mw + 5, 0);
+store8(mw + 6, 1); store8(mw + 7, 0); store8(mw + 8, 0); store8(mw + 9, 0);
+store8(mw + 10, 255); store8(mw + 11, 255);
+assert_eq(shabda_from_binary(str_new(mw, 12)), 0, "huge u16 word length -> 0");
+# truncated: valid 5-byte header, nothing after
+var mt = alloc(8);
+store8(mt + 0, 83); store8(mt + 1, 72); store8(mt + 2, 66); store8(mt + 3, 68); store8(mt + 4, 1);
+assert_eq(shabda_from_binary(str_new(mt, 5)), 0, "truncated (header only) -> 0");
+
 var rc = assert_summary();
 syscall(60, rc);

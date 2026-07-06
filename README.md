@@ -1,120 +1,129 @@
 # shabdakosh
 
-**shabdakosh** (Sanskrit: dictionary) — Pronunciation dictionary crate for [AGNOS](https://github.com/MacCracken).
+[![version](https://img.shields.io/badge/version-3.0.0-blue.svg)](VERSION)
+[![license](https://img.shields.io/badge/license-GPL--3.0--only-green.svg)](LICENSE)
+[![language](https://img.shields.io/badge/language-CYRIUS-orange.svg)](cyrius.cyml)
 
-Maps words to [svara](https://crates.io/crates/svara) `Phoneme` sequences using a 10,600+ entry English dictionary derived from the CMU Pronouncing Dictionary. Multi-language support via optional [varna](https://crates.io/crates/varna) integration.
+**shabdakosh** (Sanskrit: *dictionary*) — the pronunciation dictionary for
+[AGNOS](https://github.com/MacCracken). A **CYRIUS** (`.cyr`) library: a
+dictionary-first grapheme→phoneme store mapping words to sequences of
+[svara](https://github.com/MacCracken/svara) `SVARA_PH_*` phonemes, with
+ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
+
+> v3.0.0 is a full-parity **CYRIUS port** of a 7,085-line Rust library. It is no
+> longer a Rust crate: the API is flat, `shabda_`-prefixed C-style functions
+> (`shabda_dict_lookup`, `shabda_parse_cmudict`, …) — no methods, traits,
+> generics, `Cargo.toml`, or crates.io. Consumers pull `dist/shabdakosh.cyr`.
 
 ## Features
 
-- **10,600+ entry English dictionary** generated at compile time from CMUdict (zero runtime parsing)
-- **ARPABET mapping** — bidirectional conversion between ARPABET notation and svara phonemes
-- **IPA mapping** — bidirectional IPA-Phoneme conversion with greedy parser
-- **User overlay** — application-specific entries that override the base dictionary
-- **Variant pronunciations** — heteronyms (read, live, wind) with frequency and region metadata
-- **Import/export** — CMUdict, IPA, JSON, W3C PLS, SSML `<phoneme>` tags
-- **Dictionary operations** — merge (override/conservative), diff (added/removed/changed)
-- **Multi-language** (varna feature) — inventory validation, lexicon ingestion, script/language detection
-- **no\_std compatible** — works with `alloc`, no standard library required
+- **Pronunciation lookup** — 10k+ entry base English dictionary (ARPABET/IPA ↔ svara phonemes), a user overlay, O(1) hashmap lookup (~135 ns/hit), plus `merge`/`diff`, coverage analysis, streaming lookup, a prefix trie, heteronym context, and a G2P fallback chain.
+- **I/O formats** — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format. `LazyDict` gives mmap-backed loading (with a `file_read_all` fallback).
+- **Validation & detection** — varna-backed phoneme-inventory and phonotactics validation, plus script/language detection over a UTF-8 code-point decoder.
+- **WASM + static dict** — a `WasmDict` binding surface and a lazily-cached static dictionary singleton.
+- **Generated data** — the base CMUdict is checked-in as `.cyr` shards (from `gen_cmudict.cyr`, the port of the Rust `build.rs`), sharded to stay under the distlib 256 KB per-module cap.
+- **Sakshi errors** — no panics; fallible functions return a sakshi packed-i64 code (`0 == ok`, test with `shabda_is_err`) or a payload pointer (`0` == none).
 
 ## Quick Start
 
-```rust
-use shabdakosh::PronunciationDict;
-
-let dict = PronunciationDict::english();
-assert!(dict.lookup("hello").is_some());
-assert!(dict.len() >= 10000);
+```sh
+cyrius deps                                  # resolve dependencies (svara, varna, stdlib)
+cyrius build src/main.cyr build/shabdakosh   # compile the smoke binary
+cyrius tests tests                           # run all .tcyr suites
 ```
 
-## User Overlay
+## Usage
 
-Override or extend the built-in dictionary with application-specific pronunciations:
+Names are flat and `shabda_`-prefixed. A pronunciation is a `vec` of svara
+`SVARA_PH_*` integer ordinals; `shabda_dict_lookup` returns that vec, or `0`
+when the word is absent.
 
-```rust
-use shabdakosh::PronunciationDict;
-use svara::phoneme::Phoneme;
+```cyrius
+# Load the base English dictionary (10k+ entries).
+var d = shabda_dict_english();
 
-let mut dict = PronunciationDict::english();
+# Look up a word -> vec of SVARA_PH_* phonemes, or 0 if not found.
+var ph = shabda_dict_lookup(d, "hello");
+if (ph == 0) {
+    println("not found");
+} else {
+    println_int(vec_len(ph));   # 4 phonemes: HH AH0 L OW1
+}
 
-// Add a custom word
-dict.insert_user("agnos", &[
-    Phoneme::VowelAsh, Phoneme::PlosiveG,
-    Phoneme::NasalN, Phoneme::VowelO, Phoneme::FricativeS,
-]);
+# Extend with an application-specific pronunciation (user overlay wins).
+var agnos = vec_new();
+vec_push(agnos, SVARA_PH_VOWEL_ASH);
+vec_push(agnos, SVARA_PH_PLOSIVE_G);
+vec_push(agnos, SVARA_PH_NASAL_N);
+vec_push(agnos, SVARA_PH_VOWEL_O);
+vec_push(agnos, SVARA_PH_FRIC_S);
+shabda_dict_insert_user(d, "agnos", agnos);
 
-// User entries take precedence over base entries
-assert!(dict.lookup("agnos").is_some());
+# Import CMUdict text; export JSON / binary.
+var parsed = shabda_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n");
+var json = shabda_to_json(parsed);
 ```
 
-## Import/Export
+See [`docs/guides/getting-started.md`](docs/guides/getting-started.md) and
+[`docs/guides/usage.md`](docs/guides/usage.md) for worked examples across all
+formats and operations.
 
-```rust
-use shabdakosh::dictionary::format;
+## Consuming the distlib
 
-// Parse CMUdict format
-let input = "hello  HH AH0 L OW1\nworld  W ER1 L D\n";
-let dict = format::parse_cmudict(input).unwrap();
+Downstream AGNOS components (shabda, dhvani, vansh) pull the concatenated bundle
+`dist/shabdakosh.cyr` and its `dist/shabdakosh.deps` sidecar rather than
+rebuilding from `src/`. Point `cyrius deps` at it as a path/git dependency; the
+sidecar leaves the required stdlib folds in scope. The bundle's module order is
+the `[lib].modules` list in [`cyrius.cyml`](cyrius.cyml).
 
-// Export back to CMUdict format
-let output = format::to_cmudict(&dict);
-```
+See [`docs/guides/consuming-the-distlib.md`](docs/guides/consuming-the-distlib.md)
+for a complete, runnable consumer example (declare the dep → `cyrius deps` →
+include the svara/varna chain + bundle → call `shabda_dict_english()`).
 
-Also supported: IPA text, JSON (`json` feature), W3C PLS XML, SSML `<phoneme>` tags.
+## Module Overview
 
-## Multi-Language (varna feature)
-
-```rust
-use shabdakosh::PronunciationDict;
-
-// Ingest a varna lexicon
-let lexicon = varna::lexicon::swadesh::by_code("es").unwrap();
-let dict = PronunciationDict::from_lexicon(&lexicon);
-assert_eq!(dict.language(), Some("es"));
-
-// Detect script from Unicode
-use shabdakosh::dictionary::detect;
-assert_eq!(detect::detect_script("नमस्ते"), Some("Deva"));
-```
-
-## Feature Flags
-
-| Feature | Default | Description |
-|---------|---------|-------------|
-| `std`   | Yes     | Standard library support. Disable for `no_std` + `alloc` |
-| `json`  | No      | JSON import/export via serde\_json |
-| `varna` | No      | Multi-language: validation, lexicon ingestion, script detection |
-| `full`  | No      | All features |
-
-## Architecture
+Include order from `src/main.cyr` (modules never include each other — the entry
+orders them; stdlib + svara/varna auto-resolve from `cyrius.cyml`):
 
 ```text
-shabdakosh
-├── arpabet.rs          ARPABET <-> svara Phoneme
-├── ipa.rs              IPA <-> svara Phoneme
+src/
+├── error.cyr                    sakshi-backed error surface (shabda_err_*, shabda_is_err)
+├── arpabet.cyr                  ARPABET <-> svara SVARA_PH_* phonemes (with stress)
+├── ipa.cyr                      IPA <-> phoneme; parse_ipa_word / phonemes_to_ipa
+├── notation.cyr                 unified ARPABET / IPA / X-SAMPA render + parse
 └── dictionary/
-    ├── mod.rs           PronunciationDict (hashbrown + BTreeMap overlay)
-    ├── entry.rs         DictEntry, Pronunciation, Region
-    ├── validate.rs      inventory validation (varna feature)
-    ├── detect.rs        script/language detection (varna feature)
+    ├── entry.cyr                DictEntry, Pronunciation, Region
+    ├── morphology.cyr           Morpheme / Decomposition tags
+    ├── syllable.cyr             syllabify() via Maximal Onset Principle
+    ├── _cmudict_data_{0,1}.cyr  generated base-dictionary data shards
+    ├── cmudict.cyr              loads the shards into a hashmap
+    ├── mod.cyr                  PronunciationDict core: new/english/lookup/insert_user/merge/diff/...
+    ├── coverage.cyr             text-corpus coverage analysis
+    ├── stream.cyr              zero-alloc streaming word->phoneme lookup
+    ├── trie.cyr                 O(k) prefix search / autocomplete
+    ├── heteronym.cyr            context-aware heteronym resolution
+    ├── g2p.cyr                  FallbackDict + FstModel G2P chain (fnptr dispatch)
+    ├── static_dict.cyr          lazily-cached static dictionary singleton
+    ├── lazy.cyr                 LazyDict — mmap-backed binary loading
+    ├── detect.cyr              script / language detection
+    ├── validate.cyr            varna inventory + phonotactics validation
     └── format/
-        ├── mod.rs       CMUdict, IPA, JSON import/export
-        ├── pls.rs       W3C PLS XML
-        └── ssml.rs      SSML <phoneme> tags
+        ├── mod.cyr             CMUdict / IPA text codecs
+        ├── json.cyr            JSON via the bayan DOM
+        ├── pls.cyr             W3C PLS XML
+        ├── ssml.cyr            SSML <phoneme> tags
+        └── binary.cyr          compact hand-rolled binary format
+src/wasm.cyr                     WasmDict binding surface
 ```
 
-See [docs/architecture/overview.md](docs/architecture/overview.md) for the full architecture overview.
-
-## Documentation
-
-- [Usage Guide](docs/guides/usage.md) — comprehensive examples for all features
-- [Architecture Overview](docs/architecture/overview.md) — module map, data flow, design principles
-- [ADRs](docs/adr/) — architecture decision records
+See [`docs/architecture/`](docs/architecture/) for non-obvious constraints and
+[`docs/adr/`](docs/adr/) for the port decisions.
 
 ## Consumers
 
 - [shabda](https://github.com/MacCracken/shabda) — G2P engine (dictionary lookup + rules fallback)
-- [dhvani](https://github.com/MacCracken/dhvani) — Audio engine
-- [vansh](https://github.com/MacCracken/vansh) — Voice AI shell
+- [dhvani](https://github.com/MacCracken/dhvani) — audio engine
+- [vansh](https://github.com/MacCracken/vansh) — voice AI shell
 
 ## License
 

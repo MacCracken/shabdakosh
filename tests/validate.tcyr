@@ -141,5 +141,16 @@ assert_eq(_shabda_is_consonant(SVARA_PH_VOWEL_A), 0, "A vowel");
 assert_eq(_shabda_is_consonant(SVARA_PH_DIPH_AI), 0, "AI diphthong");
 assert_eq(_shabda_is_consonant(SVARA_PH_VOWEL_SCHWA), 0, "schwa vowel");
 
+# ================================================================
+# SECURITY regression (audit 2026-07-05): malformed JSON must not null-deref on a
+# missing/mistyped required field (Rust serde errored; this port defaults empty /
+# returns 0 on an unparseable root).
+test_group("malformed JSON (no null deref)");
+assert_neq(shabda_validation_report_from_json("{}"), 0, "empty object -> report (missing language ok)");
+assert_streq(shabda_validation_report_language(shabda_validation_report_from_json("{}")), "", "missing language -> empty");
+assert_eq(shabda_validation_report_from_json("not valid json"), 0, "unparseable -> 0");
+assert_neq(shabda_phonotactic_report_from_json("{\"violations\":[]}"), 0, "missing language -> report (no crash)");
+assert_neq(shabda_validation_report_from_json("{\"language\":123}"), 0, "mistyped language -> report (no crash)");
+
 var rc = assert_summary();
 syscall(60, rc);

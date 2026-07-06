@@ -102,7 +102,9 @@ fn _shabda_pron_from_jsonv(pobj): i64 {
     }
     var rg = json_v_obj_get(pobj, "region");
     if (rg != 0) {
-        if (json_v_is_null(rg) == 0) {
+        # SECURITY: require a STRING (not just non-null) — json_v_str on a wrong-typed
+        # node returns a 0 Str, and str_cstr(0) would deref null (audit 2026-07-05).
+        if (json_v_is_str(rg) == 1) {
             pron = shabda_pronunciation_with_region(pron, shabda_region_from_code(str_cstr(json_v_str(rg))));
         }
     }
@@ -149,7 +151,9 @@ fn shabda_from_json(input): i64 {
     var dict = shabda_dict_new();
     var lang = json_v_obj_get(root, "language");
     if (lang != 0) {
-        if (json_v_is_null(lang) == 0) { shabda_dict_set_language(dict, str_cstr(json_v_str(lang))); }
+        # SECURITY: require a STRING — a wrong-typed language (e.g. {"language":42})
+        # makes json_v_str return a 0 Str, and str_cstr(0) would deref null.
+        if (json_v_is_str(lang) == 1) { shabda_dict_set_language(dict, str_cstr(json_v_str(lang))); }
     }
     var entries = json_v_obj_get(root, "entries");
     if (entries != 0) { _shabda_parse_entries_into(dict, entries, 0); }

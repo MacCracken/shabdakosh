@@ -453,12 +453,24 @@ fn _shabda_invalid_entry_to_jsonv(e): i64 {
     return obj;
 }
 
+# Safe JSON string field: the field's cstr, or "" if the key is absent or the
+# value isn't a string. Guards the null/typed deref — Rust serde would error on a
+# missing required field; this port defaults to empty rather than dereferencing a
+# null node (a malformed/partial JSON blob decodes leniently, never crashes).
+fn _shabda_json_field_str(obj, key): cstring {
+    var v = json_v_obj_get(obj, key);
+    if (v == 0) { return ""; }
+    if (json_v_is_str(v) == 0) { return ""; }
+    return str_cstr(json_v_str(v));
+}
+
 fn _shabda_invalid_entry_from_jsonv(obj): i64 {
-    var word = str_cstr(json_v_str(json_v_obj_get(obj, "word")));
+    var word = _shabda_json_field_str(obj, "word");
     var arr = json_v_obj_get(obj, "invalid_phonemes");
     var ph = vec_new();
-    var n = json_v_arr_len(arr);
+    var n = 0;
     var i = 0;
+    if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
         vec_push(ph, json_v_int(json_v_arr_get(arr, i)));
         i = i + 1;
@@ -487,11 +499,13 @@ fn shabda_validation_report_to_json(r): cstring {
 #must_use
 fn shabda_validation_report_from_json(input): i64 {
     var root = json_v_parse_str(input, strlen(input));
-    var lang = str_cstr(json_v_str(json_v_obj_get(root, "language")));
+    if (root == 0) { return 0; }
+    var lang = _shabda_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "invalid_entries");
     var ie = vec_new();
-    var n = json_v_arr_len(arr);
+    var n = 0;
     var i = 0;
+    if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
         vec_push(ie, _shabda_invalid_entry_from_jsonv(json_v_arr_get(arr, i)));
         i = i + 1;
@@ -508,9 +522,9 @@ fn _shabda_phonotactic_violation_to_jsonv(v): i64 {
 }
 
 fn _shabda_phonotactic_violation_from_jsonv(obj): i64 {
-    var word = str_cstr(json_v_str(json_v_obj_get(obj, "word")));
-    var desc = str_cstr(json_v_str(json_v_obj_get(obj, "description")));
-    var seq = str_cstr(json_v_str(json_v_obj_get(obj, "sequence")));
+    var word = _shabda_json_field_str(obj, "word");
+    var desc = _shabda_json_field_str(obj, "description");
+    var seq = _shabda_json_field_str(obj, "sequence");
     return shabda_phonotactic_violation_new(word, desc, seq);
 }
 
@@ -535,11 +549,13 @@ fn shabda_phonotactic_report_to_json(r): cstring {
 #must_use
 fn shabda_phonotactic_report_from_json(input): i64 {
     var root = json_v_parse_str(input, strlen(input));
-    var lang = str_cstr(json_v_str(json_v_obj_get(root, "language")));
+    if (root == 0) { return 0; }
+    var lang = _shabda_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "violations");
     var vs = vec_new();
-    var n = json_v_arr_len(arr);
+    var n = 0;
     var i = 0;
+    if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
         vec_push(vs, _shabda_phonotactic_violation_from_jsonv(json_v_arr_get(arr, i)));
         i = i + 1;

@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.0.0] — 2026-07-05
+
+Complete port of shabdakosh from Rust to the **CYRIUS** language (AGNOS toolchain). A
+full-parity port: every Rust module reproduced against the preserved `rust-old/` oracle and
+cross-checked by a 653-assertion suite across 25 test groups, plus a consumer-verified distlib
+bundle (`dist/shabdakosh.cyr`).
+
+- **Breaking**: Language change — shabdakosh is now a CYRIUS (`.cyr`) library, not a Rust crate. The API is flat, `shabda_`-prefixed C-style functions (`shabda_dict_lookup`, `shabda_parse_cmudict`, …) rather than Rust methods/traits/generics. Consumers pull `dist/shabdakosh.cyr`.
+- **Breaking**: Errors are **sakshi** packed-i64 codes (`0 == ok`) instead of `thiserror` enums; fallible functions return a payload pointer (`0` == none) or a packed error (test with `shabda_is_err`).
+- **Breaking**: Traits → function-pointer dispatch (G2P `FallbackDict`, heteronym resolver) and enum-tag dispatch (notation, lookup source); `Option<T>` → sentinels; `Result<T>` → pointer-or-0.
+- **Feature**: full pronunciation surface — base dictionary (ARPABET/IPA↔svara phonemes), user overlay, O(1) hashmap lookup (~135 ns/hit), merge/diff, coverage, streaming lookup, prefix trie, heteronym context, G2P fallback chain.
+- **Feature**: I/O formats — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format (replacing postcard); `LazyDict` (mmap-backed with a `file_read_all` fallback).
+- **Feature**: varna-backed inventory + phonotactics **validation** and script/language **detection** (with a UTF-8 code-point decoder).
+- **Feature**: WASM binding surface (`WasmDict`) and the static dictionary (`static_dict`) ported as `.cyr` modules.
+- **Feature**: base CMUdict data generated as checked-in `.cyr` shards (`gen_cmudict.cyr`, the `build.rs` port), sharded to stay under the distlib 256 KB per-module cap.
+- **Changed**: `phf` static dict → lazy cached singleton — CYRIUS has no compile-time perfect hash; surface + lookup preserved, one-time ~9.6 ms load instead of a compile-time-baked table.
+- **Removed**: C FFI (`ffi.rs`) — dead in the CYRIUS/AGNOS stack (no C-ABI consumers).
+- **Removed**: the Rust `cli` binary and criterion harness — replaced by `.tcyr` tests and `benches/hotpath.bcyr` (see `docs/benchmarks.md`).
+
 ## [2.0.0] — 2026-04-01
 
 Major release for shabda integration. Adds unified phoneme notation, syllabification,

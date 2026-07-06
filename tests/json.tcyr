@@ -69,5 +69,14 @@ assert_eq(shabda_dict_language(de2), 0, "no language");
 test_group("from_json error");
 assert_eq(shabda_from_json("not valid json {{{"), 0, "invalid JSON -> 0");
 
+# ================================================================
+# SECURITY regression (audit follow-up 2026-07-05): a present-but-wrong-typed
+# language/region must not null-deref (json_v_str on a non-string returns a 0 Str,
+# and str_cstr(0) would crash). Now gated on json_v_is_str.
+test_group("wrong-typed JSON fields (no null deref)");
+assert_neq(shabda_from_json("{\"language\":42,\"entries\":{}}"), 0, "int language -> dict (no crash)");
+assert_eq(shabda_dict_language(shabda_from_json("{\"language\":42}")), 0, "int language ignored -> no language");
+assert_neq(shabda_from_json("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"region\":[]}]}}}"), 0, "array region -> dict (no crash)");
+
 var rc = assert_summary();
 syscall(60, rc);

@@ -16,7 +16,9 @@ include "src/dictionary/format/mod.cyr"
 
 alloc_init();
 
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
 fn _find(s, sub): i64 {
     var sl = strlen(s);
     var pl = strlen(sub);
@@ -93,6 +95,44 @@ test_group("to_cmudict drops unmapped phonemes cleanly");
 var jd = shabda_dict_new();
 shabda_dict_insert(jd, "test", _v2(SVARA_PH_VOWEL_A, SVARA_PH_PLOSIVE_K));
 assert_eq(_find(shabda_to_cmudict(jd), "test  K\n"), 1, "VowelA dropped -> 'test  K' (no stray space)");
+
+# ================================================================
+# SECURITY regression (audit 2026-07-05): a @freq token with trailing non-float
+# junk must be rejected whole (Rust f32::parse over the whitespace token errors),
+# not silently accept the numeric prefix.
+test_group("@freq trailing junk rejected");
+assert_eq(shabda_parse_cmudict(";;; @freq=1e5xyz\nhello  HH EH L OW\n"), 0, "@freq=1e5xyz -> 0");
+assert_neq(shabda_parse_cmudict(";;; @freq=0.85\nhello  HH EH L OW\n"), 0, "@freq=0.85 still valid");
+
+# ================================================================
+# backlog 2026-07-05: with_user exporters merge the overlay over the base (override
+# wins); the base exporters ignore the overlay. Previously untested.
+test_group("to_cmudict_with_user overlay merge");
+var ud = shabda_dict_new();
+shabda_dict_insert(ud, "cat", _v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH));   # base cat
+shabda_dict_insert_user(ud, "cat", _v1(SVARA_PH_PLOSIVE_T));                  # overlay overrides
+shabda_dict_insert_user(ud, "dog", _v1(SVARA_PH_PLOSIVE_D));                  # overlay-only word
+var wu = shabda_to_cmudict_with_user(ud);
+assert_eq(_find(wu, "dog  D\n"), 1, "with_user includes overlay-only 'dog'");
+assert_eq(_find(wu, "cat  T\n"), 1, "with_user 'cat' shows overlay pronunciation (T)");
+assert_eq(_find(shabda_to_cmudict(ud), "dog"), 0, "base to_cmudict omits overlay-only 'dog'");
+
+# ================================================================
+# backlog 2026-07-05: save_cmudict_file / load_cmudict_file round-trip.
+test_group("save/load cmudict file roundtrip");
+var sd = shabda_dict_new();
+shabda_dict_insert(sd, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+assert_eq(shabda_save_cmudict_file(sd, "/tmp/shabdakosh_test_cmudict.txt"), 0, "saved");
+var ldf = shabda_load_cmudict_file("/tmp/shabdakosh_test_cmudict.txt");
+assert_neq(ldf, 0, "loaded");
+assert_eq(vec_get(shabda_dict_lookup(ldf, "cat"), 0), SVARA_PH_PLOSIVE_K, "roundtrip cat[0] K");
+assert_eq(shabda_load_cmudict_file("/tmp/nonexistent_shabdakosh_xyz.txt"), 0, "missing file -> 0");
+
+# ================================================================
+# backlog 2026-07-05: parse_ipa error paths (missing / empty transcription).
+test_group("parse_ipa error paths");
+assert_eq(shabda_parse_ipa("cat\n"), 0, "missing IPA transcription -> 0");
+assert_eq(shabda_parse_ipa("cat //\n"), 0, "empty transcription between slashes -> 0");
 
 var rc = assert_summary();
 syscall(60, rc);

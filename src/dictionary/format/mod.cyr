@@ -117,6 +117,27 @@ fn shabda_xml_unescape(s): cstring {
     return str_data(str_builder_build(sb));
 }
 
+# 1 if every byte of input[vs..ve) is a legal float character (digit, '.', 'e',
+# 'E', '+', '-'), else 0 — so a @freq token like "1e5xyz" is rejected whole, the
+# way Rust's f32::parse() over the whitespace-split token errors on trailing junk.
+fn _shabda_fmt_all_float_chars(input, vs, ve): i64 {
+    var i = vs;
+    var c = 0;
+    while (i < ve) {
+        c = load8(input + i);
+        if (c >= 48 && c <= 57) {
+            i = i + 1;
+        } else {
+            if (c == 46 || c == 43 || c == 45 || c == 101 || c == 69) {
+                i = i + 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 # ---- CMUdict parse -----------------------------------------------------------
 # Parse extended CMUdict text into a PronunciationDict, or 0 on parse error
 # (missing two-space separator, unknown ARPABET symbol, or empty phonemes).
@@ -173,8 +194,11 @@ fn shabda_parse_cmudict(input): i64 {
                             if (_shabda_fmt_is_ws(load8(input + ve)) == 1) { break; }
                             ve = ve + 1;
                         }
-                        # Rust returns Err on a malformed @freq — validate.
-                        if (f64_parse_ok(input + vs, fc) == 0) { return 0; }
+                        # Rust returns Err on a malformed @freq. Parse a bounded,
+                        # NUL-terminated copy of exactly [vs,ve) (so f64_parse can't
+                        # read past the token) and reject any trailing non-float junk.
+                        if (f64_parse_ok(_shabda_fmt_dup(input, vs, ve), fc) == 0) { return 0; }
+                        if (_shabda_fmt_all_float_chars(input, vs, ve) == 0) { return 0; }
                         pending_freq = load64(fc);
                         ti = ve;
                     } else {
@@ -495,6 +519,9 @@ fn shabda_load_cmudict_file(path): i64 {
     var buf = alloc(8388608);
     var n = file_read_all(path, buf, 8388607);
     if (n < 0) { return 0; }
+    # SECURITY: a read that fills the buffer means the file is >= 8 MB — fail loud
+    # rather than silently parse a truncated prefix (a partial dict that looks valid).
+    if (n >= 8388607) { return 0; }
     store8(buf + n, 0);
     return shabda_parse_cmudict(buf);
 }

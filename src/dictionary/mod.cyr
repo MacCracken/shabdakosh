@@ -8,9 +8,11 @@
 # Included after svara + error + entry + _cmudict_data + cmudict (english() uses
 # the loaded base dict) — the entry file orders it.
 #
-# DEFERRED to their tiers: with_fallback (g2p, L4), prefix_search (trie, L4),
-# validate / from_lexicon / spanish / hindi / german / sanskrit (varna, L6),
-# JSON serde (format layer, L5). The Rust v0.1->v0.2 serde compat shim is dropped
+# Cross-tier surface (defined in other modules): with_fallback -> g2p (L4),
+# prefix_search -> trie (L4), validate -> validate (L6), JSON serde -> format (L5).
+# KNOWN PARITY GAP: the varna-lexicon dict constructors (from_lexicon / spanish /
+# hindi / german / sanskrit, Rust mod.rs) are NOT ported — tracked in
+# docs/development/backlog.md. The Rust v0.1->v0.2 serde compat shim is dropped
 # for the 3.0.0 major.
 #
 # NAMING: shabda_/SHABDA_ prefixes (flat namespace).

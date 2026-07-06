@@ -1,0 +1,62 @@
+# static_dict.tcyr — tests for src/dictionary/static_dict.cyr
+# (ports rust-old/src/dictionary/static_dict.rs). The cached static dict is the
+# english dict; these mirror the Rust #[cfg(test)] cases.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data_0.cyr"
+include "src/dictionary/_cmudict_data_1.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/static_dict.cyr"
+
+alloc_init();
+
+# ================================================================
+test_group("static lookup hit / miss");
+var h = shabda_static_lookup("hello");
+assert_neq(h, 0, "hello present");
+assert_gt(vec_len(h), 0, "hello has phonemes");
+assert_neq(shabda_static_lookup("the"), 0, "the present");
+assert_eq(shabda_static_lookup("zxqvbnm"), 0, "miss -> 0 (None)");
+
+# ================================================================
+# case-insensitive: "Hello" lowercases to "hello" -> same entry -> same vec.
+test_group("static lookup case-insensitive");
+assert_eq(shabda_static_lookup("Hello"), shabda_static_lookup("hello"), "Hello == hello");
+
+# ================================================================
+test_group("static len / is_empty");
+assert_gt(shabda_static_len(), 10000, "len >= 10k");
+assert_eq(shabda_static_is_empty(), 0, "not empty");
+
+# ================================================================
+test_group("static entry variants");
+var eh = shabda_static_lookup_entry("hello");
+assert_neq(eh, 0, "hello entry present");
+assert_eq(shabda_dict_entry_len(eh), 1, "hello has 1 pronunciation");
+var er = shabda_static_lookup_entry("read");
+assert_neq(er, 0, "read entry present");
+assert_gt(shabda_dict_entry_len(er), 1, "read has 2+ variants");
+
+# ================================================================
+# static matches dynamic: same phonemes for the same words (element-wise, since
+# the two dicts are separately-built and hold distinct vec pointers).
+test_group("static matches dynamic");
+var dyn = shabda_dict_english();
+var sp = shabda_static_lookup("computer");
+var dp = shabda_dict_lookup(dyn, "computer");
+assert_neq(sp, 0, "computer in static");
+assert_eq(vec_len(sp), vec_len(dp), "computer same phoneme count");
+var ci = 0;
+while (ci < vec_len(sp)) {
+    assert_eq(vec_get(sp, ci), vec_get(dp, ci), "computer phoneme matches");
+    ci = ci + 1;
+}
+
+var rc = assert_summary();
+syscall(60, rc);

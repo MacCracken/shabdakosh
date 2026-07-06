@@ -19,20 +19,31 @@ fn _shabda_utf8_next(p, out_cp): i64 {
     var b3 = 0;
     if (b0 == 0) { return 0; }
     if (b0 < 128) { store64(out_cp, b0); return 1; }
+    # SECURITY: guard each continuation byte against the NUL terminator. A truncated
+    # multibyte sequence (lead byte then NUL) must consume ONLY the lead byte and
+    # return 1 — otherwise we'd read past the terminator (b2/b3 OOB) and advance the
+    # cursor past the NUL, walking off the cstring. A cstring is NUL-terminated, so
+    # once a continuation byte is non-zero the next byte slot is guaranteed in-bounds.
     if (b0 < 224) {
         b1 = load8(p + 1);
+        if (b1 == 0) { store64(out_cp, b0); return 1; }
         store64(out_cp, ((b0 & 31) << 6) | (b1 & 63));
         return 2;
     }
     if (b0 < 240) {
         b1 = load8(p + 1);
+        if (b1 == 0) { store64(out_cp, b0); return 1; }
         b2 = load8(p + 2);
+        if (b2 == 0) { store64(out_cp, b0); return 1; }
         store64(out_cp, ((b0 & 15) << 12) | ((b1 & 63) << 6) | (b2 & 63));
         return 3;
     }
     b1 = load8(p + 1);
+    if (b1 == 0) { store64(out_cp, b0); return 1; }
     b2 = load8(p + 2);
+    if (b2 == 0) { store64(out_cp, b0); return 1; }
     b3 = load8(p + 3);
+    if (b3 == 0) { store64(out_cp, b0); return 1; }
     store64(out_cp, ((b0 & 7) << 18) | ((b1 & 63) << 12) | ((b2 & 63) << 6) | (b3 & 63));
     return 4;
 }

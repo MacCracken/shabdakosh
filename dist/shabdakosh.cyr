@@ -1370,10 +1370,10 @@ fn _shabda_cmudict_piece(i): cstring {
 # cmudict.cyr — loads the generated base English dictionary into a hashmap.
 #
 # The runtime counterpart to programs/gen_cmudict.cyr: parses the packed pieces
-# from _cmudict_data.cyr (entry = word|o,o,o[~freq][^RR]; ) into a lib/hashmap
-# map of word(Str) -> ShDictEntry*. Hand-written (stable); the DATA is generated.
+# from the _cmudict_data_N.cyr shards (entry = word|o,o,o[~freq][^RR]; ) into a
+# lib/hashmap of word(Str) -> ShDictEntry*. Hand-written (stable); DATA is generated.
 #
-# Included after _cmudict_data.cyr (piece globals) and src/dictionary/entry.cyr
+# Included after the _cmudict_data_N.cyr shards (piece globals) and src/dictionary/entry.cyr
 # (ShDictEntry / ShPronunciation / region). Keys share the static piece bytes.
 #
 # NAMING: shabda_/SHABDA_ prefixes (flat namespace).
@@ -1436,15 +1436,20 @@ fn _shabda_cmudict_parse_entry(m, piece, s, e): i64 {
                 freq = f64_parse(piece + fs);
             }
         }
-        # optional ^region (2-char code)
+        # optional ^region (2-char code). Defense-in-depth: require both region
+        # bytes to sit within the pron bound (q+3 <= pe, i.e. '^' + 2 chars) before
+        # reading them — the generated shards never emit a clipped '^', but this keeps
+        # the read bounded if the data format ever changes (audit 2026-07-05 hardening).
         if (q < pe) {
             if (load8(piece + q) == 94) {
-                q = q + 1;
-                var rbuf = alloc(3);
-                store8(rbuf + 0, load8(piece + q));
-                store8(rbuf + 1, load8(piece + q + 1));
-                store8(rbuf + 2, 0);
-                region = shabda_region_from_code(rbuf);
+                if (q + 3 <= pe) {
+                    q = q + 1;
+                    var rbuf = alloc(3);
+                    store8(rbuf + 0, load8(piece + q));
+                    store8(rbuf + 1, load8(piece + q + 1));
+                    store8(rbuf + 2, 0);
+                    region = shabda_region_from_code(rbuf);
+                }
             }
         }
 
@@ -1511,9 +1516,11 @@ fn shabda_cmudict_english(): i64 {
 # Included after svara + error + entry + _cmudict_data + cmudict (english() uses
 # the loaded base dict) — the entry file orders it.
 #
-# DEFERRED to their tiers: with_fallback (g2p, L4), prefix_search (trie, L4),
-# validate / from_lexicon / spanish / hindi / german / sanskrit (varna, L6),
-# JSON serde (format layer, L5). The Rust v0.1->v0.2 serde compat shim is dropped
+# Cross-tier surface (defined in other modules): with_fallback -> g2p (L4),
+# prefix_search -> trie (L4), validate -> validate (L6), JSON serde -> format (L5).
+# KNOWN PARITY GAP: the varna-lexicon dict constructors (from_lexicon / spanish /
+# hindi / german / sanskrit, Rust mod.rs) are NOT ported — tracked in
+# docs/development/backlog.md. The Rust v0.1->v0.2 serde compat shim is dropped
 # for the 3.0.0 major.
 #
 # NAMING: shabda_/SHABDA_ prefixes (flat namespace).
@@ -2648,6 +2655,59 @@ fn shabda_fst_model_predict(word, state): i64 {
     return 0;
 }
 
+# --- static_dict.cyr ---
+
+# static_dict.cyr — zero-construction static English dictionary
+# (ports rust-old/src/dictionary/static_dict.rs).
+#
+# The Rust used a compile-time phf::Map (a perfect hash baked into the binary by
+# build.rs). CYRIUS has no phf / const-eval, so the "static" dict is a LAZILY
+# built, cached singleton over the same generated data (shabda_dict_english()):
+# built once on first use, then every lookup/len/is_empty hits the cached dict
+# with no per-call construction. Observable surface + semantics match Rust; the
+# one property we cannot match is phf's zero-runtime-load (we do a single lazy
+# load instead of a compile-time-baked table). StaticEntry / StaticPronunciation
+# collapse onto the existing ShDictEntry / ShPronunciation — their accessors
+# (shabda_dict_entry_primary_phonemes / _all / _len) already provide the surface.
+#
+# Requires: dictionary/mod.cyr + the cmudict loader (shabda_dict_english).
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+var _SHABDA_STATIC_DICT = 0;   # cached singleton (0 = unbuilt; built on first use)
+
+# The cached static English dictionary — built once, reused thereafter.
+#must_use
+fn shabda_static_dict(): i64 {
+    if (_SHABDA_STATIC_DICT == 0) {
+        _SHABDA_STATIC_DICT = shabda_dict_english();
+    }
+    return _SHABDA_STATIC_DICT;
+}
+
+# Look up a word's primary pronunciation phonemes, or 0 (None). (Rust static_dict::lookup)
+#must_use
+fn shabda_static_lookup(word): i64 {
+    return shabda_dict_lookup(shabda_static_dict(), word);
+}
+
+# Look up a word's full static entry, or 0 (None). (Rust static_dict::lookup_entry)
+#must_use
+fn shabda_static_lookup_entry(word): i64 {
+    return shabda_dict_lookup_entry(shabda_static_dict(), word);
+}
+
+# Number of entries in the static dictionary. (Rust static_dict::len)
+#must_use
+fn shabda_static_len(): i64 {
+    return shabda_dict_len(shabda_static_dict());
+}
+
+# Whether the static dictionary is empty. (Rust static_dict::is_empty)
+#must_use
+fn shabda_static_is_empty(): i64 {
+    return shabda_dict_is_empty(shabda_static_dict());
+}
+
 # --- mod.cyr ---
 
 # format/mod.cyr — dictionary import/export: CMUdict + IPA text formats, XML
@@ -2769,6 +2829,27 @@ fn shabda_xml_unescape(s): cstring {
     return str_data(str_builder_build(sb));
 }
 
+# 1 if every byte of input[vs..ve) is a legal float character (digit, '.', 'e',
+# 'E', '+', '-'), else 0 — so a @freq token like "1e5xyz" is rejected whole, the
+# way Rust's f32::parse() over the whitespace-split token errors on trailing junk.
+fn _shabda_fmt_all_float_chars(input, vs, ve): i64 {
+    var i = vs;
+    var c = 0;
+    while (i < ve) {
+        c = load8(input + i);
+        if (c >= 48 && c <= 57) {
+            i = i + 1;
+        } else {
+            if (c == 46 || c == 43 || c == 45 || c == 101 || c == 69) {
+                i = i + 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 # ---- CMUdict parse -----------------------------------------------------------
 # Parse extended CMUdict text into a PronunciationDict, or 0 on parse error
 # (missing two-space separator, unknown ARPABET symbol, or empty phonemes).
@@ -2825,8 +2906,11 @@ fn shabda_parse_cmudict(input): i64 {
                             if (_shabda_fmt_is_ws(load8(input + ve)) == 1) { break; }
                             ve = ve + 1;
                         }
-                        # Rust returns Err on a malformed @freq — validate.
-                        if (f64_parse_ok(input + vs, fc) == 0) { return 0; }
+                        # Rust returns Err on a malformed @freq. Parse a bounded,
+                        # NUL-terminated copy of exactly [vs,ve) (so f64_parse can't
+                        # read past the token) and reject any trailing non-float junk.
+                        if (f64_parse_ok(_shabda_fmt_dup(input, vs, ve), fc) == 0) { return 0; }
+                        if (_shabda_fmt_all_float_chars(input, vs, ve) == 0) { return 0; }
                         pending_freq = load64(fc);
                         ti = ve;
                     } else {
@@ -3147,6 +3231,9 @@ fn shabda_load_cmudict_file(path): i64 {
     var buf = alloc(8388608);
     var n = file_read_all(path, buf, 8388607);
     if (n < 0) { return 0; }
+    # SECURITY: a read that fills the buffer means the file is >= 8 MB — fail loud
+    # rather than silently parse a truncated prefix (a partial dict that looks valid).
+    if (n >= 8388607) { return 0; }
     store8(buf + n, 0);
     return shabda_parse_cmudict(buf);
 }
@@ -3265,7 +3352,9 @@ fn _shabda_pron_from_jsonv(pobj): i64 {
     }
     var rg = json_v_obj_get(pobj, "region");
     if (rg != 0) {
-        if (json_v_is_null(rg) == 0) {
+        # SECURITY: require a STRING (not just non-null) — json_v_str on a wrong-typed
+        # node returns a 0 Str, and str_cstr(0) would deref null (audit 2026-07-05).
+        if (json_v_is_str(rg) == 1) {
             pron = shabda_pronunciation_with_region(pron, shabda_region_from_code(str_cstr(json_v_str(rg))));
         }
     }
@@ -3312,7 +3401,9 @@ fn shabda_from_json(input): i64 {
     var dict = shabda_dict_new();
     var lang = json_v_obj_get(root, "language");
     if (lang != 0) {
-        if (json_v_is_null(lang) == 0) { shabda_dict_set_language(dict, str_cstr(json_v_str(lang))); }
+        # SECURITY: require a STRING — a wrong-typed language (e.g. {"language":42})
+        # makes json_v_str return a 0 Str, and str_cstr(0) would deref null.
+        if (json_v_is_str(lang) == 1) { shabda_dict_set_language(dict, str_cstr(json_v_str(lang))); }
     }
     var entries = json_v_obj_get(root, "entries");
     if (entries != 0) { _shabda_parse_entries_into(dict, entries, 0); }
@@ -3751,10 +3842,58 @@ fn _shabda_bin_put_map(buf, off, map): i64 {
     return off - start;
 }
 
+# ---- exact serialized-size computation (mirrors the put_* layout) ------------
+# SECURITY: size the output buffer to the dict instead of a fixed 2 MB alloc, so a
+# large dict (many/long user entries) can never overflow the write buffer.
+fn _shabda_bin_pron_size(pron): i64 {
+    var sz = 2;   # u16 nphon
+    sz = sz + vec_len(shabda_pronunciation_phonemes(pron));   # nphon × u8
+    sz = sz + 1;   # freq flag
+    if (shabda_pronunciation_has_frequency(pron) == 1) { sz = sz + 8; }   # u64 freq
+    sz = sz + 1;   # region flag
+    if (shabda_pronunciation_has_region(pron) == 1) { sz = sz + 1; }      # u8 region
+    return sz;
+}
+
+fn _shabda_bin_map_size(map): i64 {
+    var sz = 4;   # u32 count
+    var keys = map_keys(map);
+    var n = vec_len(keys);
+    var i = 0;
+    var wk = 0;
+    var prons = 0;
+    var np = 0;
+    var j = 0;
+    while (i < n) {
+        wk = vec_get(keys, i);
+        sz = sz + 2 + str_len(wk);   # u16 wlen + word bytes
+        prons = shabda_dict_entry_all(map_get(map, wk));
+        np = vec_len(prons);
+        sz = sz + 2;   # u16 npron
+        j = 0;
+        while (j < np) {
+            sz = sz + _shabda_bin_pron_size(vec_get(prons, j));
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return sz;
+}
+
+fn _shabda_bin_total_size(dict): i64 {
+    var sz = SHABDA_BIN_HEADER;   # magic(4) + version(1)
+    sz = sz + 1;   # language flag
+    var lang = shabda_dict_language(dict);
+    if (lang != 0) { sz = sz + 2 + strlen(lang); }   # u16 llen + lang bytes
+    sz = sz + _shabda_bin_map_size(shabda_dict_entries(dict));
+    sz = sz + _shabda_bin_map_size(shabda_dict_user_entries(dict));
+    return sz;
+}
+
 # Serialize a PronunciationDict to a compact binary blob (a Str).
 #must_use
 fn shabda_to_binary(dict): i64 {
-    var buf = alloc(2097152);
+    var buf = alloc(_shabda_bin_total_size(dict) + 16);
     store8(buf + 0, 83);   # 'S'
     store8(buf + 1, 72);   # 'H'
     store8(buf + 2, 66);   # 'B'
@@ -3776,9 +3915,22 @@ fn shabda_to_binary(dict): i64 {
 }
 
 # ---- from_binary -------------------------------------------------------------
-fn _shabda_bin_get_pron(buf, off, prons): i64 {
+# SECURITY: every length/count field below is attacker-controlled (the blob may
+# be a corrupt or malicious .bin from disk/mmap). The Rust oracle got this bound
+# for free from postcard's bounds-checked reader; this port must enforce it by
+# hand. `_shabda_bin_oob(off, need, len)` returns 1 if reading `need` bytes at
+# `off` would run past the blob end (`len`); the get helpers return -1 on any
+# overrun, which propagates up to shabda_from_binary → 0 (DeserializeUnexpectedEnd).
+fn _shabda_bin_oob(off, need, len): i64 {
+    if (off + need > len) { return 1; }
+    return 0;
+}
+
+fn _shabda_bin_get_pron(buf, off, prons, len): i64 {
+    if (_shabda_bin_oob(off, 2, len) == 1) { return (0 - 1); }
     var np = _shabda_bin_get_u16(buf, off);
     off = off + 2;
+    if (_shabda_bin_oob(off, np, len) == 1) { return (0 - 1); }
     var phon = vec_new();
     var i = 0;
     while (i < np) {
@@ -3787,15 +3939,19 @@ fn _shabda_bin_get_pron(buf, off, prons): i64 {
         i = i + 1;
     }
     var pron = shabda_pronunciation_new(phon);
+    if (_shabda_bin_oob(off, 1, len) == 1) { return (0 - 1); }
     if (load8(buf + off) == 1) {
         off = off + 1;
+        if (_shabda_bin_oob(off, 8, len) == 1) { return (0 - 1); }
         pron = shabda_pronunciation_with_frequency(pron, _shabda_bin_get_u64(buf, off));
         off = off + 8;
     } else {
         off = off + 1;
     }
+    if (_shabda_bin_oob(off, 1, len) == 1) { return (0 - 1); }
     if (load8(buf + off) == 1) {
         off = off + 1;
+        if (_shabda_bin_oob(off, 1, len) == 1) { return (0 - 1); }
         pron = shabda_pronunciation_with_region(pron, load8(buf + off));
         off = off + 1;
     } else {
@@ -3805,7 +3961,8 @@ fn _shabda_bin_get_pron(buf, off, prons): i64 {
     return off;
 }
 
-fn _shabda_bin_get_map(dict, buf, off, is_user): i64 {
+fn _shabda_bin_get_map(dict, buf, off, is_user, len): i64 {
+    if (_shabda_bin_oob(off, 4, len) == 1) { return (0 - 1); }
     var n = _shabda_bin_get_u32(buf, off);
     off = off + 4;
     var i = 0;
@@ -3816,16 +3973,20 @@ fn _shabda_bin_get_map(dict, buf, off, is_user): i64 {
     var j = 0;
     var entry = 0;
     while (i < n) {
+        if (_shabda_bin_oob(off, 2, len) == 1) { return (0 - 1); }
         wlen = _shabda_bin_get_u16(buf, off);
         off = off + 2;
+        if (_shabda_bin_oob(off, wlen, len) == 1) { return (0 - 1); }
         word = _shabda_bin_dup(buf, off, wlen);
         off = off + wlen;
+        if (_shabda_bin_oob(off, 2, len) == 1) { return (0 - 1); }
         np = _shabda_bin_get_u16(buf, off);
         off = off + 2;
         prons = vec_new();
         j = 0;
         while (j < np) {
-            off = _shabda_bin_get_pron(buf, off, prons);
+            off = _shabda_bin_get_pron(buf, off, prons, len);
+            if (off < 0) { return (0 - 1); }
             j = j + 1;
         }
         entry = shabda_dict_entry_from_pronunciations(prons);
@@ -3842,7 +4003,8 @@ fn _shabda_bin_get_map(dict, buf, off, is_user): i64 {
 }
 
 # Deserialize a PronunciationDict from a binary blob (a Str), or 0 on error
-# (too short, bad magic, or bad version).
+# (too short, bad magic, bad version, or any length/count field that overruns
+# the blob — a malformed/truncated blob decodes to 0, never an OOB read).
 #must_use
 fn shabda_from_binary(data): i64 {
     var buf = str_data(data);
@@ -3855,17 +4017,22 @@ fn shabda_from_binary(data): i64 {
     if (load8(buf + 4) != SHABDA_BIN_VERSION) { return 0; }
     var off = 5;
     var dict = shabda_dict_new();
+    if (_shabda_bin_oob(off, 1, len) == 1) { return 0; }
     if (load8(buf + off) == 1) {
         off = off + 1;
+        if (_shabda_bin_oob(off, 2, len) == 1) { return 0; }
         var llen = _shabda_bin_get_u16(buf, off);
         off = off + 2;
+        if (_shabda_bin_oob(off, llen, len) == 1) { return 0; }
         shabda_dict_set_language(dict, _shabda_bin_dup(buf, off, llen));
         off = off + llen;
     } else {
         off = off + 1;
     }
-    off = _shabda_bin_get_map(dict, buf, off, 0);
-    off = _shabda_bin_get_map(dict, buf, off, 1);
+    off = _shabda_bin_get_map(dict, buf, off, 0, len);
+    if (off < 0) { return 0; }
+    off = _shabda_bin_get_map(dict, buf, off, 1, len);
+    if (off < 0) { return 0; }
     return dict;
 }
 
@@ -3884,6 +4051,9 @@ fn shabda_load_binary_file(path): i64 {
     var buf = alloc(8388608);
     var n = file_read_all(path, buf, 8388607);
     if (n < 0) { return 0; }
+    # SECURITY: a full-buffer read means the file is >= 8 MB — fail loud rather than
+    # decode a truncated blob (from_binary is bounds-checked, but this is explicit).
+    if (n >= 8388607) { return 0; }
     return shabda_from_binary(str_new(buf, n));
 }
 
@@ -3991,20 +4161,31 @@ fn _shabda_utf8_next(p, out_cp): i64 {
     var b3 = 0;
     if (b0 == 0) { return 0; }
     if (b0 < 128) { store64(out_cp, b0); return 1; }
+    # SECURITY: guard each continuation byte against the NUL terminator. A truncated
+    # multibyte sequence (lead byte then NUL) must consume ONLY the lead byte and
+    # return 1 — otherwise we'd read past the terminator (b2/b3 OOB) and advance the
+    # cursor past the NUL, walking off the cstring. A cstring is NUL-terminated, so
+    # once a continuation byte is non-zero the next byte slot is guaranteed in-bounds.
     if (b0 < 224) {
         b1 = load8(p + 1);
+        if (b1 == 0) { store64(out_cp, b0); return 1; }
         store64(out_cp, ((b0 & 31) << 6) | (b1 & 63));
         return 2;
     }
     if (b0 < 240) {
         b1 = load8(p + 1);
+        if (b1 == 0) { store64(out_cp, b0); return 1; }
         b2 = load8(p + 2);
+        if (b2 == 0) { store64(out_cp, b0); return 1; }
         store64(out_cp, ((b0 & 15) << 12) | ((b1 & 63) << 6) | (b2 & 63));
         return 3;
     }
     b1 = load8(p + 1);
+    if (b1 == 0) { store64(out_cp, b0); return 1; }
     b2 = load8(p + 2);
+    if (b2 == 0) { store64(out_cp, b0); return 1; }
     b3 = load8(p + 3);
+    if (b3 == 0) { store64(out_cp, b0); return 1; }
     store64(out_cp, ((b0 & 7) << 18) | ((b1 & 63) << 12) | ((b2 & 63) << 6) | (b3 & 63));
     return 4;
 }
@@ -4601,12 +4782,24 @@ fn _shabda_invalid_entry_to_jsonv(e): i64 {
     return obj;
 }
 
+# Safe JSON string field: the field's cstr, or "" if the key is absent or the
+# value isn't a string. Guards the null/typed deref — Rust serde would error on a
+# missing required field; this port defaults to empty rather than dereferencing a
+# null node (a malformed/partial JSON blob decodes leniently, never crashes).
+fn _shabda_json_field_str(obj, key): cstring {
+    var v = json_v_obj_get(obj, key);
+    if (v == 0) { return ""; }
+    if (json_v_is_str(v) == 0) { return ""; }
+    return str_cstr(json_v_str(v));
+}
+
 fn _shabda_invalid_entry_from_jsonv(obj): i64 {
-    var word = str_cstr(json_v_str(json_v_obj_get(obj, "word")));
+    var word = _shabda_json_field_str(obj, "word");
     var arr = json_v_obj_get(obj, "invalid_phonemes");
     var ph = vec_new();
-    var n = json_v_arr_len(arr);
+    var n = 0;
     var i = 0;
+    if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
         vec_push(ph, json_v_int(json_v_arr_get(arr, i)));
         i = i + 1;
@@ -4635,11 +4828,13 @@ fn shabda_validation_report_to_json(r): cstring {
 #must_use
 fn shabda_validation_report_from_json(input): i64 {
     var root = json_v_parse_str(input, strlen(input));
-    var lang = str_cstr(json_v_str(json_v_obj_get(root, "language")));
+    if (root == 0) { return 0; }
+    var lang = _shabda_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "invalid_entries");
     var ie = vec_new();
-    var n = json_v_arr_len(arr);
+    var n = 0;
     var i = 0;
+    if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
         vec_push(ie, _shabda_invalid_entry_from_jsonv(json_v_arr_get(arr, i)));
         i = i + 1;
@@ -4656,9 +4851,9 @@ fn _shabda_phonotactic_violation_to_jsonv(v): i64 {
 }
 
 fn _shabda_phonotactic_violation_from_jsonv(obj): i64 {
-    var word = str_cstr(json_v_str(json_v_obj_get(obj, "word")));
-    var desc = str_cstr(json_v_str(json_v_obj_get(obj, "description")));
-    var seq = str_cstr(json_v_str(json_v_obj_get(obj, "sequence")));
+    var word = _shabda_json_field_str(obj, "word");
+    var desc = _shabda_json_field_str(obj, "description");
+    var seq = _shabda_json_field_str(obj, "sequence");
     return shabda_phonotactic_violation_new(word, desc, seq);
 }
 
@@ -4683,11 +4878,13 @@ fn shabda_phonotactic_report_to_json(r): cstring {
 #must_use
 fn shabda_phonotactic_report_from_json(input): i64 {
     var root = json_v_parse_str(input, strlen(input));
-    var lang = str_cstr(json_v_str(json_v_obj_get(root, "language")));
+    if (root == 0) { return 0; }
+    var lang = _shabda_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "violations");
     var vs = vec_new();
-    var n = json_v_arr_len(arr);
+    var n = 0;
     var i = 0;
+    if (arr != 0) { n = json_v_arr_len(arr); }
     while (i < n) {
         vec_push(vs, _shabda_phonotactic_violation_from_jsonv(json_v_arr_get(arr, i)));
         i = i + 1;

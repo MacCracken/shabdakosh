@@ -5,7 +5,7 @@ description = "shabdakosh — pronunciation dictionary for AGNOS (ARPABET/IPA↔
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/shabdakosh"
 language = "cyrius"
-cyrius = "6.4.8"
+cyrius = "6.4.9"
 
 [build]
 entry = "src/main.cyr"
@@ -32,6 +32,7 @@ modules = [
     "src/dictionary/trie.cyr",
     "src/dictionary/heteronym.cyr",
     "src/dictionary/g2p.cyr",
+    "src/dictionary/static_dict.cyr",
     "src/dictionary/format/mod.cyr",
     "src/dictionary/format/json.cyr",
     "src/dictionary/format/pls.cyr",
@@ -49,7 +50,7 @@ modules = [
 # added when arpabet/ipa (svara SVARA_PH_* phonemes) and validate/detect (varna)
 # land — not front-loaded, per the incremental port playbook.
 [deps]
-stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "assert", "fnptr", "atomic", "sakshi", "math", "ganita", "tagged", "hashmap", "bayan", "mmap"]
+stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "assert", "fnptr", "atomic", "sakshi", "math", "ganita", "tagged", "hashmap", "bayan", "mmap", "bench"]
 
 # svara — SVARA_PH_* phoneme identities (the PhonemeEvent-compat contract) plus
 # the voice/synthesis surface shabdakosh maps to. Consumed from arpabet.cyr

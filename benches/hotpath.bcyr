@@ -1,0 +1,80 @@
+# hotpath.bcyr — hot-path benchmarks for shabdakosh. Run: cyrius bench (auto-discovers benches/).
+# Reproduces the intent of rust-old/benches/benchmarks.rs: dictionary construction,
+# lookup hit/miss, trie construction + prefix search, and binary serialize/deserialize.
+#
+# The CYRIUS bump allocator never frees, so alloc-heavy ops (construction, binary,
+# trie build, prefix search) are benched at MODEST N; the alloc-free lookup path
+# (lowercase fast-path — no per-call allocation) is batch-timed at high N to
+# amortize the ~40ns per-call clock overhead.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data_0.cyr"
+include "src/dictionary/_cmudict_data_1.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/coverage.cyr"
+include "src/dictionary/stream.cyr"
+include "src/dictionary/trie.cyr"
+include "src/dictionary/format/mod.cyr"
+include "src/dictionary/format/json.cyr"
+include "src/dictionary/format/binary.cyr"
+
+# Fixtures (built in main).
+var _dict = 0;   # the english dictionary (~10.6k entries)
+var _blob = 0;   # a binary-serialized english dict (Str)
+
+# --- benched hot paths (0-arg wrappers over global fixtures) ---
+fn b_dict_construct() { return shabda_dict_english(); }
+fn b_lookup_hit() { return shabda_dict_lookup(_dict, "the"); }
+fn b_lookup_miss() { return shabda_dict_lookup(_dict, "zzzznotword"); }
+fn b_trie_construct() { return shabda_trie_from_dict(_dict); }
+fn b_prefix_search() { return shabda_dict_prefix_search(_dict, "pre"); }
+fn b_binary_serialize() { return shabda_to_binary(_dict); }
+fn b_binary_deserialize() { return shabda_from_binary(_blob); }
+
+fn bench(name, fp, n) {
+    var b = bench_new(name);
+    bench_run(b, fp, n);
+    bench_report(b);
+    return 0;
+}
+
+# Batch-timed 0-arg bench for the sub-microsecond, alloc-free lookup path.
+fn bench_batch(name, fp, batch, rounds) {
+    var b = bench_new(name);
+    bench_run_batch(b, fp, batch, rounds);
+    bench_report(b);
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    _dict = shabda_dict_english();
+    _blob = shabda_to_binary(_dict);
+
+    # construction (each call rebuilds the full ~10.6k-entry dict — allocates)
+    bench("dict english construction", &b_dict_construct, 10);
+
+    # lookup (lowercase fast-path: no per-call allocation -> batch-timed)
+    bench_batch("dict lookup hit", &b_lookup_hit, 1000, 200);
+    bench_batch("dict lookup miss", &b_lookup_miss, 1000, 200);
+
+    # trie construction + prefix search (allocate)
+    bench("trie construction", &b_trie_construct, 10);
+    bench("trie prefix search 'pre'", &b_prefix_search, 500);
+
+    # binary serialize / deserialize (each call allocs a ~2 MB buffer / a dict)
+    bench("binary serialize", &b_binary_serialize, 20);
+    bench("binary deserialize", &b_binary_deserialize, 20);
+    return 0;
+}
+
+var r = main();
+syscall(60, r);
