@@ -1,0 +1,127 @@
+# wasm.cyr — WebAssembly-facing dictionary bindings (ports rust-old/src/wasm.rs).
+#
+# The Rust used wasm-bindgen to expose a JS-friendly WasmDict over
+# PronunciationDict; phoneme arrays and reports cross the boundary as JSON
+# strings. This is the faithful .cyr surface: a WasmDict handle wrapping an
+# inner dict, with the same 12 methods. JSON is built with bayan (str_from on
+# cstr keys/values, str_data on the built Str). How this surface is exposed to a
+# browser is the toolchain's concern, not this module's.
+#
+# Included after coverage.cyr (coverage), trie.cyr (prefix_search), ipa.cyr
+# (phoneme_to_ipa / parse_ipa_word), mod.cyr and entry.cyr. Uses bayan json_v_*.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+# ---- WasmDict handle: [inner dict] -------------------------------------------
+fn _shabda_wasm_inner(w): i64 { return load64(w + 0); }
+
+fn _shabda_wasm_wrap(dict): i64 {
+    var w = alloc(8);
+    store64(w + 0, dict);
+    return w;
+}
+
+# Create a new empty WasmDict. (Rust WasmDict::new / Default)
+#must_use
+fn shabda_wasm_dict_new(): i64 { return _shabda_wasm_wrap(shabda_dict_new()); }
+
+# Built-in English dictionary (10,000+ entries). (Rust WasmDict::english)
+#must_use
+fn shabda_wasm_dict_english(): i64 { return _shabda_wasm_wrap(shabda_dict_english()); }
+
+# Minimal English dictionary (~29 entries). (Rust WasmDict::english_minimal)
+#must_use
+fn shabda_wasm_dict_english_minimal(): i64 {
+    return _shabda_wasm_wrap(shabda_dict_english_minimal());
+}
+
+# Number of base entries. (Rust WasmDict::len)
+#must_use
+fn shabda_wasm_dict_len(w): i64 { return shabda_dict_len(_shabda_wasm_inner(w)); }
+
+# Whether the dictionary is empty. (Rust WasmDict::is_empty)
+#must_use
+fn shabda_wasm_dict_is_empty(w): i64 { return shabda_dict_is_empty(_shabda_wasm_inner(w)); }
+
+# Look up a word; returns a JSON array of IPA strings (a cstr), or 0 (null) when
+# the word is not found. Phonemes with no IPA equivalent are dropped (mirrors
+# Rust's filter_map). (Rust WasmDict::lookup -> Option<String>)
+#must_use
+fn shabda_wasm_dict_lookup(w, word): cstring {
+    var phon = shabda_dict_lookup(_shabda_wasm_inner(w), word);
+    if (phon == 0) { return 0; }
+    var arr = json_v_arr_new();
+    var n = vec_len(phon);
+    var i = 0;
+    var ip = 0;
+    while (i < n) {
+        ip = shabda_phoneme_to_ipa(vec_get(phon, i));
+        if (ip != 0) { json_v_arr_push(arr, json_v_str_new(str_from(ip))); }
+        i = i + 1;
+    }
+    return str_data(json_v_build(arr));
+}
+
+# Number of pronunciation variants for a word (0 if not found).
+# (Rust WasmDict::variant_count)
+#must_use
+fn shabda_wasm_dict_variant_count(w, word): i64 {
+    var e = shabda_dict_lookup_entry(_shabda_wasm_inner(w), word);
+    if (e == 0) { return 0; }
+    return shabda_dict_entry_len(e);
+}
+
+# Insert a word into the user overlay from an IPA string (parsed to phonemes).
+# No-op when the IPA parses to no phonemes. (Rust WasmDict::insert_user_ipa)
+fn shabda_wasm_dict_insert_user_ipa(w, word, ipa): i64 {
+    var phon = shabda_parse_ipa_word(ipa);
+    if (vec_len(phon) > 0) {
+        shabda_dict_insert_user(_shabda_wasm_inner(w), word, phon);
+    }
+    return 0;
+}
+
+# Remove a word from the user overlay; 1 if removed, else 0.
+# (Rust WasmDict::remove_user)
+fn shabda_wasm_dict_remove_user(w, word): i64 {
+    return shabda_dict_remove_user(_shabda_wasm_inner(w), word);
+}
+
+# Number of user overlay entries. (Rust WasmDict::user_len)
+#must_use
+fn shabda_wasm_dict_user_len(w): i64 { return shabda_dict_user_len(_shabda_wasm_inner(w)); }
+
+# Words matching a prefix, as a JSON array (a cstr). (Rust WasmDict::prefix_search)
+#must_use
+fn shabda_wasm_dict_prefix_search(w, prefix): cstring {
+    var results = shabda_dict_prefix_search(_shabda_wasm_inner(w), prefix);
+    var arr = json_v_arr_new();
+    var n = vec_len(results);
+    var i = 0;
+    while (i < n) {
+        json_v_arr_push(arr, json_v_str_new(vec_get(results, i)));
+        i = i + 1;
+    }
+    return str_data(json_v_build(arr));
+}
+
+# Coverage analysis of a text, as a JSON object (a cstr):
+# {"total_tokens":N,"covered_tokens":M,"uncovered_words":[...]}.
+# (Rust WasmDict::coverage)
+#must_use
+fn shabda_wasm_dict_coverage(w, text): cstring {
+    var r = shabda_dict_coverage(_shabda_wasm_inner(w), text);
+    var obj = json_v_obj_new();
+    json_v_obj_set(obj, str_from("total_tokens"), json_v_int_new(shabda_coverage_total_tokens(r)));
+    json_v_obj_set(obj, str_from("covered_tokens"), json_v_int_new(shabda_coverage_covered_tokens(r)));
+    var arr = json_v_arr_new();
+    var uw = shabda_coverage_uncovered_words(r);
+    var n = vec_len(uw);
+    var i = 0;
+    while (i < n) {
+        json_v_arr_push(arr, json_v_str_new(vec_get(uw, i)));
+        i = i + 1;
+    }
+    json_v_obj_set(obj, str_from("uncovered_words"), arr);
+    return str_data(json_v_build(obj));
+}

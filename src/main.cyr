@@ -31,6 +31,7 @@ include "src/dictionary/format/json.cyr"
 include "src/dictionary/format/pls.cyr"
 include "src/dictionary/format/ssml.cyr"
 include "src/dictionary/format/binary.cyr"
+include "src/wasm.cyr"
 
 fn main() {
     alloc_init();
@@ -97,6 +98,10 @@ fn main() {
     println_int(vec_len(shabda_ssml_result_phonemes(shabda_parse_ssml_phoneme("<phoneme alphabet=\"ipa\" ph=\"kæt\">cat</phoneme>"))));
     # L5 smoke — binary roundtrip of english_minimal -> entry count (29)
     println_int(shabda_dict_len(shabda_from_binary(shabda_to_binary(shabda_dict_english_minimal()))));
+    # L6 smoke — WasmDict: insert_user_ipa "kæt" then lookup -> JSON IPA array
+    var wd = shabda_wasm_dict_new();
+    shabda_wasm_dict_insert_user_ipa(wd, "foo", "kæt");
+    println(shabda_wasm_dict_lookup(wd, "foo"));
     return 0;
 }
 

@@ -23,8 +23,15 @@ preserved at `rust-old/` as the parity oracle.
   `build.rs`; matches the varna & cyrius-unicode precedent. Runtime `.cyml`/`.txt`
   parse was rejected (256 KB / 256-entry parser caps, no asset-path story).
 - **Scope**: MAXIMAL — attempt phf / binary / mmap / ffi equivalents, not just
-  core+varna. **wasm** is the one gap (Cyrius has no wasm target) — expose the API
-  surface, document the gap.
+  core+varna. **wasm** (verified 2026-07-05): the WasmDict binding surface is
+  ported as a normal `.cyr` module (`src/wasm.cyr`, `shabda_wasm_dict_*`), thin
+  wrappers over the dict with the same 12 methods and the same JSON boundary
+  shapes. How that surface reaches a browser is the toolchain's concern, not this
+  crate's — not a "gap" to design around here. (Toolchain note for reference:
+  `cyrius build` targets are `--aarch64` / `--win` / `--agnos` / `--target=js`;
+  `--target=js` is a TS/TSX→JS frontend — `hello.cyr` → "ts parse error" — and
+  there is no `--target=wasm` backend in this checkout. The only "wasm" strings
+  ecosystem-wide are Wasmtime CVE citations.)
 - **Serialization** (locked 2026-07-05): text formats (CMUdict/IPA/PLS/SSML) are
   hand-written permanent code (as in Rust — not serde). Scalar records use
   `#derive(Serialize)`. JSON dict I/O is hand-written in the format layer as
@@ -69,7 +76,7 @@ formats → gated/optional.
 | L6 | dictionary/detect.rs | … | ⬜ | — | varna-gated |
 | L6 | dictionary/lazy.rs | … | ⬜ | — | mmap (lib/mmap.cyr) |
 | L6 | ffi.rs | … | ⬜ | — | C ABI via cyrius header |
-| L6 | wasm.rs | … | ⬜ | — | no Cyrius wasm target — surface + doc gap |
+| L6 | wasm.rs | src/wasm.cyr | ✅ ported | 23 | WasmDict handle over inner dict; 12 methods; lookup/prefix_search/coverage cross as JSON (bayan); JSON IPA roundtrip test |
 
 **7 of ~24 modules ported** — L1 leaf tier + L2 notation complete (L0 error; L1 arpabet, ipa,
 entry, morphology, syllable; L2 notation). Build + smoke + tests green (273 assertions across
@@ -137,8 +144,14 @@ whitespace tokenizers) — accented capitals aren't lowercased; English dict wor
 (b) `xml_unescape` is single-pass — Rust's sequential `.replace()` OVER-decodes double-encoded
 entities (`"&amp;lt;"`→`"<"`); the single pass (`"&amp;lt;"`→`"&lt;"`) is the CORRECT behavior.
 
-Next: the **L6 gated tier** — validate + detect (varna), lazy (mmap), ffi (C ABI), wasm (no
-CYRIUS target — surface + doc the gap).
+**wasm.cyr done (2026-07-05)**: WasmDict surface ported as a `.cyr` module — 12 thin
+wrappers over the dict, JSON boundary shapes preserved (lookup → IPA array, prefix_search →
+array, coverage → `{total_tokens,covered_tokens,uncovered_words}` via bayan, key order
+preserved). 23 assertions; full tree now **21 suites / 556 assertions** green. The earlier
+"no wasm target — doc the gap" plan was corrected after verifying the toolchain (see Scope
+note): the binding is just another `.cyr` surface; browser delivery is the toolchain's job.
+
+Next: remaining **L6 gated tier** — validate + detect (varna), lazy (mmap), ffi (C ABI).
 
 ## Dependencies
 

@@ -1,0 +1,103 @@
+# wasm.tcyr — tests for src/wasm.cyr (ports rust-old/src/wasm.rs WasmDict surface).
+# The Rust wasm.rs has no unit tests (wasm-pack only); these exercise the same
+# 12-method surface against the underlying dict, asserting the JSON shapes that
+# cross the boundary.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/coverage.cyr"
+include "src/dictionary/trie.cyr"
+include "src/wasm.cyr"
+
+alloc_init();
+
+fn _sat(s, off, sub): i64 {
+    var i = 0;
+    var c = 0;
+    while (1 == 1) {
+        c = load8(sub + i);
+        if (c == 0) { return 1; }
+        if (load8(s + off + i) != c) { return 0; }
+        i = i + 1;
+    }
+    return 0;
+}
+fn _find(s, sub): i64 {
+    var sl = strlen(s);
+    var pl = strlen(sub);
+    var i = 0;
+    while (i + pl <= sl) {
+        if (_sat(s, i, sub) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# ================================================================
+test_group("new / empty");
+var w0 = shabda_wasm_dict_new();
+assert_eq(shabda_wasm_dict_len(w0), 0, "len 0");
+assert_eq(shabda_wasm_dict_is_empty(w0), 1, "is_empty");
+assert_eq(shabda_wasm_dict_user_len(w0), 0, "user_len 0");
+
+# ================================================================
+test_group("english / english_minimal");
+assert_gt(shabda_wasm_dict_len(shabda_wasm_dict_english()), 10000, "english > 10k");
+assert_eq(shabda_wasm_dict_len(shabda_wasm_dict_english_minimal()), 29, "minimal 29");
+assert_eq(shabda_wasm_dict_is_empty(shabda_wasm_dict_english_minimal()), 0, "minimal not empty");
+
+# ================================================================
+# insert_user_ipa parses IPA -> phonemes; lookup returns them back as a JSON
+# array of IPA strings. "kæt" -> [K, AE, T] -> ["k","æ","t"].
+test_group("insert_user_ipa + lookup (JSON IPA roundtrip)");
+var w = shabda_wasm_dict_new();
+shabda_wasm_dict_insert_user_ipa(w, "foo", "kæt");
+assert_eq(shabda_wasm_dict_user_len(w), 1, "user_len 1 after insert");
+assert_streq(shabda_wasm_dict_lookup(w, "foo"), "[\"k\",\"æ\",\"t\"]", "lookup -> JSON IPA array");
+assert_eq(shabda_wasm_dict_variant_count(w, "foo"), 1, "variant_count 1");
+
+# empty-IPA insert is a no-op
+shabda_wasm_dict_insert_user_ipa(w, "empty", "");
+assert_eq(shabda_wasm_dict_user_len(w), 1, "empty IPA -> no insert");
+assert_eq(shabda_wasm_dict_variant_count(w, "empty"), 0, "empty absent");
+
+# ================================================================
+test_group("lookup missing -> null (0)");
+assert_eq(shabda_wasm_dict_lookup(w, "zzznotword"), 0, "missing -> 0 (null)");
+assert_eq(shabda_wasm_dict_variant_count(w, "zzznotword"), 0, "missing variant_count 0");
+
+# ================================================================
+test_group("remove_user");
+assert_eq(shabda_wasm_dict_remove_user(w, "foo"), 1, "removed foo");
+assert_eq(shabda_wasm_dict_remove_user(w, "foo"), 0, "already gone");
+assert_eq(shabda_wasm_dict_lookup(w, "foo"), 0, "foo now missing");
+assert_eq(shabda_wasm_dict_user_len(w), 0, "user_len back to 0");
+
+# ================================================================
+# prefix_search returns a sorted JSON array of matching words.
+test_group("prefix_search (JSON array)");
+var we = shabda_wasm_dict_english_minimal();
+var ps = shabda_wasm_dict_prefix_search(we, "he");
+assert_eq(_find(ps, "hello"), 1, "prefix 'he' includes hello");
+assert_eq(_sat(ps, 0, "["), 1, "prefix_search returns a JSON array");
+assert_streq(shabda_wasm_dict_prefix_search(we, "zzz"), "[]", "no match -> []");
+
+# ================================================================
+# coverage returns {"total_tokens","covered_tokens","uncovered_words"}.
+test_group("coverage (JSON object)");
+var cov = shabda_wasm_dict_coverage(we, "hello xyzzy");
+assert_eq(_find(cov, "\"total_tokens\":2"), 1, "total_tokens 2");
+assert_eq(_find(cov, "\"covered_tokens\":1"), 1, "covered_tokens 1 (hello)");
+assert_eq(_find(cov, "\"uncovered_words\":[\"xyzzy\"]"), 1, "uncovered ['xyzzy']");
+
+var rc = assert_summary();
+syscall(60, rc);
