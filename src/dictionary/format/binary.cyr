@@ -1,0 +1,285 @@
+# binary.cyr — compact binary serialization for pronunciation dictionaries.
+#
+# Ports rust-old/src/dictionary/format/binary.rs. The Rust used postcard; CYRIUS
+# has no postcard, so this is a hand-rolled little-endian binary format (the
+# maximal-scope decision). Layout: "SHBD" magic (4) + version (1), then
+#   lang: u8 flag [+ u16 len + bytes]
+#   entries:      u32 count, each { u16 wlen + word, u16 npron, prons... }
+#   user_entries: same
+#   pron: u16 nphon + nphon×u8 (phoneme ordinals) + u8 freq-flag [+ u64 f64 bits]
+#         + u8 region-flag [+ u8 region]
+# to_binary returns a Str (blob may contain NULs); from_binary takes a Str.
+# Included after src/dictionary/mod.cyr.
+#
+# NAMING: shabda_/SHABDA_ prefixes (flat namespace).
+
+var SHABDA_BIN_VERSION = 1;
+var SHABDA_BIN_HEADER  = 5;
+
+# ---- little-endian put helpers (return bytes written) ------------------------
+fn _shabda_bin_put_u16(buf, off, v): i64 {
+    store8(buf + off + 0, v & 255);
+    store8(buf + off + 1, (v >> 8) & 255);
+    return 2;
+}
+
+fn _shabda_bin_put_u32(buf, off, v): i64 {
+    store8(buf + off + 0, v & 255);
+    store8(buf + off + 1, (v >> 8) & 255);
+    store8(buf + off + 2, (v >> 16) & 255);
+    store8(buf + off + 3, (v >> 24) & 255);
+    return 4;
+}
+
+fn _shabda_bin_put_u64(buf, off, v): i64 {
+    store8(buf + off + 0, v & 255);
+    store8(buf + off + 1, (v >> 8) & 255);
+    store8(buf + off + 2, (v >> 16) & 255);
+    store8(buf + off + 3, (v >> 24) & 255);
+    store8(buf + off + 4, (v >> 32) & 255);
+    store8(buf + off + 5, (v >> 40) & 255);
+    store8(buf + off + 6, (v >> 48) & 255);
+    store8(buf + off + 7, (v >> 56) & 255);
+    return 8;
+}
+
+fn _shabda_bin_put_strn(buf, off, data, len): i64 {
+    _shabda_bin_put_u16(buf, off, len);
+    var i = 0;
+    while (i < len) {
+        store8(buf + off + 2 + i, load8(data + i));
+        i = i + 1;
+    }
+    return 2 + len;
+}
+
+# ---- little-endian get helpers -----------------------------------------------
+fn _shabda_bin_get_u16(buf, off): i64 {
+    return load8(buf + off) | (load8(buf + off + 1) << 8);
+}
+
+fn _shabda_bin_get_u32(buf, off): i64 {
+    var v = load8(buf + off);
+    v = v | (load8(buf + off + 1) << 8);
+    v = v | (load8(buf + off + 2) << 16);
+    v = v | (load8(buf + off + 3) << 24);
+    return v;
+}
+
+fn _shabda_bin_get_u64(buf, off): i64 {
+    var v = load8(buf + off);
+    v = v | (load8(buf + off + 1) << 8);
+    v = v | (load8(buf + off + 2) << 16);
+    v = v | (load8(buf + off + 3) << 24);
+    v = v | (load8(buf + off + 4) << 32);
+    v = v | (load8(buf + off + 5) << 40);
+    v = v | (load8(buf + off + 6) << 48);
+    v = v | (load8(buf + off + 7) << 56);
+    return v;
+}
+
+# NUL-terminated cstr copy of buf[off..off+len).
+fn _shabda_bin_dup(buf, off, len): i64 {
+    var out = alloc(len + 1);
+    var i = 0;
+    while (i < len) {
+        store8(out + i, load8(buf + off + i));
+        i = i + 1;
+    }
+    store8(out + len, 0);
+    return out;
+}
+
+# ---- to_binary ---------------------------------------------------------------
+fn _shabda_bin_put_pron(buf, off, pron): i64 {
+    var start = off;
+    var phon = shabda_pronunciation_phonemes(pron);
+    var np = vec_len(phon);
+    off = off + _shabda_bin_put_u16(buf, off, np);
+    var i = 0;
+    while (i < np) {
+        store8(buf + off, vec_get(phon, i));
+        off = off + 1;
+        i = i + 1;
+    }
+    if (shabda_pronunciation_has_frequency(pron) == 1) {
+        store8(buf + off, 1);
+        off = off + 1;
+        off = off + _shabda_bin_put_u64(buf, off, shabda_pronunciation_frequency(pron));
+    } else {
+        store8(buf + off, 0);
+        off = off + 1;
+    }
+    if (shabda_pronunciation_has_region(pron) == 1) {
+        store8(buf + off, 1);
+        off = off + 1;
+        store8(buf + off, shabda_pronunciation_region(pron));
+        off = off + 1;
+    } else {
+        store8(buf + off, 0);
+        off = off + 1;
+    }
+    return off - start;
+}
+
+fn _shabda_bin_put_map(buf, off, map): i64 {
+    var start = off;
+    var keys = map_keys(map);
+    var n = vec_len(keys);
+    off = off + _shabda_bin_put_u32(buf, off, n);
+    var i = 0;
+    var wk = 0;
+    var prons = 0;
+    var np = 0;
+    var j = 0;
+    while (i < n) {
+        wk = vec_get(keys, i);
+        off = off + _shabda_bin_put_strn(buf, off, str_data(wk), str_len(wk));
+        prons = shabda_dict_entry_all(map_get(map, wk));
+        np = vec_len(prons);
+        off = off + _shabda_bin_put_u16(buf, off, np);
+        j = 0;
+        while (j < np) {
+            off = off + _shabda_bin_put_pron(buf, off, vec_get(prons, j));
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return off - start;
+}
+
+# Serialize a PronunciationDict to a compact binary blob (a Str).
+#must_use
+fn shabda_to_binary(dict): i64 {
+    var buf = alloc(2097152);
+    store8(buf + 0, 83);   # 'S'
+    store8(buf + 1, 72);   # 'H'
+    store8(buf + 2, 66);   # 'B'
+    store8(buf + 3, 68);   # 'D'
+    store8(buf + 4, SHABDA_BIN_VERSION);
+    var off = 5;
+    var lang = shabda_dict_language(dict);
+    if (lang != 0) {
+        store8(buf + off, 1);
+        off = off + 1;
+        off = off + _shabda_bin_put_strn(buf, off, lang, strlen(lang));
+    } else {
+        store8(buf + off, 0);
+        off = off + 1;
+    }
+    off = off + _shabda_bin_put_map(buf, off, shabda_dict_entries(dict));
+    off = off + _shabda_bin_put_map(buf, off, shabda_dict_user_entries(dict));
+    return str_new(buf, off);
+}
+
+# ---- from_binary -------------------------------------------------------------
+fn _shabda_bin_get_pron(buf, off, prons): i64 {
+    var np = _shabda_bin_get_u16(buf, off);
+    off = off + 2;
+    var phon = vec_new();
+    var i = 0;
+    while (i < np) {
+        vec_push(phon, load8(buf + off));
+        off = off + 1;
+        i = i + 1;
+    }
+    var pron = shabda_pronunciation_new(phon);
+    if (load8(buf + off) == 1) {
+        off = off + 1;
+        pron = shabda_pronunciation_with_frequency(pron, _shabda_bin_get_u64(buf, off));
+        off = off + 8;
+    } else {
+        off = off + 1;
+    }
+    if (load8(buf + off) == 1) {
+        off = off + 1;
+        pron = shabda_pronunciation_with_region(pron, load8(buf + off));
+        off = off + 1;
+    } else {
+        off = off + 1;
+    }
+    vec_push(prons, pron);
+    return off;
+}
+
+fn _shabda_bin_get_map(dict, buf, off, is_user): i64 {
+    var n = _shabda_bin_get_u32(buf, off);
+    off = off + 4;
+    var i = 0;
+    var wlen = 0;
+    var word = 0;
+    var np = 0;
+    var prons = 0;
+    var j = 0;
+    var entry = 0;
+    while (i < n) {
+        wlen = _shabda_bin_get_u16(buf, off);
+        off = off + 2;
+        word = _shabda_bin_dup(buf, off, wlen);
+        off = off + wlen;
+        np = _shabda_bin_get_u16(buf, off);
+        off = off + 2;
+        prons = vec_new();
+        j = 0;
+        while (j < np) {
+            off = _shabda_bin_get_pron(buf, off, prons);
+            j = j + 1;
+        }
+        entry = shabda_dict_entry_from_pronunciations(prons);
+        if (entry != 0) {
+            if (is_user == 1) {
+                shabda_dict_insert_user_entry(dict, word, entry);
+            } else {
+                shabda_dict_insert_entry(dict, word, entry);
+            }
+        }
+        i = i + 1;
+    }
+    return off;
+}
+
+# Deserialize a PronunciationDict from a binary blob (a Str), or 0 on error
+# (too short, bad magic, or bad version).
+#must_use
+fn shabda_from_binary(data): i64 {
+    var buf = str_data(data);
+    var len = str_len(data);
+    if (len < SHABDA_BIN_HEADER) { return 0; }
+    if (load8(buf + 0) != 83) { return 0; }
+    if (load8(buf + 1) != 72) { return 0; }
+    if (load8(buf + 2) != 66) { return 0; }
+    if (load8(buf + 3) != 68) { return 0; }
+    if (load8(buf + 4) != SHABDA_BIN_VERSION) { return 0; }
+    var off = 5;
+    var dict = shabda_dict_new();
+    if (load8(buf + off) == 1) {
+        off = off + 1;
+        var llen = _shabda_bin_get_u16(buf, off);
+        off = off + 2;
+        shabda_dict_set_language(dict, _shabda_bin_dup(buf, off, llen));
+        off = off + llen;
+    } else {
+        off = off + 1;
+    }
+    off = _shabda_bin_get_map(dict, buf, off, 0);
+    off = _shabda_bin_get_map(dict, buf, off, 1);
+    return dict;
+}
+
+# ---- file I/O ----------------------------------------------------------------
+# Save a dict to a binary file. 0 on success, negative on error.
+fn shabda_save_binary_file(dict, path): i64 {
+    var blob = shabda_to_binary(dict);
+    var n = file_write_all(path, str_data(blob), str_len(blob));
+    if (n < 0) { return (0 - 1); }
+    return 0;
+}
+
+# Load a dict from a binary file, or 0 on read / decode error.
+#must_use
+fn shabda_load_binary_file(path): i64 {
+    var buf = alloc(2097152);
+    var n = file_read_all(path, buf, 2097151);
+    if (n < 0) { return 0; }
+    return shabda_from_binary(str_new(buf, n));
+}

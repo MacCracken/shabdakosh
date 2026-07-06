@@ -64,7 +64,7 @@ formats → gated/optional.
 | L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr | ✅ ported | 45 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec** (bayan DOM both ways) — the serde-stance deliverable |
 | L5 | dictionary/format/pls.rs | src/dictionary/format/pls.cyr | ✅ ported | 10 | W3C PLS XML parse/emit (ipa alphabet), hand-rolled scan; to_pls/to_pls_with_user |
 | L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ✅ ported | 13 | SSML <phoneme alphabet ph>word</phoneme> parse/emit; reuses pls XML scan helpers |
-| L5 | dictionary/format/binary.rs | src/dictionary/format/binary.cyr | ⏳ next | — | compact binary format (postcard equiv, maximal scope) |
+| L5 | dictionary/format/binary.rs | src/dictionary/format/binary.cyr | ✅ ported | 20 | hand-rolled compact binary format (SHBD magic+version, LE, 1-byte phonemes); to/from_binary + file I/O |
 | L6 | dictionary/validate.rs | … | ⬜ | — | varna-gated |
 | L6 | dictionary/detect.rs | … | ⬜ | — | varna-gated |
 | L6 | dictionary/lazy.rs | … | ⬜ | — | mmap (lib/mmap.cyr) |
@@ -115,10 +115,13 @@ serde-replacement per the locked stance (round-trips words/phonemes/frequency/re
 user-overlay; invalid JSON → 0). Debugging it pinned down the **bayan cstr/Str contract**
 (see memory). Next L5: format/pls, format/ssml, format/binary.
 
-**format/pls + format/ssml done** → 507 assertions / 19 suites: W3C PLS XML + SSML
-`<phoneme>` tag parse/emit (hand-rolled bounded XML scan, escape). Remaining L5: format/binary
-(next — closes L5), a compact binary format (the Rust used postcard; no CYRIUS analogue, so a
-hand-rolled binary encoding under the maximal-scope decision).
+**format/pls + format/ssml done** → 507 assertions / 19 suites.
+
+**L5 FORMAT TIER COMPLETE** (format/mod text I/O, JSON codec, pls, ssml, binary) → 527
+assertions / 20 suites. binary is a hand-rolled compact format (postcard has no CYRIUS analogue)
+— round-trips + smaller-than-JSON verified. **Next: a parity audit over the L3–L5 work**
+(~11 hand-ported modules since the L0–L2 audit), then the **L6 gated tier**: validate + detect
+(varna), lazy (mmap), ffi (C ABI), wasm (no target — surface + doc the gap).
 
 ## Dependencies
 

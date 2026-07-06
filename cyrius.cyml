@@ -35,6 +35,7 @@ modules = [
     "src/dictionary/format/json.cyr",
     "src/dictionary/format/pls.cyr",
     "src/dictionary/format/ssml.cyr",
+    "src/dictionary/format/binary.cyr",
 ]
 
 # stdlib grows as modules arrive: `hashmap` (base dict — the hashbrown

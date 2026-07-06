@@ -1,0 +1,80 @@
+# binary.tcyr — tests for src/dictionary/format/binary.cyr (ports rust-old/src/dictionary/format/binary.rs).
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/format/json.cyr"
+include "src/dictionary/format/binary.cyr"
+
+alloc_init();
+
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+
+# ================================================================
+test_group("roundtrip minimal");
+var d = shabda_dict_english_minimal();
+var d2 = shabda_from_binary(shabda_to_binary(d));
+assert_neq(d2, 0, "decoded");
+assert_eq(shabda_dict_len(d2), shabda_dict_len(d), "same len (29)");
+assert_streq(shabda_dict_language(d2), "en", "language preserved");
+var h1 = shabda_dict_lookup(d, "hello");
+var h2 = shabda_dict_lookup(d2, "hello");
+assert_eq(vec_len(h2), vec_len(h1), "hello same phoneme count");
+assert_eq(vec_get(h2, 0), vec_get(h1, 0), "hello[0] same");
+assert_eq(vec_get(h2, 3), vec_get(h1, 3), "hello[3] same");
+
+# ================================================================
+test_group("roundtrip with user overlay");
+var du = shabda_dict_english_minimal();
+shabda_dict_insert_user(du, "custom", _v1(SVARA_PH_VOWEL_A));
+var du2 = shabda_from_binary(shabda_to_binary(du));
+assert_eq(shabda_dict_user_len(du2), 1, "user_len 1");
+assert_eq(vec_get(shabda_dict_lookup(du2, "custom"), 0), SVARA_PH_VOWEL_A, "custom preserved");
+
+# ================================================================
+test_group("roundtrip empty");
+var de2 = shabda_from_binary(shabda_to_binary(shabda_dict_new()));
+assert_neq(de2, 0, "empty decoded");
+assert_eq(shabda_dict_is_empty(de2), 1, "is_empty");
+
+# ================================================================
+test_group("header");
+var hb = shabda_to_binary(shabda_dict_new());
+assert_gte(str_len(hb), 5, "len >= header");
+assert_eq(load8(str_data(hb) + 0), 83, "magic S");
+assert_eq(load8(str_data(hb) + 1), 72, "magic H");
+assert_eq(load8(str_data(hb) + 2), 66, "magic B");
+assert_eq(load8(str_data(hb) + 3), 68, "magic D");
+assert_eq(load8(str_data(hb) + 4), 1, "version 1");
+
+# ================================================================
+test_group("reject bad input");
+var shortbuf = alloc(3);
+store8(shortbuf + 0, 0);
+store8(shortbuf + 1, 1);
+store8(shortbuf + 2, 2);
+assert_eq(shabda_from_binary(str_new(shortbuf, 3)), 0, "too short -> 0");
+var badbuf = alloc(5);
+store8(badbuf + 0, 0);
+store8(badbuf + 1, 0);
+store8(badbuf + 2, 0);
+store8(badbuf + 3, 0);
+store8(badbuf + 4, 1);
+assert_eq(shabda_from_binary(str_new(badbuf, 5)), 0, "bad magic -> 0");
+var bv = shabda_to_binary(shabda_dict_new());
+store8(str_data(bv) + 4, 99);
+assert_eq(shabda_from_binary(bv), 0, "bad version -> 0");
+
+# ================================================================
+test_group("smaller than json");
+var sd = shabda_dict_english_minimal();
+assert_lt(str_len(shabda_to_binary(sd)), strlen(shabda_to_json(sd)), "binary smaller than JSON");
+
+var rc = assert_summary();
+syscall(60, rc);
