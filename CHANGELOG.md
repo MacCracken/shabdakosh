@@ -9,6 +9,7 @@ mechanical: the 689-assertion suite passes unchanged and the distlib is regenera
 
 - **Breaking**: public prefix renamed `shabda_` → `shbdk_`, `SHABDA_` → `SHBDK_`, and `Sh<Name>` structs → `Shbdk<Name>` (269 exported symbols). API shape and semantics are unchanged. Done before any external consumer existed, so no real-world break — hence a patch, not a major.
 - **Changed**: `dist/shabdakosh.cyr` regenerated with the new prefix; the `_cmudict_data.cyr` codegen symbols became `_shbdk_cmudict_piece` / `_SHBDK_CMUDICT_PIECE_*` (generator + checked-in data + consumer kept in lockstep).
+- **Fixed**: `scripts/version-bump.sh` rewritten for the Cyrius toolchain — it edited a removed root `Cargo.toml` and ran `cargo generate-lockfile` (both Rust-era dead paths). It now writes `VERSION` (the `${file:VERSION}` source of truth) and regenerates the distlib bundle via `cyrius distlib` so `dist/shabdakosh.cyr` carries the version.
 
 ## [3.0.0] — 2026-07-05
 
