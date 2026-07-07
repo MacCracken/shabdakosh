@@ -5,7 +5,7 @@ description = "shabdakosh — pronunciation dictionary for AGNOS (ARPABET/IPA↔
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/shabdakosh"
 language = "cyrius"
-cyrius = "6.4.10"
+cyrius = "6.4.12"
 
 [build]
 entry = "src/main.cyr"
@@ -59,7 +59,8 @@ stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "ass
 # svara's dist/svara.deps sidecar).
 [deps.svara]
 git = "https://github.com/MacCracken/svara.git"
-tag = "3.0.1"
+path = "../svara"
+tag = "3.1.0"
 modules = ["dist/svara.cyr"]
 
 # varna — phoneme inventories + phonotactics + script/registry metadata, consumed

@@ -1,4 +1,3 @@
-commit	2734d8202ffba50afd5a82435917f6ae34e22af8	svara	https://github.com/MacCracken/svara.git	3.0.1
 commit	7397736405735cac4aa5d1f1de6e8b8736f3770e	varna	https://github.com/MacCracken/varna.git	2.0.0
 commit	0185805ee68c5961f39a2a7c3d6f316cb41f622e	hisab	https://github.com/MacCracken/hisab.git	2.6.7
 commit	ff649d4617b0d65cd712e8a3c5c60fdac31afefa	naad	https://github.com/MacCracken/naad.git	2.1.1
@@ -7,7 +6,7 @@ commit	d9dbb0239803421cbed430b00ea544f93516a27e	sakshi	https://github.com/MacCra
 2785d98a99e4f82e7fd4cf0e313575638af2c83855305c4dc834c545fc4fcf35  lib/naad.cyr
 d9f3b17ddbbe1bba48917c3a679807b01c39c4a1ce776efdbdfbb7a1680e86e4  lib/tagged.cyr
 d7a14f337a9e8c67ac95023cddf58614a21d8aacd2eb1736da798843ccf0deba  lib/syscalls_macos.cyr
-783ecfc023d4161eb0b9d109f4e35935dde7ea5b0a99fa231212ae5608b019a4  lib/bayan.cyr
+3b816192a2db1f48401891d1d020c607081e0af52033d8f4f00c96d8660a0580  lib/bayan.cyr
 1f37b1a26c04b67b76191282bde9f4a2b3129286afaa9671f603e89f95be1006  lib/mmap.cyr
 ae5617e74a5a6a792a50eefd8551a9ae5f76f85eddc3a495a10d03711aab9eb3  lib/math.cyr
 8a3e4378e75eefbf7e6d8d098449dbe909f9b9b80a2a72624adb250eb4335c09  lib/str.cyr
@@ -28,7 +27,7 @@ ea9a33432917f588b9efe00f04a8f963089805fa3968ba88ae43b32d2a0a1a6a  lib/syscalls_x
 861dedc4d9c07fcf1e431551e469890953a1b02e321354585742c1ed281a9fcf  lib/syscalls.cyr
 e74da1aa77fc80612b254706284eb0df62390061aeccd3122c25cf95a072e436  lib/varna.cyr
 be905dd172bb49be11a97c0c89444fabc790d9bd25a95957363e713f1e5eb309  lib/alloc_windows.cyr
-be7a2b3045b11fc6fa35e9e6da87d959f3da0be4eedfca311e9fd175bd17b1b7  lib/svara.cyr
+6816863ca164ba0ce9145dedfa0b66f60a6ac637689f728246ff7ad22101d014  lib/svara.cyr
 f7b9d52f29de6d3d633962ccc765a76637091a7256eebc1da5547530eed2c44b  lib/args_win.cyr
 de007db716c765556beff5293726d099a7368fb0b48cfa23423e25b070d4bbc3  lib/syscalls_aarch64_linux.cyr
 8af62caaa9cdd96bca338a5587526a275a0e36dbfc33066febf81498321f9bb1  lib/bench.cyr

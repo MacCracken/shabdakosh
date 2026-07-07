@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.0.2] — 2026-07-06
+
+Dependency + toolchain pin hygiene. No API or behavior change — the 715-assertion
+suite passes unchanged and the distlib is regenerated.
+
+- **Changed**: svara pin 3.0.1 → **3.1.0** (its control-rate-glide synthesis
+  release), and the dep block gains `path = "../svara"` (canonical path-for-local /
+  git+tag-for-CI form). shabdakosh only consumes svara's `SVARA_PH_*` phoneme
+  identities — unchanged in 3.1.0 — so this is a pin refresh for a consistently
+  versioned chain, not a functional change.
+- **Changed**: toolchain pin 6.4.10 → **6.4.12** (current release; removes drift,
+  aligns with svara/shabda).
+
 ## [3.0.1] — 2026-07-06
 
 Symbol-prefix correction ahead of the first downstream consumer (**shabda**, the G2P engine).
