@@ -18,6 +18,7 @@
 fn _shbdk_dupz(s): cstring {
     var n = strlen(s);
     var out = alloc(n + 1);
+    if (out == 0) { return ""; }   # 3.0.4: alloc failure -> empty, never a null write
     var i = 0;
     while (i < n) {
         store8(out + i, load8(s + i));
@@ -134,30 +135,19 @@ fn shbdk_phonotactic_report_is_valid(r): i64 {
 #must_use
 fn shbdk_phonotactic_report_violation_count(r): i64 { return vec_len(load64(r + 8)); }
 
-# In-place stable ascending insertion sort of a vec whose elements carry their
-# `word` cstr at byte offset 0 (ShbdkInvalidEntry / ShbdkPhonotacticViolation).
+# Comparator for records carrying their `word` cstr at byte offset 0
+# (ShbdkInvalidEntry / ShbdkPhonotacticViolation): 1 if a <= b by word.
+fn _shbdk_word_rec_le(a, b): i64 {
+    if (_shbdk_wordcmp(load64(a), load64(b)) == 1) { return 0; }
+    return 1;
+}
+
+# In-place STABLE ascending sort of a vec whose elements carry their `word` cstr
+# at byte offset 0. 3.0.4: was an O(n^2) insertion sort — validating the built-in
+# English dict against a foreign inventory yields thousands of records, so it now
+# shares mod.cyr's merge sort (same stable ordering, O(n log n)).
 fn _shbdk_sort_by_word(v): i64 {
-    var n = vec_len(v);
-    var i = 1;
-    var j = 0;
-    var key = 0;
-    var placed = 0;
-    while (i < n) {
-        key = vec_get(v, i);
-        j = i - 1;
-        placed = 0;
-        while (j >= 0 && placed == 0) {
-            if (_shbdk_wordcmp(load64(vec_get(v, j)), load64(key)) == 1) {
-                vec_set(v, j + 1, vec_get(v, j));
-                j = j - 1;
-            } else {
-                placed = 1;
-            }
-        }
-        vec_set(v, j + 1, key);
-        i = i + 1;
-    }
-    return 0;
+    return _shbdk_msort(v, &_shbdk_word_rec_le);
 }
 
 # ---- inventory validation ----------------------------------------------------
@@ -236,7 +226,9 @@ fn _shbdk_validate_collect(inventory, map, out): i64 {
     var ie = 0;
     while (i < n) {
         wk = vec_get(keys, i);
-        ie = _shbdk_check_entry(str_data(wk), map_get(map, wk), inventory);
+        # str_cstr, NOT str_data: base-dict keys are Str views into the packed
+        # _cmudict_data pieces and are NOT NUL-terminated (see mod.cyr).
+        ie = _shbdk_check_entry(str_cstr(wk), map_get(map, wk), inventory);
         if (ie != 0) { vec_push(out, ie); }
         i = i + 1;
     }
@@ -384,14 +376,19 @@ fn _shbdk_phono_collect(phonotactics, map, out): i64 {
     var np = 0;
     var j = 0;
     var phs = 0;
+    var wcstr = 0;
     while (i < n) {
         wk = vec_get(keys, i);
+        # str_cstr, NOT str_data: base-dict keys are Str views into the packed
+        # _cmudict_data pieces and are NOT NUL-terminated (see mod.cyr). Hoisted
+        # out of the per-pronunciation loop — one copy per word, not per variant.
+        wcstr = str_cstr(wk);
         prons = shbdk_dict_entry_all(map_get(map, wk));
         np = vec_len(prons);
         j = 0;
         while (j < np) {
             phs = shbdk_pronunciation_phonemes(vec_get(prons, j));
-            _shbdk_check_pronunciation(str_data(wk), phs, phonotactics, out);
+            _shbdk_check_pronunciation(wcstr, phs, phonotactics, out);
             j = j + 1;
         }
         i = i + 1;

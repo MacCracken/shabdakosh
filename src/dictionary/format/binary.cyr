@@ -78,9 +78,12 @@ fn _shbdk_bin_get_u64(buf, off): i64 {
     return v;
 }
 
-# NUL-terminated cstr copy of buf[off..off+len).
+# NUL-terminated cstr copy of buf[off..off+len). 3.0.4: `len` is a u16 read from
+# an untrusted blob — clamp and check the allocation before writing.
 fn _shbdk_bin_dup(buf, off, len): i64 {
+    if (len < 0) { len = 0; }
     var out = alloc(len + 1);
+    if (out == 0) { return 0; }
     var i = 0;
     while (i < len) {
         store8(out + i, load8(buf + off + i));
@@ -199,7 +202,11 @@ fn _shbdk_bin_total_size(dict): i64 {
 # Serialize a PronunciationDict to a compact binary blob (a Str).
 #must_use
 fn shbdk_to_binary(dict): i64 {
+    # 3.0.4: a dict whose serialized form exceeds ALLOC_MAX makes alloc() return 0,
+    # and the header stores below would write to address 0. Fail as an empty Str —
+    # from_binary rejects it (len < header) and save_binary_file reports the error.
     var buf = alloc(_shbdk_bin_total_size(dict) + 16);
+    if (buf == 0) { return str_new(0, 0); }
     store8(buf + 0, 83);   # 'S'
     store8(buf + 1, 72);   # 'H'
     store8(buf + 2, 66);   # 'B'
@@ -346,6 +353,9 @@ fn shbdk_from_binary(data): i64 {
 # Save a dict to a binary file. 0 on success, negative on error.
 fn shbdk_save_binary_file(dict, path): i64 {
     var blob = shbdk_to_binary(dict);
+    # 3.0.4: an empty blob means to_binary could not allocate — never write a
+    # zero-byte file that would silently decode to "no dictionary".
+    if (str_len(blob) == 0) { return (0 - 1); }
     var n = file_write_all(path, str_data(blob), str_len(blob));
     if (n < 0) { return (0 - 1); }
     return 0;
@@ -354,11 +364,16 @@ fn shbdk_save_binary_file(dict, path): i64 {
 # Load a dict from a binary file, or 0 on read / decode error.
 #must_use
 fn shbdk_load_binary_file(path): i64 {
-    var buf = alloc(8388608);
-    var n = file_read_all(path, buf, 8388607);
+    # 3.0.4: size the read buffer to the FILE (see shbdk_load_cmudict_file) — the
+    # old flat alloc(8 MB) leaked 8 MB of never-freed bump arena per call.
+    var size = _shbdk_file_size_of(path);
+    if (size < 0) { return 0; }
+    # SECURITY: fail loud at the ceiling rather than decode a truncated blob
+    # (from_binary is bounds-checked, but this is explicit).
+    if (size >= SHBDK_MAX_FILE_BYTES) { return 0; }
+    var buf = alloc(size + 1);
+    if (buf == 0) { return 0; }
+    var n = file_read_all(path, buf, size);
     if (n < 0) { return 0; }
-    # SECURITY: a full-buffer read means the file is >= 8 MB — fail loud rather than
-    # decode a truncated blob (from_binary is bounds-checked, but this is explicit).
-    if (n >= 8388607) { return 0; }
     return shbdk_from_binary(str_new(buf, n));
 }

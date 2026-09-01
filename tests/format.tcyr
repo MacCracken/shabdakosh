@@ -133,5 +133,52 @@ test_group("parse_ipa error paths");
 assert_eq(shbdk_parse_ipa("cat\n"), 0, "missing IPA transcription -> 0");
 assert_eq(shbdk_parse_ipa("cat //\n"), 0, "empty transcription between slashes -> 0");
 
+# ================================================================
+# REGRESSION (3.0.4): base-dictionary map keys are Str VIEWS into the packed
+# _cmudict_data pieces — str_len is right but the bytes are NOT NUL-terminated.
+# to_cmudict / to_cmudict_with_user / to_ipa read the key with str_data() and
+# passed it to str_builder_add_cstr, which ran to the next NUL — i.e. the whole
+# rest of the ~22 KB piece. shbdk_to_cmudict(shbdk_dict_english()) emitted
+# 128 MB instead of ~300 KB. Exporters must use str_cstr(), not str_data().
+test_group("non-NUL-terminated base-dict keys (packed Str views)");
+var packed = "cat|24,7,22;dogtail|11,15,36;";
+var pm = map_new_str();
+map_set(pm, str_new(packed, 3), shbdk_dict_entry_from_phonemes(
+    _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T)));
+var pd = shbdk_dict_from_entries(pm);
+var pcm = shbdk_to_cmudict(pd);
+assert_eq(_find(pcm, "cat  K AE1 T\n"), 1, "to_cmudict emits only the key's bytes");
+assert_eq(_find(pcm, "|"), 0, "to_cmudict leaks no packed-piece tail");
+assert_eq(_find(pcm, "dogtail"), 0, "to_cmudict leaks no following entry");
+var pip = shbdk_to_ipa(pd);
+assert_eq(_find(pip, "cat /"), 1, "to_ipa emits only the key's bytes");
+assert_eq(_find(pip, "|"), 0, "to_ipa leaks no packed-piece tail");
+var pwu = shbdk_to_cmudict_with_user(pd);
+assert_eq(_find(pwu, "|"), 0, "to_cmudict_with_user leaks no packed-piece tail");
+
+# End-to-end on the real built-in dictionary: ~10.6k entries of ~7 ARPABET
+# symbols must land in the hundreds of KB, not the hundreds of MB.
+test_group("to_cmudict(english) output size is sane");
+var edump = shbdk_to_cmudict(shbdk_dict_english());
+assert_gt(strlen(edump), 100000, "english cmudict dump > 100 KB");
+assert_lt(strlen(edump), 2000000, "english cmudict dump < 2 MB (was 128 MB)");
+
+# ================================================================
+# REGRESSION (3.0.4): shbdk_load_cmudict_file used to alloc a flat 8 MB read
+# buffer per call. The bump allocator never frees, so N loads burned 8N MB of
+# arena no matter how small the files were. The buffer is now sized to the file.
+test_group("load_cmudict_file arena is proportional to the file");
+var tinyd = shbdk_dict_new();
+shbdk_dict_insert(tinyd, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+assert_eq(shbdk_save_cmudict_file(tinyd, "/tmp/shabdakosh_arena_probe.txt"), 0, "probe file written");
+var before = alloc_used();
+var li = 0;
+while (li < 8) {
+    assert_neq(shbdk_load_cmudict_file("/tmp/shabdakosh_arena_probe.txt"), 0, "reload ok");
+    li = li + 1;
+}
+# 8 loads of a ~50-byte file: was >= 64 MB, must now be a small fraction of that.
+assert_lt(alloc_used() - before, 1048576, "8 small loads use < 1 MB of arena (was 64 MB)");
+
 var rc = assert_summary();
 syscall(60, rc);

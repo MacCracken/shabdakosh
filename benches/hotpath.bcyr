@@ -37,6 +37,10 @@ fn b_trie_construct() { return shbdk_trie_from_dict(_dict); }
 fn b_prefix_search() { return shbdk_dict_prefix_search(_dict, "pre"); }
 fn b_binary_serialize() { return shbdk_to_binary(_dict); }
 fn b_binary_deserialize() { return shbdk_from_binary(_blob); }
+# 3.0.4: the sorted-export path. It was unbenched, which is how a 128 MB
+# to_cmudict output and an O(n^2) key sort both went unnoticed for three releases.
+fn b_to_cmudict() { return shbdk_to_cmudict(_dict); }
+fn b_to_ipa() { return shbdk_to_ipa(_dict); }
 
 fn bench(name, fp, n) {
     var b = bench_new(name);
@@ -72,6 +76,10 @@ fn main() {
     # binary serialize / deserialize (each call allocs a ~2 MB buffer / a dict)
     bench("binary serialize", &b_binary_serialize, 20);
     bench("binary deserialize", &b_binary_deserialize, 20);
+
+    # sorted text export over all 10.6k keys (sort + emit)
+    bench("to_cmudict", &b_to_cmudict, 10);
+    bench("to_ipa", &b_to_ipa, 10);
     return 0;
 }
 

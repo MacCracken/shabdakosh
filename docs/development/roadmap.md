@@ -10,7 +10,8 @@ original v0.x/v1.0 sequencing collapsed into a single parity milestone.
 ## Release criteria (v3.0.0)
 
 - [x] Rust → Cyrius surface parity verified (function-level against `rust-old/`; every module ✅ or consciously dropped)
-- [x] Test coverage adequate for the surface area (689 assertions / 26 suites, all green)
+- [x] Test coverage adequate for the surface area (821 assertions / 26 suites, all green — 689 at
+      the 3.0.0 release gate, +132 regressions from the 3.0.4 P1 sweep)
 - [x] Benchmarks captured in [`docs/benchmarks.md`](../benchmarks.md)
 - [x] At least one downstream consumer green (`dist/shabdakosh.cyr` linked + exercised by a consumer smoke)
 - [x] CHANGELOG complete (3.0.0 entry)

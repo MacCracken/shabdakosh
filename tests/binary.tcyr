@@ -98,5 +98,23 @@ var mt = alloc(8);
 store8(mt + 0, 83); store8(mt + 1, 72); store8(mt + 2, 66); store8(mt + 3, 68); store8(mt + 4, 1);
 assert_eq(shbdk_from_binary(str_new(mt, 5)), 0, "truncated (header only) -> 0");
 
+# ================================================================
+# REGRESSION (3.0.4): shbdk_load_binary_file used to alloc a flat 8 MB read
+# buffer per call out of a never-freeing bump arena. Now sized to the file.
+test_group("load_binary_file arena is proportional to the file");
+var abd = shbdk_dict_new();
+var apv = vec_new();
+vec_push(apv, SVARA_PH_PLOSIVE_K);
+shbdk_dict_insert(abd, "cat", apv);
+assert_eq(shbdk_save_binary_file(abd, "/tmp/shabdakosh_arena_bin.bin"), 0, "probe blob written");
+var bbefore = alloc_used();
+var bi = 0;
+while (bi < 8) {
+    assert_neq(shbdk_load_binary_file("/tmp/shabdakosh_arena_bin.bin"), 0, "reload ok");
+    bi = bi + 1;
+}
+assert_lt(alloc_used() - bbefore, 1048576, "8 small loads use < 1 MB of arena (was 64 MB)");
+assert_eq(shbdk_load_binary_file("/tmp/nonexistent_shabdakosh_bin_xyz.bin"), 0, "missing file -> 0");
+
 var rc = assert_summary();
 syscall(60, rc);

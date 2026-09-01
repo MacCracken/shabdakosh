@@ -83,7 +83,9 @@ fn shbdk_heteronym_following_words(c): i64 {
 fn shbdk_dict_lookup_with_context(d, word, resolver, context): i64 {
     var entry = shbdk_dict_lookup_entry(d, word);
     if (entry == 0) { return 0; }
-    if (shbdk_dict_entry_len(entry) > 1) {
+    # 3.0.4: a 0 resolver would be an indirect call to address 0. Zero-panic
+    # contract: fall through to the primary pronunciation instead of crashing.
+    if (shbdk_dict_entry_len(entry) > 1 && resolver != 0) {
         var idx = fncall2(resolver, word, context);
         if (idx >= 0) {
             if (idx < shbdk_dict_entry_len(entry)) {

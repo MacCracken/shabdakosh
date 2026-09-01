@@ -124,5 +124,40 @@ shbdk_trie_insert(lt, longw);
 assert_eq(shbdk_trie_contains(lt, longw), 1, "601-byte word present");
 assert_eq(vec_len(shbdk_trie_search_prefix(lt, "a")), 1, "prefix 'a' returns the long word (no overflow)");
 
+# ================================================================
+# REGRESSION (3.0.4): _shbdk_trie_collect used to recurse once per path byte, so
+# its stack depth was the word length — attacker-controlled (from_binary allows
+# u16-length words; parse_cmudict has no limit). A ~63 KB word already blew the
+# 8 MB default stack (SIGSEGV). The walk is now iterative over a heap work-list.
+# It also used to alloc a flat plen+65536 buffer per call and silently DROP any
+# longer word; the buffer is now sized to the trie's real max word length.
+test_group("deep trie: no stack overflow, no dropped words");
+fn _long_word(len): i64 {
+    var w = alloc(len + 1);
+    var i = 0;
+    store8(w + 0, 97);                                    # 'a' so prefix "a" hits
+    while (i < len) { store8(w + i, 97); i = i + 1; }
+    store8(w + len, 0);
+    return w;
+}
+var deep = shbdk_trie_new();
+var w70k = _long_word(70000);
+shbdk_trie_insert(deep, w70k);
+assert_eq(shbdk_trie_contains(deep, w70k), 1, "70k-byte word present");
+var deepres = shbdk_trie_search_prefix(deep, "a");
+assert_eq(vec_len(deepres), 1, "70k-byte word survives collect (was SIGSEGV)");
+assert_eq(str_len(vec_get(deepres, 0)), 70000, "70k-byte word returned whole (was dropped)");
+
+var deep2 = shbdk_trie_new();
+shbdk_trie_insert(deep2, _long_word(200000));
+assert_eq(vec_len(shbdk_trie_search_prefix(deep2, "a")), 1, "200k-byte word: no stack overflow");
+
+# Words longer than the old 65536 cap are no longer silently dropped alongside
+# short ones sharing the prefix.
+var mixed = shbdk_trie_new();
+shbdk_trie_insert(mixed, "ab");
+shbdk_trie_insert(mixed, _long_word(80000));
+assert_eq(vec_len(shbdk_trie_search_prefix(mixed, "a")), 2, "short + 80k word both returned");
+
 var rc = assert_summary();
 syscall(60, rc);

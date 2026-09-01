@@ -48,16 +48,34 @@ fn _shbdk_utf8_next(p, out_cp): i64 {
     return 4;
 }
 
-# Count how many of a word's code points fall inside a varna script's ranges.
-fn _shbdk_count_cp_in_script(word, script): i64 {
-    var cnt = 0;
+# Decode a word's UTF-8 code points into a fresh vec of scalars.
+#
+# 3.0.4: detect_script tests the word against every varna script, and this used to
+# be done by re-walking the raw bytes per script AND heap-allocating an 8-byte
+# out-cell per walk — 19 decodes and 19 never-freed cells per detect_script call.
+# Decoding once up front makes it 1 decode and 0 heap cells (the out-cell is a
+# stack slot now).
+fn _shbdk_decode_cps(word): i64 {
+    var out = vec_new();
+    var cp[8];
     var p = word;
-    var cp = alloc(8);
-    var adv = _shbdk_utf8_next(p, cp);
+    var adv = _shbdk_utf8_next(p, &cp);
     while (adv > 0) {
-        if (script_contains_codepoint(script, load64(cp)) == 1) { cnt = cnt + 1; }
+        vec_push(out, load64(&cp));
         p = p + adv;
-        adv = _shbdk_utf8_next(p, cp);
+        adv = _shbdk_utf8_next(p, &cp);
+    }
+    return out;
+}
+
+# Count how many of the pre-decoded code points fall inside a varna script's ranges.
+fn _shbdk_count_cp_in_script(cps, script): i64 {
+    var cnt = 0;
+    var n = vec_len(cps);
+    var i = 0;
+    while (i < n) {
+        if (script_contains_codepoint(script, vec_get(cps, i)) == 1) { cnt = cnt + 1; }
+        i = i + 1;
     }
     return cnt;
 }
@@ -93,6 +111,11 @@ fn _shbdk_vec_has_cstr(v, s): i64 {
 
 # In-place ascending insertion sort of a vec of cstrings (matches Rust
 # Vec::sort_unstable() lexicographic order for the ASCII language codes).
+#
+# Deliberately NOT mod.cyr's shared merge sort (unlike the dictionary-scale sorts
+# converted in 3.0.4): this module is self-contained by design — it needs only
+# varna, and tests/detect.tcyr links it without dictionary/mod.cyr. The input is
+# the registry language codes for one script (a handful), so O(n^2) is free here.
 fn _shbdk_sort_cstrs(v): i64 {
     var n = vec_len(v);
     var i = 1;
@@ -122,6 +145,8 @@ fn _shbdk_sort_cstrs(v): i64 {
 # earlier code (script_all_codes order); strict-greater update. (Rust detect_script)
 #must_use
 fn shbdk_detect_script(word): cstring {
+    var cps = _shbdk_decode_cps(word);
+    if (vec_len(cps) == 0) { return 0; }   # empty word matches no script
     var codes = script_all_codes();
     var n = vec_len(codes);
     var best = 0;
@@ -137,7 +162,7 @@ fn shbdk_detect_script(word): cstring {
         if (streq(code, "Egyp") == 1) { continue; }
         script = script_by_code(code);
         if (script == 0) { continue; }
-        cnt = _shbdk_count_cp_in_script(word, script);
+        cnt = _shbdk_count_cp_in_script(cps, script);
         if (cnt > best_cnt) {
             best_cnt = cnt;
             best = code;

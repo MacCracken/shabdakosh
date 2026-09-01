@@ -70,6 +70,16 @@ fn _shbdk_clone_iv(v): i64 {
 }
 
 # ---- FallbackDict (24 bytes): [0]=dict [8]=predict_fp [16]=model_state ---------
+# 3.0.4: every G2P entry point below routes its model call through this guard. A
+# FallbackDict built with a 0 predict_fp (Rust could not express that — the trait
+# object was non-null by construction) would otherwise be an indirect call to
+# address 0. Zero-panic contract: a missing model behaves as "predicts nothing".
+fn _shbdk_g2p_predict(f, key): i64 {
+    var fp = load64(f + 8);
+    if (fp == 0) { return 0; }
+    return fncall2(fp, str_data(key), load64(f + 16));
+}
+
 #must_use
 fn shbdk_fallback_dict_new(dict, predict_fp, model_state): i64 {
     var f = alloc(24);
@@ -98,7 +108,7 @@ fn shbdk_fallback_dict_lookup(f, word): i64 {
     var phonemes = shbdk_dict_lookup(load64(f + 0), word);
     if (phonemes != 0) { return _shbdk_clone_iv(phonemes); }
     var key = str_from(str_lower_cstr(word));
-    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
     return shbdk_g2p_result_into_phonemes(result);
 }
@@ -119,7 +129,7 @@ fn shbdk_fallback_dict_lookup_with_source(f, word): i64 {
         var bp = _shbdk_clone_iv(shbdk_dict_entry_primary_phonemes(e));
         return _shbdk_lookup_result_new(bp, SHBDK_SOURCE_BASE_DICTIONARY, 0);
     }
-    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
     var gp = shbdk_g2p_result_into_phonemes(result);
     var gc = shbdk_g2p_result_confidence(result);
@@ -138,7 +148,7 @@ fn shbdk_fallback_dict_promote_prediction(f, word): i64 {
     var dict = load64(f + 0);
     if (shbdk_dict_lookup_entry(dict, word) != 0) { return 0; }
     var key = str_from(str_lower_cstr(word));
-    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
     shbdk_dict_insert_user(dict, word, shbdk_g2p_result_phonemes(result));
     return 1;
@@ -149,7 +159,7 @@ fn shbdk_fallback_dict_promote_if_confident(f, word, threshold): i64 {
     var dict = load64(f + 0);
     if (shbdk_dict_lookup_entry(dict, word) != 0) { return 0; }
     var key = str_from(str_lower_cstr(word));
-    var result = fncall2(load64(f + 8), str_data(key), load64(f + 16));
+    var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
     if (f64_ge(shbdk_g2p_result_confidence(result), threshold) == 1) {
         shbdk_dict_insert_user(dict, word, shbdk_g2p_result_phonemes(result));

@@ -42,7 +42,9 @@ fn _shbdk_normalize_token(text, start, end): i64 {
         e = e - 1;
     }
     var n = e - s;
+    if (n < 0) { n = 0; }
     var buf = alloc(n + 1);
+    if (buf == 0) { return ""; }   # 3.0.4: alloc failure -> empty token, not a null write
     var i = 0;
     var c = 0;
     while (i < n) {

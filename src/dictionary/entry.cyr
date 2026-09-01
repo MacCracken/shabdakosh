@@ -97,6 +97,26 @@ fn shbdk_pronunciation_has_region(p): i64 {
     return 0;
 }
 
+# Deep copy of a pronunciation: a fresh struct over a fresh phoneme vec, so the
+# copy shares nothing mutable with the original. (Rust derived Clone.)
+#must_use
+fn shbdk_pronunciation_clone(p): i64 {
+    var phon = load64(p + 0);
+    var out = vec_new();
+    var n = vec_len(phon);
+    var i = 0;
+    while (i < n) {
+        vec_push(out, vec_get(phon, i));
+        i = i + 1;
+    }
+    var c = alloc(24);
+    if (c == 0) { return 0; }
+    store64(c + 0, out);
+    store64(c + 8, load64(p + 8));
+    store64(c + 16, load64(p + 16));
+    return c;
+}
+
 # ---- DictEntry ---------------------------------------------------------------
 # Insertion sort of a pronunciation vec by frequency DESC (None = -1.0 sorts
 # last). Stable (equal frequencies keep insertion order), matching Rust sort_by.
@@ -171,6 +191,25 @@ fn shbdk_dict_entry_from_pronunciations(prons): i64 {
     var e = alloc(8);
     store64(e + 0, prons);
     return e;
+}
+
+# Deep copy of an entry: a fresh pronunciation vec of freshly cloned
+# pronunciations. (Rust derived Clone; the port needs it explicitly for merge —
+# see shbdk_dict_merge.) Order is preserved, so no re-sort is needed.
+#must_use
+fn shbdk_dict_entry_clone(e): i64 {
+    var prons = load64(e + 0);
+    var out = vec_new();
+    var n = vec_len(prons);
+    var i = 0;
+    while (i < n) {
+        vec_push(out, shbdk_pronunciation_clone(vec_get(prons, i)));
+        i = i + 1;
+    }
+    var c = alloc(8);
+    if (c == 0) { return 0; }
+    store64(c + 0, out);
+    return c;
 }
 
 # Add a pronunciation variant; re-sorts by frequency.

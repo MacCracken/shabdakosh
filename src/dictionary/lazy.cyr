@@ -16,8 +16,13 @@
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
 # File size via lseek(fd, 0, SEEK_END). Returns the size, or negative on error.
+#
+# 3.0.4: was a raw `syscall(8, ...)`. #8 is lseek only on x86_64 Linux/macOS — on
+# aarch64 Linux it is a different call entirely, and on AGNOS lseek is #58, so the
+# mmap path silently misbehaved off x86_64. io.cyr's xlseek resolves SYS_LSEEK per
+# target and is portable as written.
 fn _shbdk_file_size(fd): i64 {
-    return syscall(8, fd, 0, 2);   # SYS_LSEEK, SEEK_END = 2
+    return xlseek(fd, 0, 2);   # SEEK_END
 }
 
 # Open a binary dictionary file, mmap-backed with a file_read_all fallback.
@@ -29,6 +34,11 @@ fn shbdk_lazy_open(path): i64 {
     if (fd < 0) { return 0; }                 # Rust: "failed to open file"
     var len = _shbdk_file_size(fd);
     if (len <= 0) { file_close(fd); return 0; }
+    # SECURITY (3.0.4): apply the same ceiling the non-mmap loaders enforce. Without
+    # it, mmapping a huge (or sparse) file handed shbdk_from_binary a multi-GB blob
+    # whose bounded-but-length-proportional decode loop is a hang, and whose mapping
+    # is faulted in page by page. shbdk_load_binary_file always capped; this did not.
+    if (len >= SHBDK_MAX_FILE_BYTES) { file_close(fd); return 0; }
     var addr = mmap_file_ro(fd, len);         # 0 on failure (incl. AGNOS)
     file_close(fd);                           # the mapping outlives the fd
     if (addr == 0) {

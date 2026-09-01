@@ -10,7 +10,8 @@
 #
 # TrieNode layout (16 bytes): [0]=children(vec of pair*) [8]=is_word(0/1).
 # child pair (16 bytes): [0]=byte [8]=child node.
-# PrefixTrie layout (16 bytes): [0]=root(node) [8]=word_count.
+# PrefixTrie layout (24 bytes): [0]=root(node) [8]=word_count [16]=max_word_len
+#   (3.0.4: max_word_len sizes the collect buffer exactly — see search_prefix).
 
 fn _shbdk_trie_node_new(): i64 {
     var n = alloc(16);
@@ -48,6 +49,7 @@ fn _shbdk_trie_get_or_add_child(node, byte): i64 {
 # Copy buf[0..n) into a fresh NUL-terminated cstr.
 fn _shbdk_trie_dup_n(buf, n): i64 {
     var out = alloc(n + 1);
+    if (out == 0) { return ""; }   # 3.0.4: alloc failure -> empty word, never a null write
     var i = 0;
     while (i < n) {
         store8(out + i, load8(buf + i));
@@ -59,9 +61,10 @@ fn _shbdk_trie_dup_n(buf, n): i64 {
 
 #must_use
 fn shbdk_trie_new(): i64 {
-    var t = alloc(16);
+    var t = alloc(24);
     store64(t + 0, _shbdk_trie_node_new());
     store64(t + 8, 0);
+    store64(t + 16, 0);   # max inserted word length
     return t;
 }
 
@@ -77,6 +80,7 @@ fn _shbdk_trie_insert_bytes(t, data, len): i64 {
         store64(node + 8, 1);
         store64(t + 8, load64(t + 8) + 1);
     }
+    if (len > load64(t + 16)) { store64(t + 16, len); }
     return 0;
 }
 
@@ -134,24 +138,61 @@ fn shbdk_trie_is_empty(t): i64 {
     return 0;
 }
 
-# Recursively collect all words under `node`; `buf[0..depth)` is the path so far.
-# `cap` bounds the buffer (defensive — a pathological word longer than the buffer
-# is not written past the allocation; real words are tiny).
+# Collect all words under `node` in pre-order; `buf[0..depth)` is the path so far
+# and `cap` bounds the buffer (a path longer than `cap` is never written past the
+# allocation). `results` receives one Str per word.
+#
+# SECURITY (3.0.4): this walk used to RECURSE once per byte of the path, so its
+# stack depth was the word length — attacker-controlled. shbdk_from_binary accepts
+# words up to u16 (65,535 bytes) and shbdk_parse_cmudict has no length limit at
+# all, and a word of ~63 KB already overflowed the 8 MB default stack: a corrupt
+# .bin plus one prefix_search was a reliable SIGSEGV. It is now ITERATIVE over an
+# explicit heap stack of (node, next_child_index, depth) frames, so depth costs
+# heap (proportional to the path) instead of call frames, and no input length can
+# exhaust the stack.
 fn _shbdk_trie_collect(node, buf, depth, cap, results): i64 {
+    # Frames are indexed by descent level, so they preallocate exactly once:
+    # level `sp` is at path depth `depth + sp`, and sp never exceeds cap - depth.
+    # (A push/pop work-vec was measurably slower — this does no per-node alloc.)
+    var frames = cap - depth + 2;
+    if (frames < 2) { frames = 2; }
+    var nodes = alloc(frames * 8);
+    var idxs = alloc(frames * 8);
+    if (nodes == 0) { return 0; }
+    if (idxs == 0) { return 0; }
+    var sp = 0;
+    store64(nodes + 0, node);
+    store64(idxs + 0, 0);
     if (load64(node + 8) == 1) {
         vec_push(results, str_from(_shbdk_trie_dup_n(buf, depth)));
     }
-    var ch = load64(node + 0);
-    var nc = vec_len(ch);
-    var i = 0;
+    var cur = 0;
+    var ci = 0;
+    var d = 0;
+    var ch = 0;
     var pair = 0;
-    while (i < nc) {
-        pair = vec_get(ch, i);
-        if (depth < cap) {
-            store8(buf + depth, load64(pair + 0));
-            _shbdk_trie_collect(load64(pair + 8), buf, depth + 1, cap, results);
+    var child = 0;
+    while (sp >= 0) {
+        cur = load64(nodes + sp * 8);
+        ci = load64(idxs + sp * 8);
+        ch = load64(cur + 0);
+        if (ci >= vec_len(ch)) {
+            sp = sp - 1;
+        } else {
+            store64(idxs + sp * 8, ci + 1);
+            d = depth + sp;
+            if (d < cap) {
+                pair = vec_get(ch, ci);
+                store8(buf + d, load64(pair + 0));
+                child = load64(pair + 8);
+                if (load64(child + 8) == 1) {
+                    vec_push(results, str_from(_shbdk_trie_dup_n(buf, d + 1)));
+                }
+                sp = sp + 1;
+                store64(nodes + sp * 8, child);
+                store64(idxs + sp * 8, 0);
+            }
         }
-        i = i + 1;
     }
     return 0;
 }
@@ -167,9 +208,16 @@ fn shbdk_trie_search_prefix(t, prefix): i64 {
         if (node == 0) { return results; }
         i = i + 1;
     }
+    # 3.0.4: size the path buffer to the trie's longest word instead of a flat
+    # `plen + 65536`. That constant cost 64 KB of never-freed bump arena on EVERY
+    # call (autocomplete-per-keystroke burns it fast) while still silently
+    # dropping any longer word. max_word_len is exact, so nothing is dropped and
+    # a normal dictionary needs ~30 bytes.
     var plen = strlen(prefix);
-    var cap = plen + 65536;
-    var buf = alloc(cap);
+    var cap = load64(t + 16);
+    if (plen > cap) { cap = plen; }
+    var buf = alloc(cap + 1);
+    if (buf == 0) { return results; }   # 3.0.4: alloc failure -> empty result, not a null write
     var k = 0;
     while (k < plen) {
         store8(buf + k, load8(prefix + k));

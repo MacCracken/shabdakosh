@@ -121,5 +121,110 @@ map_set(upmap, str_from("CAT"), shbdk_dict_entry_from_phonemes(_v1(SVARA_PH_PLOS
 var updiff = shbdk_dict_diff(shbdk_dict_from_entries(upmap), shbdk_dict_new());
 assert_eq(vec_len(shbdk_dict_diff_removed(updiff)), 0, "CAT (non-lowercased) not 'removed' (matches Rust)");
 
+# ================================================================
+# 3.0.4: _shbdk_sort_strs is now a stable O(n log n) merge sort (was an O(n^2)
+# insertion sort that made every dictionary-scale export quadratic). Exercise it
+# across the run-length boundaries a bottom-up merge steps through (1,2,4,...)
+# and at sizes that are NOT powers of two, where the tail run is short.
+test_group("sort_strs (merge sort) orderings");
+fn _sorted_ok(v): i64 {
+    var n = vec_len(v);
+    var i = 1;
+    while (i < n) {
+        if (_shbdk_str_lt(vec_get(v, i), vec_get(v, i - 1)) == 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+fn _mk(n, step): i64 {
+    # n Strs of decreasing-then-interleaved keys, so the input is unsorted at
+    # every merge width.
+    var v = vec_new();
+    var buf = 0;
+    var i = 0;
+    var k = 0;
+    while (i < n) {
+        k = (i * step) % n;
+        buf = alloc(8);
+        store8(buf + 0, 97 + (k / 26) % 26);
+        store8(buf + 1, 97 + k % 26);
+        store8(buf + 2, 97 + (k / 676) % 26);
+        store8(buf + 3, 0);
+        vec_push(v, str_from(buf));
+        i = i + 1;
+    }
+    return v;
+}
+var sz = 0;
+var sv = 0;
+while (sz < 40) {
+    sv = _mk(sz, 7);
+    _shbdk_sort_strs(sv);
+    assert_eq(_sorted_ok(sv), 1, "sorted at every size 0..39");
+    assert_eq(vec_len(sv), sz, "length preserved at every size 0..39");
+    sz = sz + 1;
+}
+var big = _mk(1000, 337);
+_shbdk_sort_strs(big);
+assert_eq(_sorted_ok(big), 1, "1000 elements sorted");
+assert_eq(vec_len(big), 1000, "1000 elements preserved");
+
+# Stability: equal keys keep insertion order. Build duplicates that are distinct
+# Str objects and check the pre-sort object order survives among equals.
+var dup = vec_new();
+var d0 = str_from("kk");
+var d1 = str_from("aa");
+var d2 = str_from("kk");
+var d3 = str_from("aa");
+vec_push(dup, d0); vec_push(dup, d1); vec_push(dup, d2); vec_push(dup, d3);
+_shbdk_sort_strs(dup);
+assert_eq(vec_get(dup, 0), d1, "stable: first 'aa' stays first");
+assert_eq(vec_get(dup, 1), d3, "stable: second 'aa' stays second");
+assert_eq(vec_get(dup, 2), d0, "stable: first 'kk' stays first");
+assert_eq(vec_get(dup, 3), d2, "stable: second 'kk' stays second");
+
+# ================================================================
+# REGRESSION (3.0.4, backlog parity gap): merge / merge_conservative used to
+# insert the SOURCE's ShbdkDictEntry pointer, where Rust inserts entry.clone().
+# Mutating one dictionary's entry then changed the other's too.
+test_group("merge deep-clones entries (no aliasing)");
+var ma = shbdk_dict_new();
+var mb = shbdk_dict_new();
+shbdk_dict_insert(mb, "cat", _v1(SVARA_PH_PLOSIVE_K));
+shbdk_dict_merge(ma, mb);
+var ea = shbdk_dict_lookup_entry(ma, "cat");
+var eb = shbdk_dict_lookup_entry(mb, "cat");
+assert_neq(ea, eb, "merged entry is a distinct object");
+assert_neq(shbdk_dict_entry_all(ea), shbdk_dict_entry_all(eb), "distinct pronunciation vecs");
+assert_neq(shbdk_dict_entry_primary(ea), shbdk_dict_entry_primary(eb), "distinct Pronunciation structs");
+assert_neq(shbdk_dict_entry_primary_phonemes(ea), shbdk_dict_entry_primary_phonemes(eb),
+    "distinct phoneme vecs");
+assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(ea), 0), SVARA_PH_PLOSIVE_K, "value copied");
+# Mutating the merged copy must not reach back into the source.
+shbdk_dict_entry_add_pronunciation(ea, shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_T)));
+assert_eq(shbdk_dict_entry_len(ea), 2, "destination entry gained a variant");
+assert_eq(shbdk_dict_entry_len(eb), 1, "source entry is untouched (was 2: aliased)");
+
+var mc = shbdk_dict_new();
+var md = shbdk_dict_new();
+shbdk_dict_insert(md, "dog", _v1(SVARA_PH_PLOSIVE_D));
+shbdk_dict_merge_conservative(mc, md);
+var ec = shbdk_dict_lookup_entry(mc, "dog");
+shbdk_dict_entry_add_pronunciation(ec, shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_G)));
+assert_eq(shbdk_dict_entry_len(shbdk_dict_lookup_entry(md, "dog")), 1,
+    "merge_conservative source untouched");
+
+# Clone preserves frequency and region metadata.
+test_group("entry / pronunciation clone");
+var cpv = _v1(SVARA_PH_PLOSIVE_K);
+vec_push(cpv, SVARA_PH_VOWEL_ASH);
+var cp = shbdk_pronunciation_new(cpv);
+cp = shbdk_pronunciation_with_region(cp, SHBDK_REGION_RP);
+var cc = shbdk_pronunciation_clone(cp);
+assert_neq(cc, cp, "clone is a distinct struct");
+assert_eq(shbdk_pronunciation_region(cc), SHBDK_REGION_RP, "region copied");
+assert_eq(vec_len(shbdk_pronunciation_phonemes(cc)), 2, "phonemes copied");
+assert_eq(shbdk_pronunciation_has_frequency(cc), 0, "no frequency, as source");
+
 var rc = assert_summary();
 syscall(60, rc);

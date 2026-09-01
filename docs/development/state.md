@@ -5,8 +5,13 @@
 
 ## Version
 
-**3.0.3** (2026-08-31) — toolchain + dependency refresh (Cyrius 6.5.36, svara
-3.5.4, varna 2.4.1); no API change. The port itself landed at **3.0.0**
+**3.0.4** (2026-09-01) — **P1 audit sweep**: 5 defects fixed (2 HIGH — a
+128 MB-corrupt text export from any cmudict-backed dictionary, and a
+stack-overflow DoS in `prefix_search`), 4 resource/performance defects, and
+hardening across the allocation and callback paths. Suite 689 → **821**
+assertions. See [the P1 sweep](../audit/2026-09-01-p1-sweep.md). 3.0.3
+(2026-08-31) was a toolchain + dependency refresh (Cyrius 6.5.36, svara 3.5.4,
+varna 2.4.1); no API change. The port itself landed at **3.0.0**
 (RELEASED 2026-07-06) — full behavioral parity with the Rust 2.0.0 surface,
 started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
 `rust-old/` as the parity oracle. 3.0.1 corrected the symbol prefix
@@ -18,6 +23,11 @@ started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
   6.4.5→…6.4.10→6.4.12→6.5.36 as the installed cycc drifted; `lib/` re-synced
   each time (`cyrius lib sync`, declared-subset — **not** `--full`, which drops
   the whole 108-file snapshot into `lib/`), all suites stay green.
+- **3.0.4 shape changes** (all additive, no removals): `PrefixTrie` grew 16 → 24
+  bytes (`[16]=max_word_len`); the keystone gained `_shbdk_msort` (one stable
+  merge sort shared by the dictionary-scale sorts), `_shbdk_file_size_of` and
+  `SHBDK_MAX_FILE_BYTES`; `entry.cyr` gained `shbdk_dict_entry_clone` /
+  `shbdk_pronunciation_clone`; `_shbdk_trie_collect` is iterative, not recursive.
 - **6.5.36 source impact**: bayan renamed its cstr+len JSON parse entry
   `json_v_parse_str` → `json_v_parse_buf` (Cyrius routes `X(str, …)` to `X_str`,
   so the old name silently mis-dispatched). Three call sites updated
@@ -231,7 +241,8 @@ annotation (`i64`→`cstring`). Toolchain now 6.4.10, which shipped the distlib 
 from our proposal — so the cmudict data was reverted from 2 shards back to a single
 `_cmudict_data.cyr` (generator + 19 includers + `[lib].modules` collapsed).
 
-**Release state (v3.0.0) — ALL GATES MET**: full tree **26 suites / 689 assertions** green; every
+**Release state (v3.0.0) — ALL GATES MET**: full tree **26 suites / 689 assertions** green (now
+**821** after the 3.0.4 P1 sweep added 132 regression assertions); every
 Rust module ported (ffi dropped, wasm/static_dict as `.cyr` surfaces) or tracked in backlog.md;
 distlib bundle built + consumer-verified; benchmarks captured; docs accurate for v3.0.0; CHANGELOG
 3.0.0; roadmap finalized; security audit (11 fixes) passed. Ready to tag. Git operations are the user's.

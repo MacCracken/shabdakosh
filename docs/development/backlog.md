@@ -1,4 +1,4 @@
-# Backlog — shabdakosh v3.0.0
+# Backlog — shabdakosh (last swept for v3.0.4)
 
 Non-blocking improvements surfaced by the post-release backlog review (2026-07-05). The v3.0.0
 release gates are all met (see [state.md](state.md)); these are tracked for a follow-up. Format:
@@ -22,10 +22,6 @@ const-eval lands:
 
 ## Parity gaps (vs `rust-old/`)
 
-- **[medium/small] `merge` / `merge_conservative` share entry pointers where Rust deep-clones.**
-  `src/dictionary/mod.cyr:263`/`284` do `map_set(dst, k, map_get(src, k))` (shared `ShbdkDictEntry*`);
-  Rust inserts `entry.clone()`. Observable: after `A.merge(B)`, mutating a shared entry affects both.
-  Fix needs a `shbdk_dict_entry_clone` on the merge path.
 - **[low/small] `to_cmudict` emits `@freq` with 6 fixed decimals** vs Rust's shortest round-trip f32
   (`0.5` → `0.500000`). Re-parses identically; cosmetic (`src/dictionary/format/mod.cyr:332`).
 - **[low/small] `parse_cmudict` scans `@freq`/`@region` anywhere on the comment line**, not only at
@@ -48,23 +44,26 @@ Rust crate's output:
 
 ## Test coverage
 
-- **[medium/small] `load_binary_file` blob-fallback path is not exercised on Linux** — `lazy_open`
-  always takes the mmap branch there, so the `file_read_all` fallback (`binary.cyr:308`) is untested.
-  Needs an AGNOS run or a direct `load_binary_file` test.
+- **[medium/small] `lazy_open`'s blob-fallback branch is not exercised on Linux** — `lazy_open`
+  always takes the mmap branch there, so reaching `shbdk_load_binary_file` *through it* needs an
+  AGNOS run. `shbdk_load_binary_file` itself is covered directly since 3.0.4.
 - **[low/small] `from_simple_entries` constructor untested** (`src/dictionary/mod.cyr:132`).
 - **[low/small] Unknown-notation fallthrough arms untested** — `shbdk_notation_name` /
   `shbdk_notation_phoneme_to_str` return 0 for an out-of-range notation tag (`src/notation.cyr:146`).
 
 ## Code quality / tech-debt
 
-- **[low/small] Duplicated cstr-compare helper** — `_shbdk_cstr_cmp` (`detect.cyr:66`) and
-  `_shbdk_wordcmp` (`validate.cyr:31`) are byte-identical. Coexist only because they're differently
-  named; consolidating would couple the two modules (low value).
+- **[low/small] Duplicated cstr-compare helper** — `_shbdk_cstr_cmp` (`detect.cyr`) and
+  `_shbdk_wordcmp` (`validate.cyr`) are byte-identical. Coexist only because they're differently
+  named; consolidating would couple the two modules (low value). 3.0.4 confirmed the coupling is
+  real: detect.cyr is deliberately self-contained (its test links it without the keystone), which is
+  also why it keeps its own insertion sort rather than the shared `_shbdk_msort`.
 - **[low/medium] Scattered NUL-terminated byte-copy helpers** — `_shbdk_dupz`, `_shbdk_bin_dup`, and
   two range-copy variants in `format/mod.cyr` differ only in source addressing. Candidate for one shared
   primitive.
-- **[low/small] Magic buffer sizes / `SHBD` magic bytes are unnamed literals** — `8388608`/`8388607`
-  (three sites), `2097152` (now the size fn), and `83/72/66/68` in `to_binary`. Name them consts.
+- **[low/small] `SHBD` magic bytes are unnamed literals** — `83/72/66/68` in `to_binary`. Name them
+  consts. (The `8388608`/`8388607` buffer sizes became `SHBDK_MAX_FILE_BYTES` in 3.0.4, and the
+  loaders no longer allocate a fixed buffer at all.)
 
 ## Docs
 
@@ -73,6 +72,14 @@ Rust crate's output:
   Partially covered by [consuming-the-distlib.md](../guides/consuming-the-distlib.md).
 
 ## Resolved during the review (not open)
+
+- ~~`merge` / `merge_conservative` share entry pointers where Rust deep-clones~~ — **fixed in
+  3.0.4**: `shbdk_dict_entry_clone` / `shbdk_pronunciation_clone` added and used on both merge
+  paths; regression in `tests/dict.tcyr` proves mutating the merged copy leaves the source alone.
+  See [the P1 sweep](../audit/2026-09-01-p1-sweep.md).
+- ~~`load_binary_file` blob-fallback path is not exercised on Linux~~ — still true for the AGNOS
+  branch specifically, but `shbdk_load_binary_file` itself is now directly covered
+  (`tests/binary.tcyr`: repeated small loads + a missing-file case).
 
 - ~~Docs / memories still described the Rust crate (Rustisms + stale sharding/path-deps)~~ —
   **audited + cleaned** (2026-07-06): CONTRIBUTING rewritten to CYRIUS tooling, ADR-001/002/003

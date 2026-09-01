@@ -25,9 +25,17 @@ fn _shbdk_fmt_line_end(s, off, end): i64 {
 }
 
 # Lowercased NUL-terminated copy of s[start..end).
+#
+# 3.0.4 hardening: clamp an inverted range and check the allocation. alloc()
+# returns 0 for a non-positive or over-ALLOC_MAX size, and the writes below would
+# then land at address 0..n. Every caller today passes start <= end, so this is
+# defence in depth, not a live bug — but the whole point of these helpers is that
+# they are fed offsets computed from untrusted input.
 fn _shbdk_fmt_lower_dup(s, start, end): i64 {
     var n = end - start;
+    if (n < 0) { n = 0; }
     var buf = alloc(n + 1);
+    if (buf == 0) { return 0; }
     var i = 0;
     var c = 0;
     while (i < n) {
@@ -42,10 +50,13 @@ fn _shbdk_fmt_lower_dup(s, start, end): i64 {
     return buf;
 }
 
-# NUL-terminated copy of s[start..end) (no case change).
+# NUL-terminated copy of s[start..end) (no case change). Same 3.0.4 guards as
+# _shbdk_fmt_lower_dup above.
 fn _shbdk_fmt_dup(s, start, end): i64 {
     var n = end - start;
+    if (n < 0) { n = 0; }
     var buf = alloc(n + 1);
+    if (buf == 0) { return 0; }
     var i = 0;
     while (i < n) {
         store8(buf + i, load8(s + start + i));
@@ -383,7 +394,7 @@ fn shbdk_to_cmudict(dict): cstring {
     var wk = 0;
     while (i < n) {
         wk = vec_get(words, i);
-        _shbdk_write_entry_cmudict(sb, str_data(wk), map_get(shbdk_dict_entries(dict), wk));
+        _shbdk_write_entry_cmudict(sb, str_cstr(wk), map_get(shbdk_dict_entries(dict), wk));
         i = i + 1;
     }
     return str_data(str_builder_build(sb));
@@ -404,7 +415,7 @@ fn shbdk_to_cmudict_with_user(dict): cstring {
     while (i < n) {
         wk = vec_get(words, i);
         if (map_has(user, wk) == 0) {
-            _shbdk_write_entry_cmudict(sb, str_data(wk), map_get(base, wk));
+            _shbdk_write_entry_cmudict(sb, str_cstr(wk), map_get(base, wk));
         }
         i = i + 1;
     }
@@ -414,7 +425,7 @@ fn shbdk_to_cmudict_with_user(dict): cstring {
     i = 0;
     while (i < un) {
         wk = vec_get(uwords, i);
-        _shbdk_write_entry_cmudict(sb, str_data(wk), map_get(user, wk));
+        _shbdk_write_entry_cmudict(sb, str_cstr(wk), map_get(user, wk));
         i = i + 1;
     }
     return str_data(str_builder_build(sb));
@@ -503,7 +514,7 @@ fn shbdk_to_ipa(dict): cstring {
     while (i < n) {
         wk = vec_get(words, i);
         entry = map_get(shbdk_dict_entries(dict), wk);
-        str_builder_add_cstr(sb, str_data(wk));
+        str_builder_add_cstr(sb, str_cstr(wk));
         str_builder_add_cstr(sb, " /");
         str_builder_add_cstr(sb, shbdk_phonemes_to_ipa(shbdk_dict_entry_primary_phonemes(entry)));
         str_builder_add_cstr(sb, "/\n");
@@ -516,12 +527,19 @@ fn shbdk_to_ipa(dict): cstring {
 # Load + parse a CMUdict file, or 0 on read / parse error.
 #must_use
 fn shbdk_load_cmudict_file(path): i64 {
-    var buf = alloc(8388608);
-    var n = file_read_all(path, buf, 8388607);
+    # 3.0.4: size the read buffer to the FILE, not to a flat 8 MB. The bump
+    # allocator never frees, so the old fixed alloc burned 8 MB of arena per call
+    # regardless of file size — a process that reloads dictionaries exhausted
+    # memory in a few hundred loads.
+    var size = _shbdk_file_size_of(path);
+    if (size < 0) { return 0; }
+    # SECURITY: fail loud at the ceiling rather than parse a truncated prefix
+    # (a partial dict looks valid). Unchanged policy, now checked up front.
+    if (size >= SHBDK_MAX_FILE_BYTES) { return 0; }
+    var buf = alloc(size + 1);
+    if (buf == 0) { return 0; }
+    var n = file_read_all(path, buf, size);
     if (n < 0) { return 0; }
-    # SECURITY: a read that fills the buffer means the file is >= 8 MB — fail loud
-    # rather than silently parse a truncated prefix (a partial dict that looks valid).
-    if (n >= 8388607) { return 0; }
     store8(buf + n, 0);
     return shbdk_parse_cmudict(buf);
 }

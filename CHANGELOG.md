@@ -1,5 +1,93 @@
 # Changelog
 
+## [3.0.4] — 2026-09-01
+
+Priority-1 audit sweep: correctness, security hardening, performance, and the two
+parity/portability gaps the audit turned up. No API removals; two new public
+functions and one new public constant. 26 suites / 821 assertions green (was 689) — 132 of them new
+regressions for the defects below.
+
+### Fixed
+
+- **Corrupt text export from any cmudict-backed dictionary (HIGH).** Base-dictionary
+  map keys are `Str` VIEWS into the packed `_cmudict_data` pieces: `str_len` is
+  right, but the bytes are **not NUL-terminated**. `shbdk_to_cmudict`,
+  `shbdk_to_cmudict_with_user`, `shbdk_to_ipa` and both `validate` report builders
+  read those keys with `str_data()` and handed them to cstr APIs, which ran to the
+  next NUL — the rest of the ~22 KB piece. `shbdk_to_cmudict(shbdk_dict_english())`
+  emitted **128,695,456 bytes instead of 299,744**, every word followed by the
+  packed tail of its shard. Six call sites now use `str_cstr()`. The tests missed
+  it because they only ever exported dictionaries built by `parse_cmudict`, whose
+  keys *are* NUL-terminated.
+- **Stack overflow in `prefix_search` on a long word (HIGH, DoS).**
+  `_shbdk_trie_collect` recursed once per path byte, so its stack depth was the
+  word length — attacker-controlled (`from_binary` accepts u16-length words;
+  `parse_cmudict` has no limit at all). A ~63 KB word already exhausted the 8 MB
+  stack: a corrupt `.bin` plus one `prefix_search` was a reliable SIGSEGV. The walk
+  is now iterative over preallocated frame arrays; a 2 MB word is fine.
+- **`shbdk_lazy_open` had no file-size ceiling (MEDIUM, DoS).** The non-mmap loaders
+  always capped at 8 MB and failed loud; the mmap path did not, so a huge or sparse
+  file was mapped whole and fed to a decode loop whose length is proportional to
+  the blob. Now capped identically.
+- **`lazy.cyr` used a raw `syscall(8, …)` for `lseek` (MEDIUM, portability).** #8 is
+  `lseek` only on x86-64 Linux/macOS — on aarch64 Linux it is a different call, and
+  on AGNOS `lseek` is #58, so the mmap path misbehaved off x86-64. It now uses
+  io.cyr's `xlseek`, whose `SYS_LSEEK` is resolved per target.
+- **`merge` / `merge_conservative` aliased entries (MEDIUM, parity).** Both inserted
+  the source's `ShbdkDictEntry` pointer where Rust inserts `entry.clone()`, so
+  after `a.merge(b)` an `add_pronunciation` through either dictionary mutated both.
+  Entries are now deep-cloned. (Was the top open item in `docs/development/backlog.md`.)
+
+### Changed
+
+- **Dictionary-scale sorts are O(n log n) (performance).** `_shbdk_sort_strs`
+  (mod.cyr) and `_shbdk_sort_by_word` (validate.cyr) were insertion sorts running
+  over every dictionary key — ~56M byte-wise compares for the 10,617-entry built-in
+  dict. Both now share one stable bottom-up merge sort, `_shbdk_msort`, in the
+  keystone. Ordering and stability are unchanged. `detect.cyr`'s sort stays an
+  insertion sort on purpose: it is self-contained by design (its test links it
+  without the keystone) and sorts a handful of language codes.
+- **File loaders size their buffer to the file.** `shbdk_load_cmudict_file` and
+  `shbdk_load_binary_file` each allocated a flat 8 MB read buffer per call out of a
+  bump allocator that never frees — a few hundred reloads exhausted memory
+  regardless of file size. The 8 MB ceiling is unchanged (and now the named
+  `SHBDK_MAX_FILE_BYTES`), but it is checked up front against the real size.
+- **`prefix_search` sizes its path buffer to the trie.** It allocated a flat
+  `prefix + 65536` bytes per call — 64 KB of permanent arena for every
+  autocomplete keystroke — while *still* silently dropping any longer word. The
+  trie now tracks its longest word (`PrefixTrie` grew to 24 bytes) and the buffer
+  is exact: nothing is dropped, and a normal dictionary needs ~30 bytes.
+- **`detect_script` decodes the word once.** It re-walked the word's UTF-8 for each
+  of varna's 19 scripts and heap-allocated an out-cell per walk; it now decodes
+  once into a vec and the out-cell is a stack slot.
+
+### Added
+
+- **`shbdk_dict_entry_clone` / `shbdk_pronunciation_clone`** — deep copies (Rust's
+  derived `Clone`), used by the merge fix and useful to consumers directly.
+- **Hardening across the allocation and callback paths** (the zero-panic contract):
+  every input-proportional `alloc()` is checked for the 0 that `alloc` returns on
+  failure rather than writing through it; the byte-range copy helpers clamp an
+  inverted range; `shbdk_to_binary` fails as an empty `Str` and
+  `shbdk_save_binary_file` refuses to write it; a 0 heteronym resolver or 0 G2P
+  `predict_fp` no longer becomes an indirect call to address 0; and
+  `shbdk_dict_lookup_entry(d, 0)` returns "not found" instead of dereferencing null.
+- **`to_cmudict` / `to_ipa` benchmarks.** The sorted-export path was unbenched,
+  which is how both defects above survived three releases.
+
+### Performance (10,617-entry built-in English dictionary)
+
+| operation | 3.0.3 | 3.0.4 |
+|---|---|---|
+| `to_cmudict` | 1,780 ms / 539 MB arena / 128 MB output | 18 ms / 2 MB / 300 KB output |
+| `to_ipa` | 1,892 ms / 540 MB arena | 18 ms / 2.6 MB |
+| `to_pls` | 873 ms | 25 ms |
+| `dict.validate()` | 317 ms / 67 MB arena | 56 ms / 3.4 MB |
+| `prefix_search` ×100 | 16.1 ms / 7.0 MB arena | 6.3 ms / 0.8 MB |
+| whole probe run, total arena | 1,194 MB | 48 MB |
+
+Lookup is unchanged at ~128 ns (hit) / ~153 ns (miss).
+
 ## [3.0.3] — 2026-08-31
 
 Toolchain + dependency refresh to the current AGNOS chain. One mechanical source
