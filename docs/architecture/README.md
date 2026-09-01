@@ -6,4 +6,8 @@ Not decisions (those live in [`../adr/`](../adr/)) and not guides (those live in
 
 ## Items
 
-_Empty. Add a numbered entry (`001-kebab-case-title.md`) the first time the code has a non-obvious invariant a reader can't derive. Do not write entries for decisions — those are ADRs._
+- [001 — The phoneme↔IPA bridge, and why `dict.validate()` reports so much](001-phoneme-ipa-bridge-and-validation.md)
+  — the canonical `phoneme_to_ipa` rendering vs the lenient `ipa_to_phoneme` parser, and why validating
+  the built-in English dictionary against varna's `en` inventory flags 5,468 of 10,617 entries.
+
+Add the next numbered entry (`002-kebab-case-title.md`) the next time the code has a non-obvious invariant a reader can't derive. Do not write entries for decisions — those are ADRs.

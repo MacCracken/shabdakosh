@@ -1,0 +1,54 @@
+# quickstart.cyr — the smallest useful shabdakosh program: look a word up in the
+# built-in English dictionary and render its pronunciation in each notation.
+#
+# Build + run from the repository root:
+#     cyrius build docs/examples/quickstart.cyr build/quickstart && ./build/quickstart
+#
+# Include order is the crate's tier order and the entry file owns it — modules
+# never include each other. The svara chain comes first (SVARA_PH_* phoneme
+# identities); stdlib folds auto-resolve from cyrius.cyml [deps].
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/notation.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+
+# println dispatches on the STATIC return type, so a cstr-returning expression
+# must be typed `cstring` or it prints as a pointer address. This one-liner is
+# the idiomatic way to say "treat this i64 as a cstring".
+fn say(s: cstring): i64 { return println(s); }
+
+fn main(): i64 {
+    alloc_init();                       # MUST run before any heap use
+
+    var dict = shbdk_dict_english();    # 10,617 entries from the generated data
+
+    # lookup() returns the PRIMARY pronunciation as a vec of svara phoneme
+    # ordinals, or 0 when the word is absent. That vec IS the interchange format
+    # every AGNOS consumer speaks (it matches svara's PhonemeEvent contract).
+    var phonemes = shbdk_dict_lookup(dict, "hello");
+    if (phonemes == 0) {
+        say("not in the dictionary");
+        return 1;
+    }
+
+    say(shbdk_notation_render(SHBDK_NOTATION_IPA, phonemes));       # həloʊ
+    say(shbdk_notation_render(SHBDK_NOTATION_ARPABET, phonemes));   # HH AH0 L OW1
+    say(shbdk_notation_render(SHBDK_NOTATION_XSAMPA, phonemes));    # h @ l oU
+
+    # Lookup is case-insensitive (the key is lowercased), and a miss is 0 —
+    # never an error code, never a panic.
+    say(shbdk_notation_render(SHBDK_NOTATION_IPA, shbdk_dict_lookup(dict, "WORLD")));
+    if (shbdk_dict_lookup(dict, "zzzznotaword") == 0) { say("miss -> 0, as expected"); }
+    return 0;
+}
+
+var _rc = main();
+syscall(60, _rc);

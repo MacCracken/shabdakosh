@@ -1,5 +1,83 @@
 # Changelog
 
+## [3.0.5] — 2026-09-01
+
+Backlog sweep. Every actionable item on `docs/development/backlog.md` is now
+closed — two parity gaps against `rust-old/`, three test-coverage gaps, three
+tech-debt items and the empty examples directory — plus one further parity gap
+found while closing them. The only entries left open are the two gated on
+upstream Cyrius const-eval (`static_dict` perfect hash, then retiring the
+oracle), one AGNOS-only branch that Linux cannot reach, and one newly-raised
+cross-crate decision that needs an ADR. 26 suites / 873 assertions green
+(was 821).
+
+### Fixed
+
+- **`@freq` is emitted in Rust's `Display` shape.** `to_cmudict` wrote six fixed
+  decimals (`@freq=0.500000`); Rust writes `{freq}`, the shortest text that
+  round-trips (`0.5`, `0.85`, `1`, `0`). Trailing zeros and a bare trailing `.`
+  are now trimmed. *(bayan's Grisu2 writer was the obvious alternative and is
+  worse here: it is shortest-or-**near**-shortest, and the stdlib's `f64_parse`
+  lands 1 ULP off on values like `0.85`, so the pair emits
+  `0.8500000000000001`. Fixed-6 rounding absorbs that.)*
+- **`@freq` / `@region` are recognized only at whitespace-token starts.** Rust
+  does `comment.split_whitespace()` then `token.strip_prefix("@freq=")`; the port
+  scanned for `@` anywhere on the comment line, so it accepted
+  `;;; note@freq=0.5`, which Rust ignores. The comment is now tokenized first.
+- **VT and FF count as whitespace in the CMUdict parser.** `_shbdk_fmt_is_ws`
+  covered space/tab/CR but not VT (11) or FF (12), which Rust's
+  `trim()` / `split_whitespace()` do treat as whitespace — so `CAT\x0bK AE T`
+  tokenized differently from the oracle. Same defect class as the `notation.cyr`
+  tokenizer fixed at 3.0.0; this second copy was overlooked then. *(Found while
+  closing the item above, not previously on the backlog.)*
+
+### Changed
+
+- **One shared NUL-terminated copy primitive.** `shbdk_copyz` (`src/error.cyr`)
+  replaces five near-identical helpers — `_shbdk_fmt_dup`,
+  `_shbdk_fmt_lower_dup`, `_shbdk_bin_dup`, `_shbdk_trie_dup_n`, `_shbdk_dupz`
+  and `_shbdk_substr_cstr` — which differed only in how they addressed the
+  source, and which disagreed about the allocation-failure sentinel (`0` vs
+  `""`, where a `0` would have been dereferenced by several callers). They are
+  now one-line wrappers over a primitive that clamps a negative length and
+  uniformly returns `""`.
+- **One shared cstring comparator.** `shbdk_cstrcmp` (`src/error.cyr`) replaces
+  the byte-identical `_shbdk_cstr_cmp` (detect.cyr) and `_shbdk_wordcmp`
+  (validate.cyr). The backlog had kept them apart because sharing would couple
+  two sibling modules; that no longer applies now L0 hosts the shared primitives
+  — both modules depend on L0, not on each other.
+- **`SHBD` magic bytes are named** — `SHBDK_BIN_MAGIC_S/H/B/D` instead of bare
+  `83/72/66/68` literals at both the write and the read site.
+
+### Added
+
+- **`docs/examples/` is no longer empty** (it held only a `.gitkeep` while
+  CLAUDE.md advertised runnable examples). Two programs that build and run from
+  the repository root, plus a README with the build lines and the five things
+  they exist to demonstrate:
+  - `quickstart.cyr` — open the built-in dictionary, look a word up, render it
+    as IPA / ARPABET / X-SAMPA.
+  - `roundtrip.cyr` — build a dictionary, look up, apply and remove a user
+    override, round-trip through CMUdict text, IPA text, JSON, PLS, SSML and the
+    binary format (in memory and on disk), then prefix-search and coverage over
+    the built-in dictionary.
+- **Test coverage for the three gaps the backlog listed** (+52 assertions):
+  `from_simple_entries` (including the parity detail that it stores keys
+  verbatim where `insert` lowercases); the `#[non_exhaustive]` fallthrough arms
+  for an unknown notation tag; and every reachable `lazy_open` failure path plus
+  the invariant its untestable branch must preserve — `lazy_open` and
+  `load_binary_file` decode the same file to the same dictionary.
+- **[Architecture note 001](docs/architecture/001-phoneme-ipa-bridge-and-validation.md)**
+  — the phoneme↔IPA bridge, and why `shbdk_dict_validate(shbdk_dict_english())`
+  reports 5,468 of 10,617 entries as invalid. Measured and attributed: varna
+  spells affricates with the tie bar (`t͡ʃ`) while this crate emits the bare
+  `tʃ` (1,070 entries); ARPABET `IY` maps to `SVARA_PH_VOWEL_E` → IPA `e` rather
+  than `iː` (2,306); and varna's `en` inventory has no NURSE vowel and only two
+  of the five English diphthongs (3,358). **Not a port defect** — `rust-old/`
+  behaves identically — so closing the one part that is ours would be a
+  deliberate divergence from the oracle and needs an ADR first. Tracked on the
+  backlog; no behaviour changed in this release.
+
 ## [3.0.4] — 2026-09-01
 
 Priority-1 audit sweep: correctness, security hardening, performance, and the two

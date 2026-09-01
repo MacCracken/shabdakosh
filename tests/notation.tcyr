@@ -112,5 +112,22 @@ assert_eq(vec_len(vtp), 2, "VT splits into K, AE");
 assert_eq(vec_get(vtp, 0), SVARA_PH_PLOSIVE_K, "vt[0] K");
 assert_eq(vec_get(vtp, 1), SVARA_PH_VOWEL_ASH, "vt[1] AE");
 
+# ================================================================
+# 3.0.5 backlog: the #[non_exhaustive] fallthrough arms were untested. Every
+# dispatch on a notation tag has a catch-all (the Rust enum is non_exhaustive,
+# so the port must stay additive); an out-of-range tag must degrade quietly,
+# never crash or fall into another notation's table.
+test_group("unknown notation tag falls through");
+var UNKNOWN = 99;
+assert_eq(shbdk_notation_name(UNKNOWN), 0, "name -> 0 (no such notation)");
+assert_eq(shbdk_notation_phoneme_to_str(UNKNOWN, SVARA_PH_PLOSIVE_K), 0, "phoneme_to_str -> 0");
+assert_eq(shbdk_notation_str_to_phoneme(UNKNOWN, "K"), SHBDK_PH_NONE, "str_to_phoneme -> NONE");
+assert_eq(vec_len(shbdk_notation_parse(UNKNOWN, "K AE T")), 0, "parse -> no phonemes");
+assert_streq(shbdk_notation_render(UNKNOWN, _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH,
+    SVARA_PH_PLOSIVE_T)), "", "render -> empty string");
+# A negative tag takes the same path (tags are plain ints, not a checked enum).
+assert_eq(shbdk_notation_name(0 - 1), 0, "negative tag -> 0");
+assert_eq(shbdk_notation_str_to_phoneme(0 - 1, "K"), SHBDK_PH_NONE, "negative tag -> NONE");
+
 var rc = assert_summary();
 syscall(60, rc);

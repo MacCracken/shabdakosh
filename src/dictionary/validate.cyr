@@ -16,34 +16,7 @@
 # ---- small helpers -----------------------------------------------------------
 # Owned NUL-terminated copy of a cstring (Rust String::from).
 fn _shbdk_dupz(s): cstring {
-    var n = strlen(s);
-    var out = alloc(n + 1);
-    if (out == 0) { return ""; }   # 3.0.4: alloc failure -> empty, never a null write
-    var i = 0;
-    while (i < n) {
-        store8(out + i, load8(s + i));
-        i = i + 1;
-    }
-    store8(out + n, 0);
-    return out;
-}
-
-# Lexicographic byte compare: -1 if a<b, 0 if equal, 1 if a>b.
-fn _shbdk_wordcmp(a, b): i64 {
-    var i = 0;
-    var ca = 0;
-    var cb = 0;
-    while (1 == 1) {
-        ca = load8(a + i);
-        cb = load8(b + i);
-        if (ca != cb) {
-            if (ca < cb) { return (0 - 1); }
-            return 1;
-        }
-        if (ca == 0) { return 0; }
-        i = i + 1;
-    }
-    return 0;
+    return shbdk_copyz(s, strlen(s));
 }
 
 # Is int x present in a vec of ints?
@@ -138,7 +111,7 @@ fn shbdk_phonotactic_report_violation_count(r): i64 { return vec_len(load64(r + 
 # Comparator for records carrying their `word` cstr at byte offset 0
 # (ShbdkInvalidEntry / ShbdkPhonotacticViolation): 1 if a <= b by word.
 fn _shbdk_word_rec_le(a, b): i64 {
-    if (_shbdk_wordcmp(load64(a), load64(b)) == 1) { return 0; }
+    if (shbdk_cstrcmp(load64(a), load64(b)) == 1) { return 0; }
     return 1;
 }
 

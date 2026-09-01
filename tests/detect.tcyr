@@ -2,6 +2,7 @@
 # Script + language detection over varna's script ranges. varna links standalone.
 
 include "lib/varna.cyr"
+include "src/error.cyr"          # L0: shbdk_cstrcmp
 include "src/dictionary/detect.cyr"
 
 alloc_init();
@@ -34,7 +35,7 @@ assert_eq(_has(hl, "es"), 1, "latin hints include es");
 assert_eq(_has(hl, "fr"), 1, "latin hints include fr");
 assert_eq(_has(hl, "de"), 1, "latin hints include de");
 # sorted ascending: first code <= second
-assert_eq(_shbdk_cstr_cmp(vec_get(hl, 0), vec_get(hl, 1)), (0 - 1), "hints sorted ascending");
+assert_eq(shbdk_cstrcmp(vec_get(hl, 0), vec_get(hl, 1)), (0 - 1), "hints sorted ascending");
 
 # ================================================================
 test_group("detect_language_hint — Devanagari + empty");

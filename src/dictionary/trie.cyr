@@ -48,15 +48,7 @@ fn _shbdk_trie_get_or_add_child(node, byte): i64 {
 
 # Copy buf[0..n) into a fresh NUL-terminated cstr.
 fn _shbdk_trie_dup_n(buf, n): i64 {
-    var out = alloc(n + 1);
-    if (out == 0) { return ""; }   # 3.0.4: alloc failure -> empty word, never a null write
-    var i = 0;
-    while (i < n) {
-        store8(out + i, load8(buf + i));
-        i = i + 1;
-    }
-    store8(out + n, 0);
-    return out;
+    return shbdk_copyz(buf, n);
 }
 
 #must_use

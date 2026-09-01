@@ -1,0 +1,144 @@
+# roundtrip.cyr — end-to-end tour of the shabdakosh surface: build a dictionary,
+# look words up, override with a user entry, and round-trip through every
+# supported format (CMUdict text, IPA text, JSON, PLS, SSML, binary, on disk).
+#
+# Build + run from the repository root:
+#     cyrius build docs/examples/roundtrip.cyr build/roundtrip && ./build/roundtrip
+#
+# Every step below asserts nothing — it PRINTS, so you can see the shapes. The
+# suites in tests/ are where the invariants are pinned down.
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/notation.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/coverage.cyr"
+include "src/dictionary/trie.cyr"
+include "src/dictionary/format/mod.cyr"
+include "src/dictionary/format/json.cyr"
+include "src/dictionary/format/pls.cyr"
+include "src/dictionary/format/ssml.cyr"
+include "src/dictionary/format/binary.cyr"
+
+fn say(s: cstring): i64 { return println(s); }
+fn head(s): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "\n== ");
+    str_builder_add_cstr(sb, s);
+    return say(str_data(str_builder_build(sb)));
+}
+
+# Print "label = <int>".
+fn say_n(label, n): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, label);
+    str_builder_add_cstr(sb, " = ");
+    str_builder_add_int(sb, n);
+    return say(str_data(str_builder_build(sb)));
+}
+
+# Print "label: <cstr>".
+fn say_s(label, v): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, label);
+    str_builder_add_cstr(sb, ": ");
+    str_builder_add_cstr(sb, v);
+    return say(str_data(str_builder_build(sb)));
+}
+
+fn phon3(a, b, c): i64 {
+    var v = vec_new();
+    vec_push(v, a);
+    vec_push(v, b);
+    vec_push(v, c);
+    return v;
+}
+
+fn main(): i64 {
+    alloc_init();
+
+    # ---- 1. build -------------------------------------------------------
+    # Three ways in: english() (the generated 10.6k base dict), english_minimal()
+    # (~29 function words, for tests and memory-tight builds), or new() + insert.
+    head("build");
+    var dict = shbdk_dict_new();
+    shbdk_dict_set_language(dict, "en");
+    shbdk_dict_insert(dict, "cat", phon3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+    shbdk_dict_insert(dict, "dog", phon3(SVARA_PH_PLOSIVE_D, SVARA_PH_VOWEL_OPEN_O, SVARA_PH_PLOSIVE_G));
+    say_n("base entries", shbdk_dict_len(dict));
+
+    # ---- 2. look up -----------------------------------------------------
+    # lookup() gives the primary pronunciation; lookup_all() gives every variant
+    # (heteronyms), ordered by frequency descending.
+    head("look up");
+    say_s("cat (IPA)", shbdk_notation_render(SHBDK_NOTATION_IPA, shbdk_dict_lookup(dict, "cat")));
+    say_s("cat (ARPABET)", shbdk_notation_render(SHBDK_NOTATION_ARPABET, shbdk_dict_lookup(dict, "cat")));
+    say_n("variants of cat", shbdk_dict_entry_len(shbdk_dict_lookup_entry(dict, "cat")));
+
+    # ---- 3. user overlay ------------------------------------------------
+    # The overlay always wins over the base layer, and is what you serialize
+    # separately when you want a user's corrections to survive a base-dict update.
+    head("user overlay");
+    shbdk_dict_insert_user(dict, "cat", phon3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_OPEN_A, SVARA_PH_PLOSIVE_T));
+    say_s("cat after override", shbdk_notation_render(SHBDK_NOTATION_IPA, shbdk_dict_lookup(dict, "cat")));
+    say_n("removed", shbdk_dict_remove_user(dict, "cat"));
+    say_s("cat after removal", shbdk_notation_render(SHBDK_NOTATION_IPA, shbdk_dict_lookup(dict, "cat")));
+
+    # ---- 4. text formats ------------------------------------------------
+    # CMUdict is the canonical text form; `;;; @freq=` / `;;; @region=` comment
+    # lines annotate the NEXT entry.
+    head("CMUdict round-trip");
+    var cmu = shbdk_to_cmudict(dict);
+    say_s("emitted", cmu);
+    var reparsed = shbdk_parse_cmudict(cmu);
+    say_n("re-parsed entries", shbdk_dict_len(reparsed));
+
+    head("IPA text round-trip");
+    var ipa_text = shbdk_to_ipa(dict);
+    say_s("emitted", ipa_text);
+    say_n("re-parsed entries", shbdk_dict_len(shbdk_parse_ipa(ipa_text)));
+
+    # ---- 5. JSON --------------------------------------------------------
+    # Phonemes are SVARA_PH_* integer ordinals — the CYRIUS-native schema, not
+    # the old Rust crate's enum-string form. See ADR 004.
+    head("JSON round-trip");
+    var js = shbdk_to_json(dict);
+    say_s("emitted", js);
+    say_n("re-parsed entries", shbdk_dict_len(shbdk_from_json(js)));
+
+    # ---- 6. speech-synthesis interchange --------------------------------
+    head("PLS / SSML");
+    say_s("PLS", shbdk_to_pls(dict, "en"));
+    say_s("SSML", shbdk_to_ssml_phoneme("cat", shbdk_dict_lookup(dict, "cat")));
+
+    # ---- 7. binary + disk ------------------------------------------------
+    # to_binary is the compact wire form; save/load go through the same codec,
+    # and lazy_open mmaps the file instead of reading it.
+    head("binary + disk");
+    var blob = shbdk_to_binary(dict);
+    say_n("blob bytes", str_len(blob));
+    say_n("decoded entries", shbdk_dict_len(shbdk_from_binary(blob)));
+    say_n("save rc", shbdk_save_binary_file(dict, "/tmp/shabdakosh_example.bin"));
+    say_n("loaded entries", shbdk_dict_len(shbdk_load_binary_file("/tmp/shabdakosh_example.bin")));
+
+    # ---- 8. queries over the built-in dictionary -------------------------
+    head("prefix search + coverage (built-in dictionary)");
+    var big = shbdk_dict_english();
+    say_n("built-in entries", shbdk_dict_len(big));
+    say_n("words starting 'pre'", vec_len(shbdk_dict_prefix_search(big, "pre")));
+    var report = shbdk_dict_coverage(big, "the quick brown fox jumps over the lazy dog");
+    say_n("tokens", shbdk_coverage_total_tokens(report));
+    say_n("covered", shbdk_coverage_covered_tokens(report));
+    say_n("uncovered distinct", shbdk_coverage_uncovered_count(report));
+    return 0;
+}
+
+var _rc = main();
+syscall(60, _rc);

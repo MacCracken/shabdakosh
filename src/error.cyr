@@ -4,6 +4,9 @@
 # `include` each other — the entry file (src/main.cyr / tests/*.tcyr) orders
 # includes; the stdlib (incl. sakshi) auto-resolves from cyrius.cyml [deps].
 #
+# Also the home of the crate's shared L0 primitives (SHBDK_PH_NONE, shbdk_copyz)
+# — see the sections below.
+#
 # Ports rust-old/src/error.rs (the `ShabdakoshError` enum — #[non_exhaustive],
 # 4 variants). Rust carried a String payload per variant + a thiserror Display;
 # the Cyrius port drops the payloads and builds on sakshi (साक्षी — the AGNOS
@@ -34,6 +37,64 @@ var SHBDK_ERR_UNKNOWN_LANGUAGE   = 0x0104;   # UnknownLanguage(String)
 # base so every module (arpabet, ipa, ...) shares ONE definition (flat namespace).
 # ================================================================
 var SHBDK_PH_NONE = (0 - 1);
+
+# ================================================================
+# Shared L0 primitive: NUL-terminated byte copy.
+#
+# Lives here for the same reason SHBDK_PH_NONE does — error.cyr is the L0 base
+# every build/test entry includes first, so this is the one place a helper can
+# sit without coupling two sibling modules or breaking a module's independence
+# (detect.cyr and notation.cyr link without the dictionary keystone, and
+# binary.cyr links without the text-format module).
+#
+# 3.0.5: collapses five near-identical copies — _shbdk_fmt_dup and
+# _shbdk_fmt_lower_dup (format/mod.cyr), _shbdk_bin_dup (format/binary.cyr),
+# _shbdk_trie_dup_n (trie.cyr), _shbdk_dupz (validate.cyr) and
+# _shbdk_substr_cstr (notation.cyr) — which differed only in how they addressed
+# the source. They also disagreed on the alloc-failure sentinel (0 vs ""), and
+# a 0 would have been dereferenced by several callers; "" is now uniform.
+# ================================================================
+# Fresh NUL-terminated copy of the `len` bytes at `src`. A negative length is
+# clamped to 0; on allocation failure returns "" (a readable empty cstr), never 0.
+#
+# CALLER NOTE: the failure sentinel is a string LITERAL, i.e. read-only memory.
+# Anything that writes back into the returned buffer (only _shbdk_fmt_lower_dup
+# does today) must drive its loop off the copy's own NUL rather than the length
+# it asked for, so the failure path stays a no-op instead of storing into rodata.
+#must_use
+fn shbdk_copyz(src, len): cstring {
+    if (len < 0) { len = 0; }
+    var out = alloc(len + 1);
+    if (out == 0) { return ""; }
+    memcpy(out, src, len);
+    store8(out + len, 0);
+    return out;
+}
+
+# Lexicographic byte compare of two cstrings: -1 if a<b, 0 if equal, 1 if a>b.
+#
+# 3.0.5: was duplicated byte-for-byte as _shbdk_cstr_cmp (detect.cyr) and
+# _shbdk_wordcmp (validate.cyr). The backlog kept them apart because sharing
+# would have coupled two sibling modules — but L0 is not a sibling, so hoisting
+# it here costs nothing beyond detect.tcyr gaining the error.cyr include that
+# every other entry already has.
+#must_use
+fn shbdk_cstrcmp(a, b): i64 {
+    var i = 0;
+    var ca = 0;
+    var cb = 0;
+    while (1 == 1) {
+        ca = load8(a + i);
+        cb = load8(b + i);
+        if (ca != cb) {
+            if (ca < cb) { return (0 - 1); }
+            return 1;
+        }
+        if (ca == 0) { return 0; }
+        i = i + 1;
+    }
+    return 0;
+}
 
 # ================================================================
 # Constructors — pack the shabda code + a sakshi category into an i64 error.

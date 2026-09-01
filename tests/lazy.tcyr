@@ -18,6 +18,9 @@ include "src/dictionary/lazy.cyr"
 
 alloc_init();
 
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+
 fn _sat(s, off, sub): i64 {
     var i = 0;
     var c = 0;
@@ -77,6 +80,47 @@ test_group("lazy debug contains 'LazyDict'");
 var dbg = shbdk_lazy_debug(lazy);
 assert_eq(_find(dbg, "LazyDict"), 1, "debug contains LazyDict");
 assert_eq(_find(dbg, "entries: 29"), 1, "debug reports 29 entries");
+
+# ================================================================
+# 3.0.5 backlog: lazy_open's non-happy paths were untested, and its
+# file_read_all fallback is unreachable on Linux (mmap always succeeds there),
+# so it could only ever be covered indirectly.
+#
+# Probed while writing this: opening a DIRECTORY does not reach the fallback
+# either — xlseek on a directory fd returns -22 (EINVAL), so open() bails at the
+# size check first. The fallback stays AGNOS-only, as the backlog says. What IS
+# testable is the contract the fallback must preserve: both paths must decode
+# the same file to the same dictionary. That is asserted below.
+test_group("lazy_open error paths");
+assert_eq(shbdk_lazy_open("/tmp/nonexistent_shbdk_lazy_xyz.bin"), 0, "missing file -> 0");
+assert_eq(file_write_all("/tmp/shbdk_lazy_empty.bin", "", 0), 0, "empty file written");
+assert_eq(shbdk_lazy_open("/tmp/shbdk_lazy_empty.bin"), 0, "zero-length file -> 0");
+assert_gt(file_write_all("/tmp/shbdk_lazy_junk.bin", "NOTSHBD junk", 12), 0, "junk file written");
+assert_eq(shbdk_lazy_open("/tmp/shbdk_lazy_junk.bin"), 0, "bad magic -> 0");
+assert_eq(shbdk_lazy_open("/tmp"), 0, "a directory -> 0 (not a crash)");
+
+test_group("lazy_open (mmap) and load_binary_file (blob) agree");
+var bd = shbdk_dict_new();
+shbdk_dict_set_language(bd, "en");
+shbdk_dict_insert(bd, "cat", _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
+shbdk_dict_insert(bd, "dog", _v1(SVARA_PH_PLOSIVE_D));
+shbdk_dict_insert_user(bd, "cat", _v1(SVARA_PH_PLOSIVE_T));
+assert_eq(shbdk_save_binary_file(bd, "/tmp/shbdk_lazy_agree.bin"), 0, "blob written");
+var viammap = shbdk_lazy_open("/tmp/shbdk_lazy_agree.bin");
+var viablob = shbdk_load_binary_file("/tmp/shbdk_lazy_agree.bin");
+assert_neq(viammap, 0, "mmap path decoded");
+assert_neq(viablob, 0, "blob path decoded");
+assert_eq(shbdk_dict_len(viammap), shbdk_dict_len(viablob), "same base entry count");
+assert_eq(shbdk_dict_user_len(viammap), shbdk_dict_user_len(viablob), "same overlay count");
+assert_streq(shbdk_dict_language(viammap), shbdk_dict_language(viablob), "same language");
+assert_eq(vec_get(shbdk_dict_lookup(viammap, "dog"), 0),
+          vec_get(shbdk_dict_lookup(viablob, "dog"), 0), "same base pronunciation");
+assert_eq(vec_get(shbdk_dict_lookup(viammap, "cat"), 0),
+          vec_get(shbdk_dict_lookup(viablob, "cat"), 0), "same overlay pronunciation");
+assert_streq(shbdk_lazy_debug(viammap), shbdk_lazy_debug(viablob), "same debug rendering");
+# The mapping is unmapped inside open(), so the decoded dict must not point into
+# it — reading after the unmap would fault if any Str still aliased the mapping.
+assert_eq(shbdk_dict_len(viammap), 2, "decoded dict survives the munmap");
 
 var rc = assert_summary();
 syscall(60, rc);

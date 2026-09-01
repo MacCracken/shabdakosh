@@ -180,5 +180,63 @@ while (li < 8) {
 # 8 loads of a ~50-byte file: was >= 64 MB, must now be a small fraction of that.
 assert_lt(alloc_used() - before, 1048576, "8 small loads use < 1 MB of arena (was 64 MB)");
 
+# ================================================================
+# 3.0.5 backlog — parity gaps closed against rust-old/.
+
+# (1) to_cmudict wrote `@freq` with 6 fixed decimals; Rust writes `{freq}`
+# (Display), the shortest text that round-trips.
+test_group("@freq emitted in Rust Display shape");
+fn _freq_dump(txt): cstring {
+    return shbdk_to_cmudict(shbdk_parse_cmudict(txt));
+}
+var f5 = _freq_dump(";;; @freq=0.5\ncat  K AE1 T\n");
+assert_eq(_find(f5, ";;; @freq=0.5\n"), 1, "0.5 emits as 0.5 (was 0.500000)");
+assert_eq(_find(f5, "0.500000"), 0, "no fixed-6 padding");
+var f85 = _freq_dump(";;; @freq=0.85\ncat  K AE1 T\n");
+assert_eq(_find(f85, ";;; @freq=0.85\n"), 1, "0.85 emits as 0.85");
+var f1 = _freq_dump(";;; @freq=1.0\ncat  K AE1 T\n");
+assert_eq(_find(f1, ";;; @freq=1\n"), 1, "1.0 emits as 1 (Rust Display drops .0)");
+var f0 = _freq_dump(";;; @freq=0.0\ncat  K AE1 T\n");
+assert_eq(_find(f0, ";;; @freq=0\n"), 1, "0.0 emits as 0");
+var f125 = _freq_dump(";;; @freq=0.125\ncat  K AE1 T\n");
+assert_eq(_find(f125, ";;; @freq=0.125\n"), 1, "0.125 keeps its significant digits");
+# and it must still re-parse to the same value
+assert_eq(shbdk_pronunciation_frequency(shbdk_dict_entry_primary(
+    shbdk_dict_lookup_entry(shbdk_parse_cmudict(f85), "cat"))),
+    shbdk_pronunciation_frequency(shbdk_dict_entry_primary(
+    shbdk_dict_lookup_entry(shbdk_parse_cmudict(";;; @freq=0.85\ncat  K AE1 T\n"), "cat"))),
+    "trimmed @freq round-trips to the same value");
+
+# (2) Rust does comment.split_whitespace() then token.strip_prefix("@freq="), so
+# an annotation is only recognized at the START of a whitespace token. The port
+# used to scan for '@' anywhere on the comment line.
+test_group("@freq / @region only at whitespace-token starts");
+var emb = shbdk_parse_cmudict(";;; note@freq=0.5\ncat  K AE1 T\n");
+assert_neq(emb, 0, "embedded @freq= is not an annotation (parse still succeeds)");
+assert_eq(shbdk_pronunciation_has_frequency(shbdk_dict_entry_primary(
+    shbdk_dict_lookup_entry(emb, "cat"))), 0, "embedded @freq= ignored, as in Rust");
+var embr = shbdk_parse_cmudict(";;; x@region=XX\ncat  K AE1 T\n");
+assert_neq(embr, 0, "embedded @region=XX is not an annotation (so not an error)");
+assert_eq(shbdk_pronunciation_has_region(shbdk_dict_entry_primary(
+    shbdk_dict_lookup_entry(embr, "cat"))), 0, "embedded @region= ignored");
+# a real token anywhere among other tokens is still picked up
+var multi = shbdk_parse_cmudict(";;; generated  @freq=0.25  @region=GA  ok\ncat  K AE1 T\n");
+assert_neq(multi, 0, "multi-token comment parses");
+var mp = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(multi, "cat"));
+assert_eq(shbdk_pronunciation_has_frequency(mp), 1, "@freq token among others is read");
+assert_eq(shbdk_pronunciation_region(mp), SHBDK_REGION_GA, "@region token among others is read");
+assert_eq(shbdk_parse_cmudict(";;; @freq=abc\ncat  K AE1 T\n"), 0, "real malformed @freq still errors");
+
+# (3) _shbdk_fmt_is_ws was missing VT(11) and FF(12), which Rust's
+# trim()/split_whitespace() treat as whitespace (same defect class as the
+# notation.cyr tokenizer fixed at 3.0.0).
+test_group("VT / FF are whitespace, as in Rust");
+var vt = shbdk_parse_cmudict("cat  K\x0bAE1\x0cT\n");
+assert_neq(vt, 0, "VT/FF separated phonemes parse");
+assert_eq(vec_len(shbdk_dict_lookup(vt, "cat")), 3, "VT/FF split the phoneme tokens");
+var vtrim = shbdk_parse_cmudict("\x0bcat  K AE1 T\x0c\n");
+assert_neq(vtrim, 0, "leading VT / trailing FF are trimmed off the line");
+assert_neq(shbdk_dict_lookup(vtrim, "cat"), 0, "word key has no VT glued to it");
+
 var rc = assert_summary();
 syscall(60, rc);

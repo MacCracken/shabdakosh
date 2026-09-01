@@ -8,7 +8,8 @@
 # CYRIUS strings are cstr byte pointers, so this adds a UTF-8 code-point decoder
 # (Rust got char scalars free from `str::chars()`).
 #
-# Requires: lib/varna.cyr (script_*/registry_*). NAMING: shbdk_/SHBDK_ prefixes.
+# Requires: lib/varna.cyr (script_*/registry_*) and src/error.cyr (shbdk_cstrcmp).
+# NAMING: shbdk_/SHBDK_ prefixes.
 
 # Decode one UTF-8 code point at byte pointer p; writes the scalar to *out_cp and
 # returns bytes consumed (1..4), or 0 at the NUL terminator.
@@ -80,24 +81,6 @@ fn _shbdk_count_cp_in_script(cps, script): i64 {
     return cnt;
 }
 
-# Lexicographic byte compare of two cstrings: -1 if a<b, 0 if equal, 1 if a>b.
-fn _shbdk_cstr_cmp(a, b): i64 {
-    var i = 0;
-    var ca = 0;
-    var cb = 0;
-    while (1 == 1) {
-        ca = load8(a + i);
-        cb = load8(b + i);
-        if (ca != cb) {
-            if (ca < cb) { return (0 - 1); }
-            return 1;
-        }
-        if (ca == 0) { return 0; }
-        i = i + 1;
-    }
-    return 0;
-}
-
 # Membership test: is cstring s present in a vec of cstrings?
 fn _shbdk_vec_has_cstr(v, s): i64 {
     var n = vec_len(v);
@@ -127,7 +110,7 @@ fn _shbdk_sort_cstrs(v): i64 {
         j = i - 1;
         placed = 0;
         while (j >= 0 && placed == 0) {
-            if (_shbdk_cstr_cmp(vec_get(v, j), key) == 1) {
+            if (shbdk_cstrcmp(vec_get(v, j), key) == 1) {
                 vec_set(v, j + 1, vec_get(v, j));
                 j = j - 1;
             } else {

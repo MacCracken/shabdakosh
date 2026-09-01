@@ -16,6 +16,13 @@
 var SHBDK_BIN_VERSION = 1;
 var SHBDK_BIN_HEADER  = 5;
 
+# "SHBD" magic, one byte per const (3.0.5 — these were bare 83/72/66/68 literals
+# at the write site and again at the read site).
+var SHBDK_BIN_MAGIC_S = 83;
+var SHBDK_BIN_MAGIC_H = 72;
+var SHBDK_BIN_MAGIC_B = 66;
+var SHBDK_BIN_MAGIC_D = 68;
+
 # ---- little-endian put helpers (return bytes written) ------------------------
 fn _shbdk_bin_put_u16(buf, off, v): i64 {
     store8(buf + off + 0, v & 255);
@@ -78,19 +85,10 @@ fn _shbdk_bin_get_u64(buf, off): i64 {
     return v;
 }
 
-# NUL-terminated cstr copy of buf[off..off+len). 3.0.4: `len` is a u16 read from
-# an untrusted blob — clamp and check the allocation before writing.
+# NUL-terminated cstr copy of buf[off..off+len). `len` is a u16 read from an
+# untrusted blob; shbdk_copyz (error.cyr) clamps it and checks the allocation.
 fn _shbdk_bin_dup(buf, off, len): i64 {
-    if (len < 0) { len = 0; }
-    var out = alloc(len + 1);
-    if (out == 0) { return 0; }
-    var i = 0;
-    while (i < len) {
-        store8(out + i, load8(buf + off + i));
-        i = i + 1;
-    }
-    store8(out + len, 0);
-    return out;
+    return shbdk_copyz(buf + off, len);
 }
 
 # ---- to_binary ---------------------------------------------------------------
@@ -207,10 +205,10 @@ fn shbdk_to_binary(dict): i64 {
     # from_binary rejects it (len < header) and save_binary_file reports the error.
     var buf = alloc(_shbdk_bin_total_size(dict) + 16);
     if (buf == 0) { return str_new(0, 0); }
-    store8(buf + 0, 83);   # 'S'
-    store8(buf + 1, 72);   # 'H'
-    store8(buf + 2, 66);   # 'B'
-    store8(buf + 3, 68);   # 'D'
+    store8(buf + 0, SHBDK_BIN_MAGIC_S);
+    store8(buf + 1, SHBDK_BIN_MAGIC_H);
+    store8(buf + 2, SHBDK_BIN_MAGIC_B);
+    store8(buf + 3, SHBDK_BIN_MAGIC_D);
     store8(buf + 4, SHBDK_BIN_VERSION);
     var off = 5;
     var lang = shbdk_dict_language(dict);
@@ -323,10 +321,10 @@ fn shbdk_from_binary(data): i64 {
     var buf = str_data(data);
     var len = str_len(data);
     if (len < SHBDK_BIN_HEADER) { return 0; }
-    if (load8(buf + 0) != 83) { return 0; }
-    if (load8(buf + 1) != 72) { return 0; }
-    if (load8(buf + 2) != 66) { return 0; }
-    if (load8(buf + 3) != 68) { return 0; }
+    if (load8(buf + 0) != SHBDK_BIN_MAGIC_S) { return 0; }
+    if (load8(buf + 1) != SHBDK_BIN_MAGIC_H) { return 0; }
+    if (load8(buf + 2) != SHBDK_BIN_MAGIC_B) { return 0; }
+    if (load8(buf + 3) != SHBDK_BIN_MAGIC_D) { return 0; }
     if (load8(buf + 4) != SHBDK_BIN_VERSION) { return 0; }
     var off = 5;
     var dict = shbdk_dict_new();

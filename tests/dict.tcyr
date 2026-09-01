@@ -226,5 +226,33 @@ assert_eq(shbdk_pronunciation_region(cc), SHBDK_REGION_RP, "region copied");
 assert_eq(vec_len(shbdk_pronunciation_phonemes(cc)), 2, "phonemes copied");
 assert_eq(shbdk_pronunciation_has_frequency(cc), 0, "no frequency, as source");
 
+# ================================================================
+# 3.0.5 backlog: from_simple_entries was untested (dictionary/mod.cyr).
+# Parity note: Rust's from_simple_entries collects the keys AS GIVEN — unlike
+# insert(), it does NOT lowercase — so the port must not either.
+test_group("from_simple_entries");
+var simple = map_new_str();
+map_set(simple, str_from("cat"), _v1(SVARA_PH_PLOSIVE_K));
+map_set(simple, str_from("dog"), _v1(SVARA_PH_PLOSIVE_D));
+var sd = shbdk_dict_from_simple_entries(simple);
+assert_eq(shbdk_dict_len(sd), 2, "both words present");
+assert_eq(shbdk_dict_user_len(sd), 0, "user overlay starts empty");
+assert_eq(shbdk_dict_language(sd), 0, "no language set");
+assert_eq(vec_get(shbdk_dict_lookup(sd, "cat"), 0), SVARA_PH_PLOSIVE_K, "cat -> K");
+assert_eq(vec_get(shbdk_dict_lookup(sd, "dog"), 0), SVARA_PH_PLOSIVE_D, "dog -> D");
+assert_eq(shbdk_dict_entry_len(shbdk_dict_lookup_entry(sd, "cat")), 1,
+    "each phoneme vec becomes a single-pronunciation entry");
+assert_eq(shbdk_pronunciation_has_frequency(shbdk_dict_entry_primary(
+    shbdk_dict_lookup_entry(sd, "cat"))), 0, "no frequency metadata");
+# Keys are stored verbatim (Rust does not lowercase here), so a mixed-case key
+# is only reachable through the lookup path's own lowercase gate.
+var mixed = map_new_str();
+map_set(mixed, str_from("CAT"), _v1(SVARA_PH_PLOSIVE_K));
+var md2 = shbdk_dict_from_simple_entries(mixed);
+assert_eq(shbdk_dict_len(md2), 1, "mixed-case key stored verbatim");
+assert_eq(shbdk_dict_lookup(md2, "cat"), 0, "not found lowercased (key was not folded)");
+var emptysimple = shbdk_dict_from_simple_entries(map_new_str());
+assert_eq(shbdk_dict_is_empty(emptysimple), 1, "empty input -> empty dict");
+
 var rc = assert_summary();
 syscall(60, rc);

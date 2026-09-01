@@ -9,9 +9,19 @@
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
 # ---- byte-scan helpers -------------------------------------------------------
+# 1 if byte `c` is ASCII whitespace. Rust's line.trim() / split_whitespace() use
+# Unicode White_Space; this is its full ASCII subset — space(32), tab(9), VT(11),
+# FF(12), CR(13). LF(10) is deliberately absent: it is the line separator here,
+# handled by _shbdk_fmt_line_end (Rust's .lines()).
+#
+# 3.0.5 parity: VT and FF were missing, so `CAT\x0b K AE T` did not tokenize the
+# way Rust's split_whitespace() does. Same defect class as the notation.cyr
+# tokenizer fixed at 3.0.0; this copy was overlooked then.
 fn _shbdk_fmt_is_ws(c): i64 {
     if (c == 32) { return 1; }
     if (c == 9) { return 1; }
+    if (c == 11) { return 1; }
+    if (c == 12) { return 1; }
     if (c == 13) { return 1; }
     return 0;
 }
@@ -24,46 +34,30 @@ fn _shbdk_fmt_line_end(s, off, end): i64 {
     return off;
 }
 
-# Lowercased NUL-terminated copy of s[start..end).
-#
-# 3.0.4 hardening: clamp an inverted range and check the allocation. alloc()
-# returns 0 for a non-positive or over-ALLOC_MAX size, and the writes below would
-# then land at address 0..n. Every caller today passes start <= end, so this is
-# defence in depth, not a live bug — but the whole point of these helpers is that
-# they are fed offsets computed from untrusted input.
+# Lowercased NUL-terminated copy of s[start..end). 3.0.5: the copy is
+# shbdk_copyz (error.cyr) and only the ASCII case-fold stays local.
 fn _shbdk_fmt_lower_dup(s, start, end): i64 {
-    var n = end - start;
-    if (n < 0) { n = 0; }
-    var buf = alloc(n + 1);
-    if (buf == 0) { return 0; }
+    var buf = shbdk_copyz(s + start, end - start);
+    # Walk the COPY's own NUL, not the requested length: on allocation failure
+    # shbdk_copyz hands back the literal "" — read-only memory — and a
+    # length-driven loop would store into it. Terminating on the NUL makes the
+    # failure path a no-op. (Bytes after an embedded NUL are unreachable anyway:
+    # the caller turns this into a Str with str_from, which measures with strlen.)
     var i = 0;
     var c = 0;
-    while (i < n) {
-        c = load8(s + start + i);
+    while (load8(buf + i) != 0) {
+        c = load8(buf + i);
         if (c >= 65) {
-            if (c <= 90) { c = c + 32; }
+            if (c <= 90) { store8(buf + i, c + 32); }
         }
-        store8(buf + i, c);
         i = i + 1;
     }
-    store8(buf + n, 0);
     return buf;
 }
 
-# NUL-terminated copy of s[start..end) (no case change). Same 3.0.4 guards as
-# _shbdk_fmt_lower_dup above.
+# NUL-terminated copy of s[start..end) (no case change).
 fn _shbdk_fmt_dup(s, start, end): i64 {
-    var n = end - start;
-    if (n < 0) { n = 0; }
-    var buf = alloc(n + 1);
-    if (buf == 0) { return 0; }
-    var i = 0;
-    while (i < n) {
-        store8(buf + i, load8(s + start + i));
-        i = i + 1;
-    }
-    store8(buf + n, 0);
-    return buf;
+    return shbdk_copyz(s + start, end - start);
 }
 
 # 1 if s[pos..] begins with cstr `lit`.
@@ -194,43 +188,43 @@ fn shbdk_parse_cmudict(input): i64 {
         if (s >= e) { pos = le + 1; continue; }
 
         # comment / annotation line
+        #
+        # 3.0.5 parity: Rust does `comment.split_whitespace()` then
+        # `token.strip_prefix("@freq=")`, so an annotation is only recognized at the
+        # START of a whitespace-delimited token. This used to scan for '@' anywhere
+        # on the line, which accepted `;;; note@freq=0.5` that Rust rejects (its
+        # token is `note@freq=0.5`, whose prefix is not `@freq=`). Now tokenized.
         if (_shbdk_starts_at(input, s, ";;;") == 1) {
             ti = s + 3;
             while (ti < e) {
-                if (load8(input + ti) == 64) {   # '@'
-                    if (_shbdk_starts_at(input, ti, "@freq=") == 1) {
-                        vs = ti + 6;
-                        ve = vs;
-                        while (ve < e) {
-                            if (_shbdk_fmt_is_ws(load8(input + ve)) == 1) { break; }
-                            ve = ve + 1;
-                        }
-                        # Rust returns Err on a malformed @freq. Parse a bounded,
-                        # NUL-terminated copy of exactly [vs,ve) (so f64_parse can't
-                        # read past the token) and reject any trailing non-float junk.
-                        if (f64_parse_ok(_shbdk_fmt_dup(input, vs, ve), fc) == 0) { return 0; }
-                        if (_shbdk_fmt_all_float_chars(input, vs, ve) == 0) { return 0; }
-                        pending_freq = load64(fc);
-                        ti = ve;
-                    } else {
-                        if (_shbdk_starts_at(input, ti, "@region=") == 1) {
-                            vs = ti + 8;
-                            ve = vs;
-                            while (ve < e) {
-                                if (_shbdk_fmt_is_ws(load8(input + ve)) == 1) { break; }
-                                ve = ve + 1;
-                            }
-                            pending_region = shbdk_region_from_code(_shbdk_fmt_dup(input, vs, ve));
-                            # Rust returns Err on an unknown region code.
-                            if (pending_region == SHBDK_REGION_NONE) { return 0; }
-                            ti = ve;
-                        } else {
-                            ti = ti + 1;
-                        }
-                    }
-                } else {
+                while (ti < e) {
+                    if (_shbdk_fmt_is_ws(load8(input + ti)) == 0) { break; }
                     ti = ti + 1;
                 }
+                if (ti >= e) { break; }
+                # token is [ti, ve): up to the next whitespace or end of line
+                ve = ti;
+                while (ve < e) {
+                    if (_shbdk_fmt_is_ws(load8(input + ve)) == 1) { break; }
+                    ve = ve + 1;
+                }
+                if (_shbdk_starts_at(input, ti, "@freq=") == 1) {
+                    vs = ti + 6;
+                    # Rust returns Err on a malformed @freq. Parse a bounded,
+                    # NUL-terminated copy of exactly [vs,ve) (so f64_parse can't
+                    # read past the token) and reject any trailing non-float junk.
+                    if (f64_parse_ok(_shbdk_fmt_dup(input, vs, ve), fc) == 0) { return 0; }
+                    if (_shbdk_fmt_all_float_chars(input, vs, ve) == 0) { return 0; }
+                    pending_freq = load64(fc);
+                } else {
+                    if (_shbdk_starts_at(input, ti, "@region=") == 1) {
+                        vs = ti + 8;
+                        pending_region = shbdk_region_from_code(_shbdk_fmt_dup(input, vs, ve));
+                        # Rust returns Err on an unknown region code.
+                        if (pending_region == SHBDK_REGION_NONE) { return 0; }
+                    }
+                }
+                ti = ve;
             }
             pos = le + 1;
             continue;
@@ -341,6 +335,22 @@ fn _shbdk_write_entry_cmudict(sb, word, entry): i64 {
             str_builder_add_cstr(sb, ";;; @freq=");
             fbuf = alloc(32);
             flen = fmt_float_buf(shbdk_pronunciation_frequency(pron), fbuf, 6);
+            # 3.0.5 parity: Rust writes `@freq={freq}` with Display, which is the
+            # SHORTEST text that round-trips — "0.5", "0.85", "1". fmt_float_buf
+            # gives fixed 6 decimals ("0.500000"), so trim the trailing zeros and
+            # then a bare trailing '.' to land on the same text. This covers every
+            # value expressible in <= 6 decimals, i.e. the whole documented 0.0-1.0
+            # frequency contract. (bayan's Grisu2 writer was the obvious other
+            # route and is WORSE here: it is shortest-or-NEAR-shortest, and the
+            # stdlib's f64_parse lands 1 ULP off on values like 0.85, so the pair
+            # emits "0.8500000000000001". Fixed-6 rounding absorbs that.)
+            while (flen > 0) {
+                if (load8(fbuf + flen - 1) != 48) { break; }   # '0'
+                flen = flen - 1;
+            }
+            if (flen > 0) {
+                if (load8(fbuf + flen - 1) == 46) { flen = flen - 1; }   # bare '.'
+            }
             store8(fbuf + flen, 0);
             str_builder_add_cstr(sb, fbuf);
             if (hasr == 1) {

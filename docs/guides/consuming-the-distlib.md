@@ -18,7 +18,7 @@ pull its bundle module:
 ```toml
 [deps.shabdakosh]
 git = "https://github.com/MacCracken/shabdakosh.git"   # or a local checkout: path = "../shabdakosh"
-tag = "3.0.4"
+tag = "3.0.5"
 modules = ["dist/shabdakosh.cyr"]
 ```
 

@@ -5,6 +5,12 @@
 
 ## Version
 
+**3.0.5** (2026-09-01) — **backlog sweep**: every actionable backlog item closed
+(two `rust-old/` parity gaps + a third found alongside them, three test-coverage
+gaps, three tech-debt items, the empty `docs/examples/`). Suite 821 → **873**.
+What remains open is gated on upstream const-eval, is an AGNOS-only branch, or
+is the newly-raised cross-crate decision in
+[architecture note 001](../architecture/001-phoneme-ipa-bridge-and-validation.md).
 **3.0.4** (2026-09-01) — **P1 audit sweep**: 5 defects fixed (2 HIGH — a
 128 MB-corrupt text export from any cmudict-backed dictionary, and a
 stack-overflow DoS in `prefix_search`), 4 resource/performance defects, and
@@ -23,6 +29,12 @@ started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
   6.4.5→…6.4.10→6.4.12→6.5.36 as the installed cycc drifted; `lib/` re-synced
   each time (`cyrius lib sync`, declared-subset — **not** `--full`, which drops
   the whole 108-file snapshot into `lib/`), all suites stay green.
+- **3.0.5 shape changes** (all additive): `src/error.cyr` is now explicitly the
+  home for shared **L0 primitives** and gained `shbdk_copyz` (one NUL-terminated
+  byte copy, replacing five module-local variants) and `shbdk_cstrcmp` (one
+  cstring comparator, replacing two byte-identical copies); `format/binary.cyr`
+  gained `SHBDK_BIN_MAGIC_S/H/B/D`. `tests/detect.tcyr` now includes
+  `src/error.cyr` — the one include the consolidation cost.
 - **3.0.4 shape changes** (all additive, no removals): `PrefixTrie` grew 16 → 24
   bytes (`[16]=max_word_len`); the keystone gained `_shbdk_msort` (one stable
   merge sort shared by the dictionary-scale sorts), `_shbdk_file_size_of` and
@@ -242,7 +254,8 @@ from our proposal — so the cmudict data was reverted from 2 shards back to a s
 `_cmudict_data.cyr` (generator + 19 includers + `[lib].modules` collapsed).
 
 **Release state (v3.0.0) — ALL GATES MET**: full tree **26 suites / 689 assertions** green (now
-**821** after the 3.0.4 P1 sweep added 132 regression assertions); every
+**873** — the 3.0.4 P1 sweep added 132 regression assertions and the 3.0.5 backlog
+sweep another 52); every
 Rust module ported (ffi dropped, wasm/static_dict as `.cyr` surfaces) or tracked in backlog.md;
 distlib bundle built + consumer-verified; benchmarks captured; docs accurate for v3.0.0; CHANGELOG
 3.0.0; roadmap finalized; security audit (11 fixes) passed. Ready to tag. Git operations are the user's.

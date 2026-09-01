@@ -184,13 +184,7 @@ fn _shbdk_is_ws(b): i64 {
 
 # Copy s[start..end] into a fresh NUL-terminated cstr.
 fn _shbdk_substr_cstr(s, start, end): i64 {
-    var len = end - start;
-    if (len < 0) { len = 0; }
-    var buf = alloc(len + 1);
-    if (buf == 0) { return ""; }   # 3.0.4: alloc failure -> empty token, not a null memcpy
-    memcpy(buf, s + start, len);
-    store8(buf + len, 0);
-    return buf;
+    return shbdk_copyz(s + start, end - start);
 }
 
 # Default parse: split on whitespace, convert each token, drop unrecognized ones.
