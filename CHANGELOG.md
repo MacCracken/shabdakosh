@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.0.3] — 2026-08-31
+
+Toolchain + dependency refresh to the current AGNOS chain. One mechanical source
+change (a renamed bayan entry point); no API or behavior change — the
+689-assertion suite (26 files) passes unchanged, benchmarks are flat, and the
+checked-in CMUdict codegen regenerates byte-identically.
+
+- **Changed**: toolchain pin 6.4.12 → **6.5.36** (current release; clears the
+  wrapper/manifest drift warning). `lib/` re-synced from the 6.5.36 snapshot.
+- **Changed**: svara pin 3.1.0 → **3.5.4**, which carries its own dependency
+  refresh (hisab 2.6.7 → 2.11.2, naad 2.1.1 → 2.2.1, goonj 2.0.0 → 2.0.4) and
+  sakshi 2.4.2 → 2.4.11. shabdakosh consumes only svara's `SVARA_PH_*` phoneme
+  identities, which are unchanged.
+- **Changed**: varna pin 2.0.0 → **2.4.1** (adds `tone` + `features` modules
+  upstream). The script-range / inventory / phonotactics / Swadesh surfaces
+  `validate.cyr`, `detect.cyr`, and `lexicon.cyr` consume are unchanged.
+- **Changed**: `[deps].stdlib` gains `slice` and `result` — varna 2.4.1's
+  `dist/varna.deps` sidecar declares both as required leaves.
+- **Fixed**: `shbdk_from_json`, `shbdk_validation_report_from_json`, and
+  `shbdk_phonotactic_report_from_json` now call `json_v_parse_buf`. bayan renamed
+  the cstr+len parse entry `json_v_parse_str` → `json_v_parse_buf` because
+  Cyrius routes `X(str, …)` to `X_str`, which silently mis-dispatched the old
+  name; without the rename the build fails on an undefined function.
+- **Changed**: `dist/shabdakosh.cyr` regenerated at 3.0.3. Its
+  `dist/shabdakosh.deps` sidecar now lists the full stdlib leaf set (24 entries)
+  rather than just the three git-dep names — a distlib generator improvement in
+  the newer toolchain.
+
 ## [3.0.2] — 2026-07-06
 
 Dependency + toolchain pin hygiene. No API or behavior change — the 715-assertion

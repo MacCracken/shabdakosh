@@ -162,12 +162,12 @@ use them; stdlib folds (hashmap, bayan, sakshi, tagged, …) auto-resolve from
 ```
 shabdakosh
   │
-  ├── svara chain (git dep [deps.svara], tag 3.0.1, pulls dist/svara.cyr)
+  ├── svara chain (git dep [deps.svara], tag 3.5.4, pulls dist/svara.cyr)
   │     lib/hisab.cyr → lib/goonj.cyr → lib/naad.cyr → lib/svara.cyr
   │     └── SVARA_PH_* phoneme identities (the PhonemeEvent-compat contract) +
   │         the transitive backend chain (sakshi rides along)
   │
-  ├── varna (git dep [deps.varna], tag 2.0.0, pulls dist/varna.cyr)
+  ├── varna (git dep [deps.varna], tag 2.4.1, pulls dist/varna.cyr)
   │     lib/varna.cyr — phoneme inventories + phonotactics + script ranges.
   │     Self-contained bundle; bare module-prefixed symbols (phoneme_*/script_*),
   │     NOT varna_-prefixed — links cleanly alongside svara, no collision.

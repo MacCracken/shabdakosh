@@ -498,7 +498,7 @@ fn shbdk_validation_report_to_json(r): cstring {
 # Deserialize a ShbdkValidationReport from JSON.
 #must_use
 fn shbdk_validation_report_from_json(input): i64 {
-    var root = json_v_parse_str(input, strlen(input));
+    var root = json_v_parse_buf(input, strlen(input));
     if (root == 0) { return 0; }
     var lang = _shbdk_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "invalid_entries");
@@ -548,7 +548,7 @@ fn shbdk_phonotactic_report_to_json(r): cstring {
 # Deserialize a ShbdkPhonotacticReport from JSON.
 #must_use
 fn shbdk_phonotactic_report_from_json(input): i64 {
-    var root = json_v_parse_str(input, strlen(input));
+    var root = json_v_parse_buf(input, strlen(input));
     if (root == 0) { return 0; }
     var lang = _shbdk_json_field_str(root, "language");
     var arr = json_v_obj_get(root, "violations");

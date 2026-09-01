@@ -145,7 +145,7 @@ fn _shbdk_parse_entries_into(dict, obj, is_user): i64 {
 # Parse a JSON string into a PronunciationDict, or 0 on error.
 #must_use
 fn shbdk_from_json(input): i64 {
-    var root = json_v_parse_str(input, strlen(input));
+    var root = json_v_parse_buf(input, strlen(input));
     if (root == 0) { return 0; }
     if (json_v_is_obj(root) == 0) { return 0; }
     var dict = shbdk_dict_new();

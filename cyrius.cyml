@@ -5,7 +5,7 @@ description = "shabdakosh — pronunciation dictionary for AGNOS (ARPABET/IPA↔
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/shabdakosh"
 language = "cyrius"
-cyrius = "6.4.12"
+cyrius = "6.5.36"
 
 [build]
 entry = "src/main.cyr"
@@ -50,7 +50,7 @@ modules = [
 # added when arpabet/ipa (svara SVARA_PH_* phonemes) and validate/detect (varna)
 # land — not front-loaded, per the incremental port playbook.
 [deps]
-stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "assert", "fnptr", "atomic", "sakshi", "math", "ganita", "tagged", "hashmap", "bayan", "mmap", "bench"]
+stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "assert", "fnptr", "atomic", "sakshi", "math", "ganita", "tagged", "hashmap", "bayan", "mmap", "bench", "slice", "result"]
 
 # svara — SVARA_PH_* phoneme identities (the PhonemeEvent-compat contract) plus
 # the voice/synthesis surface shabdakosh maps to. Consumed from arpabet.cyr
@@ -60,7 +60,7 @@ stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "ass
 [deps.svara]
 git = "https://github.com/MacCracken/svara.git"
 path = "../svara"
-tag = "3.1.0"
+tag = "3.5.4"
 modules = ["dist/svara.cyr"]
 
 # varna — phoneme inventories + phonotactics + script/registry metadata, consumed
@@ -72,5 +72,5 @@ modules = ["dist/svara.cyr"]
 # strings via shabda_phoneme_to_ipa.
 [deps.varna]
 git = "https://github.com/MacCracken/varna.git"
-tag = "2.0.0"
+tag = "2.4.1"
 modules = ["dist/varna.cyr"]

@@ -5,14 +5,23 @@
 
 ## Version
 
-**3.0.0** (RELEASED 2026-07-06) — Rust→Cyrius port. Full behavioral parity with
-the Rust 2.0.0 surface. Started 2026-07-05 via `cyrius port`. 7,085 lines of Rust
-preserved at `rust-old/` as the parity oracle.
+**3.0.3** (2026-08-31) — toolchain + dependency refresh (Cyrius 6.5.36, svara
+3.5.4, varna 2.4.1); no API change. The port itself landed at **3.0.0**
+(RELEASED 2026-07-06) — full behavioral parity with the Rust 2.0.0 surface,
+started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
+`rust-old/` as the parity oracle. 3.0.1 corrected the symbol prefix
+(`shabda_` → `shbdk_`); 3.0.2 refreshed pins.
 
 ## Toolchain
 
-- **Cyrius pin**: `6.4.10` (in `cyrius.cyml [package].cyrius`) — bumped 6.4.5→…6.4.10 as
-  the installed cycc drifted; `lib/` re-synced each time, all suites stay green.
+- **Cyrius pin**: `6.5.36` (in `cyrius.cyml [package].cyrius`) — bumped
+  6.4.5→…6.4.10→6.4.12→6.5.36 as the installed cycc drifted; `lib/` re-synced
+  each time (`cyrius lib sync`, declared-subset — **not** `--full`, which drops
+  the whole 108-file snapshot into `lib/`), all suites stay green.
+- **6.5.36 source impact**: bayan renamed its cstr+len JSON parse entry
+  `json_v_parse_str` → `json_v_parse_buf` (Cyrius routes `X(str, …)` to `X_str`,
+  so the old name silently mis-dispatched). Three call sites updated
+  (`format/json.cyr`, `validate.cyr` ×2). Nothing else in `src/` needed changing.
 
 ## Port decisions (locked 2026-07-05)
 
@@ -229,16 +238,21 @@ distlib bundle built + consumer-verified; benchmarks captured; docs accurate for
 
 ## Dependencies
 
-- **stdlib** (declared): syscalls, string, alloc, str, fmt, vec, io, args, assert.
-  Grows: `hashmap` (dict), `bayan` (serde), `tagged` (Option), `math` at their tiers.
-- **svara** (2.0.0 Rust → 3.0.1 Cyrius, `dist/svara.cyr`) — `SVARA_PH_*` phoneme
-  source. **Wired** (L1) as a git+tag dep (`[deps.svara] git=…/svara.git, tag 3.0.1`); pulls
-  the transitive stack (hisab/naad/goonj/sakshi). Entry includes
+- **stdlib** (declared): syscalls, string, alloc, str, fmt, vec, io, args, assert,
+  fnptr, atomic, sakshi, math, ganita, tagged, hashmap, bayan, mmap, bench, plus
+  `slice` + `result` (added at 3.0.3 — varna 2.4.1's `dist/varna.deps` sidecar
+  declares both as required leaves).
+- **svara** (2.0.0 Rust → **3.5.4** Cyrius, `dist/svara.cyr`) — `SVARA_PH_*` phoneme
+  source. **Wired** (L1) as a git+tag dep with `path = "../svara"` (path-for-local /
+  git+tag-for-CI; both resolve to byte-identical bundles); pulls the transitive stack
+  (hisab 2.11.2 / naad 2.2.1 / goonj 2.0.4 / sakshi 2.4.11). Entry includes
   `lib/{hisab,goonj,naad,svara}.cyr` before src modules. NOTE: the full bundle
   adds ~1 MB of unreachable code (DCE-eligible, `CYRIUS_DCE=1`) — a phoneme-only
   svara sub-bundle would lighten dictionary-only consumers; possible later.
-- **varna** (2.0.0 Cyrius, git+tag dep, `dist/varna.cyr`) — validate/detect + lexicon ctors. Added at the
-  varna-gated tier.
+- **varna** (**2.4.1** Cyrius, git+tag dep, `dist/varna.cyr`) — validate/detect + lexicon
+  ctors. Added at the varna-gated tier. 2.4.1 adds upstream `tone` + `features` modules;
+  the script-range / inventory / phonotactics / Swadesh surfaces shabdakosh consumes are
+  unchanged.
 
 ## Consumers
 

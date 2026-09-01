@@ -18,7 +18,7 @@ pull its bundle module:
 ```toml
 [deps.shabdakosh]
 git = "https://github.com/MacCracken/shabdakosh.git"   # or a local checkout: path = "../shabdakosh"
-tag = "3.0.0"
+tag = "3.0.3"
 modules = ["dist/shabdakosh.cyr"]
 ```
 
@@ -36,12 +36,12 @@ bundle links. shabdakosh is built on two sibling AGNOS crates:
 ```toml
 [deps.svara]
 git = "https://github.com/MacCracken/svara.git"
-tag = "3.0.1"                   # sibling AGNOS crate
+tag = "3.5.4"                   # sibling AGNOS crate
 modules = ["dist/svara.cyr"]
 
 [deps.varna]
 git = "https://github.com/MacCracken/varna.git"
-tag = "2.0.0"                   # sibling AGNOS crate
+tag = "2.4.1"                   # sibling AGNOS crate
 modules = ["dist/varna.cyr"]
 ```
 
@@ -58,6 +58,7 @@ stdlib = [
     "hashmap",   # base-dictionary store (the hashbrown replacement)
     "bayan",     # JSON codecs (shbdk_to_json / shbdk_from_json)
     "mmap",      # memory-mapped lazy dictionary (shbdk_lazy_open)
+    "slice", "result",   # required leaves of the varna 2.4.1 bundle
 ]
 ```
 
