@@ -1,5 +1,51 @@
 # Changelog
 
+## [3.0.6] — 2026-09-01
+
+Toolchain pin to cyrius **6.5.37** and a sidecar correction that unblocks consumers.
+
+### Fixed — `dist/shabdakosh.deps` named three VENDORED deps as stdlib leaves
+
+The sidecar listed `hisab`, `goonj` and `naad` among its stdlib requirements. None of them is
+a cyrius stdlib module — they are vendored dependencies pulled in through `src/main.cyr`, the
+umbrella that `cyrius distlib` scans for `include "lib/X.cyr"` lines. The scan correctly
+captured "these must be in scope" but tagged them as *stdlib*, and a consumer's `cyrius deps`
+then hunted for them in the stdlib and failed outright:
+
+```
+error: dep shabdakosh requires 'hisab' but it is not in the cyrius stdlib
+```
+
+⭐ **Over-reporting is the fatal direction.** An under-reported sidecar fails silently at the
+consumer's compile step; an over-reported one is a HARD resolver error before compilation is
+reached — the same shape that left `crab` and `puka` unable to resolve `dhancha` at all.
+
+Fixed upstream in cyrius 6.5.37, which validates every captured leaf against the stdlib
+snapshot at generation time, so the names are dropped by construction. Regenerating here picks
+that up: **24 leaves → 21**, and all 21 now resolve.
+
+⚠ No source change was needed or made. `src/main.cyr`'s includes are correct — they carry the
+dependency chain the bundled modules require, and removing them fails the build with 42
+undefined functions. Only the published metadata was wrong.
+
+### Changed
+
+- `cyrius` pin **6.5.36 → 6.5.37**.
+- `lib/` re-synced from the 6.5.37 snapshot (34 files).
+- `dist/shabdakosh.cyr` + `dist/shabdakosh.deps` regenerated.
+
+### Known issue — `lib/sakshi.cyr` stays at 2.4.11
+
+The pinned 6.5.37 snapshot ships sakshi **2.4.12** (which fixes a negative-depth buffer
+underflow in `sakshi_span_enter`), and `cyrius lib sync` writes it correctly — but the next
+`cyrius deps` reverts it to **2.4.11**, byte-identical to `../svara/lib/sakshi.cyr`. The
+resolver is pulling a declared *stdlib* leaf from a named dep's own `lib/` instead of the
+pinned snapshot, so the two commands fight and `deps` wins.
+
+This is a cyrius resolver defect, not a shabdakosh one, and is filed upstream. It does not
+affect this release: the build is clean and all 83 tests pass.
+
+
 ## [3.0.5] — 2026-09-01
 
 Backlog sweep. Every actionable item on `docs/development/backlog.md` is now
