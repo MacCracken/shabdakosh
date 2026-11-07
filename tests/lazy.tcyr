@@ -114,9 +114,9 @@ assert_eq(shbdk_dict_len(viammap), shbdk_dict_len(viablob), "same base entry cou
 assert_eq(shbdk_dict_user_len(viammap), shbdk_dict_user_len(viablob), "same overlay count");
 assert_streq(shbdk_dict_language(viammap), shbdk_dict_language(viablob), "same language");
 assert_eq(vec_get(shbdk_dict_lookup(viammap, "dog"), 0),
-          vec_get(shbdk_dict_lookup(viablob, "dog"), 0), "same base pronunciation");
+  vec_get(shbdk_dict_lookup(viablob, "dog"), 0), "same base pronunciation");
 assert_eq(vec_get(shbdk_dict_lookup(viammap, "cat"), 0),
-          vec_get(shbdk_dict_lookup(viablob, "cat"), 0), "same overlay pronunciation");
+  vec_get(shbdk_dict_lookup(viablob, "cat"), 0), "same overlay pronunciation");
 assert_streq(shbdk_lazy_debug(viammap), shbdk_lazy_debug(viablob), "same debug rendering");
 # The mapping is unmapped inside open(), so the decoded dict must not point into
 # it — reading after the unmap would fault if any Str still aliased the mapping.

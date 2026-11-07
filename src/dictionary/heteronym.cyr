@@ -14,6 +14,8 @@
 #
 # ShbdkHeteronymContext layout (16 bytes): [0]=words(vec of word cstr) [8]=position.
 
+# Context for the target at index `position` of `words` (a vec of word cstrs). An
+# out-of-bounds position does not panic: the accessors below handle it (see the header).
 #must_use
 fn shbdk_heteronym_context_new(words, position): i64 {
     var c = alloc(16);
@@ -22,11 +24,13 @@ fn shbdk_heteronym_context_new(words, position): i64 {
     return c;
 }
 
+# All words in the context: the vec passed to new, not a copy.
 #must_use
 fn shbdk_heteronym_context_words(c): i64 {
     return load64(c + 0);
 }
 
+# Index of the target word as stored, which may be out of bounds.
 #must_use
 fn shbdk_heteronym_context_position(c): i64 {
     return load64(c + 8);

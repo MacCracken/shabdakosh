@@ -31,17 +31,25 @@ var _blob = 0;   # a binary-serialized english dict (Str)
 
 # --- benched hot paths (0-arg wrappers over global fixtures) ---
 fn b_dict_construct() { return shbdk_dict_english(); }
+# Lookup of a word in the dictionary.
 fn b_lookup_hit() { return shbdk_dict_lookup(_dict, "the"); }
+# Lookup of a word not in the dictionary.
 fn b_lookup_miss() { return shbdk_dict_lookup(_dict, "zzzznotword"); }
+# Builds a prefix trie over the whole dictionary.
 fn b_trie_construct() { return shbdk_trie_from_dict(_dict); }
+# Prefix search for "pre".
 fn b_prefix_search() { return shbdk_dict_prefix_search(_dict, "pre"); }
+# Serializes the dictionary to the binary format.
 fn b_binary_serialize() { return shbdk_to_binary(_dict); }
+# Deserializes the dictionary from the binary fixture.
 fn b_binary_deserialize() { return shbdk_from_binary(_blob); }
 # 3.0.4: the sorted-export path. It was unbenched, which is how a 128 MB
 # to_cmudict output and an O(n^2) key sort both went unnoticed for three releases.
 fn b_to_cmudict() { return shbdk_to_cmudict(_dict); }
+# Exports the dictionary as IPA text.
 fn b_to_ipa() { return shbdk_to_ipa(_dict); }
 
+# Times `n` calls of the 0-arg fn `fp` and reports them under `name`.
 fn bench(name, fp, n) {
     var b = bench_new(name);
     bench_run(b, fp, n);
@@ -57,6 +65,7 @@ fn bench_batch(name, fp, batch, rounds) {
     return 0;
 }
 
+# Builds the fixtures, then runs every hot-path bench.
 fn main() {
     alloc_init();
     _dict = shbdk_dict_english();

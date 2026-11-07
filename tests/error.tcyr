@@ -13,7 +13,8 @@ assert_eq(sakshi_err_code(e_parse), SHBDK_ERR_DICT_PARSE, "dict_parse code");
 assert_eq(sakshi_err_category(e_parse), ERR_CAT_PARSE, "dict_parse category");
 assert_eq(sakshi_err_code(shbdk_err_unknown_symbol()), SHBDK_ERR_UNKNOWN_SYMBOL, "unknown_symbol code");
 assert_eq(sakshi_err_code(shbdk_err_unknown_language()), SHBDK_ERR_UNKNOWN_LANGUAGE, "unknown_language code");
-assert_eq(sakshi_err_code(shbdk_err_phoneme_not_in_inventory()), SHBDK_ERR_PHONEME_NOT_IN_INV, "phoneme_not_in_inventory code");
+assert_eq(sakshi_err_code(shbdk_err_phoneme_not_in_inventory()), SHBDK_ERR_PHONEME_NOT_IN_INV,
+  "phoneme_not_in_inventory code");
 assert_eq(sakshi_err_category(shbdk_err_unknown_language()), ERR_CAT_CONFIG, "unknown_language category");
 
 # ================================================================

@@ -43,7 +43,8 @@ assert_eq(vec_get(p, 2), SVARA_PH_PLOSIVE_T, "p[2] T");
 # ================================================================
 test_group("parse errors");
 assert_eq(shbdk_parse_ssml_phoneme("<phoneme alphabet=\"ipa\">hello</phoneme>"), 0, "missing ph -> 0");
-assert_eq(shbdk_parse_ssml_phoneme("<phoneme alphabet=\"x-sampa\" ph=\"hEloU\">hello</phoneme>"), 0, "wrong alphabet -> 0");
+assert_eq(shbdk_parse_ssml_phoneme("<phoneme alphabet=\"x-sampa\" ph=\"hEloU\">hello</phoneme>"),
+  0, "wrong alphabet -> 0");
 assert_eq(shbdk_parse_ssml_phoneme("not a phoneme tag"), 0, "not a <phoneme> tag -> 0");
 
 # ================================================================

@@ -47,8 +47,10 @@ fn shbdk_invalid_entry_new(word, invalid_phonemes): i64 {
     store64(e + 8, invalid_phonemes);
     return e;
 }
+# The word with invalid phonemes.
 #must_use
 fn shbdk_invalid_entry_word(e): cstring { return load64(e + 0); }
+# Phonemes not found in the target language's inventory (vec).
 #must_use
 fn shbdk_invalid_entry_invalid_phonemes(e): i64 { return load64(e + 8); }
 
@@ -60,15 +62,19 @@ fn shbdk_validation_report_new(language, invalid_entries): i64 {
     store64(r + 8, invalid_entries);
     return r;
 }
+# Language code of the inventory used for validation.
 #must_use
 fn shbdk_validation_report_language(r): cstring { return load64(r + 0); }
+# Entries containing phonemes outside the inventory (vec of ShbdkInvalidEntry).
 #must_use
 fn shbdk_validation_report_invalid_entries(r): i64 { return load64(r + 8); }
+# 1 if all entries passed validation, else 0.
 #must_use
 fn shbdk_validation_report_is_valid(r): i64 {
     if (vec_len(load64(r + 8)) == 0) { return 1; }
     return 0;
 }
+# Number of entries with invalid phonemes.
 #must_use
 fn shbdk_validation_report_invalid_count(r): i64 { return vec_len(load64(r + 8)); }
 
@@ -81,10 +87,13 @@ fn shbdk_phonotactic_violation_new(word, description, sequence): i64 {
     store64(v + 16, _shbdk_dupz(sequence));
     return v;
 }
+# The word containing the violation.
 #must_use
 fn shbdk_phonotactic_violation_word(v): cstring { return load64(v + 0); }
+# Description of the violation.
 #must_use
 fn shbdk_phonotactic_violation_description(v): cstring { return load64(v + 8); }
+# The IPA sequence that violated phonotactic constraints.
 #must_use
 fn shbdk_phonotactic_violation_sequence(v): cstring { return load64(v + 16); }
 
@@ -96,15 +105,19 @@ fn shbdk_phonotactic_report_new(language, violations): i64 {
     store64(r + 8, violations);
     return r;
 }
+# Language code of the phonotactic profile used.
 #must_use
 fn shbdk_phonotactic_report_language(r): cstring { return load64(r + 0); }
+# Violations found (vec of ShbdkPhonotacticViolation).
 #must_use
 fn shbdk_phonotactic_report_violations(r): i64 { return load64(r + 8); }
+# 1 if no violations were found, else 0.
 #must_use
 fn shbdk_phonotactic_report_is_valid(r): i64 {
     if (vec_len(load64(r + 8)) == 0) { return 1; }
     return 0;
 }
+# Number of violations found.
 #must_use
 fn shbdk_phonotactic_report_violation_count(r): i64 { return vec_len(load64(r + 8)); }
 
@@ -428,7 +441,7 @@ fn _shbdk_invalid_entry_to_jsonv(e): i64 {
 # missing required field; this port defaults to empty rather than dereferencing a
 # null node (a malformed/partial JSON blob decodes leniently, never crashes).
 fn _shbdk_json_field_str(obj, key): cstring {
-    var v = json_v_obj_get(obj, key);
+    var v = bayan_json_v_obj_get_by_cstr(obj, key);
     if (v == 0) { return ""; }
     if (json_v_is_str(v) == 0) { return ""; }
     return str_cstr(json_v_str(v));
@@ -436,7 +449,7 @@ fn _shbdk_json_field_str(obj, key): cstring {
 
 fn _shbdk_invalid_entry_from_jsonv(obj): i64 {
     var word = _shbdk_json_field_str(obj, "word");
-    var arr = json_v_obj_get(obj, "invalid_phonemes");
+    var arr = bayan_json_v_obj_get_by_cstr(obj, "invalid_phonemes");
     var ph = vec_new();
     var n = 0;
     var i = 0;
@@ -471,7 +484,7 @@ fn shbdk_validation_report_from_json(input): i64 {
     var root = json_v_parse_buf(input, strlen(input));
     if (root == 0) { return 0; }
     var lang = _shbdk_json_field_str(root, "language");
-    var arr = json_v_obj_get(root, "invalid_entries");
+    var arr = bayan_json_v_obj_get_by_cstr(root, "invalid_entries");
     var ie = vec_new();
     var n = 0;
     var i = 0;
@@ -521,7 +534,7 @@ fn shbdk_phonotactic_report_from_json(input): i64 {
     var root = json_v_parse_buf(input, strlen(input));
     if (root == 0) { return 0; }
     var lang = _shbdk_json_field_str(root, "language");
-    var arr = json_v_obj_get(root, "violations");
+    var arr = bayan_json_v_obj_get_by_cstr(root, "violations");
     var vs = vec_new();
     var n = 0;
     var i = 0;

@@ -5,6 +5,10 @@
 
 ## Version
 
+**3.0.8** (2026-11-07) — toolchain + dependency refresh: cyrius 6.6.20, svara 3.5.6, varna 2.4.3,
+with hisab 3.3.7 / naad 2.2.5 / goonj 2.0.6 / sakshi 2.5.7 transitively. No API change. Suite
+stays **873 assertions / 26 suites**. Dropped the `path` override that made the svara tag inert.
+3.0.6 and 3.0.7 were toolchain pins (6.5.37, 6.6.3).
 **3.0.5** (2026-09-01) — **backlog sweep**: every actionable backlog item closed
 (two `rust-old/` parity gaps + a third found alongside them, three test-coverage
 gaps, three tech-debt items, the empty `docs/examples/`). Suite 821 → **873**.
@@ -25,10 +29,25 @@ started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
 
 ## Toolchain
 
-- **Cyrius pin**: `6.5.36` (in `cyrius.cyml [package].cyrius`) — bumped
-  6.4.5→…6.4.10→6.4.12→6.5.36 as the installed cycc drifted; `lib/` re-synced
-  each time (`cyrius lib sync`, declared-subset — **not** `--full`, which drops
-  the whole 108-file snapshot into `lib/`), all suites stay green.
+- **Cyrius pin**: `6.6.20` (in `cyrius.cyml [package].cyrius`) — bumped
+  6.4.5→…6.4.10→6.4.12→6.5.36→6.5.37→6.6.3→6.6.20 as the installed cycc drifted;
+  `lib/` re-synced each time (`cyrius lib sync`, declared-subset — **not** `--full`,
+  which drops the whole 108-file snapshot into `lib/`), all suites stay green.
+  3.0.8 regenerated it from scratch instead (`rm -rf lib cyrius.lock && cyrius deps`).
+- **6.6.20 pin set**: svara 3.5.6 and varna 2.4.3 are the last tags on 6.6.20; the next
+  tags of svara, varna, hisab, naad and goonj need 6.7.x. svara's manifest supplies the
+  hisab/naad/goonj versions.
+- **Never put `path =` beside `git`/`tag` in `[deps.*]`**: an existing path makes the tag inert
+  and skips the commit pin. Every `cyrius build`/`test`/`tests` re-resolves deps, so the sibling's
+  checkout would land in `lib/` just from running tests.
+- **Sidecar**: `dist/shabdakosh.deps` lists only `mmap` since 3.0.8. That is the 6.6.18 rule (the
+  compile-verify decides; named deps are not listed), not a loss. Verified with a from-scratch
+  consumer build.
+- **`cyrius audit` exits 0** since 3.0.8 (fmt, lint, docs, tests), though CI does not run it. Its
+  docs total counts `src/dictionary` several times, because the fmt, lint and doc walks share one
+  directory list, so use per-file `cyrdoc --check` (`.fcyr` included) for the real number.
+- **`tests/shabdakosh.fcyr` is still the scaffold stub**: it exercises no shabdakosh code, and
+  `cyrius fuzz` reads `fuzz/*.fcyr`, so nothing runs it.
 - **3.0.5 shape changes** (all additive): `src/error.cyr` is now explicitly the
   home for shared **L0 primitives** and gained `shbdk_copyz` (one NUL-terminated
   byte copy, replacing five module-local variants) and `shbdk_cstrcmp` (one

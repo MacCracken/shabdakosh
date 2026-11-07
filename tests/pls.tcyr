@@ -19,17 +19,24 @@ alloc_init();
 fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
 fn _contains(s, sub): i64 { return _shbdk_pls_find(s, 0, strlen(s), sub); }
+# Joins two literals into one cstr: cyrius has no adjacent-literal concatenation, and these
+# fixtures are longer than the 120-column line limit.
+fn _join(a, b): cstring { return str_cstr(str_cat(str_from(a), str_from(b))); }
 
 # ================================================================
 test_group("parse minimal PLS");
-var d = shbdk_parse_pls("<?xml version=\"1.0\"?>\n<lexicon alphabet=\"ipa\" xml:lang=\"en-US\">\n  <lexeme>\n    <grapheme>hello</grapheme>\n    <phoneme>hɛloʊ</phoneme>\n  </lexeme>\n</lexicon>");
+var d = shbdk_parse_pls(_join(
+    "<?xml version=\"1.0\"?>\n<lexicon alphabet=\"ipa\" xml:lang=\"en-US\">\n  <lexeme>\n",
+    "    <grapheme>hello</grapheme>\n    <phoneme>hɛloʊ</phoneme>\n  </lexeme>\n</lexicon>"));
 assert_neq(d, 0, "parsed");
 assert_eq(shbdk_dict_len(d), 1, "1 entry");
 assert_neq(shbdk_dict_lookup(d, "hello"), 0, "hello present");
 
 # ================================================================
 test_group("parse multi-phoneme (heteronym)");
-var d2 = shbdk_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>read</grapheme><phoneme>ɹid</phoneme><phoneme>ɹɛd</phoneme></lexeme></lexicon>");
+var d2 = shbdk_parse_pls(_join(
+    "<lexicon alphabet=\"ipa\"><lexeme><grapheme>read</grapheme>",
+    "<phoneme>ɹid</phoneme><phoneme>ɹɛd</phoneme></lexeme></lexicon>"));
 assert_neq(d2, 0, "parsed");
 var all = shbdk_dict_lookup_all(d2, "read");
 assert_neq(all, 0, "read present");

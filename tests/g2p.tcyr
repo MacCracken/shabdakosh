@@ -50,8 +50,10 @@ test_group("lookup_with_source");
 var lm = shbdk_dict_english_minimal();
 shbdk_dict_insert_user(lm, "custom", _v1(SVARA_PH_VOWEL_A));
 var fbs = shbdk_dict_with_fallback(lm, &_mock_predict, 0.75);
-assert_eq(shbdk_lookup_result_source(shbdk_fallback_dict_lookup_with_source(fbs, "custom")), SHBDK_SOURCE_USER_OVERLAY, "custom -> UserOverlay");
-assert_eq(shbdk_lookup_result_source(shbdk_fallback_dict_lookup_with_source(fbs, "hello")), SHBDK_SOURCE_BASE_DICTIONARY, "hello -> BaseDictionary");
+assert_eq(shbdk_lookup_result_source(shbdk_fallback_dict_lookup_with_source(fbs, "custom")),
+  SHBDK_SOURCE_USER_OVERLAY, "custom -> UserOverlay");
+assert_eq(shbdk_lookup_result_source(shbdk_fallback_dict_lookup_with_source(fbs, "hello")),
+  SHBDK_SOURCE_BASE_DICTIONARY, "hello -> BaseDictionary");
 var g2ps = shbdk_fallback_dict_lookup_with_source(fbs, "xyzzy");
 assert_eq(shbdk_lookup_result_source(g2ps), SHBDK_SOURCE_G2P_MODEL, "xyzzy -> G2PModel");
 assert_eq(vec_get(shbdk_lookup_result_phonemes(g2ps), 0), SVARA_PH_VOWEL_SCHWA, "g2p phonemes [schwa]");

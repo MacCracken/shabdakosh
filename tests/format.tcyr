@@ -202,10 +202,10 @@ var f125 = _freq_dump(";;; @freq=0.125\ncat  K AE1 T\n");
 assert_eq(_find(f125, ";;; @freq=0.125\n"), 1, "0.125 keeps its significant digits");
 # and it must still re-parse to the same value
 assert_eq(shbdk_pronunciation_frequency(shbdk_dict_entry_primary(
-    shbdk_dict_lookup_entry(shbdk_parse_cmudict(f85), "cat"))),
-    shbdk_pronunciation_frequency(shbdk_dict_entry_primary(
-    shbdk_dict_lookup_entry(shbdk_parse_cmudict(";;; @freq=0.85\ncat  K AE1 T\n"), "cat"))),
-    "trimmed @freq round-trips to the same value");
+      shbdk_dict_lookup_entry(shbdk_parse_cmudict(f85), "cat"))),
+  shbdk_pronunciation_frequency(shbdk_dict_entry_primary(
+      shbdk_dict_lookup_entry(shbdk_parse_cmudict(";;; @freq=0.85\ncat  K AE1 T\n"), "cat"))),
+  "trimmed @freq round-trips to the same value");
 
 # (2) Rust does comment.split_whitespace() then token.strip_prefix("@freq="), so
 # an annotation is only recognized at the START of a whitespace token. The port
@@ -214,11 +214,11 @@ test_group("@freq / @region only at whitespace-token starts");
 var emb = shbdk_parse_cmudict(";;; note@freq=0.5\ncat  K AE1 T\n");
 assert_neq(emb, 0, "embedded @freq= is not an annotation (parse still succeeds)");
 assert_eq(shbdk_pronunciation_has_frequency(shbdk_dict_entry_primary(
-    shbdk_dict_lookup_entry(emb, "cat"))), 0, "embedded @freq= ignored, as in Rust");
+      shbdk_dict_lookup_entry(emb, "cat"))), 0, "embedded @freq= ignored, as in Rust");
 var embr = shbdk_parse_cmudict(";;; x@region=XX\ncat  K AE1 T\n");
 assert_neq(embr, 0, "embedded @region=XX is not an annotation (so not an error)");
 assert_eq(shbdk_pronunciation_has_region(shbdk_dict_entry_primary(
-    shbdk_dict_lookup_entry(embr, "cat"))), 0, "embedded @region= ignored");
+      shbdk_dict_lookup_entry(embr, "cat"))), 0, "embedded @region= ignored");
 # a real token anywhere among other tokens is still picked up
 var multi = shbdk_parse_cmudict(";;; generated  @freq=0.25  @region=GA  ok\ncat  K AE1 T\n");
 assert_neq(multi, 0, "multi-token comment parses");

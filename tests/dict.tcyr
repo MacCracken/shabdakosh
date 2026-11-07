@@ -198,7 +198,7 @@ assert_neq(ea, eb, "merged entry is a distinct object");
 assert_neq(shbdk_dict_entry_all(ea), shbdk_dict_entry_all(eb), "distinct pronunciation vecs");
 assert_neq(shbdk_dict_entry_primary(ea), shbdk_dict_entry_primary(eb), "distinct Pronunciation structs");
 assert_neq(shbdk_dict_entry_primary_phonemes(ea), shbdk_dict_entry_primary_phonemes(eb),
-    "distinct phoneme vecs");
+  "distinct phoneme vecs");
 assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(ea), 0), SVARA_PH_PLOSIVE_K, "value copied");
 # Mutating the merged copy must not reach back into the source.
 shbdk_dict_entry_add_pronunciation(ea, shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_T)));
@@ -212,7 +212,7 @@ shbdk_dict_merge_conservative(mc, md);
 var ec = shbdk_dict_lookup_entry(mc, "dog");
 shbdk_dict_entry_add_pronunciation(ec, shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_G)));
 assert_eq(shbdk_dict_entry_len(shbdk_dict_lookup_entry(md, "dog")), 1,
-    "merge_conservative source untouched");
+  "merge_conservative source untouched");
 
 # Clone preserves frequency and region metadata.
 test_group("entry / pronunciation clone");
@@ -241,9 +241,9 @@ assert_eq(shbdk_dict_language(sd), 0, "no language set");
 assert_eq(vec_get(shbdk_dict_lookup(sd, "cat"), 0), SVARA_PH_PLOSIVE_K, "cat -> K");
 assert_eq(vec_get(shbdk_dict_lookup(sd, "dog"), 0), SVARA_PH_PLOSIVE_D, "dog -> D");
 assert_eq(shbdk_dict_entry_len(shbdk_dict_lookup_entry(sd, "cat")), 1,
-    "each phoneme vec becomes a single-pronunciation entry");
+  "each phoneme vec becomes a single-pronunciation entry");
 assert_eq(shbdk_pronunciation_has_frequency(shbdk_dict_entry_primary(
-    shbdk_dict_lookup_entry(sd, "cat"))), 0, "no frequency metadata");
+      shbdk_dict_lookup_entry(sd, "cat"))), 0, "no frequency metadata");
 # Keys are stored verbatim (Rust does not lowercase here), so a mixed-case key
 # is only reachable through the lookup path's own lowercase gate.
 var mixed = map_new_str();

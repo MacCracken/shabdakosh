@@ -39,6 +39,7 @@ include "src/dictionary/validate.cyr"
 include "src/dictionary/lexicon.cyr"
 include "src/wasm.cyr"
 
+# Smoke entry: runs one call per ported tier and prints the results.
 fn main() {
     alloc_init();
     println("shabdakosh ready");
@@ -77,7 +78,8 @@ fn main() {
     # L3 smoke — dictionary keystone: english_minimal entry count
     println_int(shbdk_dict_len(shbdk_dict_english_minimal()));
     # L4 smoke — coverage of "the hello world xyz" (3 of 4 covered)
-    println_int(shbdk_coverage_covered_tokens(shbdk_dict_coverage(shbdk_dict_english_minimal(), "the hello world xyz")));
+    println_int(shbdk_coverage_covered_tokens(
+        shbdk_dict_coverage(shbdk_dict_english_minimal(), "the hello world xyz")));
     # L4 smoke — streaming lookup over 2 words -> remaining size hint
     var sw = vec_new();
     vec_push(sw, "hello");
@@ -92,16 +94,19 @@ fn main() {
     vec_push(hw, "books");
     println_int(vec_len(shbdk_heteronym_preceding_words(shbdk_heteronym_context_new(hw, 1))));
     # L4 smoke — fallback dict (FstModel stub) still serves "hello" from base (4 phonemes)
-    var fbm = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &shbdk_fst_model_predict, shbdk_fst_model_new("/x", SHBDK_FST_NOTATION_ARPABET));
+    var fbm = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &shbdk_fst_model_predict,
+      shbdk_fst_model_new("/x", SHBDK_FST_NOTATION_ARPABET));
     println_int(vec_len(shbdk_fallback_dict_lookup(fbm, "hello")));
     # L5 smoke — parse a 2-line CMUdict string -> entry count
     println_int(shbdk_dict_len(shbdk_parse_cmudict("cat  K AE1 T\ndog  D AO1 G\n")));
     # L5 smoke — JSON codec roundtrip: parse -> to_json -> from_json -> entry count
     println_int(shbdk_dict_len(shbdk_from_json(shbdk_to_json(shbdk_parse_cmudict("cat  K AE1 T\n")))));
     # L5 smoke — parse a PLS lexeme -> entry count
-    println_int(shbdk_dict_len(shbdk_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>hi</grapheme><phoneme>haɪ</phoneme></lexeme></lexicon>")));
+    println_int(shbdk_dict_len(shbdk_parse_pls(
+          "<lexicon alphabet=\"ipa\"><lexeme><grapheme>hi</grapheme><phoneme>haɪ</phoneme></lexeme></lexicon>")));
     # L5 smoke — parse an SSML <phoneme> tag -> phoneme count for "cat"
-    println_int(vec_len(shbdk_ssml_result_phonemes(shbdk_parse_ssml_phoneme("<phoneme alphabet=\"ipa\" ph=\"kæt\">cat</phoneme>"))));
+    println_int(vec_len(shbdk_ssml_result_phonemes(
+          shbdk_parse_ssml_phoneme("<phoneme alphabet=\"ipa\" ph=\"kæt\">cat</phoneme>"))));
     # L5 smoke — binary roundtrip of english_minimal -> entry count (29)
     println_int(shbdk_dict_len(shbdk_from_binary(shbdk_to_binary(shbdk_dict_english_minimal()))));
     # L6 smoke — WasmDict: insert_user_ipa "kæt" then lookup -> JSON IPA array

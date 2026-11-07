@@ -238,16 +238,20 @@ fn shbdk_dict_insert(d, word, phonemes): i64 {
     return 0;
 }
 
+# Inserts a full entry into the base dictionary, keyed by the lowercased word.
 fn shbdk_dict_insert_entry(d, word, entry): i64 {
     map_set(load64(d + 0), str_from(str_lower_cstr(word)), entry);
     return 0;
 }
 
+# Inserts a word into the user overlay with a single pronunciation. User entries take
+# precedence over base entries during lookup.
 fn shbdk_dict_insert_user(d, word, phonemes): i64 {
     map_set(load64(d + 8), str_from(str_lower_cstr(word)), shbdk_dict_entry_from_phonemes(phonemes));
     return 0;
 }
 
+# Inserts a full entry into the user overlay, keyed by the lowercased word.
 fn shbdk_dict_insert_user_entry(d, word, entry): i64 {
     map_set(load64(d + 8), str_from(str_lower_cstr(word)), entry);
     return 0;
@@ -264,11 +268,13 @@ fn shbdk_dict_language(d): cstring {
     return load64(d + 16);
 }
 
+# Sets the ISO 639 language code. `code` is stored as given, not copied.
 fn shbdk_dict_set_language(d, code): i64 {
     store64(d + 16, code);
     return 0;
 }
 
+# Builder form of shbdk_dict_set_language: sets the code on `d` and returns `d`.
 #must_use
 fn shbdk_dict_with_language(d, code): i64 {
     store64(d + 16, code);
@@ -281,21 +287,25 @@ fn shbdk_dict_entries(d): i64 {
     return load64(d + 0);
 }
 
+# The user overlay map (word -> entry): the live map, not a copy.
 #must_use
 fn shbdk_dict_user_entries(d): i64 {
     return load64(d + 8);
 }
 
+# Number of user overlay entries.
 #must_use
 fn shbdk_dict_user_len(d): i64 {
     return map_size(load64(d + 8));
 }
 
+# Number of base dictionary entries. The user overlay is not counted.
 #must_use
 fn shbdk_dict_len(d): i64 {
     return map_size(load64(d + 0));
 }
 
+# 1 if the base dictionary is empty, else 0. The user overlay is not counted.
 #must_use
 fn shbdk_dict_is_empty(d): i64 {
     if (map_size(load64(d + 0)) == 0) { return 1; }
@@ -443,20 +453,25 @@ fn shbdk_dict_diff_new(): i64 {
     return dd;
 }
 
+# Words present in `right` but not `left` (vec<Str>).
 #must_use
 fn shbdk_dict_diff_added(dd): i64 { return load64(dd + 0); }
 
+# Words present in `left` but not `right` (vec<Str>).
 #must_use
 fn shbdk_dict_diff_removed(dd): i64 { return load64(dd + 8); }
 
+# Words in both dictionaries whose entries differ (vec<Str>).
 #must_use
 fn shbdk_dict_diff_changed(dd): i64 { return load64(dd + 16); }
 
+# Total number of differences.
 #must_use
 fn shbdk_dict_diff_len(dd): i64 {
     return vec_len(load64(dd + 0)) + vec_len(load64(dd + 8)) + vec_len(load64(dd + 16));
 }
 
+# 1 if the dictionaries are identical, else 0.
 #must_use
 fn shbdk_dict_diff_is_empty(dd): i64 {
     if (shbdk_dict_diff_len(dd) == 0) { return 1; }

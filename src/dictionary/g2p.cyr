@@ -17,11 +17,13 @@ fn shbdk_g2p_result_new(phonemes, confidence): i64 {
     return r;
 }
 
+# Predicted phoneme sequence (vec).
 #must_use
 fn shbdk_g2p_result_phonemes(r): i64 {
     return load64(r + 0);
 }
 
+# Confidence score, 0.0 to 1.0 (f64 bits).
 #must_use
 fn shbdk_g2p_result_confidence(r): i64 {
     return load64(r + 8);
@@ -48,12 +50,15 @@ fn _shbdk_lookup_result_new(phonemes, source, confidence): i64 {
     return r;
 }
 
+# Phonemes the lookup produced (vec).
 #must_use
 fn shbdk_lookup_result_phonemes(r): i64 { return load64(r + 0); }
 
+# Where the phonemes came from: a SHBDK_SOURCE_* tag.
 #must_use
 fn shbdk_lookup_result_source(r): i64 { return load64(r + 8); }
 
+# Confidence (f64 bits). Only meaningful when the source is SHBDK_SOURCE_G2P_MODEL.
 #must_use
 fn shbdk_lookup_result_confidence(r): i64 { return load64(r + 16); }
 
@@ -80,6 +85,7 @@ fn _shbdk_g2p_predict(f, key): i64 {
     return fncall2(fp, str_data(key), load64(f + 16));
 }
 
+# Fallback dictionary over `dict`, using the model pair (predict_fp, model_state).
 #must_use
 fn shbdk_fallback_dict_new(dict, predict_fp, model_state): i64 {
     var f = alloc(24);
@@ -187,11 +193,13 @@ fn shbdk_fst_model_new(model_path, notation): i64 {
     return m;
 }
 
+# Path to the model file, as given to shbdk_fst_model_new.
 #must_use
 fn shbdk_fst_model_path(m): cstring {
     return load64(m + 0);
 }
 
+# Output notation of this model: a SHBDK_FST_NOTATION_* tag.
 #must_use
 fn shbdk_fst_model_notation(m): i64 {
     return load64(m + 8);

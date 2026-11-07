@@ -146,7 +146,8 @@ assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_SCHWA), 0, "schwa vowel");
 # returns 0 on an unparseable root).
 test_group("malformed JSON (no null deref)");
 assert_neq(shbdk_validation_report_from_json("{}"), 0, "empty object -> report (missing language ok)");
-assert_streq(shbdk_validation_report_language(shbdk_validation_report_from_json("{}")), "", "missing language -> empty");
+assert_streq(shbdk_validation_report_language(shbdk_validation_report_from_json("{}")),
+  "", "missing language -> empty");
 assert_eq(shbdk_validation_report_from_json("not valid json"), 0, "unparseable -> 0");
 assert_neq(shbdk_phonotactic_report_from_json("{\"violations\":[]}"), 0, "missing language -> report (no crash)");
 assert_neq(shbdk_validation_report_from_json("{\"language\":123}"), 0, "mistyped language -> report (no crash)");

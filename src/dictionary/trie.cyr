@@ -51,6 +51,7 @@ fn _shbdk_trie_dup_n(buf, n): i64 {
     return shbdk_copyz(buf, n);
 }
 
+# Creates an empty trie.
 #must_use
 fn shbdk_trie_new(): i64 {
     var t = alloc(24);
@@ -119,11 +120,13 @@ fn shbdk_trie_contains(t, word): i64 {
     return load64(node + 8);
 }
 
+# Number of words in the trie.
 #must_use
 fn shbdk_trie_len(t): i64 {
     return load64(t + 8);
 }
 
+# 1 if the trie contains no words, else 0.
 #must_use
 fn shbdk_trie_is_empty(t): i64 {
     if (load64(t + 8) == 0) { return 1; }

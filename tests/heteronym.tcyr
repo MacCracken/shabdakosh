@@ -46,7 +46,8 @@ assert_eq(vec_len(shbdk_heteronym_following_words(ctxl)), 0, "last: no following
 test_group("lookup_with_context: single pronunciation ignores resolver");
 var em = shbdk_dict_english_minimal();
 var sctx = shbdk_heteronym_context_new(_w1("the"), 0);
-assert_eq(shbdk_dict_lookup_with_context(em, "the", &_second_resolver, sctx), shbdk_dict_lookup(em, "the"), "the (1 pron) -> primary");
+assert_eq(shbdk_dict_lookup_with_context(em, "the", &_second_resolver, sctx),
+  shbdk_dict_lookup(em, "the"), "the (1 pron) -> primary");
 
 # ================================================================
 test_group("lookup_with_context: heteronym variant selection");
@@ -56,10 +57,14 @@ assert_neq(re, 0, "read present");
 assert_gte(shbdk_dict_entry_len(re), 2, "read has >= 2 pronunciations");
 var rall = shbdk_dict_entry_all(re);
 var rctx = shbdk_heteronym_context_new(_w3("I", "read", "books"), 1);
-assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_primary_resolver, rctx), shbdk_pronunciation_phonemes(vec_get(rall, 0)), "primary -> variant 0");
-assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_second_resolver, rctx), shbdk_pronunciation_phonemes(vec_get(rall, 1)), "second -> variant 1");
-assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_none_resolver, rctx), shbdk_dict_lookup(eng, "read"), "none -> primary");
-assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_bad_resolver, rctx), shbdk_dict_lookup(eng, "read"), "out-of-bounds idx -> primary");
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_primary_resolver, rctx),
+  shbdk_pronunciation_phonemes(vec_get(rall, 0)), "primary -> variant 0");
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_second_resolver, rctx),
+  shbdk_pronunciation_phonemes(vec_get(rall, 1)), "second -> variant 1");
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_none_resolver, rctx),
+  shbdk_dict_lookup(eng, "read"), "none -> primary");
+assert_eq(shbdk_dict_lookup_with_context(eng, "read", &_bad_resolver, rctx),
+  shbdk_dict_lookup(eng, "read"), "out-of-bounds idx -> primary");
 
 # ================================================================
 test_group("lookup_with_context: missing word");

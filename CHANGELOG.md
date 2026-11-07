@@ -1,5 +1,46 @@
 # Changelog
 
+## [3.0.8] — 2026-11-07
+
+Toolchain and dependency release. `cyrius` 6.6.3 -> **6.6.20**, `svara` -> **3.5.6**, `varna`
+2.4.1 -> **2.4.3**, and transitively `hisab` 2.22.1 -> **3.3.7**, `naad` 2.2.2 -> **2.2.5**,
+`goonj` 2.0.4 -> **2.0.6**, `sakshi` 2.5.1 -> **2.5.7**. This is the set matched to 6.6.20:
+svara 3.5.6 and varna 2.4.3 are the last tags on it, and the stdlib folds (`sakshi`, `bayan`,
+`ganita`, ...) are the copies the toolchain bundles. `lib/` and `cyrius.lock` were regenerated
+from scratch, and every vendored dep is byte-identical to its tag's `dist/` bundle.
+
+No API change. **873 assertions / 26 suites**, same as 3.0.7 on 6.6.3. All 101 `SVARA_PH_*`
+ordinals are unchanged, and regenerating `_cmudict_data.cyr` reproduces it byte for byte.
+
+### Fixed
+
+- **The svara tag pin was inert.** `[deps.svara]` set `path = "../svara"` beside `git` and `tag`,
+  and an existing `path` makes both of those inert: `cyrius deps` copies from the sibling with no
+  clone and no commit pin. So the vendored svara was 3.5.5 while the manifest said 3.5.4, the lock
+  had no svara row, and any `cyrius build` or `cyrius test` could re-vendor whatever `../svara` had
+  checked out. With the sibling at 3.6.1, that also pulled the 6.7.x `hisab`, `naad` and `goonj`
+  and broke all 26 suites. `path` is gone, so svara now resolves from its tag and is commit-pinned.
+
+### Changed
+
+- **`json_v_obj_get` -> `bayan_json_v_obj_get_by_cstr`, 11 call sites** in `format/json.cyr` and
+  `validate.cyr`. bayan deprecated the bare name and forwards it to `_by_cstr`, and every key here
+  is a C string, so behaviour is unchanged. Consumers no longer see the deprecation warnings.
+- **`dist/shabdakosh.deps`: 21 leaves -> 1 (`mmap`).** Since cyrius 6.6.18 a sidecar lists only
+  what the compile-verify proves the bundle needs beyond its named deps. Nothing is lost: a
+  from-scratch consumer declaring only 7 stdlib leaves still gets `bayan`, `hashmap`, `sakshi`,
+  `math` and `ganita` through svara and varna, and passes a lookup, JSON round trip, binary save
+  and lazy mmap reopen.
+- **`lib/`**: `callback.cyr` and `hashmap_fast.cyr` dropped (stale, nothing includes them);
+  `alloc_cx.cyr`, `chrono.cyr` and `poison.cyr` added (leaves the 6.6.x stdlib now includes). The
+  lock gains the svara commit pin and a toolchain row.
+- **`cyrius audit` now exits 0.** It failed on 6.6.3 too; 6.6.20 only added to the docs leg, because
+  cyrdoc stopped counting `#must_use` as documentation. 62 fns gained a doc comment, 27 lines over
+  120 columns were wrapped, `cyrius fmt` was applied to the files it flagged, and two comments
+  that lint read as untracked deferrals were reworded. The cleanup changed no library code: with
+  comment lines stripped, all 26 `[lib]` modules match 3.0.7 apart from the rename above. The two
+  PLS test fixtures are split across literals by a new `_join` helper and keep the same bytes.
+
 ## [3.0.7] - Unblocked by cyrius 6.6.3
 
 Toolchain-pin release. `cyrius` 6.6.2 -> **6.6.3**; no source change.

@@ -20,8 +20,10 @@ fn _v4(a, b, c, d): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec
 fn _example(): i64 {
     var ms = vec_new();
     vec_push(ms, shbdk_morpheme_new("un", SHBDK_MORPH_PREFIX, _v2(SVARA_PH_VOWEL_CUP_V, SVARA_PH_NASAL_N)));
-    vec_push(ms, shbdk_morpheme_new("happi", SHBDK_MORPH_ROOT, _v4(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_P, SVARA_PH_VOWEL_E)));
-    vec_push(ms, shbdk_morpheme_new("ness", SHBDK_MORPH_SUFFIX, _v3(SVARA_PH_NASAL_N, SVARA_PH_VOWEL_OPEN_E, SVARA_PH_FRIC_S)));
+    vec_push(ms, shbdk_morpheme_new("happi", SHBDK_MORPH_ROOT,
+        _v4(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_P, SVARA_PH_VOWEL_E)));
+    vec_push(ms, shbdk_morpheme_new("ness", SHBDK_MORPH_SUFFIX,
+        _v3(SVARA_PH_NASAL_N, SVARA_PH_VOWEL_OPEN_E, SVARA_PH_FRIC_S)));
     return shbdk_decomposition_new(ms);
 }
 

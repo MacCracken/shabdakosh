@@ -15,7 +15,15 @@ fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
 fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
 fn _v4(a, b, c, d): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); vec_push(v, d); return v; }
-fn _v5(a, b, c, d, e): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); vec_push(v, d); vec_push(v, e); return v; }
+fn _v5(a, b, c, d, e): i64 {
+    var v = vec_new();
+    vec_push(v, a);
+    vec_push(v, b);
+    vec_push(v, c);
+    vec_push(v, d);
+    vec_push(v, e);
+    return v;
+}
 
 # ================================================================
 test_group("syllable new");
@@ -55,11 +63,14 @@ assert_eq(vec_get(shbdk_syllable_phonemes(vec_get(mama, 1)), 0), SVARA_PH_NASAL_
 
 # ================================================================
 test_group("syllabify hello");
-assert_eq(vec_len(shbdk_syllabify(_v4(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_OPEN_E, SVARA_PH_LATERAL_L, SVARA_PH_DIPH_OU))), 2, "hello -> 2");
+assert_eq(vec_len(shbdk_syllabify(_v4(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_OPEN_E, SVARA_PH_LATERAL_L, SVARA_PH_DIPH_OU))),
+  2, "hello -> 2");
 
 # ================================================================
 test_group("syllabify consonant cluster (street)");
-assert_eq(vec_len(shbdk_syllabify(_v5(SVARA_PH_FRIC_S, SVARA_PH_PLOSIVE_T, SVARA_PH_APPROX_R, SVARA_PH_VOWEL_E, SVARA_PH_PLOSIVE_T))), 1, "street -> 1");
+assert_eq(vec_len(shbdk_syllabify(
+      _v5(SVARA_PH_FRIC_S, SVARA_PH_PLOSIVE_T, SVARA_PH_APPROX_R, SVARA_PH_VOWEL_E, SVARA_PH_PLOSIVE_T))),
+  1, "street -> 1");
 
 # ================================================================
 test_group("syllabify no vowels");

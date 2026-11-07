@@ -68,26 +68,31 @@ fn _shbdk_coverage_report_new(total, covered, uncovered): i64 {
     return r;
 }
 
+# Total number of word tokens in the corpus.
 #must_use
 fn shbdk_coverage_total_tokens(r): i64 {
     return load64(r + 0);
 }
 
+# Number of tokens found in the dictionary.
 #must_use
 fn shbdk_coverage_covered_tokens(r): i64 {
     return load64(r + 8);
 }
 
+# Unique words not found in the dictionary, sorted (vec).
 #must_use
 fn shbdk_coverage_uncovered_words(r): i64 {
     return load64(r + 16);
 }
 
+# Number of unique uncovered words.
 #must_use
 fn shbdk_coverage_uncovered_count(r): i64 {
     return vec_len(load64(r + 16));
 }
 
+# 1 if every token was covered, else 0.
 #must_use
 fn shbdk_coverage_is_fully_covered(r): i64 {
     if (vec_len(load64(r + 16)) == 0) { return 1; }

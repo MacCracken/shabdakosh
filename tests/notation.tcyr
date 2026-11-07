@@ -33,7 +33,8 @@ assert_streq(_rt(SHBDK_NOTATION_ARPABET, "N"), "N", "N");
 # ================================================================
 test_group("arpabet vowel mapping");
 assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_ARPABET, "AE"), SVARA_PH_VOWEL_ASH, "AE -> ash");
-assert_streq(shbdk_notation_phoneme_to_str(SHBDK_NOTATION_ARPABET, SVARA_PH_VOWEL_ASH), "AE1", "ash -> AE1 (with stress)");
+assert_streq(shbdk_notation_phoneme_to_str(SHBDK_NOTATION_ARPABET, SVARA_PH_VOWEL_ASH),
+  "AE1", "ash -> AE1 (with stress)");
 
 # ================================================================
 test_group("ipa roundtrip");
@@ -124,7 +125,7 @@ assert_eq(shbdk_notation_phoneme_to_str(UNKNOWN, SVARA_PH_PLOSIVE_K), 0, "phonem
 assert_eq(shbdk_notation_str_to_phoneme(UNKNOWN, "K"), SHBDK_PH_NONE, "str_to_phoneme -> NONE");
 assert_eq(vec_len(shbdk_notation_parse(UNKNOWN, "K AE T")), 0, "parse -> no phonemes");
 assert_streq(shbdk_notation_render(UNKNOWN, _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH,
-    SVARA_PH_PLOSIVE_T)), "", "render -> empty string");
+      SVARA_PH_PLOSIVE_T)), "", "render -> empty string");
 # A negative tag takes the same path (tags are plain ints, not a checked enum).
 assert_eq(shbdk_notation_name(0 - 1), 0, "negative tag -> 0");
 assert_eq(shbdk_notation_str_to_phoneme(0 - 1, "K"), SHBDK_PH_NONE, "negative tag -> NONE");

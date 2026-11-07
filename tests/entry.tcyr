@@ -1,6 +1,6 @@
 # entry.tcyr — tests for src/dictionary/entry.cyr (ports rust-old/src/dictionary/entry.rs).
 # Needs svara for SVARA_PH_* test data. The Rust serde-roundtrip tests
-# (Pronunciation / DictEntry) are deferred to the format layer (L5) per the
+# (Pronunciation / DictEntry) are covered by the format layer (L5) per the
 # locked serde stance; Region round-trips via its code here.
 
 include "lib/hisab.cyr"
@@ -25,7 +25,8 @@ assert_eq(shbdk_pronunciation_has_region(p), 0, "no region");
 
 # ================================================================
 test_group("pronunciation builder");
-var pb = shbdk_pronunciation_with_region(shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_K)), 0.75), SHBDK_REGION_GA);
+var pb = shbdk_pronunciation_with_region(
+  shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_K)), 0.75), SHBDK_REGION_GA);
 assert_eq(shbdk_pronunciation_has_frequency(pb), 1, "has frequency");
 assert_eq(shbdk_pronunciation_frequency(pb), 0.75, "frequency 0.75");
 assert_eq(shbdk_pronunciation_region(pb), SHBDK_REGION_GA, "region GA");
@@ -58,7 +59,8 @@ var op1 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_P
 var op2 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), 0.7);
 var oe = shbdk_dict_entry_from_pronunciations(_v2(op1, op2));
 assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(oe), 0), SVARA_PH_VOWEL_E, "primary E (higher freq first)");
-assert_eq(vec_get(shbdk_pronunciation_phonemes(vec_get(shbdk_dict_entry_all(oe), 1)), 0), SVARA_PH_VOWEL_A, "second is A");
+assert_eq(vec_get(shbdk_pronunciation_phonemes(vec_get(shbdk_dict_entry_all(oe), 1)), 0),
+  SVARA_PH_VOWEL_A, "second is A");
 
 # ================================================================
 test_group("none frequency sorts last");
@@ -80,7 +82,8 @@ assert_eq(shbdk_dict_entry_for_region(re, SHBDK_REGION_NONE), 0, "no NONE-region
 # ================================================================
 test_group("add pronunciation re-sorts");
 var ae = shbdk_dict_entry_from_phonemes(_v1(SVARA_PH_VOWEL_A));
-shbdk_dict_entry_add_pronunciation(ae, shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), 0.9));
+shbdk_dict_entry_add_pronunciation(ae,
+  shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), 0.9));
 assert_eq(shbdk_dict_entry_len(ae), 2, "len 2");
 assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(ae), 0), SVARA_PH_VOWEL_E, "new high-freq E is primary");
 
@@ -94,7 +97,8 @@ var nf2 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_P
 var nf3 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_I)), 0.3);
 var nfe = shbdk_dict_entry_from_pronunciations(_v3(nf1, nf2, nf3));
 assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(nfe), 0), SVARA_PH_VOWEL_A, "primary stays 0.7/A despite NaN");
-assert_eq(vec_get(shbdk_pronunciation_phonemes(vec_get(shbdk_dict_entry_all(nfe), 1)), 0), SVARA_PH_VOWEL_E, "NaN stays in middle");
+assert_eq(vec_get(shbdk_pronunciation_phonemes(vec_get(shbdk_dict_entry_all(nfe), 1)), 0),
+  SVARA_PH_VOWEL_E, "NaN stays in middle");
 
 var rc = assert_summary();
 syscall(60, rc);

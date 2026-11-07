@@ -104,16 +104,19 @@ fn shbdk_err_dict_parse(): i64 {
     return sakshi_err_new(SHBDK_ERR_DICT_PARSE, ERR_CAT_PARSE);
 }
 
+# An unrecognized ARPABET symbol was encountered (ERR_CAT_PARSE).
 #must_use
 fn shbdk_err_unknown_symbol(): i64 {
     return sakshi_err_new(SHBDK_ERR_UNKNOWN_SYMBOL, ERR_CAT_PARSE);
 }
 
+# A phoneme is not in the target language's inventory (ERR_CAT_RUNTIME).
 #must_use
 fn shbdk_err_phoneme_not_in_inventory(): i64 {
     return sakshi_err_new(SHBDK_ERR_PHONEME_NOT_IN_INV, ERR_CAT_RUNTIME);
 }
 
+# An unknown language code was provided (ERR_CAT_CONFIG).
 #must_use
 fn shbdk_err_unknown_language(): i64 {
     return sakshi_err_new(SHBDK_ERR_UNKNOWN_LANGUAGE, ERR_CAT_CONFIG);

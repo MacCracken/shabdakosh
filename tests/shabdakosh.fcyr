@@ -1,10 +1,12 @@
 # shabdakosh fuzz harness
 
+# Scaffold stub: takes the fuzz input and exercises no shabdakosh code.
 fn fuzz_main(data, len) {
     if (len == 0) { return 0; }
     return 0;
 }
 
+# Runs the stub target once on a fixed input.
 fn main() {
     alloc_init();
     fuzz_main("test", 4);
