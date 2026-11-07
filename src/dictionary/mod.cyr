@@ -144,9 +144,113 @@ fn _shbdk_str_le(a, b): i64 {
     return 1;
 }
 
-# Sort a vec of Str ascending (used for deterministic export / diff output).
+# Str `s`'s first 8 bytes as one big-endian integer (zero padded past its length), with the
+# sign bit flipped so that a signed compare of two keys orders those bytes as unsigned.
+fn _shbdk_str_key8(s): i64 {
+    var d = str_data(s);
+    var l = str_len(s);
+    var k = 0;
+    var i = 0;
+    while (i < 8) {
+        k = k << 8;
+        if (i < l) { k = k | load8(d + i); }
+        i = i + 1;
+    }
+    return k ^ (1 << 63);
+}
+
+# Sort a vec of Str ascending in byte order (unsigned bytes; a prefix sorts before its
+# extensions), stably, in place. Used for every deterministic export and diff.
+#
+# 3.1.0: its own bottom-up merge sort instead of _shbdk_msort with _shbdk_str_le, which cost a
+# fncall2, vec_get / vec_set per access and a copy-back per pass: about 10 ms for the 10,617
+# English keys. Each Str gets a 16-byte record, [0] = _shbdk_str_key8, [8] = the Str, so most
+# comparisons are one integer compare. Equal keys (the same first 8 bytes, or a real NUL
+# meeting the padding) fall back to _shbdk_str_lt. Two raw buffers swap roles each pass, and
+# the left run wins ties, so the sort stays stable.
 fn _shbdk_sort_strs(v): i64 {
-    return _shbdk_msort(v, &_shbdk_str_le);
+    var n = vec_len(v);
+    if (n < 2) { return 0; }
+    var src = alloc(n * 32);
+    if (src == 0) { return _shbdk_msort(v, &_shbdk_str_le); }
+    var dst = src + n * 16;
+    var i = 0;
+    var s = 0;
+    while (i < n) {
+        s = vec_get(v, i);
+        store64(src + i * 16, _shbdk_str_key8(s));
+        store64(src + i * 16 + 8, s);
+        i = i + 1;
+    }
+    var width = 1;
+    var lo = 0;
+    var mid = 0;
+    var hi = 0;
+    var a = 0;
+    var b = 0;
+    var k = 0;
+    var r = 0;
+    var ra = 0;
+    var rb = 0;
+    var ka = 0;
+    var kb = 0;
+    var take_right = 0;
+    var t = 0;
+    while (width < n) {
+        lo = 0;
+        while (lo < n) {
+            mid = lo + width;
+            if (mid > n) { mid = n; }
+            hi = mid + width;
+            if (hi > n) { hi = n; }
+            a = lo;
+            b = mid;
+            k = lo;
+            while (k < hi) {
+                if (a >= mid) {
+                    take_right = 1;
+                } else {
+                    if (b >= hi) {
+                        take_right = 0;
+                    } else {
+                        ra = src + a * 16;
+                        rb = src + b * 16;
+                        ka = load64(ra);
+                        kb = load64(rb);
+                        take_right = 0;
+                        if (kb < ka) {
+                            take_right = 1;
+                        } else {
+                            if (kb == ka) {
+                                take_right = _shbdk_str_lt(load64(rb + 8), load64(ra + 8));
+                            }
+                        }
+                    }
+                }
+                if (take_right == 1) {
+                    r = src + b * 16;
+                    b = b + 1;
+                } else {
+                    r = src + a * 16;
+                    a = a + 1;
+                }
+                store64(dst + k * 16, load64(r));
+                store64(dst + k * 16 + 8, load64(r + 8));
+                k = k + 1;
+            }
+            lo = hi;   # == min(lo + 2*width, n); reaching n ends the pass
+        }
+        t = src;
+        src = dst;
+        dst = t;
+        width = width + width;
+    }
+    i = 0;
+    while (i < n) {
+        vec_set(v, i, load64(src + i * 16 + 8));
+        i = i + 1;
+    }
+    return 0;
 }
 
 # phoneme-vec builders for english_minimal.

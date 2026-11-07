@@ -5,6 +5,12 @@
 
 ## Version
 
+**3.1.0** (2026-11-07) — toolchain + dependency refresh onto the cyrius 6.7 language minor: cyrius
+6.7.9, svara 3.6.0, varna 2.5.0, with hisab 3.4.0 / naad 2.3.0 / goonj 2.1.0 / sakshi 2.5.8
+transitively. The toolchain move changed no output; three `rust-old/` parity fixes did (sorted
+`to_binary` / `to_json` keys, and `portuguese` reachable), and a ~4x faster string sort speeds
+every sorted export. Suite **934 assertions / 26 suites**.
+Consumers need cyrius 6.7.2+.
 **3.0.8** (2026-11-07) — toolchain + dependency refresh: cyrius 6.6.20, svara 3.5.6, varna 2.4.3,
 with hisab 3.3.7 / naad 2.2.5 / goonj 2.0.6 / sakshi 2.5.7 transitively. No API change. Suite
 stays **873 assertions / 26 suites**. Dropped the `path` override that made the svara tag inert.
@@ -29,17 +35,26 @@ started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
 
 ## Toolchain
 
-- **Cyrius pin**: `6.6.20` (in `cyrius.cyml [package].cyrius`) — bumped
-  6.4.5→…6.4.10→6.4.12→6.5.36→6.5.37→6.6.3→6.6.20 as the installed cycc drifted;
+- **Cyrius pin**: `6.7.9` (in `cyrius.cyml [package].cyrius`) — bumped
+  6.4.5→…6.4.10→6.4.12→6.5.36→6.5.37→6.6.3→6.6.20→6.7.9 as the installed cycc drifted;
   `lib/` re-synced each time (`cyrius lib sync`, declared-subset — **not** `--full`,
   which drops the whole 108-file snapshot into `lib/`), all suites stay green.
-  3.0.8 regenerated it from scratch instead (`rm -rf lib cyrius.lock && cyrius deps`).
-- **6.6.20 pin set**: svara 3.5.6 and varna 2.4.3 are the last tags on 6.6.20; the next
-  tags of svara, varna, hisab, naad and goonj need 6.7.x. svara's manifest supplies the
-  hisab/naad/goonj versions.
-- **Never put `path =` beside `git`/`tag` in `[deps.*]`**: an existing path makes the tag inert
-  and skips the commit pin. Every `cyrius build`/`test`/`tests` re-resolves deps, so the sibling's
-  checkout would land in `lib/` just from running tests.
+  3.0.8 and 3.1.0 regenerated it from scratch instead (`rm -rf lib cyrius.lock && cyrius deps`).
+- **6.7.9 pin set**: svara 3.6.0 and varna 2.5.0 pin 6.7.9 exactly; their next tags need 6.7.18.
+  svara's manifest supplies the hisab/naad/goonj versions.
+- **Pin moves past 6.7.0 need more than green tests**: 6.7.x changes what some code means. Read
+  the cyrius `docs/development/ecosystem-migration.md` for the target version, and compare output
+  against the previous tag with the hash seed pinned (`_hm_seed`), as 3.1.0 did.
+- **`path =` beside `git`/`tag`** is a dev override since cyrius 6.7.6, used only with
+  `CYRIUS_LOCAL=1` or `--local`; a default build builds the tag. Before 6.7.6 it silently beat
+  the tag. A `path` with no `git` is refused.
+- **Every export sorts its keys** since 3.1.0 (`to_binary` and `to_json` joined `to_cmudict`,
+  `to_ipa`, `to_pls`), so the same dictionary gives the same bytes in any process. `map_keys`
+  order changes per process because the stdlib hashmap is seeded, so a new export must sort too.
+- **`_shbdk_sort_strs` has its own merge sort** since 3.1.0: an 8-byte integer prefix per string,
+  `_shbdk_str_lt` only on ties, two raw buffers. About 2.4 ms for 10,617 keys, against 9.5 ms
+  through the generic `_shbdk_msort`, which still serves the comparator sorts in `validate.cyr`.
+  The "sort_strs matches the generic merge sort" group in `tests/dict.tcyr` is its guard.
 - **Sidecar**: `dist/shabdakosh.deps` lists only `mmap` since 3.0.8. That is the 6.6.18 rule (the
   compile-verify decides; named deps are not listed), not a loss. Verified with a from-scratch
   consumer build.

@@ -38,7 +38,7 @@ do not modify it; cross-check the port against it.
 cyrius deps                                   # resolve dependencies
 cyrius build src/main.cyr build/shabdakosh    # compile
 cyrius test tests/<mod>.tcyr                   # run one suite
-cyrius tests tests                             # run all .tcyr
+cyrius test tests                              # run all .tcyr
 ```
 
 ## Work Loop
@@ -47,7 +47,7 @@ cyrius tests tests                             # run all .tcyr
 2. Port the module; keep `src/main.cyr` including it and building at every step
 3. `cyrius fmt <file>`
 4. `cyrius lint <file>`
-5. `cyrius test tests/<mod>.tcyr` and `cyrius tests tests`
+5. `cyrius test tests/<mod>.tcyr` and `cyrius test tests`
 6. `cyrius doctest <file>` (if it has doc examples)
 7. `cyrius bench` (if performance-relevant — **never skip**)
 8. Update `CHANGELOG.md` if user-facing; update `docs/development/state.md` progress

@@ -36,7 +36,7 @@ The whole surface follows a handful of rules. Learn them once:
 ```sh
 cyrius deps                                   # resolve dependencies
 cyrius build src/main.cyr build/shabdakosh    # compile
-cyrius tests tests                            # run every .tcyr suite
+cyrius test tests                             # run every .tcyr suite
 ```
 
 Consumers pull `dist/shabdakosh.cyr` and its `dist/shabdakosh.deps` sidecar, and

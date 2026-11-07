@@ -72,7 +72,7 @@ shabdakosh/
 ├── data/cmudict-5k.txt            — base-dictionary source of truth (300 KB, 10,692 lines)
 ├── programs/gen_cmudict.cyr        — codegen: data → _cmudict_data.cyr (the build.rs port)
 ├── benches/hotpath.bcyr           — cyrius bench (criterion replacement)
-├── tests/*.tcyr                    — per-module suites (cyrius tests)
+├── tests/*.tcyr                    — per-module suites (cyrius test tests)
 └── dist/shabdakosh.cyr (+ .deps)   — the shipped distlib bundle
 ```
 
@@ -268,7 +268,7 @@ dist/shabdakosh.cyr
 cyrius deps                                   # resolve dependencies
 cyrius build src/main.cyr build/shabdakosh    # compile the smoke entry
 cyrius test tests/<mod>.tcyr                   # run one suite
-cyrius tests tests                            # run all .tcyr
+cyrius test tests                             # run all .tcyr
 cyrius bench                                   # benches/hotpath.bcyr
 cyrius distlib                                 # rebuild dist/shabdakosh.cyr
 ```

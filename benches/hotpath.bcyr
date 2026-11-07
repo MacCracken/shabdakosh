@@ -48,6 +48,8 @@ fn b_binary_deserialize() { return shbdk_from_binary(_blob); }
 fn b_to_cmudict() { return shbdk_to_cmudict(_dict); }
 # Exports the dictionary as IPA text.
 fn b_to_ipa() { return shbdk_to_ipa(_dict); }
+# Exports the dictionary as JSON, which has sorted its keys since 3.1.0.
+fn b_to_json() { return shbdk_to_json(_dict); }
 
 # Times `n` calls of the 0-arg fn `fp` and reports them under `name`.
 fn bench(name, fp, n) {
@@ -89,6 +91,7 @@ fn main() {
     # sorted text export over all 10.6k keys (sort + emit)
     bench("to_cmudict", &b_to_cmudict, 10);
     bench("to_ipa", &b_to_ipa, 10);
+    bench("to_json", &b_to_json, 10);
     return 0;
 }
 

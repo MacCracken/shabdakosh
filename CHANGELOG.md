@@ -1,5 +1,86 @@
 # Changelog
 
+## [3.1.0] — 2026-11-07
+
+Toolchain and dependency release, moving to the cyrius 6.7 language minor. `cyrius` 6.6.20 ->
+**6.7.9**, `svara` 3.5.6 -> **3.6.0**, `varna` 2.4.3 -> **2.5.0**, and transitively `hisab` 3.3.7 ->
+**3.4.0**, `naad` 2.2.5 -> **2.3.0**, `goonj` 2.0.6 -> **2.1.0**, `sakshi` 2.5.7 -> **2.5.8**. svara
+3.6.0 and varna 2.5.0 are the tags pinned to exactly 6.7.9. `lib/` and `cyrius.lock` were
+regenerated from scratch, and every vendored file is byte-identical to its tag or to the 6.7.9
+stdlib snapshot.
+
+It is a minor because the floor for consumers moves: svara 3.6.0 needs cyrius 6.7.2 or later. It
+also closes three parity gaps with `rust-old/`, which change output (see *Fixed*).
+
+No API change. **934 assertions / 26 suites**: the 873 from 3.0.8, 14 regression checks for the
+fixes below, and 47 for the new string sort. `cyrius audit` stays clean. All 101 `SVARA_PH_*` ordinals are unchanged.
+
+### Fixed
+
+All three predate 3.1.0. Each regression check was confirmed to fail before its fix.
+
+- **`portuguese` could not be found in the built-in dictionary.** Rust's `build.rs` lowercases every
+  word; `programs/gen_cmudict.cyr` did not, so the one mixed-case entry in `data/cmudict-5k.txt`
+  was stored as `Portuguese`, which a lowercasing lookup never reaches. The generator now
+  lowercases, and the regenerated `_cmudict_data.cyr` differs by that one character.
+- **`to_binary` wrote words in hash order.** Rust writes through `BTreeMap`s, so its keys are
+  sorted. Since the stdlib hashmap gained a per-process seed (cyrius 6.5.39), the same dictionary
+  gave different bytes on every run. Both maps are now written in byte order. The reader accepts
+  any order, so files from earlier versions still load.
+- **`to_json` wrote `user_entries` in hash order**, where Rust's `BTreeMap` sorts them. `entries` is
+  sorted too now: Rust leaves its order unspecified, and sorting it makes the whole export
+  byte-reproducible.
+
+Checked against 3.0.8 with the same differential program as the toolchain move: the JSON, PLS and
+binary exports decode to the same content apart from that one key, 10 of its 17 sections are
+byte-identical, and the JSON and binary round trips now come back with 0 differences (2 before).
+Run three times with random hash seeds, its output is byte-identical every time.
+
+**Cost:** sorting is not free. Through the old shared sort, 10,617 keys took about 10 ms and
+`binary serialize` rose from about 4 to 14 ms. The faster sort below brings it to about 6.4 ms,
+and `to_json` back to about where it was unsorted. `binary deserialize` measured about 15 % faster,
+for a reason not established.
+
+### Added
+
+- **`to_json` bench** in `benches/hotpath.bcyr`, since that path now sorts.
+
+### Changed
+
+- **`_shbdk_sort_strs` has its own merge sort, about 4x faster.** It sorted through the generic
+  `_shbdk_msort`, paying a `fncall2` per comparison, a `vec_get` / `vec_set` per access and a
+  copy-back per pass: about 9.5 ms for the 10,617 English keys. It now keys each string by its
+  first 8 bytes as one integer (sign bit flipped, so a signed compare orders bytes as unsigned),
+  falls back to a full compare only when those tie, and swaps two raw buffers per pass: about
+  2.4 ms. Measured against the previous build: `binary serialize` -52 %, `to_ipa` -39 %,
+  `to_cmudict` -37 %, `to_json` -16 %, others within noise. The order is unchanged: the 6.3 MB
+  differential output is byte-identical, and a new test requires the generic sort's exact object
+  order on edge cases (bytes >= 0x80, embedded NULs, prefixes, ties past byte 8) and on the
+  English keys. It fails if either the sign flip or the tie-break is removed. `_shbdk_msort`
+  still serves the comparator sorts in `validate.cyr`.
+- **`dyn` renamed in `tests/static_dict.tcyr`.** cyrius 6.7.8 made it a reserved word. This was the
+  only source that 6.7.x stopped compiling.
+- **`tests/trie.tcyr` compares with `str_eq_cstr`.** It passed a `Str`'s data pointer to `streq`,
+  which relies on a NUL terminator a `Str` does not promise. The compiler warns about this.
+- **`cyrius tests tests` -> `cyrius test tests`** in `CLAUDE.md`, `README.md`, `CONTRIBUTING.md` and
+  the guides. 6.7.6 deprecated the old spelling.
+- **Dropped the `[deps.svara]` warning about `path =`.** Since cyrius 6.7.6 a `path` beside `git` and
+  `tag` is a dev override, used only with `CYRIUS_LOCAL=1` or `--local`, so a default build always
+  builds the tag.
+
+### Verified
+
+6.7.x changes what some code means, not just what compiles, so two checks went beyond the suite:
+
+- **Source sweep**, with comments and strings stripped, over `src/`, `tests/`, `benches/` and
+  `programs/`: no lone `!` (dropped by the lexer before 6.7.3), no unary `-` or `~` on a constant
+  (rebound in 6.7.9), no typed `*T` or derefs (narrowed in 6.7.8), no `for` loops, no `bool`.
+- **Differential run**: one program drives the public surface (all 101 phonemes through every
+  notation, every word through lookup, syllabification and all three notations, every export and
+  round trip, validation, detection, the varna languages, overlay, morphology, heteronyms, G2P,
+  lazy mmap). With the hash seed pinned, its 6.3 MB of output was byte-identical to 3.0.8 before
+  the fixes above, so the toolchain move by itself changed no output.
+
 ## [3.0.8] — 2026-11-07
 
 Toolchain and dependency release. `cyrius` 6.6.3 -> **6.6.20**, `svara` -> **3.5.6**, `varna`

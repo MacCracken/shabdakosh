@@ -15,6 +15,38 @@ include "src/dictionary/format/binary.cyr"
 alloc_init();
 
 fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+# Offset of `needle` in data[0..len), or -1.
+fn _pos(data, len, needle): i64 {
+    var n = strlen(needle);
+    var i = 0;
+    while (i + n <= len) {
+        if (memeq(data + i, needle, n) == 1) { return i; }
+        i = i + 1;
+    }
+    return 0 - 1;
+}
+# 1 if every word of `words` occurs in data[0..len), in that order.
+fn _in_order(data, len, words): i64 {
+    var prev = 0 - 1;
+    var i = 0;
+    var at = 0;
+    while (i < vec_len(words)) {
+        at = _pos(data, len, vec_get(words, i));
+        if (at <= prev) { return 0; }
+        prev = at;
+        i = i + 1;
+    }
+    return 1;
+}
+fn _words(a, b, c, d, e): i64 {
+    var v = vec_new();
+    vec_push(v, a);
+    vec_push(v, b);
+    vec_push(v, c);
+    vec_push(v, d);
+    vec_push(v, e);
+    return v;
+}
 
 # ================================================================
 test_group("roundtrip minimal");
@@ -115,6 +147,36 @@ while (bi < 8) {
 }
 assert_lt(alloc_used() - bbefore, 1048576, "8 small loads use < 1 MB of arena (was 64 MB)");
 assert_eq(shbdk_load_binary_file("/tmp/nonexistent_shabdakosh_bin_xyz.bin"), 0, "missing file -> 0");
+
+# ================================================================
+# Rust writes through BTreeMaps, so keys go out in byte order. Hash order would change the
+# bytes from run to run, because the stdlib hashmap is seeded per process.
+test_group("keys are byte-sorted, so the bytes are reproducible");
+var sd = shbdk_dict_new();
+shbdk_dict_insert(sd, "ñu", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert(sd, "zebra", _v1(SVARA_PH_FRIC_Z));
+shbdk_dict_insert(sd, "yak", _v1(SVARA_PH_VOWEL_ASH));
+shbdk_dict_insert(sd, "walrus", _v1(SVARA_PH_FRIC_S));
+shbdk_dict_insert(sd, "mule", _v1(SVARA_PH_LATERAL_L));
+shbdk_dict_insert(sd, "koala", _v1(SVARA_PH_PLOSIVE_K));
+shbdk_dict_insert(sd, "heron", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert(sd, "goose", _v1(SVARA_PH_FRIC_S));
+shbdk_dict_insert(sd, "eagle", _v1(SVARA_PH_LATERAL_L));
+shbdk_dict_insert(sd, "crane", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(sd, "zinc", _v1(SVARA_PH_FRIC_Z));
+shbdk_dict_insert_user(sd, "tin", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(sd, "neon", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(sd, "iron", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(sd, "argon", _v1(SVARA_PH_NASAL_N));
+var sb = shbdk_to_binary(sd);
+var sp = str_data(sb);
+var sl = str_len(sb);
+assert_eq(_in_order(sp, sl, _words("crane", "eagle", "goose", "heron", "koala")), 1, "base: first half");
+assert_eq(_in_order(sp, sl, _words("koala", "mule", "walrus", "yak", "zebra")), 1, "base: second half");
+assert_lt(_pos(sp, sl, "zebra"), _pos(sp, sl, "ñu"), "unsigned bytes: ñu (0xC3) sorts after z");
+assert_eq(_in_order(sp, sl, _words("argon", "iron", "neon", "tin", "zinc")), 1, "user overlay sorted");
+assert_lt(_pos(sp, sl, "ñu"), _pos(sp, sl, "argon"), "base block before overlay block");
+assert_eq(vec_len(shbdk_dict_lookup(shbdk_from_binary(sb), "yak")), 1, "sorted output decodes");
 
 var rc = assert_summary();
 syscall(60, rc);

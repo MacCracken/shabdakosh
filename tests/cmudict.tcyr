@@ -13,6 +13,30 @@ include "src/dictionary/cmudict.cyr"
 
 alloc_init();
 
+# Number of keys in map `m` holding an ASCII uppercase byte.
+fn _upper_keys(m): i64 {
+    var ks = map_keys(m);
+    var bad = 0;
+    var i = 0;
+    var j = 0;
+    var k = 0;
+    var c = 0;
+    while (i < vec_len(ks)) {
+        k = vec_get(ks, i);
+        j = 0;
+        while (j < str_len(k)) {
+            c = load8(str_data(k) + j);
+            if (c >= 65 && c <= 90) {
+                bad = bad + 1;
+                break;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return bad;
+}
+
 var m = shbdk_cmudict_english();
 
 # ================================================================
@@ -46,6 +70,14 @@ assert_neq(bass, 0, "bass present");
 assert_eq(shbdk_dict_entry_len(bass), 2, "bass: 2 pronunciations");
 assert_eq(shbdk_pronunciation_has_frequency(shbdk_dict_entry_primary(bass)), 1, "bass primary has @freq");
 assert_eq(shbdk_pronunciation_frequency(shbdk_dict_entry_primary(bass)), 0.5, "bass @freq=0.5 parsed");
+
+# ================================================================
+# Lookups lowercase their input, so a key holding an uppercase byte can never be reached.
+# build.rs lowercases every word; the data file's one mixed-case entry is "Portuguese".
+test_group("keys are lowercase");
+assert_eq(_upper_keys(m), 0, "no key holds an uppercase byte");
+assert_neq(map_get(m, str_from("portuguese")), 0, "portuguese stored lowercase");
+assert_eq(map_get(m, str_from("Portuguese")), 0, "no mixed-case key");
 
 # ================================================================
 test_group("missing word");

@@ -6,6 +6,8 @@
 #   lang: u8 flag [+ u16 len + bytes]
 #   entries:      u32 count, each { u16 wlen + word, u16 npron, prons... }
 #   user_entries: same
+# Words go out in byte order in both maps, as Rust's BTreeMaps do, so the same dictionary
+# always gives the same bytes. The reader takes them in any order.
 #   pron: u16 nphon + nphon×u8 (phoneme ordinals) + u8 freq-flag [+ u64 f64 bits]
 #         + u8 region-flag [+ u8 region]
 # to_binary returns a Str (blob may contain NULs); from_binary takes a Str.
@@ -126,6 +128,7 @@ fn _shbdk_bin_put_pron(buf, off, pron): i64 {
 fn _shbdk_bin_put_map(buf, off, map): i64 {
     var start = off;
     var keys = map_keys(map);
+    _shbdk_sort_strs(keys);
     var n = vec_len(keys);
     off = off + _shbdk_bin_put_u32(buf, off, n);
     var i = 0;

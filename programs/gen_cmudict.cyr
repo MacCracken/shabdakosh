@@ -227,8 +227,9 @@ fn main() {
         pending_freq = 0;
         pending_region = 0;
 
-        # fold into the entry for this base word
-        var wkey = str_new(src + s, wend - s);
+        # fold into the entry for this base word, lowercased as build.rs does: lookups
+        # lowercase their input, so a key holding an uppercase byte could never be reached
+        var wkey = str_from(str_lower_cstr(_gc_dup(src, s, wend)));
         var acc = map_get(word_map, wkey);
         if (acc == 0) {
             acc = vec_new();

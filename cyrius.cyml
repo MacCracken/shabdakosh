@@ -5,7 +5,7 @@ description = "shabdakosh — pronunciation dictionary for AGNOS (ARPABET/IPA↔
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/shabdakosh"
 language = "cyrius"
-cyrius = "6.6.20"
+cyrius = "6.7.9"
 
 [build]
 entry = "src/main.cyr"
@@ -56,13 +56,11 @@ stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "ass
 # the voice/synthesis surface shabdakosh maps to. Consumed from arpabet.cyr
 # onward. git+tag dep (CI-resolvable; no local sibling checkout needed). The dist
 # bundle needs the `hashmap` + `bayan` folds in scope (declared above, per
-# svara's dist/svara.deps sidecar). 3.5.6 is the last svara on cyrius 6.6.x, and
-# its manifest brings the matched set: hisab 3.3.7, naad 2.2.5, goonj 2.0.6.
-# Keep this block free of `path =`: an existing path makes `git`/`tag` inert, so
-# `cyrius deps` would vendor whatever the sibling has checked out, unpinned.
+# svara's dist/svara.deps sidecar). 3.6.0 pins cyrius 6.7.9 exactly, and its
+# manifest brings the matched set: hisab 3.4.0, naad 2.3.0, goonj 2.1.0.
 [deps.svara]
 git = "https://github.com/MacCracken/svara.git"
-tag = "3.5.6"
+tag = "3.6.0"
 modules = ["dist/svara.cyr"]
 
 # varna — phoneme inventories + phonotactics + script/registry metadata, consumed
@@ -74,5 +72,5 @@ modules = ["dist/svara.cyr"]
 # strings via shabda_phoneme_to_ipa.
 [deps.varna]
 git = "https://github.com/MacCracken/varna.git"
-tag = "2.4.3"
+tag = "2.5.0"
 modules = ["dist/varna.cyr"]

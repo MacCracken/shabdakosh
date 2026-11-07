@@ -53,9 +53,13 @@ fn _shbdk_entry_to_jsonv(entry): i64 {
     return obj;
 }
 
+# Keys go out sorted: user_entries is a BTreeMap in Rust. Rust leaves entries (a HashMap)
+# unspecified, and sorting it too makes the export byte-reproducible despite the per-process
+# hash seed.
 fn _shbdk_map_to_jsonv(m): i64 {
     var obj = json_v_obj_new();
     var keys = map_keys(m);
+    _shbdk_sort_strs(keys);
     var n = vec_len(keys);
     var i = 0;
     var wk = 0;

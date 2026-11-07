@@ -29,7 +29,7 @@ ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
 ```sh
 cyrius deps                                  # resolve dependencies (svara, varna, stdlib)
 cyrius build src/main.cyr build/shabdakosh   # compile the smoke binary
-cyrius tests tests                           # run all .tcyr suites
+cyrius test tests                            # run all .tcyr suites
 ```
 
 ## Usage

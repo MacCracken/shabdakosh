@@ -33,7 +33,7 @@ Or the individual checks:
 ```sh
 cyrius fmt <file.cyr>          # format (add --check to verify without writing)
 cyrius lint <file.cyr>         # static analysis (warnings + untracked deferrals)
-cyrius tests tests             # run every tests/*.tcyr suite
+cyrius test tests              # run every tests/*.tcyr suite
 cyrius doctest <file.cyr>      # run doc examples, if the file has any
 cyrius bench                   # benchmarks (auto-discovers benches/)
 ```

@@ -184,6 +184,105 @@ assert_eq(vec_get(dup, 2), d0, "stable: first 'kk' stays first");
 assert_eq(vec_get(dup, 3), d2, "stable: second 'kk' stays second");
 
 # ================================================================
+# 3.1.0: _shbdk_sort_strs has its own merge sort, which orders on each Str's first 8 bytes as
+# one integer and falls back to _shbdk_str_lt only on a tie there. It must give exactly the
+# order the generic sort (_shbdk_msort with _shbdk_str_le) gives, object for object, including
+# where the integer shortcut could go wrong: bytes >= 0x80 (the sign bit), embedded NULs (equal
+# to the zero padding), prefixes of each other, and ties that differ only after byte 8.
+test_group("sort_strs matches the generic merge sort");
+# A Str of the first `len` of the bytes a..j (NULs and bytes >= 0x80 included).
+fn _sb(len, a, b, c, d, e, f, g, h, i, j): i64 {
+    var buf = alloc(16);
+    store8(buf + 0, a);
+    store8(buf + 1, b);
+    store8(buf + 2, c);
+    store8(buf + 3, d);
+    store8(buf + 4, e);
+    store8(buf + 5, f);
+    store8(buf + 6, g);
+    store8(buf + 7, h);
+    store8(buf + 8, i);
+    store8(buf + 9, j);
+    return str_new(buf, len);
+}
+fn _edge_strs(): i64 {
+    var v = vec_new();
+    vec_push(v, _sb(9, 97, 98, 99, 100, 101, 102, 103, 104, 105, 0));
+    vec_push(v, _sb(1, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(2, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(8, 97, 98, 99, 100, 101, 102, 103, 104, 0, 0));
+    vec_push(v, _sb(1, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(3, 195, 177, 117, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(9, 97, 98, 99, 100, 101, 102, 103, 104, 0, 0));
+    vec_push(v, _sb(2, 97, 98, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(1, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(8, 97, 98, 99, 100, 101, 102, 103, 103, 0, 0));
+    vec_push(v, _sb(9, 255, 255, 255, 255, 255, 255, 255, 255, 1, 0));
+    vec_push(v, _sb(1, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(3, 97, 0, 98, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(10, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106));
+    vec_push(v, _sb(8, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0));
+    vec_push(v, _sb(5, 122, 101, 98, 114, 97, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(9, 97, 98, 99, 100, 101, 102, 103, 104, 255, 0));
+    vec_push(v, _sb(2, 97, 98, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(1, 122, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    vec_push(v, _sb(9, 97, 98, 99, 100, 101, 102, 103, 104, 105, 0));
+    vec_push(v, _sb(9, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0));
+    return v;
+}
+fn _copyv(v): i64 {
+    var c = vec_new();
+    var i = 0;
+    while (i < vec_len(v)) {
+        vec_push(c, vec_get(v, i));
+        i = i + 1;
+    }
+    return c;
+}
+fn _reversed(v): i64 {
+    var c = vec_new();
+    var i = vec_len(v);
+    while (i > 0) {
+        i = i - 1;
+        vec_push(c, vec_get(v, i));
+    }
+    return c;
+}
+# 1 if _shbdk_sort_strs and the generic sort put the same objects in the same order.
+fn _matches_generic(v): i64 {
+    var a = _copyv(v);
+    var b = _copyv(v);
+    _shbdk_sort_strs(a);
+    _shbdk_msort(b, &_shbdk_str_le);
+    if (vec_len(a) != vec_len(b)) { return 0; }
+    var i = 0;
+    while (i < vec_len(a)) {
+        if (vec_get(a, i) != vec_get(b, i)) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+var edge = _edge_strs();
+assert_eq(_matches_generic(edge), 1, "edge cases, as built");
+assert_eq(_matches_generic(_reversed(edge)), 1, "edge cases, reversed");
+var esort = _copyv(edge);
+_shbdk_sort_strs(esort);
+assert_eq(_sorted_ok(esort), 1, "edge cases sorted");
+assert_eq(str_len(vec_get(esort, 0)), 0, "empty Str first");
+assert_eq(load8(str_data(vec_get(esort, vec_len(esort) - 1))), 255, "0xFF... last");
+var msz = 0;
+while (msz < 40) {
+    assert_eq(_matches_generic(_mk(msz, 7)), 1, "matches at every size 0..39");
+    msz = msz + 1;
+}
+var ekeys = map_keys(shbdk_dict_entries(shbdk_dict_english()));
+assert_eq(_matches_generic(ekeys), 1, "matches on the 10,617 English keys");
+assert_eq(_matches_generic(_reversed(ekeys)), 1, "matches on them reversed");
+
+# ================================================================
 # REGRESSION (3.0.4, backlog parity gap): merge / merge_conservative used to
 # insert the SOURCE's ShbdkDictEntry pointer, where Rust inserts entry.clone().
 # Mutating one dictionary's entry then changed the other's too.
@@ -253,6 +352,13 @@ assert_eq(shbdk_dict_len(md2), 1, "mixed-case key stored verbatim");
 assert_eq(shbdk_dict_lookup(md2, "cat"), 0, "not found lowercased (key was not folded)");
 var emptysimple = shbdk_dict_from_simple_entries(map_new_str());
 assert_eq(shbdk_dict_is_empty(emptysimple), 1, "empty input -> empty dict");
+
+# ================================================================
+test_group("english: mixed-case data entry is reachable in any case");
+var pt = shbdk_dict_english();
+assert_neq(shbdk_dict_lookup(pt, "portuguese"), 0, "portuguese");
+assert_neq(shbdk_dict_lookup(pt, "Portuguese"), 0, "Portuguese");
+assert_neq(shbdk_dict_lookup(pt, "PORTUGUESE"), 0, "PORTUGUESE");
 
 var rc = assert_summary();
 syscall(60, rc);

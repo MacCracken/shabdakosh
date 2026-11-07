@@ -46,9 +46,9 @@ assert_gt(shbdk_dict_entry_len(er), 1, "read has 2+ variants");
 # static matches dynamic: same phonemes for the same words (element-wise, since
 # the two dicts are separately-built and hold distinct vec pointers).
 test_group("static matches dynamic");
-var dyn = shbdk_dict_english();
+var dynamic = shbdk_dict_english();
 var sp = shbdk_static_lookup("computer");
-var dp = shbdk_dict_lookup(dyn, "computer");
+var dp = shbdk_dict_lookup(dynamic, "computer");
 assert_neq(sp, 0, "computer in static");
 assert_eq(vec_len(sp), vec_len(dp), "computer same phoneme count");
 var ci = 0;

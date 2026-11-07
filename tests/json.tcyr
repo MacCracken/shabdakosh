@@ -17,6 +17,38 @@ include "src/dictionary/format/json.cyr"
 alloc_init();
 
 fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+# Offset of `needle` in data[0..len), or -1.
+fn _pos(data, len, needle): i64 {
+    var n = strlen(needle);
+    var i = 0;
+    while (i + n <= len) {
+        if (memeq(data + i, needle, n) == 1) { return i; }
+        i = i + 1;
+    }
+    return 0 - 1;
+}
+# 1 if every word of `words` occurs in data[0..len), in that order.
+fn _in_order(data, len, words): i64 {
+    var prev = 0 - 1;
+    var i = 0;
+    var at = 0;
+    while (i < vec_len(words)) {
+        at = _pos(data, len, vec_get(words, i));
+        if (at <= prev) { return 0; }
+        prev = at;
+        i = i + 1;
+    }
+    return 1;
+}
+fn _quoted5(a, b, c, d, e): i64 {
+    var v = vec_new();
+    vec_push(v, a);
+    vec_push(v, b);
+    vec_push(v, c);
+    vec_push(v, d);
+    vec_push(v, e);
+    return v;
+}
 
 # ================================================================
 test_group("to_json / from_json roundtrip");
@@ -77,6 +109,28 @@ assert_neq(shbdk_from_json("{\"language\":42,\"entries\":{}}"), 0, "int language
 assert_eq(shbdk_dict_language(shbdk_from_json("{\"language\":42}")), 0, "int language ignored -> no language");
 assert_neq(shbdk_from_json("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"region\":[]}]}}}"),
   0, "array region -> dict (no crash)");
+
+# ================================================================
+# user_entries is a BTreeMap in Rust, so it serializes sorted. Rust leaves entries (a HashMap)
+# unspecified; sorting it too makes the export reproducible despite the per-process hash seed.
+test_group("keys are sorted, so the export is reproducible");
+var jd = shbdk_dict_new();
+shbdk_dict_insert(jd, "zebra", _v1(SVARA_PH_FRIC_Z));
+shbdk_dict_insert(jd, "yak", _v1(SVARA_PH_VOWEL_ASH));
+shbdk_dict_insert(jd, "mule", _v1(SVARA_PH_LATERAL_L));
+shbdk_dict_insert(jd, "koala", _v1(SVARA_PH_PLOSIVE_K));
+shbdk_dict_insert(jd, "crane", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(jd, "zinc", _v1(SVARA_PH_FRIC_Z));
+shbdk_dict_insert_user(jd, "tin", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(jd, "neon", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(jd, "iron", _v1(SVARA_PH_NASAL_N));
+shbdk_dict_insert_user(jd, "argon", _v1(SVARA_PH_NASAL_N));
+var jt = shbdk_to_json(jd);
+var jl = strlen(jt);
+assert_eq(_in_order(jt, jl, _quoted5("\"crane\"", "\"koala\"", "\"mule\"", "\"yak\"", "\"zebra\"")),
+  1, "entries sorted");
+assert_eq(_in_order(jt, jl, _quoted5("\"argon\"", "\"iron\"", "\"neon\"", "\"tin\"", "\"zinc\"")),
+  1, "user_entries sorted");
 
 var rc = assert_summary();
 syscall(60, rc);
