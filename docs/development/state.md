@@ -5,6 +5,9 @@
 
 ## Version
 
+**3.1.1** (2026-11-07) — toolchain + dependency refresh: cyrius 6.7.18, svara 3.6.3, varna 2.5.2,
+with hisab 3.4.1 / naad 2.3.3 / goonj 2.3.1 / sakshi 2.5.10 transitively (each dep's newest tag).
+No source, API or output change; suite stays **934 assertions / 26 suites**.
 **3.1.0** (2026-11-07) — toolchain + dependency refresh onto the cyrius 6.7 language minor: cyrius
 6.7.9, svara 3.6.0, varna 2.5.0, with hisab 3.4.0 / naad 2.3.0 / goonj 2.1.0 / sakshi 2.5.8
 transitively. The toolchain move changed no output; three `rust-old/` parity fixes did (sorted
@@ -35,16 +38,20 @@ started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
 
 ## Toolchain
 
-- **Cyrius pin**: `6.7.9` (in `cyrius.cyml [package].cyrius`) — bumped
-  6.4.5→…6.4.10→6.4.12→6.5.36→6.5.37→6.6.3→6.6.20→6.7.9 as the installed cycc drifted;
+- **Cyrius pin**: `6.7.18` (in `cyrius.cyml [package].cyrius`) — bumped
+  6.4.5→…6.4.10→6.4.12→6.5.36→6.5.37→6.6.3→6.6.20→6.7.9→6.7.18 as the installed cycc drifted;
   `lib/` re-synced each time (`cyrius lib sync`, declared-subset — **not** `--full`,
   which drops the whole 108-file snapshot into `lib/`), all suites stay green.
-  3.0.8 and 3.1.0 regenerated it from scratch instead (`rm -rf lib cyrius.lock && cyrius deps`).
-- **6.7.9 pin set**: svara 3.6.0 and varna 2.5.0 pin 6.7.9 exactly; their next tags need 6.7.18.
-  svara's manifest supplies the hisab/naad/goonj versions.
+  3.0.8, 3.1.0 and 3.1.1 regenerated it from scratch instead (`rm -rf lib cyrius.lock && cyrius deps`).
+- **6.7.18 pin set**: svara 3.6.3 and varna 2.5.2 pin 6.7.18 exactly, and were the newest tags
+  on 2026-11-07. svara's manifest supplies the hisab/naad/goonj versions (3.4.1 / 2.3.3 / 2.3.1).
+- **`bayan` is the stdlib monolith.** At 6.7.18 it includes `lib/unicode/` (353 KB of tables), so
+  the default build is 4.70 MB (1.21 MB with `CYRIUS_DCE=1`). bayan also ships a thin
+  `dist/bayan-json.cyr` profile, but shabda folds the monolith too, and a consumer must not hold
+  both, so a switch is a cross-crate decision, not a pin bump.
 - **Pin moves past 6.7.0 need more than green tests**: 6.7.x changes what some code means. Read
   the cyrius `docs/development/ecosystem-migration.md` for the target version, and compare output
-  against the previous tag with the hash seed pinned (`_hm_seed`), as 3.1.0 did.
+  against the previous tag with the hash seed pinned (`_hm_seed`), as 3.1.0 and 3.1.1 did.
 - **`path =` beside `git`/`tag`** is a dev override since cyrius 6.7.6, used only with
   `CYRIUS_LOCAL=1` or `--local`; a default build builds the tag. Before 6.7.6 it silently beat
   the tag. A `path` with no `git` is refused.

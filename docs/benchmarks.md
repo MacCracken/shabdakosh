@@ -12,30 +12,34 @@ cyrius bench            # auto-discovers benches/
 ## Latest results
 
 - **Date**: 2026-11-07
-- **Toolchain**: cyrius 6.7.9
-- **Revision**: 3.1.0 working tree (on `520e288`)
+- **Toolchain**: cyrius 6.7.18
+- **Revision**: 3.1.1 working tree (on `88cea94`)
 - **Platform**: Linux 7.2.14-arch1-1, x86_64
 - **Dictionary**: base English (`_cmudict_data.cyr`), ~10,617 entries
 
 | Benchmark | Avg | Min | Max | Iters |
 |---|---:|---:|---:|---:|
-| dict english construction | 8.064 ms | 8.064 ms | 8.064 ms | 10 |
-| **dict lookup hit** | **158 ns** | 158 ns | 158 ns | 200,000 |
-| **dict lookup miss** | **180 ns** | 180 ns | 180 ns | 200,000 |
-| trie construction | 6.810 ms | 6.810 ms | 6.810 ms | 10 |
-| trie prefix search `'pre'` | 6.541 ms | 5.962 ms | 8.988 ms | 500 |
-| binary serialize | 6.437 ms | 6.385 ms | 6.982 ms | 20 |
-| binary deserialize | 7.298 ms | 7.278 ms | 7.543 ms | 20 |
-| to_cmudict | 11.957 ms | 11.957 ms | 11.957 ms | 10 |
-| to_ipa | 11.107 ms | 11.107 ms | 11.107 ms | 10 |
-| to_json | 35.105 ms | 35.105 ms | 35.105 ms | 10 |
+| dict english construction | 7.783 ms | 7.783 ms | 7.783 ms | 10 |
+| **dict lookup hit** | **146 ns** | 146 ns | 146 ns | 200,000 |
+| **dict lookup miss** | **168 ns** | 168 ns | 168 ns | 200,000 |
+| trie construction | 6.443 ms | 6.443 ms | 6.443 ms | 10 |
+| trie prefix search `'pre'` | 6.411 ms | 6.048 ms | 10.354 ms | 500 |
+| binary serialize | 6.409 ms | 6.196 ms | 6.435 ms | 20 |
+| binary deserialize | 7.129 ms | 7.034 ms | 7.141 ms | 20 |
+| to_cmudict | 11.986 ms | 11.986 ms | 11.986 ms | 10 |
+| to_ipa | 10.942 ms | 10.942 ms | 10.942 ms | 10 |
+| to_json | 33.969 ms | 33.969 ms | 33.969 ms | 10 |
 
 Rows whose min and max equal the average were timed by `lib/bench` as a single window.
 
+Against 3.1.0 on cyrius 6.7.9, five alternating runs of each build put every row within a few
+percent. `dict lookup miss` is the noisiest row: it ranged 176-355 ns on 6.7.9 and 177-237 ns on
+6.7.18 across those runs, so a single reading of it is not a regression signal.
+
 ## Reading the numbers
 
-- **Dictionary lookup is the headline** and meets the O(1) design goal: **~150-160 ns per hit**,
-  ~180 ns per miss — a single `lib/hashmap` probe with **no per-call allocation** (the
+- **Dictionary lookup is the headline** and meets the O(1) design goal: **~145-160 ns per hit**,
+  ~170-180 ns per miss — a single `lib/hashmap` probe with **no per-call allocation** (the
   lowercase fast-path, `_shbdk_is_lower_cstr`, skips the lowercase copy for already-lowercase
   words). shabdakosh is dictionary-first: this is the path that matters.
 - **Construction is a one-time ~8 ms** (load the ~10.6k entries into a fresh hashmap).
@@ -49,8 +53,8 @@ Rows whose min and max equal the average were timed by `lib/bench` as a single w
   keys (9.5 ms through the generic one it replaced). That is most of the gap between
   **binary serialize (6.4 ms)**, which writes sorted, and the 2.4 ms recorded here in July, when it
   wrote in hash order. It is a smaller share of `to_cmudict` / `to_ipa` (~11-12 ms) and of
-  `to_json` (~35 ms), whose cost is mostly building the JSON tree.
-- **Binary deserialize (7.3 ms)** and **trie build/search (~6.5-6.8 ms)** are
+  `to_json` (~34 ms), whose cost is mostly building the JSON tree.
+- **Binary deserialize (7.1 ms)** and **trie build/search (~6.4 ms)** are
   alloc-heavy whole-dictionary operations, benched at modest iteration counts because the CYRIUS
   bump allocator never frees (high-N loops would exhaust the arena, not reflect steady state).
 

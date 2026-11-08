@@ -1,5 +1,48 @@
 # Changelog
 
+## [3.1.1] — 2026-11-07
+
+Toolchain and dependency release. `cyrius` 6.7.9 -> **6.7.18**, `svara` 3.6.0 -> **3.6.3**, `varna`
+2.5.0 -> **2.5.2**, and transitively `hisab` 3.4.0 -> **3.4.1**, `naad` 2.3.0 -> **2.3.3**, `goonj`
+2.1.0 -> **2.3.1**, `sakshi` 2.5.8 -> **2.5.10**. Each is its dep's newest tag, and all pin cyrius
+6.7.18. `lib/` and `cyrius.lock` were regenerated from scratch, and `cyrius deps --verify` and
+`cyrius deps --locked` both pass.
+
+No source, API or output change. **934 assertions / 26 suites**, the same as 3.1.0. svara 3.6.3
+keeps its consumer floor at cyrius 6.7.2.
+
+### Changed
+
+- **`lib/`**:
+  - Added `simd.cyr`, which goonj 2.3.1 includes for its AVX2 check.
+  - Added `lib/unicode/`, seven files of case-folding, category and normalization tables that
+    the 6.7.18 `bayan` monolith now includes.
+  - 32 other vendored files moved to their 6.7.18 or tag copies.
+- **`build/shabdakosh` grew from 3.54 MB to 4.70 MB.** Most of it is the `bayan` monolith,
+  which grew from 736 KB to 995 KB of source and pulls in 353 KB of those tables. The default
+  build keeps unreachable functions; with `CYRIUS_DCE=1` the binary is 1.21 MB.
+
+### Verified
+
+- **Output**: the differential program from 3.1.0 produces 6.4 MB that are byte-identical to
+  3.1.0 on 6.7.9. That holds with the hash seed pinned, and in three runs with random seeds.
+- **Deps**:
+  - All 101 `SVARA_PH_*` ordinals are unchanged.
+  - All 16 varna functions shabdakosh calls still exist.
+  - `cyrius deps` still says it kept the stdlib `sakshi` over the dep's copy, as on 6.7.9. The
+    two files are byte-identical (2.5.10).
+- **Generated files**: `_cmudict_data.cyr` regenerates byte for byte, and the smoke binary
+  prints what it did on 6.7.9.
+- **CI replay**: a clean copy with no sibling checkouts passes `cyrius deps --locked` and all 26
+  suites.
+- **Consumer build**: a local-mode build folds the 3.1.1 bundle with svara 3.6.3 and varna
+  2.5.2. It passes a lookup, a JSON round trip, a binary save, a lazy mmap reopen and the
+  `Portuguese` lookup.
+- **Audit and warnings**: `cyrius audit` exits 0, with fmt, lint and docs clean, and the build
+  and suites emit no compiler warnings.
+- **Benchmarks**: in five alternating runs of each build, every bench row is within a few
+  percent of 3.1.0. `docs/benchmarks.md` has the 6.7.18 numbers.
+
 ## [3.1.0] — 2026-11-07
 
 Toolchain and dependency release, moving to the cyrius 6.7 language minor. `cyrius` 6.6.20 ->
