@@ -1,5 +1,105 @@
 # Changelog
 
+## [3.2.0] — 2026-11-17
+
+**Lexical stress.** CMUdict marks every vowel 0 (unstressed), 1 (primary) or 2 (secondary).
+shabdakosh read the digits and dropped them, so a dictionary could not say where a word's stress
+falls, and every CMUdict export gave every vowel a 1. Pronunciations now keep the stress, the
+built-in dictionary has it for all 10,617 words, and every codec that can hold it carries it. The
+API change is additive; the binary format gains a version 2. Asked for by shabda, whose English
+stress came from heuristics even for dictionary words.
+
+**1,553 assertions / 28 suites** (1,426 in 3.1.4).
+
+### Added
+
+- **A pronunciation's stress**, one value per phoneme as CMUdict numbers it:
+  `SHBDK_STRESS_UNSTRESSED` (0), `_PRIMARY` (1), `_SECONDARY` (2), and `SHBDK_STRESS_NONE` (-1)
+  for a phoneme with no stress of its own, a consonant.
+  - `shbdk_pronunciation_stress(p)` gives the vec, or 0 when the stress is not known.
+  - `shbdk_pronunciation_has_stress(p)`, and `shbdk_pronunciation_stress_at(p, i)` (`_NONE` when
+    unknown or out of range).
+  - `shbdk_pronunciation_with_stress(p, stress)` copies the vec. It stores only valid stress, the
+    test being `shbdk_stress_is_valid(stress, n)`: exactly one value from -1 to 2 per phoneme.
+  - Stress whose length no longer matches the phonemes reads as unknown. The phoneme vec belongs
+    to the pronunciation, so a caller that changes it afterwards gets no stress back, never a read
+    past the end.
+  - `shbdk_phoneme_takes_stress(ph)` is 1 for the 17 ARPABET vowels, the phonemes CMUdict writes
+    with a digit.
+  - `ShbdkPronunciation` grows from 24 to 32 bytes; offset 24 holds the stress.
+- **The built-in dictionary has CMUdict's stress for every word.** For example, *record* is
+  R EH1 K ER0 D (the noun) and R IH0 K AO1 R D (the verb), and *photograph* is
+  F OW1 T AH0 G R AE2 F.
+  - The packed data gains a `!ddd` segment holding one digit per vowel, in order, so
+    `_cmudict_data.cyr` grows from 285 KB to 324 KB. It is still one module, under distlib's
+    1 MB cap.
+  - Checked against `data/cmudict-5k.txt` parsed fresh: all 10,617 built-in entries are equal,
+    stress included, and come back unchanged through the binary, JSON and CMUdict round trips.
+- **Binary format version 2.** After the region, each pronunciation has a stress flag, followed
+  by one byte per phoneme (the stress + 1).
+  - Version 2 is written only when some pronunciation has stress. A dictionary without any gives
+    the same version-1 bytes as 3.1.4, which older readers still load.
+  - The reader takes version 1 and version 2. It refuses, with the reason, a stress byte over 3
+    or a flag that is not 0 or 1.
+- **JSON `"stress"`**: an optional array on each pronunciation, written when the stress is known.
+  - The reader requires one integer from -1 to 2 per phoneme and gives the reason when it refuses.
+  - `null` means no stress.
+  - The pronunciation record codec (`shbdk_pronunciation_to_json` / `_from_json`) carries it too.
+
+### Changed (output differs from 3.1.4)
+
+- **`shbdk_to_cmudict` writes the stored digits.** It wrote 1 on every vowel (0 on schwa), so
+  *photograph* exported as F OW1 T AH0 G R AE1 F, *record* as R EH1 K ER1 D, and a CMUdict round
+  trip lost the stress.
+  - A pronunciation without stress still writes 1.
+  - It refuses, with the reason, stress that would not read back: a stressed schwa (AH1 is /ʌ/),
+    an unstressed /ʌ/ (AH0 is schwa), or stress on a consonant.
+  - A phoneme with no ARPABET symbol is still left out, now together with its stress.
+- **`shbdk_parse_cmudict` keeps the digits.**
+  - A digit on a consonant (`Y1`) is dropped. It read as Y in 3.1.4 too, and a consonant has no
+    stress.
+  - A line with no digit gives a pronunciation without stress.
+- **`shbdk_pronunciation_eq` compares stress**, and so do `shbdk_dict_entry_eq` and the dictionary
+  diff. Known stress differs from unknown stress, and AE1 from AE2. `shbdk_pronunciation_clone`
+  copies the stress.
+- **`programs/gen_cmudict.cyr` refuses a vowel without a digit and a digit on a consonant**, giving
+  the line number. The packed form hands the digits to the vowels in order, so both would
+  misplace them.
+- **The fuzz seeds have words with all three digits**, and the tokens have a `"stress"` array, `AH2`
+  and `ER0`. The digest is now `-7288571526447291009` (the same under `--poison` and `--bounds`).
+  The new seeds caught the `Y1` case above before release.
+
+### Not carried
+
+- **IPA, X-SAMPA, PLS and SSML have no stress yet.** IPA marks it once per syllable, before the
+  onset (ˈ ˌ), so placing it on a vowel needs syllabification on both read and write. These
+  readers give pronunciations without stress, as before, and these writers ignore it.
+
+### Performance
+
+These are medians of 8 alternated rounds against a build of 3.1.4. Lookups are unchanged.
+Whole-dictionary work pays for the extra data.
+
+| Benchmark | 3.1.4 | 3.2.0 | |
+|---|---:|---:|---:|
+| static lookup hit | 115 ns | 114 ns | -0.9% |
+| dict lookup hit | 148 ns | 156 ns | +4.7% |
+| dict english construction | 8.15 ms | 10.2 ms | +25.6% |
+| binary serialize | 6.75 ms | 7.61 ms | +12.7% |
+| binary deserialize | 7.76 ms | 9.13 ms | +17.8% |
+| to_cmudict | 12.9 ms | 14.4 ms | +12.3% |
+| to_json | 34.3 ms | 48.4 ms | +41.3% |
+
+- Building the English map decodes 10,640 stress vecs, one for each pronunciation. With the stress
+  segment skipped, the build was +6% (the larger data alone).
+- `to_json` writes 69,421 more values, one per phoneme, in 10,640 `"stress"` arrays.
+- Three changes made before release cut these costs:
+  - the vowel test is three comparisons, written out in the decoder;
+  - the CMUdict writer looks each symbol up once;
+  - the binary writer picks its version during the sizing pass.
+- `dict lookup miss` runs no changed code. It measured +18% here, but in a second session 3.1.4
+  alone ranged 165–332 ns, which covers the gap.
+
 ## [3.1.4] — 2026-11-17
 
 Roadmap M3 step 3: the Rust original leaves the tree, plus one detection fix. Three varna data gaps

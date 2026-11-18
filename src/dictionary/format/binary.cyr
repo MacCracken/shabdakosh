@@ -10,13 +10,25 @@
 # always gives the same bytes. The reader takes them in any order.
 #   pron: u16 nphon + nphon×u8 (phoneme ordinals) + u8 freq-flag [+ u64 f64 bits]
 #         + u8 region-flag [+ u8 region]
+#         + (version 2 only) u8 stress-flag [+ nphon×u8, each SHBDK_STRESS_* + 1]
+# Version 2 (3.2.0) adds the stress. It is written only when some pronunciation has
+# stress, so a dictionary without any gives the same version-1 bytes as before 3.2.0,
+# which older readers still load. The reader takes both versions.
 # to_binary returns a Str (blob may contain NULs); from_binary takes a Str.
 # Included after src/dictionary/mod.cyr.
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
-var SHBDK_BIN_VERSION = 1;
+var SHBDK_BIN_VERSION = 2;           # the newest version this reader takes
+var SHBDK_BIN_VERSION_NO_STRESS = 1; # written when no pronunciation has stress
 var SHBDK_BIN_HEADER  = 5;
+
+# The version being written or read: 1, or 2 with a stress field per pronunciation.
+var _SHBDK_BIN_V = 1;
+# Set by the sizing pass: the bytes version 2's stress fields add, and whether any
+# pronunciation has stress (so the writer picks the version without a second scan).
+var _SHBDK_BIN_STRESS_BYTES = 0;
+var _SHBDK_BIN_ANY_STRESS = 0;
 
 # "SHBD" magic, one byte per const (3.0.5 — these were bare 83/72/66/68 literals
 # at the write site and again at the read site).
@@ -127,6 +139,22 @@ fn _shbdk_bin_put_pron(buf, off, pron): i64 {
         store8(buf + off, 0);
         off = off + 1;
     }
+    if (_SHBDK_BIN_V >= 2) {
+        if (shbdk_pronunciation_has_stress(pron) == 1) {
+            store8(buf + off, 1);
+            off = off + 1;
+            var st = shbdk_pronunciation_stress(pron);
+            i = 0;
+            while (i < np) {
+                store8(buf + off, vec_get(st, i) + 1);
+                off = off + 1;
+                i = i + 1;
+            }
+        } else {
+            store8(buf + off, 0);
+            off = off + 1;
+        }
+    }
     return off - start;
 }
 
@@ -174,6 +202,13 @@ fn _shbdk_bin_pron_size(pron): i64 {
     if (shbdk_pronunciation_has_frequency(pron) == 1) { sz = sz + 8; }   # u64 freq
     sz = sz + 1;   # region flag
     if (shbdk_pronunciation_has_region(pron) == 1) { sz = sz + 1; }      # u8 region
+    # version 2's stress flag [+ u8 per phoneme], counted apart: the version is not
+    # known until every pronunciation has been seen
+    _SHBDK_BIN_STRESS_BYTES = _SHBDK_BIN_STRESS_BYTES + 1;
+    if (shbdk_pronunciation_has_stress(pron) == 1) {
+        _SHBDK_BIN_STRESS_BYTES = _SHBDK_BIN_STRESS_BYTES + np;
+        _SHBDK_BIN_ANY_STRESS = 1;
+    }
     return sz;
 }
 
@@ -255,8 +290,15 @@ fn _shbdk_bin_total_size(dict): i64 {
 #must_use
 fn shbdk_to_binary(dict): i64 {
     shbdk_clear_error();
+    _SHBDK_BIN_STRESS_BYTES = 0;
+    _SHBDK_BIN_ANY_STRESS = 0;
     var total = _shbdk_bin_total_size(dict);
     if (total < 0) { return str_new(0, 0); }
+    _SHBDK_BIN_V = SHBDK_BIN_VERSION_NO_STRESS;
+    if (_SHBDK_BIN_ANY_STRESS == 1) {
+        _SHBDK_BIN_V = SHBDK_BIN_VERSION;
+        total = total + _SHBDK_BIN_STRESS_BYTES;
+    }
     # 3.0.4: a dict whose serialized form exceeds ALLOC_MAX makes alloc() return 0,
     # and the header stores below would write to address 0. Fail as an empty Str —
     # from_binary rejects it (len < header) and save_binary_file reports the error.
@@ -266,7 +308,7 @@ fn shbdk_to_binary(dict): i64 {
     store8(buf + 1, SHBDK_BIN_MAGIC_H);
     store8(buf + 2, SHBDK_BIN_MAGIC_B);
     store8(buf + 3, SHBDK_BIN_MAGIC_D);
-    store8(buf + 4, SHBDK_BIN_VERSION);
+    store8(buf + 4, _SHBDK_BIN_V);
     var off = 5;
     var lang = shbdk_dict_language(dict);
     if (lang != 0) {
@@ -297,7 +339,8 @@ fn shbdk_to_binary(dict): i64 {
 #
 # 3.1.3: every VALUE is checked as well as every length, and a failure says what it
 # was. An option flag must be 0 or 1, a phoneme 0..100, a region GA or RP, a
-# frequency 0.0-1.0, a word or language well-formed UTF-8 with no NUL, an entry
+# frequency 0.0-1.0, a stress byte 0..3 (SHBDK_STRESS_* + 1; 3.2.0), a word or
+# language well-formed UTF-8 with no NUL, an entry
 # must have a pronunciation, and nothing may follow the user map. A region byte of
 # 7 used to load and then crash to_cmudict / to_json.
 fn _shbdk_bin_oob(off, need, len): i64 {
@@ -358,6 +401,28 @@ fn _shbdk_bin_get_pron(buf, off, prons, len): i64 {
         off = off + 1;
     } else {
         if (flag != 0) { return _shbdk_bin_bad("binary deserialize error: an option flag is not 0 or 1"); }
+    }
+    if (_SHBDK_BIN_V >= 2) {
+        if (_shbdk_bin_oob(off, 1, len) == 1) { return _shbdk_bin_truncated(); }
+        flag = load8(buf + off);
+        off = off + 1;
+        if (flag == 1) {
+            if (_shbdk_bin_oob(off, np, len) == 1) { return _shbdk_bin_truncated(); }
+            var stress = _shbdk_vec_sized(np);
+            var sdat = load64(stress);
+            var sb = 0;
+            i = 0;
+            while (i < np) {
+                sb = load8(buf + off);
+                if (sb > 3) { return _shbdk_bin_bad("binary deserialize error: a stress value is not -1 to 2"); }
+                store64(sdat + i * 8, sb - 1);
+                off = off + 1;
+                i = i + 1;
+            }
+            store64(pron + 24, stress);   # each value checked above, one per phoneme
+        } else {
+            if (flag != 0) { return _shbdk_bin_bad("binary deserialize error: an option flag is not 0 or 1"); }
+        }
     }
     vec_push(prons, pron);
     return off;
@@ -421,9 +486,11 @@ fn shbdk_from_binary(data): i64 {
       || load8(buf + 2) != SHBDK_BIN_MAGIC_B || load8(buf + 3) != SHBDK_BIN_MAGIC_D) {
         return _shbdk_fail("invalid magic number: not a shabdakosh binary dictionary");
     }
-    if (load8(buf + 4) != SHBDK_BIN_VERSION) {
-        return _shbdk_fail("unsupported binary format version (expected 1)");
+    var ver = load8(buf + 4);
+    if (ver != SHBDK_BIN_VERSION_NO_STRESS && ver != SHBDK_BIN_VERSION) {
+        return _shbdk_fail("unsupported binary format version (expected 1 or 2)");
     }
+    _SHBDK_BIN_V = ver;
     var off = 5;
     var dict = shbdk_dict_new();
     if (_shbdk_bin_oob(off, 1, len) == 1) { _shbdk_bin_truncated(); return 0; }

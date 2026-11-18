@@ -1,7 +1,7 @@
 # cmudict.cyr — loads the generated base English dictionary into a hashmap.
 #
 # The runtime counterpart to programs/gen_cmudict.cyr: parses the packed pieces
-# from _cmudict_data.cyr (entry = word|o,o,o[~freq][^RR]; ) into a lib/hashmap
+# from _cmudict_data.cyr (entry = word|o,o,o[!ddd][~freq][^RR]; ) into a lib/hashmap
 # of word(Str) -> ShbdkDictEntry*. Hand-written (stable); the DATA is generated.
 #
 # Included after _cmudict_data.cyr (piece globals) and src/dictionary/entry.cyr
@@ -25,7 +25,7 @@ fn _shbdk_cmudict_decode_entry(piece, wsep, e): i64 {
         }
         var pe = p;
 
-        # phonemes: comma-separated ordinals until '~' / '^' / pe
+        # phonemes: comma-separated ordinals until '!' / '~' / '^' / pe
         var phon = vec_new();
         var freq = SHBDK_FREQ_NONE;
         var region = SHBDK_REGION_NONE;
@@ -40,6 +40,7 @@ fn _shbdk_cmudict_decode_entry(piece, wsep, e): i64 {
                 cur = 0;
                 indig = 0;
             } else {
+                if (ch == 33) { break; }    # '!'
                 if (ch == 126) { break; }   # '~'
                 if (ch == 94) { break; }    # '^'
                 cur = cur * 10 + (ch - 48);
@@ -48,6 +49,42 @@ fn _shbdk_cmudict_decode_entry(piece, wsep, e): i64 {
             q = q + 1;
         }
         if (indig == 1) { vec_push(phon, cur); }
+
+        # optional !ddd: the stress digit of each vowel, in order (3.2.0). The generator
+        # checks there is one per vowel; a count that does not fit leaves the stress unknown.
+        var stress = 0;
+        if (q < pe) {
+            if (load8(piece + q) == 33) {
+                q = q + 1;
+                var np2 = vec_len(phon);
+                stress = _shbdk_vec_sized(np2);
+                var sdat = load64(stress);
+                var pdat = load64(phon);
+                var k = 0;
+                var phk = 0;
+                while (k < np2) {
+                    # shbdk_phoneme_takes_stress, written out: the call per phoneme was a
+                    # sixth of the English map's build time
+                    phk = load64(pdat + k * 8);
+                    if (phk >= SVARA_PH_VOWEL_I && phk <= SVARA_PH_DIPH_OU && phk != SVARA_PH_VOWEL_O) {
+                        ch = 0;
+                        if (q < pe) { ch = load8(piece + q); }
+                        if (ch < 48 || ch > 50) { stress = 0; break; }
+                        store64(sdat + k * 8, ch - 48);
+                        q = q + 1;
+                    } else {
+                        store64(sdat + k * 8, SHBDK_STRESS_NONE);
+                    }
+                    k = k + 1;
+                }
+                while (q < pe) {
+                    ch = load8(piece + q);
+                    if (ch == 126 || ch == 94) { break; }
+                    stress = 0;   # more digits than vowels
+                    q = q + 1;
+                }
+            }
+        }
 
         # optional ~freq
         if (q < pe) {
@@ -83,6 +120,7 @@ fn _shbdk_cmudict_decode_entry(piece, wsep, e): i64 {
         # GA / RP, so the stores skip the builders' validation (3.1.3)
         if (freq != SHBDK_FREQ_NONE) { store64(pron + 8, freq); }
         if (region != SHBDK_REGION_NONE) { store64(pron + 16, region); }
+        if (stress != 0) { store64(pron + 24, stress); }
         vec_push(prons, pron);
     }
 

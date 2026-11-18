@@ -111,7 +111,7 @@ It now lives only at tag `3.1.3`: `git show 3.1.3:rust-old/<path>`.
   strings. Valid, standard JSON in the CYRIUS-native schema; no AGNOS consumer wants the old one.
   ([ADR 004](../adr/004-cyrius-port-decisions.md))
 - **Binary is the CYRIUS format** (hand-rolled, replacing postcard), reusing the `SHBD` magic and
-  version 1. There are no Rust `.bin` blobs in the AGNOS world; the decoder is bounds-checked
+  version 1; version 2 (3.2.0) adds lexical stress and is written only when a dictionary has it. There are no Rust `.bin` blobs in the AGNOS world; the decoder is bounds-checked
   either way. (ADR 004)
 - **`detect.cyr` keeps its own insertion sort** rather than the keystone's `_shbdk_msort`: it sorts
   a handful of language codes, and the module is self-contained so its suite links without the

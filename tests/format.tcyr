@@ -327,5 +327,70 @@ var okw = shbdk_dict_new();
 shbdk_dict_insert(okw, "ice cream", _cat_ph());
 assert_neq(_cm(shbdk_to_cmudict(okw)), 0, "one space inside a word is fine");
 
+test_group("CMUdict keeps the stress digits (3.2.0)");
+var rec = _cm("record  R EH1 K ER0 D\nphotograph  F OW1 T AH0 G R AE2 F\n");
+assert_neq(rec, 0, "parsed");
+var rp = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(rec, "record"));
+assert_eq(shbdk_pronunciation_has_stress(rp), 1, "record has stress");
+assert_eq(shbdk_pronunciation_stress_at(rp, 0), SHBDK_STRESS_NONE, "R: none");
+assert_eq(shbdk_pronunciation_stress_at(rp, 1), SHBDK_STRESS_PRIMARY, "EH1");
+assert_eq(shbdk_pronunciation_stress_at(rp, 3), SHBDK_STRESS_UNSTRESSED, "ER0");
+var pp2 = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(rec, "photograph"));
+assert_eq(shbdk_pronunciation_stress_at(pp2, 6), SHBDK_STRESS_SECONDARY, "AE2");
+var rect = shbdk_to_cmudict(rec);
+assert_eq(_find(rect, "photograph  F OW1 T AH0 G R AE2 F\n"), 1, "AE2 written back (was AE1)");
+assert_eq(_find(rect, "record  R EH1 K ER0 D\n"), 1, "ER0 written back (was ER1)");
+assert_eq(shbdk_dict_entry_eq(shbdk_dict_lookup_entry(_cm(rect), "record"), shbdk_dict_lookup_entry(rec, "record")), 1,
+  "the stress round-trips");
+var nod = _cm("hmm  HH M\n");
+assert_eq(shbdk_pronunciation_has_stress(shbdk_dict_entry_primary(shbdk_dict_lookup_entry(nod, "hmm"))), 0,
+  "no digit on the line: no stress");
+var unk = shbdk_dict_new();
+shbdk_dict_insert(unk, "cat", _cat_ph());
+assert_eq(_find(shbdk_to_cmudict(unk), "cat  K AE1 T\n"), 1, "unknown stress writes 1, as before");
+var yd = _cm("yes  Y1 EH1 S\n");
+var yp = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(yd, "yes"));
+assert_eq(shbdk_pronunciation_stress_at(yp, 0), SHBDK_STRESS_NONE, "a digit on a consonant is dropped");
+assert_eq(_find(shbdk_to_cmudict(yd), "yes  Y EH1 S\n"), 1, "and it writes back without one");
+var yc = shbdk_pronunciation_has_stress(shbdk_dict_entry_primary(shbdk_dict_lookup_entry(_cm("hm  HH0 M1\n"), "hm")));
+assert_eq(yc, 0, "digits on consonants only: no stress");
+
+test_group("CMUdict refuses stress it cannot write back");
+fn _stressed(ph, st): i64 {
+    var d = shbdk_dict_new();
+    var v = vec_new();
+    vec_push(v, ph);
+    var s = vec_new();
+    vec_push(s, st);
+    var p = shbdk_pronunciation_with_stress(shbdk_pronunciation_new(v), s);
+    shbdk_dict_insert_entry(d, "x", shbdk_dict_entry_new(p));
+    return d;
+}
+assert_eq(shbdk_to_cmudict(_stressed(SVARA_PH_VOWEL_SCHWA, SHBDK_STRESS_PRIMARY)), 0, "stressed schwa (AH1 is /ʌ/)");
+assert_eq(_find(shbdk_last_error(), "stress that ARPABET cannot write back in 'x'"), 1, "says why");
+assert_eq(shbdk_to_cmudict(_stressed(SVARA_PH_VOWEL_CUP_V, SHBDK_STRESS_UNSTRESSED)), 0,
+  "unstressed /ʌ/ (AH0 is schwa)");
+assert_eq(shbdk_to_cmudict(_stressed(SVARA_PH_PLOSIVE_K, SHBDK_STRESS_PRIMARY)), 0, "stress on a consonant");
+assert_neq(shbdk_to_cmudict(_stressed(SVARA_PH_VOWEL_SCHWA, SHBDK_STRESS_UNSTRESSED)), 0, "AH0 is fine");
+assert_neq(shbdk_to_cmudict(_stressed(SVARA_PH_VOWEL_CUP_V, SHBDK_STRESS_SECONDARY)), 0, "AH2 is fine");
+assert_neq(shbdk_to_cmudict(_stressed(SVARA_PH_PLOSIVE_K, SHBDK_STRESS_NONE)), 0, "K with none is fine");
+var nar = shbdk_dict_new();
+var narv = _cat_ph();
+vec_push(narv, SVARA_PH_VOWEL_E);
+var nars = vec_new();
+vec_push(nars, SHBDK_STRESS_NONE); vec_push(nars, SHBDK_STRESS_PRIMARY); vec_push(nars, SHBDK_STRESS_NONE);
+vec_push(nars, SHBDK_STRESS_PRIMARY);
+var narp = shbdk_pronunciation_with_stress(shbdk_pronunciation_new(narv), nars);
+shbdk_dict_insert_entry(nar, "cate", shbdk_dict_entry_new(narp));
+assert_eq(_find(shbdk_to_cmudict(nar), "cate  K AE1 T\n"), 1, "a stressed /e/ (no ARPABET) is left out, as unstressed");
+
+test_group("pronunciation_eq compares the stress");
+var eqa = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(_cm("cat  K AE1 T\n"), "cat"));
+var eqb = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(_cm("cat  K AE2 T\n"), "cat"));
+var eqc = shbdk_pronunciation_new(_cat_ph());
+assert_eq(shbdk_pronunciation_eq(eqa, eqb), 0, "AE1 != AE2");
+assert_eq(shbdk_pronunciation_eq(eqa, eqc), 0, "known != unknown");
+assert_eq(shbdk_pronunciation_eq(eqa, shbdk_pronunciation_clone(eqa)), 1, "a clone is equal");
+
 var rc = assert_summary();
 syscall(60, rc);

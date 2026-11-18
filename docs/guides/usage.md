@@ -123,6 +123,26 @@ var ga = shbdk_dict_entry_for_region(e, SHBDK_REGION_GA);   # a pronunciation ha
 
 `SHBDK_REGION_NONE` is not a region, so `for_region` finds nothing for it.
 
+### Stress
+
+A pronunciation can carry lexical stress, one value per phoneme as CMUdict numbers it:
+`SHBDK_STRESS_UNSTRESSED` (0), `SHBDK_STRESS_PRIMARY` (1), `SHBDK_STRESS_SECONDARY` (2), and
+`SHBDK_STRESS_NONE` (-1) for a consonant. The built-in dictionary has it for every word, and
+the CMUdict, JSON and binary codecs carry it (IPA, X-SAMPA, PLS and SSML do not yet).
+
+```
+if (shbdk_pronunciation_has_stress(pron) == 1) {
+    var s1 = shbdk_pronunciation_stress_at(pron, 1);   # "record" R EH1 K ER0 D -> SHBDK_STRESS_PRIMARY
+}
+var st = vec_new();                                   # one value per phoneme
+vec_push(st, SHBDK_STRESS_NONE); vec_push(st, SHBDK_STRESS_PRIMARY); vec_push(st, SHBDK_STRESS_NONE);
+pron = shbdk_pronunciation_with_stress(pron, st);     # copied; stored only if valid
+```
+
+`shbdk_pronunciation_stress_at` gives `SHBDK_STRESS_NONE` when the stress is not known.
+`shbdk_phoneme_takes_stress(ph)` says whether a phoneme is one of the 17 ARPABET vowels that
+take a digit.
+
 ### Frequencies
 
 A frequency is a relative weight, **0.0 to 1.0** (f64 bits). `shbdk_frequency_is_valid(f)`

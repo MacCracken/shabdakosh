@@ -5,6 +5,14 @@
 
 ## Version
 
+**3.2.0** (2026-11-17) — lexical stress, asked for by shabda. A pronunciation keeps CMUdict's
+stress digit for each vowel (`shbdk_pronunciation_stress` / `_stress_at` / `_with_stress`,
+`SHBDK_STRESS_*`), and the built-in data has it for all 10,617 words: the packed form gained a
+`!ddd` segment, 285 → 324 KB. CMUdict and JSON carry it, and so does binary format **version 2**,
+which is written only when some pronunciation has stress (so a dictionary without stress gives the
+same version-1 bytes). `to_cmudict` writes the stored digits; it wrote 1 on every vowel. IPA,
+X-SAMPA, PLS and SSML do not carry stress yet. Suite **1,553 assertions / 28 suites**; fuzz, audit
+and lint are clean.
 **3.1.4** (2026-11-17) — `rust-old/` removed (roadmap M3 step 3). The Rust original lives at tag `3.1.3`
 (`git show 3.1.3:rust-old/<path>`); every source, test and doc reference points there. One output
 change: `shbdk_detect_script` reports Kana / Hangul for a word mixing it with Han (ひら漢字 is `Kana`,
@@ -105,8 +113,8 @@ started 2026-07-05 via `cyrius port`, 7,085 lines of Rust preserved at
   Eleven targets (CMUdict, IPA text, JSON, binary, PLS, SSML, IPA word, the three notations, the
   report JSON codecs, static lookup, script detection) over seeded mutants placed flush against a
   PROT_NONE page; an accepted input must survive export → parse → export. Deterministic: 3,000
-  cases a parser target in ~10 s, digest `2257794219994145177`, the same under `--poison` (and it
-  passes `--bounds`). A 10x soak (670,000 cases) passes. CI runs `cyrius fuzz`. A failure prints
+  cases a parser target in ~10 s, digest `-7288571526447291009` since 3.2.0 (stressed seeds;
+  `2257794219994145177` before), the same under `--poison` and `--bounds`. A 10x soak (670,000 cases) passes. CI runs `cyrius fuzz`. A failure prints
   the case; `<binary> <target> <case>` replays it. Two known Rust-parity round-trip breaks are
   tolerated with a comment (roadmap, *Open decisions* 2 and 3).
 - **The perfect hash** (3.1.2): `programs/gen_cmudict.cyr` writes `_static_phf_data.cyr` next to
@@ -179,13 +187,13 @@ formats → gated/optional.
 |------|-------------|--------|--------|-------|-------|
 | — | (scaffold) | src/main.cyr | ✅ green | 2 | `cyrius build` OK; smoke 2/2 |
 | L0 | error.rs | src/error.cyr | ✅ ported | 15 | ShabdakoshError → sakshi packed codes + `shbdk_err_name`; M3: `shbdk_last_error()` diagnostics, the L0 text primitives (strict UTF-8, White_Space, punctuation, Rust-semantics lowercase), the shared CMUdict number / variant rules |
-| L1 | arpabet.rs | src/arpabet.cyr | ✅ ported | 68 | ARPABET ↔ `SVARA_PH_*`; M3: IY is /iː/ (`VOWEL_LONG_I`, was /e/) |
+| L1 | arpabet.rs | src/arpabet.cyr | ✅ ported | 70 | ARPABET ↔ `SVARA_PH_*`; M3: IY is /iː/ (`VOWEL_LONG_I`, was /e/) |
 | L1 | ipa.rs | src/ipa.cyr | ✅ ported | 103 | IPA ↔ `SVARA_PH_*`, table-driven; M3: all 100 svara phonemes (Rust: 46), tie-bar affricates, `r` the trill, ligature / tie-below alternates, syllable break where two symbols would merge |
-| L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 48 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; M3: frequency contract 0.0–1.0 (`shbdk_frequency_is_valid` / `_text`), `from_phonemes` copies, `for_region(NONE)` finds nothing |
+| L1 | dictionary/entry.rs | src/dictionary/entry.cyr | ✅ ported | 73 | Pronunciation/Region/DictEntry; sentinels for Option<freq/region>; M3: frequency contract 0.0–1.0 (`shbdk_frequency_is_valid` / `_text`), `from_phonemes` copies, `for_region(NONE)` finds nothing; 3.2.0: lexical stress (`[24]`, `SHBDK_STRESS_*`, `shbdk_phoneme_takes_stress`) |
 | L1 | dictionary/morphology.rs | src/dictionary/morphology.cyr | ✅ ported | 20 | MorphemeKind/Morpheme/Decomposition; composite/root/prefixes/suffixes; M3: the text is copied |
 | L1 | dictionary/syllable.rs | src/dictionary/syllable.cyr | ✅ ported | 35 | StressLevel/Syllable + syllabify; M3: true Maximal Onset (English onsets / SSP), every svara vowel a nucleus (svara classes) |
 | L2 | notation.rs | src/notation.cyr | ✅ ported | 68 | PhonemeNotation trait → notation-tag dispatch; ARPABET/IPA/X-SAMPA; M3: X-SAMPA all 100, ARPABET parse reads stress digits, Unicode whitespace |
-| L2 | build.rs → gen | programs/gen_cmudict.cyr + _cmudict_data.cyr + cmudict.cyr | ✅ done | 20 | generator reuses arpabet.cyr (no table dup); emits 285KB/12-piece packed data (10,617 words, 0 unknown); M3: as strict as the runtime reader, a bad line fails the build with its line number |
+| L2 | build.rs → gen | programs/gen_cmudict.cyr + _cmudict_data.cyr + cmudict.cyr | ✅ done | 20 | generator reuses arpabet.cyr (no table dup); emits 324KB/14-piece packed data (10,617 words, 0 unknown); M3: as strict as the runtime reader, a bad line fails the build with its line number; 3.2.0: a `!ddd` stress segment, one digit per vowel |
 | L3 | dictionary/mod.rs | src/dictionary/mod.cyr | ✅ ported | 214 | PronunciationDict (base+overlay maps), lookup (overlay→base, lowercase fast-path), merge/merge_conservative, diff/DictDiff, english()/english_minimal(); M3: Unicode lowercase, inserts copy, owned language, `clone`, diff compares frequencies by value, no load ceiling |
 | L4 | dictionary/coverage.rs | src/dictionary/coverage.cyr | ✅ ported | 29 | CoverageReport + coverage(); M3: Unicode whitespace / punctuation / lowercase, typographic apostrophes, public report constructor |
 | L4 | dictionary/stream.rs | src/dictionary/stream.cyr | ✅ ported | 17 | LookupStream iterator → stateful cursor (zero-alloc per step); next/word/phonemes/size_hint |
@@ -193,10 +201,10 @@ formats → gated/optional.
 | L4 | dictionary/heteronym.rs | src/dictionary/heteronym.cyr | ✅ ported | 21 | HeteronymContext + resolver as fn-ptr (fncall2); lookup_with_context variant selection; M3: `set_position` |
 | L4 | dictionary/g2p.rs | src/dictionary/g2p.cyr | ✅ ported | 37 | G2PResult, LookupSource, FallbackDict (model = (predict_fp,state) pair), promote*, FstModel stub; wires with_fallback; M3: predictions and promotions copied, null guards |
 | L4 | dictionary/static_dict.rs | src/dictionary/static_dict.cyr + phf.cyr + _static_phf_data.cyr | ✅ ported | 68 | phf → generated CHD perfect hash (3.1.2) over the packed pieces; per-slot decode cache; no load, alloc-free miss / repeated hit / capitals; StaticEntry collapses onto ShbdkDictEntry; M3: Unicode lowercase for non-ASCII words, `shbdk_static_reset` |
-| L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr + format/records.cyr | ✅ ported | 124 + 54 + 43 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec**; M3: strict readers with line-numbered diagnostics, writers refuse what would not load back, shortest `@freq`, v0.1 JSON shape, and `records.cyr`: a codec + `_eq` for every other record type |
+| L5 | dictionary/format/mod.rs | src/dictionary/format/mod.cyr + format/json.cyr + format/records.cyr | ✅ ported | 149 + 64 + 43 | CMUdict + IPA parse/emit, XML, file I/O; **hand-written PronunciationDict JSON codec**; M3: strict readers with line-numbered diagnostics, writers refuse what would not load back, shortest `@freq`, v0.1 JSON shape, and `records.cyr`: a codec + `_eq` for every other record type; 3.2.0: CMUdict keeps and writes the stress digits, JSON `"stress"` |
 | L5 | dictionary/format/pls.rs | src/dictionary/format/pls.cyr | ✅ ported | 29 | W3C PLS XML parse/emit (ipa alphabet); M3: a small XML reader (quotes, CDATA, references, comments, matched tags), every grapheme, `prefer` |
 | L5 | dictionary/format/ssml.rs | src/dictionary/format/ssml.cyr | ✅ ported | 21 | SSML <phoneme alphabet ph>word</phoneme> parse/emit; M3: on the XML reader, malformed tags refused |
-| L5 | dictionary/format/binary.rs | src/dictionary/format/binary.cyr | ✅ ported | 66 | hand-rolled compact binary format (SHBD magic+version, LE, 1-byte phonemes); to/from_binary + file I/O; M3: every value checked (a bad region crashed the exporters), writer refuses what does not fit |
+| L5 | dictionary/format/binary.rs | src/dictionary/format/binary.cyr | ✅ ported | 82 | hand-rolled compact binary format (SHBD magic+version, LE, 1-byte phonemes); to/from_binary + file I/O; M3: every value checked (a bad region crashed the exporters), writer refuses what does not fit; 3.2.0: version 2 adds stress, written only when present |
 | L6 | dictionary/validate.rs | src/dictionary/validate.cyr | ✅ ported | 70 | inventory + phonotactics validation vs varna; 4 report structs w/ strict JSON codecs + `_eq`; ː and affricate-tie normalization; M3: syllable-aware phonotactics, every varna language, is_consonant by svara class |
 | L6 | dictionary/detect.rs | src/dictionary/detect.cyr | ✅ ported | 33 | script + language detection vs varna script ranges; majority vote; language-hint filter+sort; script-name out-params; M3: strict UTF-8 (ill-formed bytes are U+FFFD) |
 | L6 | dictionary/mod.rs (varna ctors) | src/dictionary/lexicon.cyr | ✅ ported | 23 | from_lexicon + dict.spanish/hindi/german/sanskrit over varna's lexicon API (IPA→phonemes, frequency rank→1/(1+rank)); own module (mod.cyr's non-varna consumers can't link varna); M3: the rank, not the Swadesh index |

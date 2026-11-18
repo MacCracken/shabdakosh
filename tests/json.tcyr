@@ -203,5 +203,32 @@ assert_eq(_in_order(jt, jl, _quoted5("\"crane\"", "\"koala\"", "\"mule\"", "\"ya
 assert_eq(_in_order(jt, jl, _quoted5("\"argon\"", "\"iron\"", "\"neon\"", "\"tin\"", "\"zinc\"")),
   1, "user_entries sorted");
 
+test_group("JSON carries the stress (3.2.0)");
+var jsd = shbdk_parse_cmudict("record  R EH1 K ER0 D\ncat  K AE1 T\n");
+var jst = shbdk_to_json(jsd);
+assert_neq(_pos(jst, strlen(jst), "\"stress\":[-1,1,-1,0,-1]"), 0 - 1, "record's stress written");
+var jsr = shbdk_from_json(jst);
+assert_neq(jsr, 0, "read back");
+assert_eq(shbdk_dict_entry_eq(shbdk_dict_lookup_entry(jsr, "record"), shbdk_dict_lookup_entry(jsd, "record")), 1,
+  "the stress round-trips");
+var jnd = shbdk_dict_new();
+shbdk_dict_insert(jnd, "cat", shbdk_dict_lookup(jsd, "cat"));
+var jnt = shbdk_to_json(jnd);
+assert_eq(_pos(jnt, strlen(jnt), "stress"), 0 - 1, "no stress, no field");
+var jbad = "{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24,7,22],\"stress\":";
+fn _jstress(pre, s): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, pre);
+    str_builder_add_cstr(sb, s);
+    str_builder_add_cstr(sb, "}]}}}");
+    return shbdk_from_json(str_cstr(str_builder_build(sb)));
+}
+assert_neq(_jstress(jbad, "[-1,1,-1]"), 0, "one value per phoneme loads");
+assert_neq(_jstress(jbad, "null"), 0, "null is no stress");
+assert_eq(_jstress(jbad, "[-1,1]"), 0, "too few values refused");
+assert_eq(_jstress(jbad, "[-1,3,-1]"), 0, "3 refused");
+assert_eq(_jstress(jbad, "[-1,1.5,-1]"), 0, "a float refused");
+assert_eq(_jstress(jbad, "\"1\""), 0, "a string refused");
+
 var rc = assert_summary();
 syscall(60, rc);

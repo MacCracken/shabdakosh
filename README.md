@@ -17,7 +17,7 @@ ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
 
 ## Features
 
-- **Pronunciation lookup** — 10k+ entry base English dictionary (ARPABET/IPA ↔ svara phonemes), a user overlay, O(1) hashmap lookup (~135 ns/hit), plus `merge`/`diff`, coverage analysis, streaming lookup, a prefix trie, heteronym context, and a G2P fallback chain.
+- **Pronunciation lookup** — 10k+ entry base English dictionary (ARPABET/IPA ↔ svara phonemes, with CMUdict's lexical stress on every vowel), a user overlay, O(1) hashmap lookup (~135 ns/hit), plus `merge`/`diff`, coverage analysis, streaming lookup, a prefix trie, heteronym context, and a G2P fallback chain.
 - **I/O formats** — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format. Readers check what they read and say why they fail (`shbdk_last_error()`); writers refuse what would not load back. Every record type has a JSON codec. `LazyDict` gives mmap-backed loading (with a `file_read_all` fallback).
 - **Validation & detection** — varna-backed phoneme-inventory validation and syllable-aware phonotactics validation for every language varna profiles, plus script/language detection over a strict UTF-8 decoder.
 - **WASM + static dict** — a `WasmDict` binding surface and a static English dictionary over a compile-time perfect hash (no load; ~124 ns/hit, allocation-free on a miss).

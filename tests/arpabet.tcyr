@@ -7,6 +7,7 @@ include "lib/naad.cyr"
 include "lib/svara.cyr"
 include "src/error.cyr"
 include "src/arpabet.cyr"
+include "src/dictionary/entry.cyr"   # shbdk_phoneme_takes_stress
 
 alloc_init();
 
@@ -102,6 +103,23 @@ assert_eq(shbdk_arpabet_base_len("AH1"), 2, "base of AH1 is AH");
 assert_eq(shbdk_arpabet_base_len("AH2"), 2, "base of AH2 is AH");
 assert_eq(shbdk_arpabet_base_len(""), 0, "base of empty is empty");
 assert_eq(shbdk_arpabet_stress(""), SHBDK_PH_NONE, "empty has no stress");
+
+test_group("takes_stress is the set of ARPABET symbols with a digit (3.2.0)");
+var tsk = 0;
+var tsbad = 0;
+var tsn = 0;
+while (tsk <= 100) {
+    var tsa = shbdk_phoneme_to_arpabet(tsk);
+    var tsd = 0;
+    if (tsa != 0) {
+        if (shbdk_arpabet_stress(tsa) != SHBDK_PH_NONE) { tsd = 1; }
+    }
+    if (tsd != shbdk_phoneme_takes_stress(tsk)) { tsbad = tsbad + 1; }
+    tsn = tsn + tsd;
+    tsk = tsk + 1;
+}
+assert_eq(tsbad, 0, "no ordinal 0..100 disagrees");
+assert_eq(tsn, 17, "17 vowel ordinals");
 
 var rc = assert_summary();
 syscall(60, rc);

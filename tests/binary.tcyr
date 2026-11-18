@@ -259,5 +259,55 @@ assert_eq(shbdk_dict_entry_eq(shbdk_dict_lookup_entry(tvb, "read"), shbdk_dict_l
 test_group("roundtrip minimal: lookup the");
 assert_neq(shbdk_dict_lookup(shbdk_from_binary(shbdk_to_binary(shbdk_dict_english_minimal())), "the"), 0, "the");
 
+test_group("version 2 carries the stress (3.2.0)");
+fn _kat(): i64 {
+    var v = vec_new();
+    vec_push(v, SVARA_PH_PLOSIVE_K); vec_push(v, SVARA_PH_VOWEL_ASH); vec_push(v, SVARA_PH_PLOSIVE_T);
+    return v;
+}
+var kst = vec_new();
+vec_push(kst, SHBDK_STRESS_NONE); vec_push(kst, SHBDK_STRESS_PRIMARY); vec_push(kst, SHBDK_STRESS_NONE);
+var stsd = shbdk_dict_new();
+var kpr = shbdk_pronunciation_with_stress(shbdk_pronunciation_new(_kat()), kst);
+shbdk_dict_insert_entry(stsd, "cat", shbdk_dict_entry_new(kpr));
+var sbl = shbdk_to_binary(stsd);
+#   0-3 magic  4 version  5 lang flag  6-9 count  10-11 wlen  12-14 "cat"  15-16 npron
+#   17-18 nphon  19-21 phonemes  22 freq flag  23 region flag  24 stress flag  25-27 stress+1
+#   28-31 user count
+assert_eq(load8(str_data(sbl) + 4), 2, "version 2 when a pronunciation has stress");
+assert_eq(str_len(sbl), 32, "32-byte blob");
+assert_eq(load8(str_data(sbl) + 26), 2, "primary written as 2 (stress + 1)");
+var sbr = shbdk_from_binary(sbl);
+assert_neq(sbr, 0, "decodes");
+assert_eq(shbdk_dict_entry_eq(shbdk_dict_lookup_entry(sbr, "cat"), shbdk_dict_lookup_entry(stsd, "cat")), 1,
+  "the stress round-trips");
+assert_eq(_mut(sbl, 26, 4), 0, "stress byte 4 refused");
+assert_eq(_err_has("stress value is not -1 to 2"), 1, "stress reason");
+assert_eq(_mut(sbl, 24, 2), 0, "stress flag 2 refused");
+assert_eq(_err_has("option flag"), 1, "flag reason");
+assert_eq(shbdk_from_binary(str_new(str_data(sbl), 26)), 0, "cut inside the stress refused");
+assert_eq(_err_has("unexpected end"), 1, "truncation reason");
+assert_eq(_mut(sbl, 4, 1), 0, "the same bytes as version 1 do not decode");
+# a version-2 blob whose pronunciation has no stress (flag 0) loads with none
+var v2n = alloc(40);
+memcpy(v2n, str_data(sbl), 24);
+store8(v2n + 24, 0);
+memcpy(v2n + 25, str_data(sbl) + 28, 4);
+var v2d = shbdk_from_binary(str_new(v2n, 29));
+assert_neq(v2d, 0, "version 2 without stress decodes");
+assert_eq(shbdk_pronunciation_has_stress(shbdk_dict_entry_primary(shbdk_dict_lookup_entry(v2d, "cat"))), 0,
+  "and has no stress");
+# one stressed and one unstressed variant: version 2, each keeps what it had
+var mix = shbdk_dict_new();
+var mprons = vec_new();
+vec_push(mprons, shbdk_pronunciation_with_stress(shbdk_pronunciation_new(_kat()), kst));
+vec_push(mprons, shbdk_pronunciation_new(_kat()));
+shbdk_dict_insert_entry(mix, "cat", shbdk_dict_entry_from_pronunciations(mprons));
+var mixr = shbdk_from_binary(shbdk_to_binary(mix));
+assert_eq(shbdk_dict_entry_eq(shbdk_dict_lookup_entry(mixr, "cat"), shbdk_dict_lookup_entry(mix, "cat")), 1,
+  "a mixed entry round-trips");
+assert_eq(load8(str_data(shbdk_to_binary(shbdk_dict_english_minimal())) + 4), 1,
+  "a dictionary without stress still writes version 1");
+
 var rc = assert_summary();
 syscall(60, rc);

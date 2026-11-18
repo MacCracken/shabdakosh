@@ -6,7 +6,8 @@
 # regression tests; this harness looks for the next one.
 #
 #   SEEDS    real exports of a small dictionary that has a user entry, a heteronym with
-#            frequencies and regions, and a word with an affricate and a diphthong, in each text
+#            frequencies and regions, words with and without lexical stress (all three digits,
+#            3.2.0), and a word with an affricate and a diphthong, in each text
 #            format and the binary format; hand-written CMUdict annotations, SSML tags, IPA words,
 #            words in several scripts.
 #   MUTANTS  each case is a seed after 1..4 seeded mutations: a truncation; a byte replaced,
@@ -171,10 +172,14 @@ fn build_seeds(): i64 {
     var hc = "bass  B AE1 S\n;;; @freq=0.3 @region=RP\nbass(1)  B EY1 S\n;;; comment\nread  R IY1 D\n";
     var het = shbdk_parse_cmudict(hc);
     if (het != 0) { shbdk_dict_merge(d, het); }
+    var sc = "photograph  F OW1 T AH0 G R AE2 F\nrecord  R IH0 K AO1 R D\nrecord(2)  R EH1 K ER0 D\n";
+    var st = shbdk_parse_cmudict(sc);
+    if (st != 0) { shbdk_dict_merge(d, st); }
 
     add_seed_cstr(T_CMUDICT, shbdk_to_cmudict(d));
     add_seed_cstr(T_CMUDICT, shbdk_to_cmudict_with_user(d));
     add_seed_cstr(T_CMUDICT, hc);
+    add_seed_cstr(T_CMUDICT, sc);
     add_seed_cstr(T_CMUDICT, ";;; @freq=1e999\nx  AA0\n;;; @region=ZZ\ny(2)  AH0 AH1 AH2\n");
     add_seed_cstr(T_IPA, shbdk_to_ipa(d));
     add_seed_cstr(T_IPA, "hello\thɛˈloʊ\nchurch\tt͡ʃɜːt͡ʃ\n# c\n\nbait\tbeɪt\n");
@@ -235,6 +240,9 @@ fn build_seeds(): i64 {
     add_tok(":");
     add_tok(",");
     add_tok("null");
+    add_tok("\"stress\":[-1,2,0]");
+    add_tok("AH2");
+    add_tok("ER0");
     add_tok("true");
     add_tok("&amp;");
     add_tok("&lt;");

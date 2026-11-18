@@ -614,6 +614,18 @@ fn _shbdk_freq_eq(a, b): i64 {
 fn shbdk_pronunciation_eq(a, b): i64 {
     if (_shbdk_freq_eq(load64(a + 8), load64(b + 8)) == 0) { return 0; }
     if (load64(a + 16) != load64(b + 16)) { return 0; }
+    # 3.2.0: the lexical stress too, known or not
+    var sa = shbdk_pronunciation_stress(a);
+    var sb = shbdk_pronunciation_stress(b);
+    if ((sa == 0) != (sb == 0)) { return 0; }
+    if (sa != 0) {
+        if (vec_len(sa) != vec_len(sb)) { return 0; }
+        var k = 0;
+        while (k < vec_len(sa)) {
+            if (vec_get(sa, k) != vec_get(sb, k)) { return 0; }
+            k = k + 1;
+        }
+    }
     var pa = load64(a + 0);
     var pb = load64(b + 0);
     var na = vec_len(pa);

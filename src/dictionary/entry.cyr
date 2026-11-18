@@ -11,8 +11,9 @@
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 #
-# ShbdkPronunciation layout (24 bytes): [0]=phonemes(vec of i64) [8]=frequency(f64
-#   bits, SHBDK_FREQ_NONE when absent) [16]=region(SHBDK_REGION_* or _NONE).
+# ShbdkPronunciation layout (32 bytes): [0]=phonemes(vec of i64) [8]=frequency(f64
+#   bits, SHBDK_FREQ_NONE when absent) [16]=region(SHBDK_REGION_* or _NONE)
+#   [24]=stress(vec of SHBDK_STRESS_*, one per phoneme, or 0 when unknown; 3.2.0).
 # ShbdkDictEntry layout (8 bytes): [0]=pronunciations(vec of ShbdkPronunciation*).
 
 # ---- Region (#[non_exhaustive] enum) -----------------------------------------
@@ -41,14 +42,107 @@ fn shbdk_region_code(region): cstring {
 # sort treats None as (matches Rust's unwrap_or(-1.0)).
 var SHBDK_FREQ_NONE = 0xBFF0000000000000;
 
-# new(phonemes) — no frequency / region metadata. Takes the vec over (not copied).
+# ---- Lexical stress (3.2.0) ----------------------------------------------------
+# One value per phoneme, as CMUdict's digits number them: a vowel is unstressed (0),
+# primary (1) or secondary (2); a phoneme with no stress of its own, a consonant, is
+# SHBDK_STRESS_NONE. A pronunciation whose stress is not known holds no stress vec.
+var SHBDK_STRESS_NONE       = (0 - 1);
+var SHBDK_STRESS_UNSTRESSED = 0;
+var SHBDK_STRESS_PRIMARY    = 1;
+var SHBDK_STRESS_SECONDARY  = 2;
+
+# 1 if phoneme `ph` is an ARPABET vowel, which CMUdict writes with a stress digit (its
+# shbdk_phoneme_to_arpabet symbol ends in 0, 1 or 2), else 0. It lives here, beside the
+# stress values, because the packed-data decoder in cmudict.cyr needs it without
+# arpabet.cyr.
+#must_use
+fn shbdk_phoneme_takes_stress(ph): i64 {
+    # The 17 ARPABET vowels are exactly svara's VOWEL_I..DIPH_OU block less VOWEL_O
+    # (/o/, which ARPABET writes only as the diphthong OW). tests/arpabet.tcyr checks
+    # this against the ARPABET table for every ordinal.
+    if (ph < SVARA_PH_VOWEL_I || ph > SVARA_PH_DIPH_OU) { return 0; }
+    if (ph == SVARA_PH_VOWEL_O) { return 0; }
+    return 1;
+}
+
+# A vec of `n` zeros in ONE allocation, its data right after the header (the layout
+# lib/vec.cyr documents: data_ptr, len, cap). The stress decoders fill one of these
+# per pronunciation, where vec_new + vec_push made two allocations and a call per
+# value. vec_push still works on it: a grow moves the data to a new buffer.
+fn _shbdk_vec_sized(n): i64 {
+    var cap = n;
+    if (cap < 1) { cap = 1; }
+    var v = alloc(24 + cap * 8);
+    if (v == 0) { return 0; }
+    store64(v, v + 24);
+    store64(v + 8, n);
+    store64(v + 16, cap);
+    memset(v + 24, 0, cap * 8);
+    return v;
+}
+
+# new(phonemes) — no frequency / region / stress metadata. Takes the vec over (not copied).
 #must_use
 fn shbdk_pronunciation_new(phonemes): i64 {
-    var p = alloc(24);
+    var p = alloc(32);
     store64(p + 0, phonemes);
     store64(p + 8, SHBDK_FREQ_NONE);
     store64(p + 16, SHBDK_REGION_NONE);
+    store64(p + 24, 0);
     return p;
+}
+
+# 1 if `stress` can be the stress of a pronunciation of `n` phonemes: a vec of exactly
+# `n` values, each SHBDK_STRESS_NONE / _UNSTRESSED / _PRIMARY / _SECONDARY.
+#must_use
+fn shbdk_stress_is_valid(stress, n): i64 {
+    if (stress == 0) { return 0; }
+    if (vec_len(stress) != n) { return 0; }
+    var i = 0;
+    while (i < n) {
+        var v = vec_get(stress, i);
+        if (v < SHBDK_STRESS_NONE || v > SHBDK_STRESS_SECONDARY) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# Builder: set the lexical stress, one SHBDK_STRESS_* per phoneme. The vec is copied.
+# Mutates + returns self. A vec that is not valid stress for these phonemes
+# (shbdk_stress_is_valid) is not stored: the pronunciation keeps the stress it had.
+#must_use
+fn shbdk_pronunciation_with_stress(p, stress): i64 {
+    if (shbdk_stress_is_valid(stress, vec_len(load64(p + 0))) == 0) { return p; }
+    store64(p + 24, shbdk_phonemes_clone(stress));
+    return p;
+}
+
+# The lexical stress (vec of SHBDK_STRESS_*, one per phoneme), or 0 when unknown. A
+# stress vec that no longer has one value per phoneme (the caller changed the phoneme
+# vec, which the pronunciation owns, after setting it) counts as unknown, so no
+# reader of it indexes past its end.
+#must_use
+fn shbdk_pronunciation_stress(p): i64 {
+    var st = load64(p + 24);
+    if (st == 0) { return 0; }
+    if (vec_len(st) != vec_len(load64(p + 0))) { return 0; }
+    return st;
+}
+
+# 1 if the lexical stress is known, 0 otherwise.
+#must_use
+fn shbdk_pronunciation_has_stress(p): i64 {
+    if (shbdk_pronunciation_stress(p) != 0) { return 1; }
+    return 0;
+}
+
+# The stress of phoneme `i` (SHBDK_STRESS_*), or SHBDK_STRESS_NONE when the stress is
+# not known or `i` is out of range.
+#must_use
+fn shbdk_pronunciation_stress_at(p, i): i64 {
+    var st = shbdk_pronunciation_stress(p);
+    if (st == 0 || i < 0 || i >= vec_len(st)) { return SHBDK_STRESS_NONE; }
+    return vec_get(st, i);
 }
 
 # 1 if `f` (f64 bits) is a frequency: 0.0 <= f <= 1.0. NaN, the infinities and
@@ -161,11 +255,14 @@ fn shbdk_pronunciation_clone(p): i64 {
         vec_push(out, vec_get(phon, i));
         i = i + 1;
     }
-    var c = alloc(24);
+    var c = alloc(32);
     if (c == 0) { return 0; }
     store64(c + 0, out);
     store64(c + 8, load64(p + 8));
     store64(c + 16, load64(p + 16));
+    var st = shbdk_pronunciation_stress(p);
+    if (st != 0) { st = shbdk_phonemes_clone(st); }
+    store64(c + 24, st);
     return c;
 }
 

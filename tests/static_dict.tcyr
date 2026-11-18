@@ -250,5 +250,28 @@ var after_reset = shbdk_static_lookup_entry("hello");
 assert_neq(after_reset, 0, "lookups work after a reset");
 assert_eq(shbdk_dict_entry_eq(before_reset, after_reset), 1, "and decode the same entry");
 
+test_group("the built-in dictionary has CMUdict's stress (3.2.0)");
+var srec = shbdk_dict_entry_all(shbdk_static_lookup_entry("record"));
+assert_eq(vec_len(srec), 2, "record: two variants");
+var sr0 = vec_get(srec, 0);
+var sr1 = vec_get(srec, 1);
+# R IH0 K AO1 R D (the verb) and R EH1 K ER0 D (the noun), each @freq 0.5
+var sr_verb = sr0;
+var sr_noun = sr1;
+if (shbdk_pronunciation_stress_at(sr0, 1) == SHBDK_STRESS_PRIMARY) { sr_noun = sr0; sr_verb = sr1; }
+assert_eq(shbdk_pronunciation_stress_at(sr_noun, 1), SHBDK_STRESS_PRIMARY, "REcord: EH1");
+assert_eq(shbdk_pronunciation_stress_at(sr_noun, 3), SHBDK_STRESS_UNSTRESSED, "REcord: ER0");
+assert_eq(shbdk_pronunciation_stress_at(sr_verb, 1), SHBDK_STRESS_UNSTRESSED, "reCORD: IH0");
+assert_eq(shbdk_pronunciation_stress_at(sr_verb, 3), SHBDK_STRESS_PRIMARY, "reCORD: AO1");
+assert_eq(shbdk_pronunciation_stress_at(sr_verb, 0), SHBDK_STRESS_NONE, "R: none");
+var sph = shbdk_dict_entry_primary(shbdk_static_lookup_entry("photograph"));
+assert_eq(shbdk_pronunciation_stress_at(sph, 1), SHBDK_STRESS_PRIMARY, "photograph: OW1");
+assert_eq(shbdk_pronunciation_stress_at(sph, 3), SHBDK_STRESS_UNSTRESSED, "photograph: AH0");
+assert_eq(shbdk_pronunciation_stress_at(sph, 6), SHBDK_STRESS_SECONDARY, "photograph: AE2");
+var sthe = shbdk_dict_entry_primary(shbdk_static_lookup_entry("the"));
+assert_eq(shbdk_pronunciation_stress_at(sthe, 1), SHBDK_STRESS_UNSTRESSED, "the: AH0");
+var shello = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(shbdk_dict_english(), "hello"));
+assert_eq(shbdk_pronunciation_stress_at(shello, 3), SHBDK_STRESS_PRIMARY, "the loaded map has it too: OW1");
+
 var rc = assert_summary();
 syscall(60, rc);

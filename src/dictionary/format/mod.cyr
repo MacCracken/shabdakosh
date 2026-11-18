@@ -303,21 +303,32 @@ fn shbdk_parse_cmudict(input): i64 {
             return _shbdk_fail_line(line, "a word may not end in a (n) variant marker", 0, 0, 0, 0);
         }
 
-        # phonemes
+        # phonemes, and each symbol's stress digit (3.2.0: the digits were read and
+        # dropped, so every export gave every vowel a 1)
         phon = vec_new();
+        var stress = vec_new();
+        var any_digit = 0;
         pp = sep + 2;
         while (pp < e) {
             pp = _shbdk_fmt_skip_ws(input, pp, e);
             if (pp >= e) { break; }
             ss = pp;
             pp = _shbdk_fmt_find_ws(input, pp, e);
-            ph = shbdk_arpabet_to_phoneme_with_stress(_shbdk_fmt_dup(input, ss, pp));
+            var sym = _shbdk_fmt_dup(input, ss, pp);
+            ph = shbdk_arpabet_to_phoneme_with_stress(sym);
             if (ph == SHBDK_PH_NONE) { return _shbdk_fail_line(line, "unknown ARPABET symbol '", input, ss, pp, "'"); }
             vec_push(phon, ph);
+            # a digit counts on a vowel only: a consonant has no stress, and "Y1" read as
+            # Y before 3.2.0 too (keeping the 1 would give stress no writer can write)
+            var dg = shbdk_arpabet_stress(sym);
+            if (shbdk_phoneme_takes_stress(ph) == 0) { dg = SHBDK_STRESS_NONE; }
+            if (dg != SHBDK_STRESS_NONE) { any_digit = 1; }
+            vec_push(stress, dg);
         }
         if (vec_len(phon) == 0) { return _shbdk_fail_line(line, "no phonemes for word '", input, ws, we, "'"); }
 
         pron = shbdk_pronunciation_new(phon);
+        if (any_digit == 1) { pron = shbdk_pronunciation_with_stress(pron, stress); }
         if (pending_freq != SHBDK_FREQ_NONE) {
             pron = shbdk_pronunciation_with_frequency(pron, pending_freq);
             pending_freq = SHBDK_FREQ_NONE;
@@ -358,10 +369,27 @@ fn shbdk_parse_cmudict(input): i64 {
 }
 
 # ---- CMUdict emit ------------------------------------------------------------
+# `arp` (phoneme `ph`'s ARPABET symbol, which ends in a default digit for a vowel) with
+# its digit set to the known stress `st` (SHBDK_STRESS_*), into `buf` (>= 8 bytes).
+# Returns 1, or 0 when the stress cannot be written so that it reads back: a stressed
+# schwa (AH1 is /ʌ/), an unstressed /ʌ/ (AH0 is schwa), or stress on a consonant. A
+# phoneme whose stress is unknown is written as `arp` itself (1, schwa 0, as before 3.2.0).
+fn _shbdk_arpabet_stressed(ph, arp, st, buf): i64 {
+    if (shbdk_phoneme_takes_stress(ph) == 0) { return 0; }
+    if (ph == SVARA_PH_VOWEL_SCHWA && st != SHBDK_STRESS_UNSTRESSED) { return 0; }
+    if (ph == SVARA_PH_VOWEL_CUP_V && st == SHBDK_STRESS_UNSTRESSED) { return 0; }
+    var n = strlen(arp);
+    memcpy(buf, arp, n);
+    store8(buf + n - 1, 48 + st);
+    store8(buf + n, 0);
+    return 1;
+}
+
 # Append one entry (all its pronunciations) to `sb` in CMUdict format. Returns 1,
 # or 0 (with the reason recorded) if a pronunciation has no ARPABET symbol at all:
-# its line would read back as "no phonemes". A phoneme with no ARPABET symbol is
-# otherwise left out, ARPABET being an English phoneme set.
+# its line would read back as "no phonemes", or if its stress cannot be written (see
+# _shbdk_arpabet_stressed). A phoneme with no ARPABET symbol is otherwise left
+# out, with its stress, ARPABET being an English phoneme set.
 fn _shbdk_write_entry_cmudict(sb, word, entry): i64 {
     var prons = shbdk_dict_entry_all(entry);
     var n = vec_len(prons);
@@ -375,6 +403,10 @@ fn _shbdk_write_entry_cmudict(sb, word, entry): i64 {
     var k = 0;
     var arp = 0;
     var emitted = 0;
+    var symbuf = alloc(8);
+    var stv = 0;
+    var ph = 0;
+    var st = 0;
     while (i < n) {
         pron = vec_get(prons, i);
         hasf = shbdk_pronunciation_has_frequency(pron);
@@ -408,8 +440,19 @@ fn _shbdk_write_entry_cmudict(sb, word, entry): i64 {
         np = vec_len(phon);
         k = 0;
         emitted = 0;
+        stv = shbdk_pronunciation_stress(pron);
         while (k < np) {
-            arp = shbdk_phoneme_to_arpabet(vec_get(phon, k));
+            ph = vec_get(phon, k);
+            arp = shbdk_phoneme_to_arpabet(ph);
+            st = SHBDK_STRESS_NONE;
+            if (stv != 0) { st = vec_get(stv, k); }
+            if (arp != 0 && st != SHBDK_STRESS_NONE) {
+                if (_shbdk_arpabet_stressed(ph, arp, st, symbuf) == 0) {
+                    return _shbdk_fail_line(0, "stress that ARPABET cannot write back in '", word, 0,
+                      strlen(word), "'");
+                }
+                arp = symbuf;
+            }
             if (arp != 0) {
                 # separator only BETWEEN emitted symbols (Rust filter_map + join(" "))
                 if (emitted > 0) { str_builder_add_cstr(sb, " "); }

@@ -12,7 +12,9 @@
 #
 # 3.0.0 JSON schema (Cyrius-native — phonemes are integer ordinals):
 #   {"language":"en",
-#    "entries":{"cat":{"pronunciations":[{"phonemes":[24,7,22],"frequency":0.5,"region":"GA"}]}},
+#    "entries":{"cat":{"pronunciations":[{"phonemes":[24,7,22],"frequency":0.5,"region":"GA",
+#                                         "stress":[-1,1,-1]}]}},
+# "stress" (3.2.0) is optional: one SHBDK_STRESS_* per phoneme, written when known.
 #    "user_entries":{ ... }}
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
@@ -35,6 +37,16 @@ fn _shbdk_pron_to_jsonv(pron): i64 {
     if (shbdk_pronunciation_has_region(pron) == 1) {
         var rc = shbdk_region_code(shbdk_pronunciation_region(pron));
         json_v_obj_set(obj, str_from("region"), json_v_str_new(str_from(rc)));
+    }
+    if (shbdk_pronunciation_has_stress(pron) == 1) {
+        var sarr = json_v_arr_new();
+        var st = shbdk_pronunciation_stress(pron);
+        var k = 0;
+        while (k < vec_len(st)) {
+            json_v_arr_push(sarr, json_v_int_new(vec_get(st, k)));
+            k = k + 1;
+        }
+        json_v_obj_set(obj, str_from("stress"), sarr);
     }
     return obj;
 }
@@ -153,6 +165,23 @@ fn _shbdk_pron_from_jsonv(pobj, word): i64 {
         var region = shbdk_region_from_code(str_cstr(json_v_str(rg)));
         if (region == SHBDK_REGION_NONE) { return _shbdk_json_bad(word, "unknown region code"); }
         pron = shbdk_pronunciation_with_region(pron, region);
+    }
+    var sv = bayan_json_v_obj_get_by_cstr(pobj, "stress");
+    if (sv != 0 && json_v_is_null(sv) == 0) {
+        if (json_v_is_arr(sv) == 0) { return _shbdk_json_bad(word, "\"stress\" must be an array"); }
+        var stress = vec_new();
+        var sn = json_v_arr_len(sv);
+        var si = 0;
+        while (si < sn) {
+            var se = json_v_arr_get(sv, si);
+            if (json_v_is_int(se) == 0) { return _shbdk_json_bad(word, "a stress value must be an integer"); }
+            vec_push(stress, json_v_int(se));
+            si = si + 1;
+        }
+        if (shbdk_stress_is_valid(stress, vec_len(phon)) == 0) {
+            return _shbdk_json_bad(word, "\"stress\" must hold one value from -1 to 2 per phoneme");
+        }
+        pron = shbdk_pronunciation_with_stress(pron, stress);
     }
     return pron;
 }

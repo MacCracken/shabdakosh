@@ -42,7 +42,7 @@ shabdakosh/
 │       ├── syllable.cyr            — Syllable / StressLevel + syllabify (Maximal Onset)
 │       │
 │       │  ── L2 generated base data ──
-│       ├── _cmudict_data.cyr       — packed-string pieces + count + accessor (~285 KB)
+│       ├── _cmudict_data.cyr       — packed-string pieces + count + accessor (~324 KB)
 │       ├── cmudict.cyr             — loads the data into a lib/hashmap at runtime
 │       │
 │       │  ── L3 keystone ──
