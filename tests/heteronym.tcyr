@@ -71,5 +71,14 @@ test_group("lookup_with_context: missing word");
 var mctx = shbdk_heteronym_context_new(_w1("xyzzy"), 0);
 assert_eq(shbdk_dict_lookup_with_context(em, "xyzzy", &_primary_resolver, mctx), 0, "missing -> 0 (None)");
 
+# ================================================================
+test_group("context: first word, set_position");
+var hfc = shbdk_heteronym_context_new(_w3("read", "the", "book"), 0);
+assert_eq(vec_len(shbdk_heteronym_preceding_words(hfc)), 0, "nothing before the first word");
+assert_eq(vec_len(shbdk_heteronym_following_words(hfc)), 2, "two after");
+assert_streq(vec_get(shbdk_heteronym_following_words(hfc), 0), "the", "the first following word");
+shbdk_heteronym_context_set_position(hfc, 2);
+assert_streq(shbdk_heteronym_target_word(hfc), "book", "set_position moves the target");
+
 var rc = assert_summary();
 syscall(60, rc);

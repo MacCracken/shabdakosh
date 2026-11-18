@@ -72,9 +72,10 @@ var empty = shbdk_dict_is_empty(d1);   # 1 if base is empty, else 0
 
 ## Lookup
 
-Two lookup entry points. Both take a `cstr` word, are case-insensitive (ASCII
-lowercase fold, with a fast-path when the word is already lowercase), and check the
-**user overlay first, then the base**.
+Two lookup entry points. Both take a `cstr` word, are case-insensitive (Unicode
+lowercase with Rust's `to_lowercase` rules — `"ÜBER"` finds `"über"`, a word-final `Σ` is
+`ς` — and a fast path when the word is already lowercase), and check the **user overlay
+first, then the base**.
 
 ```
 # Primary pronunciation as a vec of SVARA_PH_* ordinals, or 0 if not found.
@@ -120,6 +121,17 @@ Region-specific pronunciation (`SHBDK_REGION_GA` / `SHBDK_REGION_RP`, or
 var ga = shbdk_dict_entry_for_region(e, SHBDK_REGION_GA);   # a pronunciation handle, or 0
 ```
 
+`SHBDK_REGION_NONE` is not a region, so `for_region` finds nothing for it.
+
+### Frequencies
+
+A frequency is a relative weight, **0.0 to 1.0** (f64 bits). `shbdk_frequency_is_valid(f)`
+says whether a value is one; NaN, the infinities and anything outside the range are not.
+`shbdk_pronunciation_with_frequency` stores only a valid value (otherwise the pronunciation
+keeps the frequency it had), every reader (CMUdict `@freq`, JSON, binary) refuses an
+invalid one, and the writers write the shortest text that reads back exactly
+(`shbdk_frequency_text`: `0.5`, `0.85`, `0.3333333333333333`).
+
 ---
 
 ## The User Overlay
@@ -140,10 +152,10 @@ vec_push(seq, SVARA_PH_FRIC_S);
 shbdk_dict_insert_user(d, "agnos", seq);
 # shbdk_dict_lookup(d, "agnos") now returns the overlay pronunciation.
 
-# Override an existing base word — overlay wins.
+# Override an existing base word — overlay wins ("thee").
 var the = vec_new();
 vec_push(the, SVARA_PH_FRIC_DH);
-vec_push(the, SVARA_PH_VOWEL_E);
+vec_push(the, SVARA_PH_VOWEL_LONG_I);
 shbdk_dict_insert_user(d, "the", the);
 
 # Remove the override; returns 1 if it was present, 0 if not. Base pronunciation returns.
@@ -151,6 +163,9 @@ shbdk_dict_remove_user(d, "the");
 ```
 
 Base-dict inserts (not the overlay) go through `shbdk_dict_insert(d, word, phonemes)`.
+`insert` and `insert_user` **copy** the phoneme vec, so a caller may reuse its buffer;
+`shbdk_pronunciation_new(vec)` takes the vec over, as the Rust's `Pronunciation::new(Vec)`
+did. `shbdk_dict_set_language` copies the code. `shbdk_dict_clone(d)` is a deep copy.
 Entry-level variants: `shbdk_dict_insert_entry` / `shbdk_dict_insert_user_entry` take a
 prebuilt DictEntry handle instead of a phoneme vec.
 
@@ -233,18 +248,33 @@ var out_user = shbdk_to_cmudict_with_user(d);    # includes the user overlay
 ```
 
 The extended format carries `;;; @freq=0.7` and `;;; @region=GA` annotation lines
-before an entry; variant pronunciations use `read(2)  ...`. A malformed `@freq` token or
-an unknown `@region` makes `shbdk_parse_cmudict` return `0` (matching the Rust `Err`).
+before an entry; variant pronunciations use `read(2)  ...` (only a trailing `(digits)` is a
+variant marker, so CMUdict's own `(PAREN` and `;SEMI-COLON` are words). Any of these makes
+`shbdk_parse_cmudict` return `0`, with the reason in `shbdk_last_error()` (see *Errors and
+Diagnostics*): a `@freq` that is not a number or not 0.0–1.0, an unknown `@region`, a line
+with no two-space separator, an unknown ARPABET symbol, a word with no phonemes, or input
+that is not UTF-8. Whitespace is Unicode White_Space.
+
+The writers return `0` instead of a file that would not load back: a word with a newline,
+a two-space run or a trailing `(n)`, or a pronunciation with no ARPABET symbol at all
+(ARPABET is an English phoneme set; a phoneme without a symbol is left out).
 
 File helpers: `shbdk_load_cmudict_file(path)` (dict-or-0) and
-`shbdk_save_cmudict_file(dict, path)` (packed status; test with `shbdk_is_err`).
+`shbdk_save_cmudict_file(dict, path)` (0 on success, negative on error). The loaders read
+the whole file, whatever its size.
 
 ### IPA lexicon text
 
 ```
 var d   = shbdk_parse_ipa("hello /hɛloʊ/\nworld /wɜld/\n");   # dict, or 0
-var out = shbdk_to_ipa(d);                                    # cstr
+var out = shbdk_to_ipa(d);                                    # cstr, or 0
 ```
+
+The IPA bridge covers every svara phoneme with a symbol (all 100, silence aside).
+Affricates are written with their tie bar (`t͡ʃ`, `d͡ʒ`, `t͡s`); a bare `tʃ` / `dʒ` still reads
+as the affricate, a bare `ts` is a cluster. Where two symbols would read back as one
+(`[a, ɪ]` as `aɪ`), the writer puts a syllable break between them (`a.ɪ`). `r` is the
+alveolar trill and `ɹ` the English approximant, as IPA defines them.
 
 ### W3C PLS (Pronunciation Lexicon Specification)
 
@@ -253,6 +283,11 @@ var d = shbdk_parse_pls("<lexicon alphabet=\"ipa\"><lexeme><grapheme>hi</graphem
 var out = shbdk_to_pls(d, "en-US");                # cstr
 var out_user = shbdk_to_pls_with_user(d, "en-US");
 ```
+
+The reader is a real XML reader: attributes in either quote style, comments, processing
+instructions, CDATA and character references, and an end tag must close its start tag.
+Every `<grapheme>` of a `<lexeme>` gets its pronunciations, `prefer="true"` ones first.
+Only the `ipa` alphabet is read; another one (on the lexicon or a phoneme) is an error.
 
 ### SSML `<phoneme>` tags
 
@@ -277,20 +312,37 @@ language, and the user overlay):
 
 ```
 var json = shbdk_to_json(d);                     # cstr
-var back = shbdk_from_json(json);                # dict, or 0 on invalid JSON
+var back = shbdk_from_json(json);                # dict, or 0 (shbdk_last_error() says why)
 ```
+
+The reader checks the schema: `entries` is required, a phoneme is an integer 0–100, a
+frequency a number 0.0–1.0, a region `"GA"` / `"RP"`, an entry has at least one
+pronunciation. It also reads the v0.1 shape where an entry is its phoneme array
+(`{"entries":{"cat":[24,7,22]}}`).
+
+Every other record type has a codec and an equality function too, in
+`src/dictionary/format/records.cyr`: `shbdk_<type>_to_json` / `_from_json` / `_eq` for
+`pronunciation`, `dict_entry`, `dict_diff`, `morpheme`, `decomposition`, `syllable`,
+`coverage_report`, `trie` (its sorted words), `heteronym_context`, `g2p_result`,
+`fst_model`; plus `shbdk_region_to_json` / `_from_json`, `shbdk_lookup_source_to_json` /
+`_from_json` and `shbdk_err_to_json` / `_from_json`.
 
 ### Binary
 
 Compact `SHBD`-magic format; the deserializer is bounds-checked against hostile input:
 
 ```
-var bytes = shbdk_to_binary(d);                  # buffer handle
-var back  = shbdk_from_binary(bytes);            # dict, or 0 if magic/length invalid
+var bytes = shbdk_to_binary(d);                  # a Str; empty if the dict does not fit the format
+var back  = shbdk_from_binary(bytes);            # dict, or 0 (shbdk_last_error() says why)
 
-shbdk_save_binary_file(d, "/path/dict.bin");     # packed status
+shbdk_save_binary_file(d, "/path/dict.bin");     # 0, or negative on error
 var d2 = shbdk_load_binary_file("/path/dict.bin");   # dict, or 0
 ```
+
+Every field is checked, not only every length: an option flag is 0 or 1, a phoneme 0–100,
+a region GA or RP, a frequency 0.0–1.0, a word well-formed UTF-8, an entry has a
+pronunciation, and nothing follows the overlay. The writer refuses what the format cannot
+hold (a field over 65,535, a phoneme outside 0–100) rather than write an unreadable file.
 
 ---
 
@@ -302,18 +354,22 @@ Report how much of a text the dict can pronounce:
 var r = shbdk_dict_coverage(d2, "the hello world xyz");
 var total    = shbdk_coverage_total_tokens(r);       # 4
 var covered  = shbdk_coverage_covered_tokens(r);     # 3
-var missing  = shbdk_coverage_uncovered_words(r);    # vec of cstr (deduped, sorted)
+var missing  = shbdk_coverage_uncovered_words(r);    # vec of Str (deduped, sorted)
 var nmiss    = shbdk_coverage_uncovered_count(r);
 var full     = shbdk_coverage_is_fully_covered(r);   # 1 if nothing uncovered
 var pct      = shbdk_coverage_pct(r);                # 0.0-100.0 as f64 bits
 ```
+
+Tokens split on Unicode whitespace (NBSP, U+3000, …). Each token loses leading and trailing
+punctuation and symbols (ASCII and Unicode: curly quotes, the ellipsis, guillemets, emoji),
+reads a typographic apostrophe (`’`, `ʼ`) as `'`, and lowercases with Unicode rules.
 
 ---
 
 ## Prefix Search (Trie)
 
 ```
-var hits = shbdk_dict_prefix_search(d3, "he");   # vec of matching words (cstr): he, hello
+var hits = shbdk_dict_prefix_search(d3, "he");   # vec of matching words (Str): he, hello
 var n    = vec_len(hits);
 ```
 
@@ -322,7 +378,7 @@ Build a standalone trie if you need repeated queries:
 ```
 var t = shbdk_trie_from_dict(d3);
 var has = shbdk_trie_contains(t, "hello");        # 1/0
-var matches = shbdk_trie_search_prefix(t, "he");  # vec of cstr
+var matches = shbdk_trie_search_prefix(t, "he");  # vec of Str (str_cstr() to print one)
 var size = shbdk_trie_len(t);
 ```
 
@@ -360,9 +416,33 @@ var ctx = shbdk_heteronym_context_new(ctx_words, 1);   # target at index 1
 var preceding = shbdk_heteronym_preceding_words(ctx);
 var following = shbdk_heteronym_following_words(ctx);
 
-# resolver: fn(context, entry) -> chosen-pronunciation-index.
+# resolver: fn(word, context) -> the index of the pronunciation to use, or -1 for none.
 var ph = shbdk_dict_lookup_with_context(d, "read", &my_resolver, ctx);
 ```
+
+The context keeps the words vec it was given; `shbdk_heteronym_context_set_position(ctx, i)`
+moves the target.
+
+---
+
+## Syllables and Morphemes
+
+```
+var syl = shbdk_syllabify(ph);                  # vec of syllable handles
+var first = vec_get(syl, 0);
+var sp = shbdk_syllable_phonemes(first);        # its phoneme vec
+var st = shbdk_syllable_stress(first);          # SHBDK_STRESS_* (Unstressed unless set)
+```
+
+`shbdk_syllabify` follows the Maximal Onset Principle: between two nuclei, the next
+syllable takes the longest run of consonants that can begin a syllable — English's onsets
+when every consonant is English (`astray` → `ə.stɹeɪ`, `atlas` → `æt.ləs`), the Sonority
+Sequencing Principle otherwise — and `ŋ` never begins one. Every svara vowel and diphthong
+is a nucleus, the extended ones included (`über` has two syllables).
+
+A `Decomposition` is a vec of morphemes (`shbdk_morpheme_new(text, SHBDK_MORPH_*, phonemes)`,
+which copies the text); `shbdk_decomposition_composite_phonemes` / `_text` / `_root` /
+`_prefixes` / `_suffixes` read it.
 
 ---
 
@@ -390,8 +470,10 @@ var conf = shbdk_lookup_result_confidence(lr);
 shbdk_fallback_dict_promote_if_confident(fb, "xyzzy", 0.75);
 ```
 
-A predict fn builds its result with `shbdk_g2p_result_new(phonemes_vec, confidence)` and
-returns `0` for "no prediction". `shbdk_g2p_result_phonemes` / `_confidence` read it back.
+A predict fn receives the lowercased word as a `cstr`, builds its result with
+`shbdk_g2p_result_new(phonemes_vec, confidence)` and returns `0` for "no prediction".
+`shbdk_g2p_result_phonemes` / `_confidence` read it back. Lookups and promotions copy the
+predicted phonemes, so a model may reuse one buffer.
 
 ---
 
@@ -414,11 +496,17 @@ var word  = shbdk_invalid_entry_word(first);                   # offending word 
 var phs   = shbdk_invalid_entry_invalid_phonemes(first);       # the offending phonemes
 ```
 
+Membership treats `ɔ`/`ɔː` (length) and `t͡ʃ`/`tʃ` (the affricate tie) as one phoneme.
+
 Convenience wrappers validate against the dict's own language tag:
-`shbdk_dict_validate(d)` and `shbdk_dict_validate_phonotactics(d)`.
-Phonotactics has its own path: `shbdk_validate_phonotactics(dict, phonotactics)` →
-a report read with `shbdk_phonotactic_report_is_valid` / `_violations` /
-`_violation_count`.
+`shbdk_dict_validate(d)` and `shbdk_dict_validate_phonotactics(d)` — for every language
+varna has an inventory / a phonotactic profile for, and a regional tag (`pt-BR`) falls back
+to its language. Phonotactics has its own path: `shbdk_validate_phonotactics(dict,
+phonotactics)` → a report read with `shbdk_phonotactic_report_is_valid` / `_violations` /
+`_violation_count`. Each pronunciation is syllabified (Maximal Onset) and its onsets,
+nuclei, codas and syllable boundaries are checked against the profile's constraints for
+that position, with onsets held to the profile's maximum onset and codas to its maximum
+coda. The built-in English dictionary has no English phonotactic violation.
 
 ### Script and language detection
 
@@ -451,9 +539,10 @@ Both merge base entries and overlay entries.
 
 ```
 var dd = shbdk_dict_diff(v1, v2);              # by effective lookup, sorted
-var added   = shbdk_dict_diff_added(dd);       # vec of cstr: in v2 only
+var added   = shbdk_dict_diff_added(dd);       # vec of Str: in v2 only
 var removed = shbdk_dict_diff_removed(dd);     # in v1 only
 var changed = shbdk_dict_diff_changed(dd);     # present in both, different pronunciation
+                                               # (frequencies compared by value: 0.0 == -0.0)
 var total   = shbdk_dict_diff_len(dd);
 var empty   = shbdk_dict_diff_is_empty(dd);    # 1 if identical
 ```
@@ -469,14 +558,16 @@ A miss, a repeated hit and a capitalised word (`"Hello"`) allocate nothing:
 
 ```
 var e   = shbdk_static_lookup_entry("hello");   # entry handle, or 0
-var ph  = shbdk_static_lookup("Hello");         # phoneme vec, or 0 (A-Z folded)
+var ph  = shbdk_static_lookup("Hello");         # phoneme vec, or 0 (case-insensitive)
 var n   = shbdk_static_len();                    # 10617, a generated constant
 ```
 
 The entry a hit returns is the static dictionary's own and the same pointer every time,
 so treat it as read-only. For a full `PronunciationDict` handle over the same data (prefix
 search, export, merge), `shbdk_static_dict()` builds one on first use and caches it; its
-entries are separate objects with the same content.
+entries are separate objects with the same content. Both caches live in the allocator like
+any other allocation: after `alloc_reset()`, call `shbdk_static_reset()` before the next
+static lookup.
 
 ---
 
@@ -525,3 +616,16 @@ if (shbdk_is_err(err) == 1) {
 Named error constructors exist for the four categories — `shbdk_err_dict_parse()`,
 `shbdk_err_unknown_symbol()`, `shbdk_err_phoneme_not_in_inventory()`,
 `shbdk_err_unknown_language()` — mapping to `SHBDK_ERR_*` codes.
+
+A parser or loader that fails returns `0` and keeps the reason, the detail the Rust carried
+in `DictParseError(String)`:
+
+```
+var d = shbdk_parse_cmudict("word  XX1\n");
+if (d == 0) {
+    println(shbdk_last_error());        # line 1: unknown ARPABET symbol 'XX1'
+}
+```
+
+Each parse / load entry point clears it on entry, so it describes the last failure (and is
+`""` after a success). `shbdk_err_to_json(err, detail)` writes `{"DictParseError":"..."}`.

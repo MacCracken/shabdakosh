@@ -1,20 +1,20 @@
 # lexicon.cyr — varna-lexicon dictionary constructors
 # (ports rust-old/src/dictionary/mod.rs from_lexicon / spanish / hindi / german / sanskrit).
 #
-# Builds a PronunciationDict from a varna Swadesh lexicon: each entry's IPA is
-# parsed to svara phonemes, its Swadesh rank becomes a 1/(1+rank) frequency, keyed
+# Builds a PronunciationDict from a varna lexicon: each entry's IPA is parsed to
+# svara phonemes, its frequency rank (if any) becomes a 1/(1+rank) frequency, keyed
 # by the lowercased native word (entries whose IPA doesn't parse are skipped, as in
 # Rust). varna-gated — like detect/validate, it lives in its own module included
 # after varna + ipa + mod (mod.cyr is included by non-varna tests, so these can't
 # live there).
 #
-# Requires: lib/varna.cyr (lexicon_*/swadesh_*), src/ipa.cyr (parse_ipa_word),
+# Requires: lib/varna.cyr (lexicon_*/swadesh_*/lex_*), src/ipa.cyr (parse_ipa_word),
 # dictionary/mod.cyr + entry.cyr; f64_from/f64_div (stdlib).
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
-# Build a dict from a varna Lexicon: IPA -> phonemes, Swadesh rank -> 1/(1+rank)
-# frequency, lowercased native word as the key. (Rust from_lexicon)
+# Build a dict from a varna Lexicon: IPA -> phonemes, frequency rank -> 1/(1+rank)
+# frequency (none without a rank), lowercased native word as the key. (Rust from_lexicon)
 #must_use
 fn shbdk_from_lexicon(lexicon): i64 {
     var dict = shbdk_dict_new();
@@ -31,8 +31,14 @@ fn shbdk_from_lexicon(lexicon): i64 {
         phon = shbdk_parse_ipa_word(swadesh_entry_ipa(e));
         if (vec_len(phon) > 0) {
             pron = shbdk_pronunciation_new(phon);
-            rank = swadesh_entry_index(e);
-            pron = shbdk_pronunciation_with_frequency(pron, f64_div(f64_from(1), f64_from(1 + rank)));
+            # The frequency comes from the entry's frequency RANK (lower = more
+            # common), as 1/(1+rank); an entry without one has no frequency.
+            # 3.2: this read swadesh_index, a concept number, so every Swadesh word
+            # got an invented 1/(1+index) and a ranked, unindexed entry got +inf.
+            rank = lex_frequency_rank(e);
+            if (rank >= 0) {
+                pron = shbdk_pronunciation_with_frequency(pron, f64_div(f64_from(1), f64_from(1 + rank)));
+            }
             shbdk_dict_insert_entry(dict, swadesh_entry_word(e), shbdk_dict_entry_new(pron));
         }
         i = i + 1;

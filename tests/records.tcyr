@@ -1,0 +1,157 @@
+# records.tcyr — tests for src/dictionary/format/records.cyr: a JSON round trip
+# and equality for every record type the Rust derived Serialize / Deserialize /
+# PartialEq on (3.2). Carries the Rust serde tests the port had no counterpart for:
+# entry.rs (pronunciation, dict_entry, region), morphology.rs (morpheme,
+# decomposition, kind), syllable.rs (syllable, stress), coverage.rs, trie.rs,
+# heteronym.rs, g2p.rs (result, lookup source, fst model, fst notation) and
+# integration.rs (dict diff, error).
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/morphology.cyr"
+include "src/dictionary/syllable.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/coverage.cyr"
+include "src/dictionary/trie.cyr"
+include "src/dictionary/heteronym.cyr"
+include "src/dictionary/g2p.cyr"
+include "src/dictionary/format/json.cyr"
+include "src/dictionary/format/records.cyr"
+
+alloc_init();
+
+fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
+fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+fn _has(s, sub): i64 {
+    var n = strlen(sub);
+    var i = 0;
+    while (load8(s + i) != 0) {
+        if (memeq(s + i, sub, n) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# ================================================================
+test_group("Region");
+assert_streq(shbdk_region_to_json(SHBDK_REGION_GA), "\"GA\"", "GA");
+assert_eq(shbdk_region_from_json(shbdk_region_to_json(SHBDK_REGION_RP)), SHBDK_REGION_RP, "RP round-trips");
+assert_eq(shbdk_region_from_json("\"XX\""), SHBDK_REGION_NONE, "XX is no region");
+assert_eq(shbdk_region_to_json(SHBDK_REGION_NONE), 0, "no region has no JSON");
+
+test_group("Pronunciation, DictEntry");
+var pr = shbdk_pronunciation_with_region(shbdk_pronunciation_with_frequency(
+    shbdk_pronunciation_new(_v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T)), 0.75), SHBDK_REGION_GA);
+var pr2 = shbdk_pronunciation_from_json(shbdk_pronunciation_to_json(pr));
+assert_eq(shbdk_pronunciation_eq(pr, pr2), 1, "phonemes, frequency and region together");
+var de = shbdk_dict_entry_from_pronunciations(_v2(pr,
+    shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_SCHWA)), 0.25)));
+assert_eq(shbdk_dict_entry_eq(de, shbdk_dict_entry_from_json(shbdk_dict_entry_to_json(de))), 1, "a 2-variant entry");
+assert_eq(shbdk_pronunciation_from_json("{\"phonemes\":[500]}"), 0, "a bad phoneme");
+
+test_group("DictDiff");
+var dl = shbdk_dict_new();
+var dr = shbdk_dict_new();
+shbdk_dict_insert(dl, "old", _v1(SVARA_PH_VOWEL_A));
+shbdk_dict_insert(dl, "mod", _v1(SVARA_PH_VOWEL_A));
+shbdk_dict_insert(dr, "mod", _v1(SVARA_PH_VOWEL_E));
+shbdk_dict_insert(dr, "new", _v1(SVARA_PH_VOWEL_A));
+var dd = shbdk_dict_diff(dl, dr);
+var ddj = shbdk_dict_diff_to_json(dd);
+assert_streq(ddj, "{\"added\":[\"new\"],\"removed\":[\"old\"],\"changed\":[\"mod\"]}", "the Rust's shape");
+assert_eq(shbdk_dict_diff_eq(dd, shbdk_dict_diff_from_json(ddj)), 1, "round-trips");
+assert_eq(shbdk_dict_diff_from_json("{\"added\":[]}"), 0, "missing fields");
+
+test_group("MorphemeKind, Morpheme, Decomposition");
+assert_streq(shbdk_morpheme_kind_name(SHBDK_MORPH_INFIX), "Infix", "kind name");
+assert_eq(shbdk_morpheme_kind_from_name("Suffix"), SHBDK_MORPH_SUFFIX, "kind from name");
+var buf = alloc(8);
+store8(buf, 117); store8(buf + 1, 110); store8(buf + 2, 0);   # "un"
+var mp = shbdk_morpheme_new(buf, SHBDK_MORPH_PREFIX, _v2(SVARA_PH_VOWEL_CUP_V, SVARA_PH_NASAL_N));
+store8(buf, 120);   # the caller reuses its buffer
+assert_streq(shbdk_morpheme_text(mp), "un", "the text was copied");
+var mr = shbdk_morpheme_new("happy", SHBDK_MORPH_ROOT, _v2(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_ASH));
+assert_eq(shbdk_morpheme_eq(mp, shbdk_morpheme_from_json(shbdk_morpheme_to_json(mp))), 1, "morpheme");
+var dc = shbdk_decomposition_new(_v2(mp, mr));
+assert_eq(shbdk_decomposition_eq(dc, shbdk_decomposition_from_json(shbdk_decomposition_to_json(dc))), 1,
+  "decomposition");
+assert_eq(shbdk_morpheme_from_json("{\"text\":\"a\",\"kind\":\"Bogus\",\"phonemes\":[]}"), 0, "bad kind");
+
+test_group("StressLevel, Syllable");
+assert_eq(shbdk_stress_from_name(shbdk_stress_name(SHBDK_STRESS_SECONDARY)), SHBDK_STRESS_SECONDARY, "stress");
+var sy = shbdk_syllable_with_stress(shbdk_syllable_new(_v2(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_OPEN_E)),
+  SHBDK_STRESS_PRIMARY);
+assert_eq(shbdk_syllable_eq(sy, shbdk_syllable_from_json(shbdk_syllable_to_json(sy))), 1, "syllable");
+assert_eq(_has(shbdk_syllable_to_json(sy), "\"stress\":\"Primary\""), 1, "stress as its name");
+
+test_group("CoverageReport");
+var cd = shbdk_dict_new();
+shbdk_dict_insert(cd, "the", _v1(SVARA_PH_VOWEL_SCHWA));
+var cr = shbdk_dict_coverage(cd, "the cat the dog");
+var crj = shbdk_coverage_report_to_json(cr);
+assert_streq(crj, "{\"total_tokens\":4,\"covered_tokens\":2,\"uncovered_words\":[\"cat\",\"dog\"]}", "the wasm shape");
+assert_eq(shbdk_coverage_report_eq(cr, shbdk_coverage_report_from_json(crj)), 1, "round-trips");
+assert_eq(shbdk_coverage_report_from_json("{\"total_tokens\":1,\"covered_tokens\":2,\"uncovered_words\":[]}"), 0,
+  "covered > total");
+var crn = shbdk_coverage_report_new(0, 0, vec_new());
+assert_eq(shbdk_coverage_is_fully_covered(crn), 1, "public constructor");
+
+test_group("PrefixTrie");
+var tr = shbdk_trie_new();
+shbdk_trie_insert(tr, "hello");
+shbdk_trie_insert(tr, "help");
+shbdk_trie_insert(tr, "world");
+var trj = shbdk_trie_to_json(tr);
+assert_streq(trj, "{\"words\":[\"hello\",\"help\",\"world\"]}", "sorted word list");
+var tr2 = shbdk_trie_from_json(trj);
+assert_eq(shbdk_trie_eq(tr, tr2), 1, "rebuilds the same trie");
+assert_eq(vec_len(shbdk_trie_search_prefix(tr2, "hel")), 2, "and searches");
+
+test_group("HeteronymContext");
+var hw = vec_new();
+vec_push(hw, "I"); vec_push(hw, "read"); vec_push(hw, "books");
+var hc = shbdk_heteronym_context_new(hw, 1);
+assert_eq(shbdk_heteronym_context_eq(hc, shbdk_heteronym_context_from_json(shbdk_heteronym_context_to_json(hc))), 1,
+  "round-trips");
+shbdk_heteronym_context_set_position(hc, 2);
+assert_streq(shbdk_heteronym_target_word(hc), "books", "set_position moves the target");
+assert_eq(shbdk_heteronym_context_from_json("{\"words\":[],\"position\":-1}"), 0, "negative position");
+
+test_group("G2PResult, LookupSource, FstNotation, FstModel");
+var gr = shbdk_g2p_result_new(_v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH), 0.75);
+assert_eq(shbdk_g2p_result_eq(gr, shbdk_g2p_result_from_json(shbdk_g2p_result_to_json(gr))), 1, "G2PResult");
+var conf = alloc(8);
+assert_streq(shbdk_lookup_source_to_json(SHBDK_SOURCE_USER_OVERLAY, 0), "\"UserOverlay\"", "UserOverlay");
+assert_eq(shbdk_lookup_source_from_json("\"BaseDictionary\"", conf), SHBDK_SOURCE_BASE_DICTIONARY, "BaseDictionary");
+var lsj = shbdk_lookup_source_to_json(SHBDK_SOURCE_G2P_MODEL, 0.8);
+assert_eq(_has(lsj, "{\"G2PModel\":{\"confidence\":0.8"), 1, "G2PModel carries its confidence");
+assert_eq(shbdk_lookup_source_from_json(lsj, conf), SHBDK_SOURCE_G2P_MODEL, "G2PModel back");
+assert_eq(load64(conf), 0.8, "with its confidence");
+assert_eq(shbdk_lookup_source_from_json("\"Nope\"", conf), 0 - 1, "unknown source");
+assert_eq(shbdk_fst_notation_from_name(shbdk_fst_notation_name(SHBDK_FST_NOTATION_IPA)), SHBDK_FST_NOTATION_IPA,
+  "FstNotation");
+var fm = shbdk_fst_model_new("/models/en.fst", SHBDK_FST_NOTATION_ARPABET);
+var fmj = shbdk_fst_model_to_json(fm);
+assert_streq(fmj, "{\"model_path\":\"/models/en.fst\",\"notation\":\"Arpabet\"}", "the Rust's shape");
+assert_eq(shbdk_fst_model_eq(fm, shbdk_fst_model_from_json(fmj)), 1, "FstModel round-trips");
+
+test_group("the error");
+var ej = shbdk_err_to_json(shbdk_err_dict_parse(), "test parse error");
+assert_streq(ej, "{\"DictParseError\":\"test parse error\"}", "the Rust's shape");
+var edet = alloc(8);
+var eback = shbdk_err_from_json(ej, edet);
+assert_eq(sakshi_err_code(eback), SHBDK_ERR_DICT_PARSE, "the variant");
+assert_streq(load64(edet), "test parse error", "the detail");
+assert_eq(shbdk_err_from_json("{\"Nope\":\"x\"}", edet), 0, "unknown variant");
+
+var rc = assert_summary();
+syscall(60, rc);

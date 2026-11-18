@@ -18,6 +18,10 @@ sibling AGNOS port) doesn't have to reconstruct the "why". Each is a real choice
 Port every Rust module function-for-function, mapping the seven idioms below. Cross-check every
 port against `rust-old/`; the correctness bar is "matches what Rust did."
 
+> **Amended by [ADR 005](005-accuracy-over-rust-parity.md) (2026-11-17):** `rust-old/` is the list of
+> capabilities the port must have, not the correctness oracle; accuracy decides whether a result
+> is right, and the port does not reproduce the Rust's bugs.
+
 1. **Errors: `thiserror` enums → sakshi packed-i64.** Errors are `sakshi` packed `i64`
    (`[ctx][category][code]`, `0 == ok`), tested with `shabda_is_err`. Fallible functions return a
    payload pointer with `0 == none/error`, or write the payload to an out-param.

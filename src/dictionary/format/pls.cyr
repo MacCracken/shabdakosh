@@ -1,18 +1,28 @@
-# pls.cyr — W3C PLS (Pronunciation Lexicon Specification) XML import/export.
+# pls.cyr — W3C PLS (Pronunciation Lexicon Specification) XML import/export, and
+# the small XML reader it and ssml.cyr share.
 #
 # Ports rust-old/src/dictionary/format/pls.rs. Only the `ipa` alphabet is
-# supported. Hand-rolled XML scanning (like the Rust). Reuses shbdk_xml_escape /
-# _unescape, _shbdk_starts_at, _shbdk_fmt_dup from format/mod.cyr; the dict
-# helpers _shbdk_sort_strs / _shbdk_collect_keys / _shbdk_dict_lookup_entry_str
-# from mod.cyr. Included after src/dictionary/format/mod.cyr.
+# supported. Reuses shbdk_xml_escape / _shbdk_xml_decode_at, _shbdk_starts_at and
+# _shbdk_fmt_dup from format/mod.cyr, and _shbdk_sort_strs / _shbdk_collect_keys /
+# _shbdk_dict_lookup_entry_str from mod.cyr. Included after format/mod.cyr.
+#
+# 3.2: the Rust (and the port through 3.1) found elements by substring search, so
+# a lexeme kept only its FIRST <grapheme> (PLS 1.0 allows several, all sharing the
+# pronunciations), an attribute on <phoneme> (`prefer="true"`) made that phoneme
+# vanish, single-quoted attributes were missed (alphabet='x-sampa' slipped past
+# the alphabet check), CDATA and numeric references were not decoded, and the
+# lang attribute was written unescaped. This reads the XML properly: tags with
+# attributes in either quote style, self-closing tags, comments, processing
+# instructions, a DOCTYPE, CDATA, the five named entities and numeric references,
+# and an end tag must close its start tag. A malformed document is an error with
+# a reason.
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
+# ---- XML reader -----------------------------------------------------------------
+# XML white space: space, tab, CR, LF (the XML `S` production).
 fn _shbdk_pls_ws(c): i64 {
-    if (c == 32) { return 1; }
-    if (c == 9) { return 1; }
-    if (c == 10) { return 1; }
-    if (c == 13) { return 1; }
+    if (c == 32 || c == 9 || c == 10 || c == 13) { return 1; }
     return 0;
 }
 
@@ -27,97 +37,319 @@ fn _shbdk_pls_find(s, from, limit, pat): i64 {
     return (0 - 1);
 }
 
-# Value of attribute `attr` (first `attr="value"`), or 0.
-fn _shbdk_pls_extract_attr(input, attr): i64 {
-    var pb = str_builder_new();
-    str_builder_add_cstr(pb, attr);
-    str_builder_add_cstr(pb, "=\"");
-    var pat = str_data(str_builder_build(pb));
-    var len = strlen(input);
-    var start = _shbdk_pls_find(input, 0, len, pat);
-    if (start < 0) { return 0; }
-    var vs = start + strlen(pat);
-    var ve = _shbdk_pls_find(input, vs, len, "\"");
-    if (ve < 0) { return 0; }
-    return _shbdk_fmt_dup(input, vs, ve);
+# 1 if byte c can be part of an XML name (ASCII letters, digits, - _ . : and any
+# non-ASCII byte).
+fn _shbdk_xml_namech(c): i64 {
+    if (c >= 128) { return 1; }
+    if (c >= 97 && c <= 122) { return 1; }
+    if (c >= 65 && c <= 90) { return 1; }
+    if (c >= 48 && c <= 57) { return 1; }
+    if (c == 45 || c == 95 || c == 46 || c == 58) { return 1; }
+    return 0;
 }
 
-# Trimmed text of the first `<tag>...</tag>` within [from, limit), or 0.
-fn _shbdk_pls_extract_elem(input, from, limit, tag): i64 {
-    var ob = str_builder_new();
-    str_builder_add_cstr(ob, "<");
-    str_builder_add_cstr(ob, tag);
-    str_builder_add_cstr(ob, ">");
-    var openc = str_data(str_builder_build(ob));
-    var cb = str_builder_new();
-    str_builder_add_cstr(cb, "</");
-    str_builder_add_cstr(cb, tag);
-    str_builder_add_cstr(cb, ">");
-    var closec = str_data(str_builder_build(cb));
-    var start = _shbdk_pls_find(input, from, limit, openc);
-    if (start < 0) { return 0; }
-    var ts = start + strlen(openc);
-    var te = _shbdk_pls_find(input, ts, limit, closec);
-    if (te < 0) { return 0; }
-    while (ts < te) {
-        if (_shbdk_pls_ws(load8(input + ts)) == 0) { break; }
-        ts = ts + 1;
+# A tag record (48 bytes), filled by _shbdk_xml_tag:
+#   [0] kind: 1 start, 2 end, 3 self-closing   [8] name start  [16] name end
+#   [24] attributes start  [32] attributes end  [40] index just past '>'
+var SHBDK_XML_START = 1;
+var SHBDK_XML_END   = 2;
+var SHBDK_XML_EMPTY = 3;
+
+# Read the tag at s[i] == '<' into `t`. Returns 1, or 0 if it is malformed.
+fn _shbdk_xml_tag(s, i, n, t): i64 {
+    var j = i + 1;
+    var kind = SHBDK_XML_START;
+    if (j < n && load8(s + j) == 47) { kind = SHBDK_XML_END; j = j + 1; }   # '/'
+    var ns = j;
+    while (j < n && _shbdk_xml_namech(load8(s + j)) == 1) { j = j + 1; }
+    if (j == ns) { return 0; }
+    store64(t + 8, ns);
+    store64(t + 16, j);
+    var as = j;
+    var q = 0;
+    var c = 0;
+    while (j < n) {
+        c = load8(s + j);
+        if (q != 0) {
+            if (c == q) { q = 0; }
+            if (c == 60) { return 0; }   # '<' inside an attribute value
+        } else {
+            if (c == 34 || c == 39) { q = c; }
+            if (c == 62) { break; }      # '>'
+            if (c == 60) { return 0; }
+        }
+        j = j + 1;
     }
-    while (te > ts) {
-        if (_shbdk_pls_ws(load8(input + te - 1)) == 0) { break; }
-        te = te - 1;
-    }
-    return _shbdk_fmt_dup(input, ts, te);
+    if (j >= n) { return 0; }
+    var ae = j;
+    if (load8(s + j - 1) == 47 && kind == SHBDK_XML_START) { kind = SHBDK_XML_EMPTY; ae = j - 1; }
+    store64(t + 0, kind);
+    store64(t + 24, as);
+    store64(t + 32, ae);
+    store64(t + 40, j + 1);
+    return 1;
 }
 
-# Parse a W3C PLS XML string into a PronunciationDict, or 0 on error
-# (unsupported alphabet).
+# 1 if the tag's name, with any namespace prefix dropped, is `local`.
+fn _shbdk_xml_is(s, t, local): i64 {
+    var ns = load64(t + 8);
+    var ne = load64(t + 16);
+    var k = ns;
+    while (k < ne) {
+        if (load8(s + k) == 58) { ns = k + 1; }   # ':' -> drop the prefix
+        k = k + 1;
+    }
+    var ln = strlen(local);
+    if (ne - ns != ln) { return 0; }
+    return memeq(s + ns, local, ln);
+}
+
+# Decode s[i..j) (character data or an attribute value): entities, numeric
+# references and CDATA sections. Returns a fresh cstr.
+fn _shbdk_xml_text(s, i, j): cstring {
+    var sb = str_builder_new();
+    var k = i;
+    var ce = 0;
+    while (k < j) {
+        if (_shbdk_starts_at(s, k, "<!--") == 1) {   # a comment inside text is not text
+            ce = _shbdk_pls_find(s, k + 4, j, "-->");
+            if (ce < 0) { ce = j; }
+            k = ce + 3;
+            continue;
+        }
+        if (_shbdk_starts_at(s, k, "<![CDATA[") == 1) {
+            ce = _shbdk_pls_find(s, k + 9, j, "]]>");
+            if (ce < 0) { ce = j; }
+            var q = k + 9;
+            while (q < ce) { str_builder_add_byte(sb, load8(s + q)); q = q + 1; }
+            k = ce + 3;
+        } else {
+            k = k + _shbdk_xml_decode_at(s, k, sb);
+        }
+    }
+    return str_data(str_builder_build(sb));
+}
+
+# The decoded value of attribute `name` in the tag (either quote style), or 0.
+fn _shbdk_xml_attr(s, t, name): cstring {
+    var i = load64(t + 24);
+    var e = load64(t + 32);
+    var nl = strlen(name);
+    var ns = 0;
+    var q = 0;
+    var vs = 0;
+    while (i < e) {
+        while (i < e && _shbdk_pls_ws(load8(s + i)) == 1) { i = i + 1; }
+        ns = i;
+        while (i < e && _shbdk_xml_namech(load8(s + i)) == 1) { i = i + 1; }
+        if (i == ns) { return 0; }
+        var nend = i;
+        while (i < e && _shbdk_pls_ws(load8(s + i)) == 1) { i = i + 1; }
+        if (i >= e || load8(s + i) != 61) { return 0; }   # '='
+        i = i + 1;
+        while (i < e && _shbdk_pls_ws(load8(s + i)) == 1) { i = i + 1; }
+        if (i >= e) { return 0; }
+        q = load8(s + i);
+        if (q != 34 && q != 39) { return 0; }
+        vs = i + 1;
+        i = vs;
+        while (i < e && load8(s + i) != q) { i = i + 1; }
+        if (i >= e) { return 0; }
+        if (nend - ns == nl && memeq(s + ns, name, nl) == 1) { return _shbdk_xml_text(s, vs, i); }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Past a comment, processing instruction, DOCTYPE or CDATA at s[i] == '<', or -1
+# if it is none of those (or is unterminated: -2).
+fn _shbdk_xml_skip_special(s, i, n): i64 {
+    var e = 0;
+    if (_shbdk_starts_at(s, i, "<!--") == 1) {
+        e = _shbdk_pls_find(s, i + 4, n, "-->");
+        if (e < 0) { return 0 - 2; }
+        return e + 3;
+    }
+    if (_shbdk_starts_at(s, i, "<?") == 1) {
+        e = _shbdk_pls_find(s, i + 2, n, "?>");
+        if (e < 0) { return 0 - 2; }
+        return e + 2;
+    }
+    if (_shbdk_starts_at(s, i, "<![CDATA[") == 1) {
+        e = _shbdk_pls_find(s, i + 9, n, "]]>");
+        if (e < 0) { return 0 - 2; }
+        return e + 3;
+    }
+    if (_shbdk_starts_at(s, i, "<!") == 1) {
+        # DOCTYPE: to the matching '>' (an internal subset in [] may hold '>')
+        var depth = 0;
+        e = i + 2;
+        while (e < n) {
+            if (load8(s + e) == 91) { depth = depth + 1; }
+            if (load8(s + e) == 93) { depth = depth - 1; }
+            if (load8(s + e) == 62 && depth <= 0) { return e + 1; }
+            e = e + 1;
+        }
+        return 0 - 2;
+    }
+    return 0 - 1;
+}
+
+# Index of the next '<' that starts markup other than CDATA, from i (or n).
+fn _shbdk_xml_next_markup(s, i, n): i64 {
+    while (i < n) {
+        if (load8(s + i) == 60 && _shbdk_starts_at(s, i, "<![CDATA[") == 0) { return i; }
+        if (_shbdk_starts_at(s, i, "<![CDATA[") == 1) {
+            var ce = _shbdk_pls_find(s, i + 9, n, "]]>");
+            if (ce < 0) { return n; }
+            i = ce + 3;
+        } else {
+            i = i + 1;
+        }
+    }
+    return n;
+}
+
+# XML-whitespace-trimmed copy of cstr s.
+fn _shbdk_xml_trim(s): cstring {
+    var n = strlen(s);
+    var a = 0;
+    while (a < n && _shbdk_pls_ws(load8(s + a)) == 1) { a = a + 1; }
+    while (n > a && _shbdk_pls_ws(load8(s + n - 1)) == 1) { n = n - 1; }
+    return _shbdk_fmt_dup(s, a, n);
+}
+
+# ---- PLS parse -------------------------------------------------------------------
+# 1 if an alphabet attribute value is IPA (absent counts as IPA, as in the Rust).
+fn _shbdk_pls_alpha_ok(a): i64 {
+    if (a == 0) { return 1; }
+    if (streq(a, "ipa") == 1) { return 1; }
+    return 0;
+}
+
+# Add every grapheme of a finished lexeme to `dict` with its pronunciations
+# (preferred ones first, then document order).
+fn _shbdk_pls_emit(dict, graphemes, preferred, others): i64 {
+    var all = vec_new();
+    var i = 0;
+    while (i < vec_len(preferred)) { vec_push(all, vec_get(preferred, i)); i = i + 1; }
+    i = 0;
+    while (i < vec_len(others)) { vec_push(all, vec_get(others, i)); i = i + 1; }
+    if (vec_len(all) == 0) { return 0; }   # aliases / examples only: nothing to say
+    i = 0;
+    var prons = 0;
+    var j = 0;
+    while (i < vec_len(graphemes)) {
+        prons = vec_new();
+        j = 0;
+        while (j < vec_len(all)) {
+            vec_push(prons, shbdk_pronunciation_new(shbdk_phonemes_clone(vec_get(all, j))));
+            j = j + 1;
+        }
+        shbdk_dict_insert_entry(dict, vec_get(graphemes, i), shbdk_dict_entry_from_pronunciations(prons));
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Parse a W3C PLS XML string into a PronunciationDict, or 0 on error with the
+# reason in shbdk_last_error(): an alphabet other than ipa (on the lexicon or on a
+# phoneme), malformed XML, a root that is not <lexicon>, or input that is not UTF-8.
+# Every <grapheme> of a <lexeme> gets every <phoneme> of it; `prefer="true"` ones
+# come first. <alias> and <example> are read past (an alias names no phonemes).
 #must_use
 fn shbdk_parse_pls(input): i64 {
-    var alpha = _shbdk_pls_extract_attr(input, "alphabet");
-    if (alpha != 0) {
-        if (streq(alpha, "ipa") == 0) { return 0; }
-    }
+    shbdk_clear_error();
+    if (input == 0) { return _shbdk_fail("no input"); }
+    var n = strlen(input);
+    if (shbdk_utf8_valid(input, n) == 0) { return _shbdk_fail("input is not valid UTF-8"); }
     var dict = shbdk_dict_new();
-    var len = strlen(input);
-    var pos = 0;
-    var lstart = 0;
-    var lend = 0;
-    var gtext = 0;
-    var word = 0;
-    var prons = 0;
-    var ppos = 0;
-    var ph = 0;
-    var phon = 0;
-    var pe = 0;
-    var entry = 0;
-    while (pos < len) {
-        lstart = _shbdk_pls_find(input, pos, len, "<lexeme");
-        if (lstart < 0) { break; }
-        lend = _shbdk_pls_find(input, lstart, len, "</lexeme>");
-        if (lend < 0) { break; }
-        lend = lend + strlen("</lexeme>");
-
-        gtext = _shbdk_pls_extract_elem(input, lstart, lend, "grapheme");
-        if (gtext == 0) { pos = lend; continue; }
-        word = shbdk_xml_unescape(gtext);
-
-        prons = vec_new();
-        ppos = lstart;
-        while (ppos < lend) {
-            ph = _shbdk_pls_extract_elem(input, ppos, lend, "phoneme");
-            if (ph == 0) { break; }
-            phon = shbdk_parse_ipa_word(ph);
-            if (vec_len(phon) > 0) { vec_push(prons, shbdk_pronunciation_new(phon)); }
-            pe = _shbdk_pls_find(input, ppos, lend, "</phoneme>");
-            if (pe < 0) { break; }
-            ppos = pe + strlen("</phoneme>");
+    var t = alloc(48);
+    var open_els = vec_new();     # names of open elements: 1 lexicon, 2 lexeme, 3 grapheme, 4 phoneme, 0 other
+    var i = 0;
+    var k = 0;
+    var tx = 0;
+    var top = 0;
+    var seen_root = 0;
+    var graphemes = 0;
+    var preferred = 0;
+    var others = 0;
+    var text_start = 0;
+    var prefer = 0;
+    var code = 0;
+    while (i < n) {
+        if (load8(input + i) != 60) {
+            # character data: only matters inside a grapheme / phoneme (collected on close)
+            i = _shbdk_xml_next_markup(input, i, n);
+            continue;
         }
-
-        entry = shbdk_dict_entry_from_pronunciations(prons);
-        if (entry != 0) { shbdk_dict_insert_entry(dict, word, entry); }
-        pos = lend;
+        k = _shbdk_xml_skip_special(input, i, n);
+        if (k == 0 - 2) { return _shbdk_fail("malformed XML: unterminated comment, PI or CDATA"); }
+        if (k >= 0) { i = k; continue; }
+        if (_shbdk_xml_tag(input, i, n, t) == 0) { return _shbdk_fail("malformed XML: bad tag"); }
+        code = 0;
+        if (_shbdk_xml_is(input, t, "lexicon") == 1) { code = 1; }
+        if (_shbdk_xml_is(input, t, "lexeme") == 1) { code = 2; }
+        if (_shbdk_xml_is(input, t, "grapheme") == 1) { code = 3; }
+        if (_shbdk_xml_is(input, t, "phoneme") == 1) { code = 4; }
+        if (load64(t) == SHBDK_XML_END) {
+            if (vec_len(open_els) == 0) { return _shbdk_fail("malformed XML: an end tag with no start tag"); }
+            top = vec_get(open_els, vec_len(open_els) - 1);
+            if (top != code) { return _shbdk_fail("malformed XML: an end tag does not match its start tag"); }
+            if (code == 3) {
+                tx = _shbdk_xml_trim(_shbdk_xml_text(input, text_start, i));
+                if (load8(tx) != 0) { vec_push(graphemes, tx); }
+            }
+            if (code == 4) {
+                var phon = shbdk_parse_ipa_word(_shbdk_xml_text(input, text_start, i));
+                if (vec_len(phon) > 0) {
+                    if (prefer == 1) { vec_push(preferred, phon); } else { vec_push(others, phon); }
+                }
+            }
+            if (code == 2) { _shbdk_pls_emit(dict, graphemes, preferred, others); }
+            vec_pop(open_els);
+            i = load64(t + 40);
+            continue;
+        }
+        if (seen_root == 0) {
+            if (code != 1) { return _shbdk_fail("malformed PLS: the root element is not <lexicon>"); }
+            seen_root = 1;
+            var la = _shbdk_xml_attr(input, t, "alphabet");
+            if (_shbdk_pls_alpha_ok(la) == 0) {
+                var sb = str_builder_new();
+                str_builder_add_cstr(sb, "unsupported PLS alphabet: '");
+                str_builder_add_cstr(sb, la);
+                str_builder_add_cstr(sb, "' (only 'ipa' is supported)");
+                return _shbdk_fail(str_data(str_builder_build(sb)));
+            }
+        }
+        if (code == 2) { graphemes = vec_new(); preferred = vec_new(); others = vec_new(); }
+        if (code == 4) {
+            var pa = _shbdk_xml_attr(input, t, "alphabet");
+            if (_shbdk_pls_alpha_ok(pa) == 0) {
+                var sb2 = str_builder_new();
+                str_builder_add_cstr(sb2, "unsupported PLS alphabet: '");
+                str_builder_add_cstr(sb2, pa);
+                str_builder_add_cstr(sb2, "' (only 'ipa' is supported)");
+                return _shbdk_fail(str_data(str_builder_build(sb2)));
+            }
+            prefer = 0;
+            var pf = _shbdk_xml_attr(input, t, "prefer");
+            if (pf != 0 && streq(pf, "true") == 1) { prefer = 1; }
+        }
+        if (load64(t) == SHBDK_XML_START) {
+            if ((code == 3 || code == 4) && (vec_len(open_els) == 0 || vec_get(open_els, vec_len(open_els) - 1) != 2)) {
+                code = 0;   # a grapheme / phoneme outside a lexeme is not one
+            }
+            vec_push(open_els, code);
+            text_start = load64(t + 40);
+        } else {
+            if (code == 2) { _shbdk_pls_emit(dict, graphemes, preferred, others); }   # <lexeme/>
+        }
+        i = load64(t + 40);
     }
+    if (vec_len(open_els) != 0) { return _shbdk_fail("malformed XML: an element is not closed"); }
+    if (seen_root == 0) { return _shbdk_fail("malformed PLS: no <lexicon> element"); }
     return dict;
 }
 
@@ -127,7 +359,7 @@ fn _shbdk_pls_header(sb, lang): i64 {
     str_builder_add_cstr(sb, "<lexicon version=\"1.0\" ");
     str_builder_add_cstr(sb, "xmlns=\"http://www.w3.org/2005/01/pronunciation-lexicon\" ");
     str_builder_add_cstr(sb, "alphabet=\"ipa\" xml:lang=\"");
-    str_builder_add_cstr(sb, lang);
+    str_builder_add_cstr(sb, shbdk_xml_escape(lang));   # 3.2: escaped (en"US broke the XML)
     str_builder_add_cstr(sb, "\">\n");
     return 0;
 }
@@ -143,7 +375,8 @@ fn _shbdk_pls_write_lexeme(sb, word, entry): i64 {
     var i = 0;
     while (i < n) {
         str_builder_add_cstr(sb, "    <phoneme>");
-        str_builder_add_cstr(sb, shbdk_phonemes_to_ipa(shbdk_pronunciation_phonemes(vec_get(prons, i))));
+        str_builder_add_cstr(sb,
+          shbdk_xml_escape(shbdk_phonemes_to_ipa(shbdk_pronunciation_phonemes(vec_get(prons, i)))));
         str_builder_add_cstr(sb, "</phoneme>\n");
         i = i + 1;
     }

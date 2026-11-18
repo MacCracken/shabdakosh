@@ -159,5 +159,21 @@ shbdk_trie_insert(mixed, "ab");
 shbdk_trie_insert(mixed, _long_word(80000));
 assert_eq(vec_len(shbdk_trie_search_prefix(mixed, "a")), 2, "short + 80k word both returned");
 
+# ================================================================
+test_group("exact match returns the word; null input; NUL-bearing keys");
+var tx = shbdk_trie_new();
+shbdk_trie_insert(tx, "hello");
+shbdk_trie_insert(tx, "help");
+var tex = shbdk_trie_search_prefix(tx, "hello");
+assert_eq(vec_len(tex), 1, "one result");
+assert_streq(str_cstr(vec_get(tex, 0)), "hello", "and it is hello");
+assert_eq(shbdk_trie_insert(tx, 0), 0, "a null word is not inserted (it crashed)");
+assert_eq(shbdk_trie_contains(tx, 0), 0, "contains(null) is 0");
+assert_eq(vec_len(shbdk_trie_search_prefix(tx, 0)), 0, "search(null) is empty");
+var nk = shbdk_trie_new();
+_shbdk_trie_insert_bytes(nk, "a\x00b", 3);
+var nkr = shbdk_trie_search_prefix(nk, "a");
+assert_eq(str_len(vec_get(nkr, 0)), 3, "a key with a NUL comes back whole (it was cut to 'a')");
+
 var rc = assert_summary();
 syscall(60, rc);

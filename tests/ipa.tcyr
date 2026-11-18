@@ -66,7 +66,7 @@ assert_eq(shbdk_ipa_to_phoneme("ʔ"), SVARA_PH_GLOTTAL_STOP, "glottal stop");
 assert_eq(shbdk_ipa_to_phoneme("ɾ"), SVARA_PH_TAP_FLAP, "tap");
 assert_eq(shbdk_ipa_to_phoneme("l"), SVARA_PH_LATERAL_L, "l");
 assert_eq(shbdk_ipa_to_phoneme("ɹ"), SVARA_PH_APPROX_R, "approx-r");
-assert_eq(shbdk_ipa_to_phoneme("r"), SVARA_PH_APPROX_R, "ascii-r alt");
+assert_eq(shbdk_ipa_to_phoneme("r"), SVARA_PH_TRILL_ALVEOLAR, "r is the IPA alveolar trill (3.2; it read as ɹ)");
 assert_eq(shbdk_ipa_to_phoneme("w"), SVARA_PH_APPROX_W, "w");
 assert_eq(shbdk_ipa_to_phoneme("j"), SVARA_PH_APPROX_J, "j");
 
@@ -112,6 +112,8 @@ assert_streq(rendered, "hɛloʊ", "phonemes_to_ipa -> hɛloʊ");
 var back = shbdk_parse_ipa_word(rendered);
 assert_eq(vec_len(back), 4, "roundtrip len 4");
 assert_eq(vec_get(back, 0), SVARA_PH_FRIC_H, "roundtrip[0]");
+assert_eq(vec_get(back, 1), SVARA_PH_VOWEL_OPEN_E, "roundtrip[1]");
+assert_eq(vec_get(back, 2), SVARA_PH_LATERAL_L, "roundtrip[2]");
 assert_eq(vec_get(back, 3), SVARA_PH_DIPH_OU, "roundtrip[3]");
 
 # ================================================================
@@ -119,8 +121,79 @@ test_group("phoneme_to_ipa reverse + no-equivalent");
 assert_streq(shbdk_phoneme_to_ipa(SVARA_PH_VOWEL_SCHWA), "ə", "schwa -> ə");
 assert_streq(shbdk_phoneme_to_ipa(SVARA_PH_NASAL_NG), "ŋ", "ng -> ŋ");
 assert_streq(shbdk_phoneme_to_ipa(SVARA_PH_VOWEL_LONG_I), "iː", "long-i -> iː");
-assert_streq(shbdk_phoneme_to_ipa(SVARA_PH_AFFR_CH), "tʃ", "ch -> tʃ");
+assert_streq(shbdk_phoneme_to_ipa(SVARA_PH_AFFR_CH), "t͡ʃ", "ch -> t͡ʃ (3.2: tie bar, unambiguous)");
+assert_streq(shbdk_phoneme_to_ipa(SVARA_PH_AFFR_J), "d͡ʒ", "j -> d͡ʒ");
 assert_eq(shbdk_phoneme_to_ipa(SVARA_PH_SILENCE), 0, "silence has no ipa");
+
+# ================================================================
+# 3.2: the bridge covers every svara phoneme with an IPA symbol (the Rust's covered
+# 46 of 100). Each of 0..99 renders, parses back as itself (exactly and as a
+# one-symbol word), and silence (100) has none.
+test_group("every svara phoneme round-trips through IPA");
+var all_ok = 0;
+var word_ok = 0;
+var pi = 0;
+var one = 0;
+while (pi < 100) {
+    var sym = shbdk_phoneme_to_ipa(pi);
+    if (sym != 0) {
+        if (shbdk_ipa_to_phoneme(sym) == pi) { all_ok = all_ok + 1; }
+        one = shbdk_parse_ipa_word(sym);
+        if (vec_len(one) == 1 && vec_get(one, 0) == pi) { word_ok = word_ok + 1; }
+    }
+    pi = pi + 1;
+}
+assert_eq(all_ok, 100, "ipa_to_phoneme(phoneme_to_ipa(p)) == p for all 100");
+assert_eq(word_ok, 100, "parse_ipa_word(phoneme_to_ipa(p)) == [p] for all 100");
+var allv = vec_new();
+pi = 0;
+while (pi < 100) { vec_push(allv, pi); pi = pi + 1; }
+var allback = shbdk_parse_ipa_word(shbdk_phonemes_to_ipa(allv));
+var same = 0;
+if (vec_len(allback) == 100) {
+    pi = 0;
+    while (pi < 100) { if (vec_get(allback, pi) == pi) { same = same + 1; } pi = pi + 1; }
+}
+assert_eq(same, 100, "all 100 in one word: rendered and parsed back in order");
+
+test_group("extended symbols, alternates, clusters vs affricates");
+assert_eq(shbdk_ipa_to_phoneme("ç"), SVARA_PH_FRIC_PALATAL_C, "ç (German ich)");
+assert_eq(shbdk_ipa_to_phoneme("ɦ"), SVARA_PH_FRIC_GLOTTAL_H, "ɦ (Hindi breathy h)");
+assert_eq(shbdk_ipa_to_phoneme("y"), SVARA_PH_VOWEL_Y, "y");
+assert_eq(shbdk_ipa_to_phoneme("ɚ"), SVARA_PH_VOWEL_BIRD, "ɚ alternate");
+assert_eq(shbdk_ipa_to_phoneme("ʧ"), SVARA_PH_AFFR_CH, "ʧ ligature");
+assert_eq(shbdk_ipa_to_phoneme("t͜ʃ"), SVARA_PH_AFFR_CH, "tie below");
+assert_eq(shbdk_ipa_to_phoneme("ɫ"), SVARA_PH_LATERAL_L, "dark l");
+var cats = shbdk_parse_ipa_word("kæts");
+assert_eq(vec_len(cats), 4, "kæts: a bare ts is a cluster");
+assert_eq(vec_get(cats, 2), SVARA_PH_PLOSIVE_T, "kæts[2] t");
+assert_eq(vec_get(cats, 3), SVARA_PH_FRIC_S, "kæts[3] s");
+var zeit = shbdk_parse_ipa_word("t͡saɪt");
+assert_eq(vec_len(zeit), 3, "t͡saɪt: the tie bar makes the affricate");
+assert_eq(vec_get(zeit, 0), SVARA_PH_AFFR_TS, "t͡s");
+var ich = shbdk_parse_ipa_word("ɪç");
+assert_eq(vec_len(ich), 2, "ɪç keeps its ç");
+var kp = shbdk_parse_ipa_word("kʼa");
+assert_eq(vec_get(kp, 0), SVARA_PH_EJECTIVE_K, "kʼ ejective");
+var perro = shbdk_parse_ipa_word("pero");
+assert_eq(vec_get(perro, 2), SVARA_PH_TRILL_ALVEOLAR, "pero: r is the trill");
+assert_eq(shbdk_ipa_to_phoneme(0), SHBDK_PH_NONE, "null symbol -> none");
+
+test_group("the writer keeps adjacent symbols apart");
+var hia = vec_new();
+vec_push(hia, SVARA_PH_VOWEL_A); vec_push(hia, SVARA_PH_VOWEL_NEAR_I);
+assert_streq(shbdk_phonemes_to_ipa(hia), "a.ɪ", "[a, ɪ] is written a.ɪ (aɪ would read as the diphthong)");
+assert_eq(vec_len(shbdk_parse_ipa_word(shbdk_phonemes_to_ipa(hia))), 2, "and reads back as two");
+var tsh = vec_new();
+vec_push(tsh, SVARA_PH_PLOSIVE_T); vec_push(tsh, SVARA_PH_FRIC_SH);
+assert_streq(shbdk_phonemes_to_ipa(tsh), "t.ʃ", "[t, ʃ] is written t.ʃ");
+var tshb = shbdk_parse_ipa_word(shbdk_phonemes_to_ipa(tsh));
+assert_eq(vec_get(tshb, 0), SVARA_PH_PLOSIVE_T, "and reads back as t");
+assert_eq(vec_get(tshb, 1), SVARA_PH_FRIC_SH, "then ʃ");
+assert_eq(vec_get(shbdk_parse_ipa_word("tʃɪp"), 0), SVARA_PH_AFFR_CH, "a bare tʃ still reads as the affricate");
+var cats2 = vec_new();
+vec_push(cats2, SVARA_PH_PLOSIVE_T); vec_push(cats2, SVARA_PH_FRIC_S);
+assert_streq(shbdk_phonemes_to_ipa(cats2), "ts", "t + s needs no break (a bare ts is a cluster)");
 
 var rc = assert_summary();
 syscall(60, rc);

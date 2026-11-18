@@ -51,5 +51,20 @@ assert_eq(shbdk_parse_ssml_phoneme("not a phoneme tag"), 0, "not a <phoneme> tag
 test_group("xml escape in output");
 assert_gte(_contains(shbdk_to_ssml_phoneme("a&b", _v1(SVARA_PH_VOWEL_A)), "a&amp;b"), 0, "word escaped as a&amp;b");
 
+# ================================================================
+# 3.2: on the XML reader.
+test_group("SSML: quoting, order, references, malformed");
+var sq = shbdk_parse_ssml_phoneme("<phoneme ph='kæt' alphabet='ipa'>cat</phoneme>");
+assert_neq(sq, 0, "single quotes, ph first");
+assert_streq(shbdk_ssml_result_word(sq), "cat", "word");
+var sr = shbdk_parse_ssml_phoneme("<phoneme ph=\"kæt\">c&#97;t &amp; co</phoneme>");
+assert_streq(shbdk_ssml_result_word(sr), "cat & co", "references in the word decode");
+assert_eq(shbdk_parse_ssml_phoneme("<phoneme ph=\"</phoneme>kæt\">cat</phoneme>"), 0,
+  "a '<' in ph is malformed (it returned a junk word)");
+assert_eq(shbdk_parse_ssml_phoneme("<phoneme ph=\"kæt\">c<b>a</b>t</phoneme>"), 0, "markup inside the word");
+assert_eq(shbdk_parse_ssml_phoneme("<phoneme ph=\"kæt\">cat</phoneme> more"), 0, "content after the tag");
+assert_eq(shbdk_parse_ssml_phoneme("<phoneme ph=\"kæt\"/>"), 0, "no close tag");
+assert_eq(shbdk_parse_ssml_phoneme("<phonemes ph=\"kæt\">cat</phonemes>"), 0, "not a phoneme element");
+
 var rc = assert_summary();
 syscall(60, rc);

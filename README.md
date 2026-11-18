@@ -18,8 +18,8 @@ ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
 ## Features
 
 - **Pronunciation lookup** — 10k+ entry base English dictionary (ARPABET/IPA ↔ svara phonemes), a user overlay, O(1) hashmap lookup (~135 ns/hit), plus `merge`/`diff`, coverage analysis, streaming lookup, a prefix trie, heteronym context, and a G2P fallback chain.
-- **I/O formats** — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format. `LazyDict` gives mmap-backed loading (with a `file_read_all` fallback).
-- **Validation & detection** — varna-backed phoneme-inventory and phonotactics validation, plus script/language detection over a UTF-8 code-point decoder.
+- **I/O formats** — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format. Readers check what they read and say why they fail (`shbdk_last_error()`); writers refuse what would not load back. Every record type has a JSON codec. `LazyDict` gives mmap-backed loading (with a `file_read_all` fallback).
+- **Validation & detection** — varna-backed phoneme-inventory validation and syllable-aware phonotactics validation for every language varna profiles, plus script/language detection over a strict UTF-8 decoder.
 - **WASM + static dict** — a `WasmDict` binding surface and a static English dictionary over a compile-time perfect hash (no load; ~124 ns/hit, allocation-free on a miss).
 - **Generated data** — the base CMUdict is checked-in as a single `.cyr` module (`src/dictionary/_cmudict_data.cyr`, from `gen_cmudict.cyr`, the port of the Rust `build.rs`); it fits under the distlib 1 MB per-module cap (toolchain 6.4.10). The same generator writes the static dictionary's perfect hash (`_static_phf_data.cyr`).
 - **Sakshi errors** — no panics; fallible functions return a sakshi packed-i64 code (`0 == ok`, test with `shbdk_is_err`) or a payload pointer (`0` == none).
@@ -87,9 +87,9 @@ orders them; stdlib + svara/varna auto-resolve from `cyrius.cyml`):
 
 ```text
 src/
-├── error.cyr                    sakshi-backed error surface (shbdk_err_*, shbdk_is_err)
+├── error.cyr                    sakshi errors, shbdk_last_error, Unicode text primitives
 ├── arpabet.cyr                  ARPABET <-> svara SVARA_PH_* phonemes (with stress)
-├── ipa.cyr                      IPA <-> phoneme; parse_ipa_word / phonemes_to_ipa
+├── ipa.cyr                      IPA <-> phoneme (all 100); parse_ipa_word / phonemes_to_ipa
 ├── notation.cyr                 unified ARPABET / IPA / X-SAMPA render + parse
 └── dictionary/
     ├── entry.cyr                DictEntry, Pronunciation, Region
@@ -112,6 +112,7 @@ src/
     └── format/
         ├── mod.cyr             CMUdict / IPA text codecs
         ├── json.cyr            JSON via the bayan DOM
+        ├── records.cyr         JSON codec + equality for every other record type
         ├── pls.cyr             W3C PLS XML
         ├── ssml.cyr            SSML <phoneme> tags
         └── binary.cyr          compact hand-rolled binary format

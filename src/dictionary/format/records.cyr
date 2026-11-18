@@ -1,0 +1,608 @@
+# records.cyr — JSON codecs and equality for every record type the Rust derived
+# Serialize / Deserialize / PartialEq on, beyond PronunciationDict itself.
+#
+# 3.2: the Rust's serde derives made each of these types serializable on its own,
+# and CLAUDE.md's invariant is "every type Serialize+Deserialize with roundtrip
+# tests", but through 3.1 the port serialized only the dictionary (json.cyr), the
+# two validation reports (validate.cyr) and nothing else. This module closes it:
+# Region, Pronunciation, DictEntry, DictDiff, MorphemeKind / Morpheme /
+# Decomposition, StressLevel / Syllable, CoverageReport, PrefixTrie,
+# HeteronymContext, G2PResult, LookupSource, FstNotation / FstModel and the error.
+#
+# The shapes are serde's: a struct is an object of its fields, a unit enum is its
+# variant name ("Prefix", "Primary", "UserOverlay", "Arpabet"), and LookupSource's
+# data-carrying variant is {"G2PModel":{"confidence":0.8}}. As in json.cyr, a
+# phoneme is its svara ordinal and a region its code ("GA" / "RP"). PrefixTrie is
+# carried as its sorted word list ({"words":[...]}), from which it rebuilds — the
+# same trie, without the node layout. Each from_json returns 0 (or the stated
+# failure value) with the reason in shbdk_last_error().
+#
+# Included after format/json.cyr (its pronunciation / entry codecs) and every
+# module whose type it serializes (entry, morphology, syllable, mod, coverage,
+# trie, heteronym, g2p).
+#
+# NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
+
+# ---- shared helpers ----------------------------------------------------------
+fn _shbdk_rec_parse(input): i64 {
+    shbdk_clear_error();
+    if (input == 0) { return _shbdk_fail("no input"); }
+    var root = json_v_parse_buf(input, strlen(input));
+    if (root == 0) { return _shbdk_fail("JSON parse error: not valid JSON"); }
+    return root;
+}
+
+fn _shbdk_rec_bad(msg): i64 {
+    return _shbdk_json_bad(0, msg);
+}
+
+fn _shbdk_rec_build(v): cstring {
+    return str_data(json_v_build(v));
+}
+
+# JSON array of the ints in vec `v`.
+fn _shbdk_rec_int_arr(v): i64 {
+    var arr = json_v_arr_new();
+    var i = 0;
+    while (i < vec_len(v)) {
+        json_v_arr_push(arr, json_v_int_new(vec_get(v, i)));
+        i = i + 1;
+    }
+    return arr;
+}
+
+# JSON array of the strings in vec `v` (Str elements when is_str, else cstr).
+fn _shbdk_rec_str_arr(v, is_str): i64 {
+    var arr = json_v_arr_new();
+    var i = 0;
+    var e = 0;
+    while (i < vec_len(v)) {
+        e = vec_get(v, i);
+        if (is_str == 1) { json_v_arr_push(arr, json_v_str_new(e)); } else { json_v_arr_push(arr,
+              json_v_str_new(str_from(e))); }
+        i = i + 1;
+    }
+    return arr;
+}
+
+# The string array field `key` of `obj` as a vec (of Str when as_str, else cstr),
+# or 0 with the reason recorded.
+fn _shbdk_rec_get_strs(obj, key, as_str): i64 {
+    var arr = bayan_json_v_obj_get_by_cstr(obj, key);
+    if (arr == 0 || json_v_is_arr(arr) == 0) { return _shbdk_rec_field_bad(key, "an array of strings"); }
+    var out = vec_new();
+    var i = 0;
+    var el = 0;
+    while (i < json_v_arr_len(arr)) {
+        el = json_v_arr_get(arr, i);
+        if (json_v_is_str(el) == 0) { return _shbdk_rec_field_bad(key, "an array of strings"); }
+        if (as_str == 1) { vec_push(out, str_from(str_cstr(json_v_str(el)))); } else { vec_push(out,
+              str_cstr(json_v_str(el))); }
+        i = i + 1;
+    }
+    return out;
+}
+
+# The integer field `key` of `obj` into store64(out). 1, or 0 with the reason recorded.
+fn _shbdk_rec_get_int(obj, key, out): i64 {
+    var v = bayan_json_v_obj_get_by_cstr(obj, key);
+    if (v == 0 || json_v_is_int(v) == 0) { return _shbdk_rec_field_bad(key, "an integer"); }
+    store64(out, json_v_int(v));
+    return 1;
+}
+
+# The number field `key` of `obj` (f64 bits) into store64(out). 1, or 0.
+fn _shbdk_rec_get_num(obj, key, out): i64 {
+    var v = bayan_json_v_obj_get_by_cstr(obj, key);
+    if (v == 0 || (json_v_is_int(v) == 0 && json_v_is_float(v) == 0)) { return _shbdk_rec_field_bad(key, "a number"); }
+    store64(out, json_v_float(v));
+    return 1;
+}
+
+# The string field `key` of `obj` as a cstr, or 0 with the reason recorded.
+fn _shbdk_rec_get_str(obj, key): cstring {
+    var v = bayan_json_v_obj_get_by_cstr(obj, key);
+    if (v == 0 || json_v_is_str(v) == 0) { return _shbdk_rec_field_bad(key, "a string"); }
+    return str_cstr(json_v_str(v));
+}
+
+fn _shbdk_rec_field_bad(key, what): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "\"");
+    str_builder_add_cstr(sb, key);
+    str_builder_add_cstr(sb, "\" must be ");
+    str_builder_add_cstr(sb, what);
+    return _shbdk_rec_bad(str_data(str_builder_build(sb)));
+}
+
+# 1 if two int vecs hold the same values in order.
+fn _shbdk_rec_ivec_eq(a, b): i64 {
+    if (vec_len(a) != vec_len(b)) { return 0; }
+    var i = 0;
+    while (i < vec_len(a)) {
+        if (vec_get(a, i) != vec_get(b, i)) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# 1 if two string vecs (Str elements when is_str, else cstr) hold the same strings in order.
+fn _shbdk_rec_svec_eq(a, b, is_str): i64 {
+    if (vec_len(a) != vec_len(b)) { return 0; }
+    var i = 0;
+    while (i < vec_len(a)) {
+        if (is_str == 1) {
+            if (str_eq(vec_get(a, i), vec_get(b, i)) == 0) { return 0; }
+        } else {
+            if (streq(vec_get(a, i), vec_get(b, i)) == 0) { return 0; }
+        }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# 1 if two f64 bit patterns are the same number (as _shbdk_freq_eq).
+fn _shbdk_rec_num_eq(a, b): i64 {
+    return _shbdk_freq_eq(a, b);
+}
+
+# ---- Region ------------------------------------------------------------------
+# Region -> JSON text ("\"GA\"" / "\"RP\""), or 0 for no region.
+#must_use
+fn shbdk_region_to_json(region): cstring {
+    var code = shbdk_region_code(region);
+    if (code == 0) { return 0; }
+    return _shbdk_rec_build(json_v_str_new(str_from(code)));
+}
+
+# JSON text -> SHBDK_REGION_*, or SHBDK_REGION_NONE (reason recorded) if it is not one.
+#must_use
+fn shbdk_region_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return SHBDK_REGION_NONE; }
+    if (json_v_is_str(root) == 0) { _shbdk_rec_bad("a region must be a string"); return SHBDK_REGION_NONE; }
+    var r = shbdk_region_from_code(str_cstr(json_v_str(root)));
+    if (r == SHBDK_REGION_NONE) { _shbdk_rec_bad("unknown region code"); }
+    return r;
+}
+
+# ---- Pronunciation / DictEntry -----------------------------------------------
+# The same objects json.cyr writes inside a dictionary.
+#must_use
+fn shbdk_pronunciation_to_json(p): cstring { return _shbdk_rec_build(_shbdk_pron_to_jsonv(p)); }
+# JSON text -> a pronunciation, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_pronunciation_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    return _shbdk_pron_from_jsonv(root, 0);
+}
+# A DictEntry -> JSON text {"pronunciations":[...]}.
+#must_use
+fn shbdk_dict_entry_to_json(e): cstring { return _shbdk_rec_build(_shbdk_entry_to_jsonv(e)); }
+# JSON text -> a DictEntry (also the v0.1 phoneme-array shape), or 0.
+#must_use
+fn shbdk_dict_entry_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    return _shbdk_entry_from_jsonv(root, 0);
+}
+
+# ---- DictDiff ----------------------------------------------------------------
+# {"added":[..],"removed":[..],"changed":[..]}
+#must_use
+fn shbdk_dict_diff_to_json(dd): cstring {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("added"), _shbdk_rec_str_arr(shbdk_dict_diff_added(dd), 1));
+    json_v_obj_set(o, str_from("removed"), _shbdk_rec_str_arr(shbdk_dict_diff_removed(dd), 1));
+    json_v_obj_set(o, str_from("changed"), _shbdk_rec_str_arr(shbdk_dict_diff_changed(dd), 1));
+    return _shbdk_rec_build(o);
+}
+# JSON text -> a DictDiff, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_dict_diff_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("a DictDiff must be an object"); }
+    var a = _shbdk_rec_get_strs(root, "added", 1);
+    if (a == 0) { return 0; }
+    var r = _shbdk_rec_get_strs(root, "removed", 1);
+    if (r == 0) { return 0; }
+    var c = _shbdk_rec_get_strs(root, "changed", 1);
+    if (c == 0) { return 0; }
+    var dd = alloc(24);
+    store64(dd + 0, a);
+    store64(dd + 8, r);
+    store64(dd + 16, c);
+    return dd;
+}
+# 1 if two diffs list the same added, removed and changed words in order.
+#must_use
+fn shbdk_dict_diff_eq(a, b): i64 {
+    if (_shbdk_rec_svec_eq(shbdk_dict_diff_added(a), shbdk_dict_diff_added(b), 1) == 0) { return 0; }
+    if (_shbdk_rec_svec_eq(shbdk_dict_diff_removed(a), shbdk_dict_diff_removed(b), 1) == 0) { return 0; }
+    return _shbdk_rec_svec_eq(shbdk_dict_diff_changed(a), shbdk_dict_diff_changed(b), 1);
+}
+
+# ---- MorphemeKind / Morpheme / Decomposition ---------------------------------
+#must_use
+fn shbdk_morpheme_kind_name(kind): cstring {
+    if (kind == SHBDK_MORPH_PREFIX) { return "Prefix"; }
+    if (kind == SHBDK_MORPH_ROOT) { return "Root"; }
+    if (kind == SHBDK_MORPH_SUFFIX) { return "Suffix"; }
+    if (kind == SHBDK_MORPH_INFIX) { return "Infix"; }
+    return 0;
+}
+# A MorphemeKind name -> SHBDK_MORPH_*, or -1.
+#must_use
+fn shbdk_morpheme_kind_from_name(name): i64 {
+    if (name == 0) { return 0 - 1; }
+    if (streq(name, "Prefix") == 1) { return SHBDK_MORPH_PREFIX; }
+    if (streq(name, "Root") == 1) { return SHBDK_MORPH_ROOT; }
+    if (streq(name, "Suffix") == 1) { return SHBDK_MORPH_SUFFIX; }
+    if (streq(name, "Infix") == 1) { return SHBDK_MORPH_INFIX; }
+    return 0 - 1;
+}
+fn _shbdk_morpheme_to_jsonv(m): i64 {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("text"), json_v_str_new(str_from(shbdk_morpheme_text(m))));
+    json_v_obj_set(o, str_from("kind"), json_v_str_new(str_from(shbdk_morpheme_kind_name(shbdk_morpheme_kind(m)))));
+    json_v_obj_set(o, str_from("phonemes"), _shbdk_rec_int_arr(shbdk_morpheme_phonemes(m)));
+    return o;
+}
+fn _shbdk_morpheme_from_jsonv(o): i64 {
+    if (json_v_is_obj(o) == 0) { return _shbdk_rec_bad("a Morpheme must be an object"); }
+    var text = _shbdk_rec_get_str(o, "text");
+    if (text == 0) { return 0; }
+    var kind = shbdk_morpheme_kind_from_name(_shbdk_rec_get_str(o, "kind"));
+    if (kind < 0) { return _shbdk_rec_bad("\"kind\" must be Prefix, Root, Suffix or Infix"); }
+    var phon = _shbdk_phonemes_from_jsonv(bayan_json_v_obj_get_by_cstr(o, "phonemes"), 0);
+    if (phon == 0) { return 0; }
+    return shbdk_morpheme_new(text, kind, phon);
+}
+# A Morpheme -> JSON text {"text":..,"kind":"Prefix","phonemes":[..]}.
+#must_use
+fn shbdk_morpheme_to_json(m): cstring { return _shbdk_rec_build(_shbdk_morpheme_to_jsonv(m)); }
+# JSON text -> a Morpheme, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_morpheme_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    return _shbdk_morpheme_from_jsonv(root);
+}
+# 1 if two morphemes have the same text, kind and phonemes.
+#must_use
+fn shbdk_morpheme_eq(a, b): i64 {
+    if (streq(shbdk_morpheme_text(a), shbdk_morpheme_text(b)) == 0) { return 0; }
+    if (shbdk_morpheme_kind(a) != shbdk_morpheme_kind(b)) { return 0; }
+    return _shbdk_rec_ivec_eq(shbdk_morpheme_phonemes(a), shbdk_morpheme_phonemes(b));
+}
+# {"morphemes":[...]}
+#must_use
+fn shbdk_decomposition_to_json(d): cstring {
+    var o = json_v_obj_new();
+    var arr = json_v_arr_new();
+    var ms = shbdk_decomposition_morphemes(d);
+    var i = 0;
+    while (i < vec_len(ms)) { json_v_arr_push(arr, _shbdk_morpheme_to_jsonv(vec_get(ms, i))); i = i + 1; }
+    json_v_obj_set(o, str_from("morphemes"), arr);
+    return _shbdk_rec_build(o);
+}
+# JSON text -> a Decomposition, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_decomposition_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("a Decomposition must be an object"); }
+    var arr = bayan_json_v_obj_get_by_cstr(root, "morphemes");
+    if (arr == 0 || json_v_is_arr(arr) == 0) { return _shbdk_rec_field_bad("morphemes", "an array"); }
+    var ms = vec_new();
+    var i = 0;
+    var m = 0;
+    while (i < json_v_arr_len(arr)) {
+        m = _shbdk_morpheme_from_jsonv(json_v_arr_get(arr, i));
+        if (m == 0) { return 0; }
+        vec_push(ms, m);
+        i = i + 1;
+    }
+    return shbdk_decomposition_new(ms);
+}
+# 1 if two decompositions hold equal morphemes in order.
+#must_use
+fn shbdk_decomposition_eq(a, b): i64 {
+    var ma = shbdk_decomposition_morphemes(a);
+    var mb = shbdk_decomposition_morphemes(b);
+    if (vec_len(ma) != vec_len(mb)) { return 0; }
+    var i = 0;
+    while (i < vec_len(ma)) {
+        if (shbdk_morpheme_eq(vec_get(ma, i), vec_get(mb, i)) == 0) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# ---- StressLevel / Syllable --------------------------------------------------
+#must_use
+fn shbdk_stress_name(stress): cstring {
+    if (stress == SHBDK_STRESS_UNSTRESSED) { return "Unstressed"; }
+    if (stress == SHBDK_STRESS_PRIMARY) { return "Primary"; }
+    if (stress == SHBDK_STRESS_SECONDARY) { return "Secondary"; }
+    return 0;
+}
+# A StressLevel name -> SHBDK_STRESS_*, or -1.
+#must_use
+fn shbdk_stress_from_name(name): i64 {
+    if (name == 0) { return 0 - 1; }
+    if (streq(name, "Unstressed") == 1) { return SHBDK_STRESS_UNSTRESSED; }
+    if (streq(name, "Primary") == 1) { return SHBDK_STRESS_PRIMARY; }
+    if (streq(name, "Secondary") == 1) { return SHBDK_STRESS_SECONDARY; }
+    return 0 - 1;
+}
+# {"phonemes":[..],"stress":"Primary"}
+#must_use
+fn shbdk_syllable_to_json(s): cstring {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("phonemes"), _shbdk_rec_int_arr(shbdk_syllable_phonemes(s)));
+    json_v_obj_set(o, str_from("stress"), json_v_str_new(str_from(shbdk_stress_name(shbdk_syllable_stress(s)))));
+    return _shbdk_rec_build(o);
+}
+# JSON text -> a Syllable, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_syllable_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("a Syllable must be an object"); }
+    var phon = _shbdk_phonemes_from_jsonv(bayan_json_v_obj_get_by_cstr(root, "phonemes"), 0);
+    if (phon == 0) { return 0; }
+    var st = shbdk_stress_from_name(_shbdk_rec_get_str(root, "stress"));
+    if (st < 0) { return _shbdk_rec_bad("\"stress\" must be Unstressed, Primary or Secondary"); }
+    return shbdk_syllable_with_stress(shbdk_syllable_new(phon), st);
+}
+# 1 if two syllables have the same phonemes and stress.
+#must_use
+fn shbdk_syllable_eq(a, b): i64 {
+    if (shbdk_syllable_stress(a) != shbdk_syllable_stress(b)) { return 0; }
+    return _shbdk_rec_ivec_eq(shbdk_syllable_phonemes(a), shbdk_syllable_phonemes(b));
+}
+
+# ---- CoverageReport ----------------------------------------------------------
+# {"total_tokens":N,"covered_tokens":N,"uncovered_words":[..]} (the wasm shape)
+#must_use
+fn shbdk_coverage_report_to_json(r): cstring {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("total_tokens"), json_v_int_new(shbdk_coverage_total_tokens(r)));
+    json_v_obj_set(o, str_from("covered_tokens"), json_v_int_new(shbdk_coverage_covered_tokens(r)));
+    json_v_obj_set(o, str_from("uncovered_words"), _shbdk_rec_str_arr(shbdk_coverage_uncovered_words(r), 1));
+    return _shbdk_rec_build(o);
+}
+# JSON text -> a CoverageReport, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_coverage_report_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("a CoverageReport must be an object"); }
+    var cell = alloc(8);
+    if (_shbdk_rec_get_int(root, "total_tokens", cell) == 0) { return 0; }
+    var total = load64(cell);
+    if (_shbdk_rec_get_int(root, "covered_tokens", cell) == 0) { return 0; }
+    var covered = load64(cell);
+    if (total < 0 || covered < 0 || covered > total) { return _shbdk_rec_bad("token counts are inconsistent"); }
+    var unc = _shbdk_rec_get_strs(root, "uncovered_words", 1);
+    if (unc == 0) { return 0; }
+    return shbdk_coverage_report_new(total, covered, unc);
+}
+# 1 if two reports have the same counts and uncovered words.
+#must_use
+fn shbdk_coverage_report_eq(a, b): i64 {
+    if (shbdk_coverage_total_tokens(a) != shbdk_coverage_total_tokens(b)) { return 0; }
+    if (shbdk_coverage_covered_tokens(a) != shbdk_coverage_covered_tokens(b)) { return 0; }
+    return _shbdk_rec_svec_eq(shbdk_coverage_uncovered_words(a), shbdk_coverage_uncovered_words(b), 1);
+}
+
+# ---- PrefixTrie --------------------------------------------------------------
+# {"words":[...]} — every word, sorted; from_json rebuilds the trie.
+#must_use
+fn shbdk_trie_to_json(t): cstring {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("words"), _shbdk_rec_str_arr(shbdk_trie_search_prefix(t, ""), 1));
+    return _shbdk_rec_build(o);
+}
+# JSON text {"words":[..]} -> a PrefixTrie of those words, or 0.
+#must_use
+fn shbdk_trie_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("a PrefixTrie must be an object"); }
+    var words = _shbdk_rec_get_strs(root, "words", 0);
+    if (words == 0) { return 0; }
+    var t = shbdk_trie_new();
+    var i = 0;
+    while (i < vec_len(words)) { shbdk_trie_insert(t, vec_get(words, i)); i = i + 1; }
+    return t;
+}
+# 1 if two tries hold the same words.
+#must_use
+fn shbdk_trie_eq(a, b): i64 {
+    if (shbdk_trie_len(a) != shbdk_trie_len(b)) { return 0; }
+    return _shbdk_rec_svec_eq(shbdk_trie_search_prefix(a, ""), shbdk_trie_search_prefix(b, ""), 1);
+}
+
+# ---- HeteronymContext --------------------------------------------------------
+# {"words":[..],"position":N}
+#must_use
+fn shbdk_heteronym_context_to_json(c): cstring {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("words"), _shbdk_rec_str_arr(shbdk_heteronym_context_words(c), 0));
+    json_v_obj_set(o, str_from("position"), json_v_int_new(shbdk_heteronym_context_position(c)));
+    return _shbdk_rec_build(o);
+}
+# JSON text -> a HeteronymContext, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_heteronym_context_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("a HeteronymContext must be an object"); }
+    var words = _shbdk_rec_get_strs(root, "words", 0);
+    if (words == 0) { return 0; }
+    var cell = alloc(8);
+    if (_shbdk_rec_get_int(root, "position", cell) == 0) { return 0; }
+    if (load64(cell) < 0) { return _shbdk_rec_bad("\"position\" must not be negative"); }
+    return shbdk_heteronym_context_new(words, load64(cell));
+}
+# 1 if two contexts have the same words and position.
+#must_use
+fn shbdk_heteronym_context_eq(a, b): i64 {
+    if (shbdk_heteronym_context_position(a) != shbdk_heteronym_context_position(b)) { return 0; }
+    return _shbdk_rec_svec_eq(shbdk_heteronym_context_words(a), shbdk_heteronym_context_words(b), 0);
+}
+
+# ---- G2PResult / LookupSource / FstNotation / FstModel -----------------------
+# {"phonemes":[..],"confidence":0.75}
+#must_use
+fn shbdk_g2p_result_to_json(r): cstring {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("phonemes"), _shbdk_rec_int_arr(shbdk_g2p_result_phonemes(r)));
+    json_v_obj_set(o, str_from("confidence"), json_v_float_new(shbdk_g2p_result_confidence(r)));
+    return _shbdk_rec_build(o);
+}
+# JSON text -> a G2PResult, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_g2p_result_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("a G2PResult must be an object"); }
+    var phon = _shbdk_phonemes_from_jsonv(bayan_json_v_obj_get_by_cstr(root, "phonemes"), 0);
+    if (phon == 0) { return 0; }
+    var cell = alloc(8);
+    if (_shbdk_rec_get_num(root, "confidence", cell) == 0) { return 0; }
+    return shbdk_g2p_result_new(phon, load64(cell));
+}
+# 1 if two results have the same phonemes and confidence.
+#must_use
+fn shbdk_g2p_result_eq(a, b): i64 {
+    if (_shbdk_rec_num_eq(shbdk_g2p_result_confidence(a), shbdk_g2p_result_confidence(b)) == 0) { return 0; }
+    return _shbdk_rec_ivec_eq(shbdk_g2p_result_phonemes(a), shbdk_g2p_result_phonemes(b));
+}
+
+# LookupSource -> "UserOverlay" | "BaseDictionary" | {"G2PModel":{"confidence":f}}.
+# `confidence` (f64 bits) is used only for SHBDK_SOURCE_G2P_MODEL. 0 for an unknown tag.
+#must_use
+fn shbdk_lookup_source_to_json(source, confidence): cstring {
+    if (source == SHBDK_SOURCE_USER_OVERLAY) { return _shbdk_rec_build(json_v_str_new(str_from("UserOverlay"))); }
+    if (source == SHBDK_SOURCE_BASE_DICTIONARY) { return _shbdk_rec_build(json_v_str_new(str_from("BaseDictionary"))); }
+    if (source == SHBDK_SOURCE_G2P_MODEL) {
+        var inner = json_v_obj_new();
+        json_v_obj_set(inner, str_from("confidence"), json_v_float_new(confidence));
+        var o = json_v_obj_new();
+        json_v_obj_set(o, str_from("G2PModel"), inner);
+        return _shbdk_rec_build(o);
+    }
+    return 0;
+}
+# JSON text -> a SHBDK_SOURCE_* tag (the G2P confidence into store64(conf_out),
+# 0.0 for the others), or -1 with the reason recorded.
+#must_use
+fn shbdk_lookup_source_from_json(input, conf_out): i64 {
+    store64(conf_out, 0);
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0 - 1; }
+    if (json_v_is_str(root) == 1) {
+        var name = str_cstr(json_v_str(root));
+        if (streq(name, "UserOverlay") == 1) { return SHBDK_SOURCE_USER_OVERLAY; }
+        if (streq(name, "BaseDictionary") == 1) { return SHBDK_SOURCE_BASE_DICTIONARY; }
+        _shbdk_rec_bad("unknown LookupSource");
+        return 0 - 1;
+    }
+    if (json_v_is_obj(root) == 1) {
+        var inner = bayan_json_v_obj_get_by_cstr(root, "G2PModel");
+        if (inner != 0 && json_v_is_obj(inner) == 1) {
+            if (_shbdk_rec_get_num(inner, "confidence", conf_out) == 0) { return 0 - 1; }
+            return SHBDK_SOURCE_G2P_MODEL;
+        }
+    }
+    _shbdk_rec_bad("unknown LookupSource");
+    return 0 - 1;
+}
+
+# An FstNotation tag -> its name ("Arpabet" / "Ipa"), or 0.
+#must_use
+fn shbdk_fst_notation_name(n): cstring {
+    if (n == SHBDK_FST_NOTATION_ARPABET) { return "Arpabet"; }
+    if (n == SHBDK_FST_NOTATION_IPA) { return "Ipa"; }
+    return 0;
+}
+# An FstNotation name -> SHBDK_FST_NOTATION_*, or -1.
+#must_use
+fn shbdk_fst_notation_from_name(name): i64 {
+    if (name == 0) { return 0 - 1; }
+    if (streq(name, "Arpabet") == 1) { return SHBDK_FST_NOTATION_ARPABET; }
+    if (streq(name, "Ipa") == 1) { return SHBDK_FST_NOTATION_IPA; }
+    return 0 - 1;
+}
+# {"model_path":"...","notation":"Arpabet"}
+#must_use
+fn shbdk_fst_model_to_json(m): cstring {
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from("model_path"), json_v_str_new(str_from(shbdk_fst_model_path(m))));
+    json_v_obj_set(o, str_from("notation"),
+      json_v_str_new(str_from(shbdk_fst_notation_name(shbdk_fst_model_notation(m)))));
+    return _shbdk_rec_build(o);
+}
+# JSON text -> an FstModel, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_fst_model_from_json(input): i64 {
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0) { return _shbdk_rec_bad("an FstModel must be an object"); }
+    var path = _shbdk_rec_get_str(root, "model_path");
+    if (path == 0) { return 0; }
+    var n = shbdk_fst_notation_from_name(_shbdk_rec_get_str(root, "notation"));
+    if (n < 0) { return _shbdk_rec_bad("\"notation\" must be Arpabet or Ipa"); }
+    return shbdk_fst_model_new(path, n);
+}
+# 1 if two models have the same path and notation.
+#must_use
+fn shbdk_fst_model_eq(a, b): i64 {
+    if (shbdk_fst_model_notation(a) != shbdk_fst_model_notation(b)) { return 0; }
+    return streq(shbdk_fst_model_path(a), shbdk_fst_model_path(b));
+}
+
+# ---- the error ---------------------------------------------------------------
+# {"<Variant>":"<detail>"} — the Rust's externally tagged ShabdakoshError, with
+# its message: {"DictParseError":"line 3: unknown ARPABET symbol 'XX1'"}. `detail`
+# is the text (shbdk_last_error() for the last failure). 0 for an ok / unknown code.
+#must_use
+fn shbdk_err_to_json(err, detail): cstring {
+    var name = 0;
+    var code = sakshi_err_code(err);
+    if (code == SHBDK_ERR_DICT_PARSE) { name = "DictParseError"; }
+    if (code == SHBDK_ERR_UNKNOWN_SYMBOL) { name = "UnknownSymbol"; }
+    if (code == SHBDK_ERR_PHONEME_NOT_IN_INV) { name = "PhonemeNotInInventory"; }
+    if (code == SHBDK_ERR_UNKNOWN_LANGUAGE) { name = "UnknownLanguage"; }
+    if (name == 0) { return 0; }
+    if (detail == 0) { detail = ""; }
+    var o = json_v_obj_new();
+    json_v_obj_set(o, str_from(name), json_v_str_new(str_from(detail)));
+    return _shbdk_rec_build(o);
+}
+# JSON text -> a packed error (its detail copied into store64(detail_out)), or 0
+# (ok is not an error) with the reason recorded.
+#must_use
+fn shbdk_err_from_json(input, detail_out): i64 {
+    store64(detail_out, "");
+    var root = _shbdk_rec_parse(input);
+    if (root == 0) { return 0; }
+    if (json_v_is_obj(root) == 0 ||
+      json_v_obj_len(root) != 1) { return _shbdk_rec_bad("an error must be a one-key object"); }
+    var name = str_cstr(json_v_obj_key(root, 0));
+    var v = json_v_obj_val(root, 0);
+    if (json_v_is_str(v) == 0) { return _shbdk_rec_bad("an error's detail must be a string"); }
+    var err = 0;
+    if (streq(name, "DictParseError") == 1) { err = shbdk_err_dict_parse(); }
+    if (streq(name, "UnknownSymbol") == 1) { err = shbdk_err_unknown_symbol(); }
+    if (streq(name, "PhonemeNotInInventory") == 1) { err = shbdk_err_phoneme_not_in_inventory(); }
+    if (streq(name, "UnknownLanguage") == 1) { err = shbdk_err_unknown_language(); }
+    if (err == 0) { return _shbdk_rec_bad("unknown error variant"); }
+    store64(detail_out, str_cstr(json_v_str(v)));
+    return err;
+}

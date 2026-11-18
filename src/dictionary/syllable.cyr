@@ -1,8 +1,8 @@
 # syllable.cyr — syllable structure + Maximal Onset Principle syllabification.
 #
-# Ports rust-old/src/dictionary/syllable.rs. Phoneme-agnostic (operates on
-# phoneme ordinals) — stdlib only, no svara. Container serde (Syllable) is
-# handled by the format layer (L5) per the serde stance.
+# Ports rust-old/src/dictionary/syllable.rs. Operates on svara phoneme ordinals
+# and asks svara which class each is (svara_phoneme_class), so it needs
+# lib/svara.cyr ahead of it (3.2; it was stdlib only).
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 #
@@ -56,13 +56,105 @@ fn shbdk_syllable_is_empty(s): i64 {
 }
 
 # ---- Syllabification ---------------------------------------------------------
-# 1 if the phoneme is a vowel or diphthong (a syllable nucleus). svara orders the
-# 15 English vowels as ordinals 0..14 and the 5 diphthongs as 15..19 (a stable
-# ABI), so the nuclei are exactly ordinals 0..19; extended vowels (VOWEL_Y=46,
-# ...) are NOT nuclei — matching the Rust's explicit list.
+# 3.2: two accuracy fixes, both wrong in the Rust as well.
+#
+# (1) A nucleus is any vowel or diphthong svara has, by svara_phoneme_class. The
+#     Rust listed the 20 English ones, so the extended vowels y ø œ ɯ ɤ ɨ ʉ (46..52)
+#     were consonants: "über" /ybə/ was one syllable.
+# (2) It is the Maximal Onset Principle the doc always claimed: between two nuclei,
+#     the next syllable takes the LONGEST run of consonants that is a legal onset.
+#     The Rust kept exactly one consonant as coda whenever there were two or more,
+#     so "astray" split as [əs][tɹeɪ] (MOP: [ə][stɹeɪ]), and "handbag" / "pumpkin"
+#     got the illegal onsets /db/ and /pk/.
+#
+# Legal onsets: English's (below) when every consonant is an English phoneme, the
+# Sonority Sequencing Principle otherwise (rising sonority toward the nucleus, with
+# the s + stop exception). ŋ never begins a syllable. syllabify takes no language,
+# and the crate's base dictionary is English.
+
+# 1 if the phoneme is a vowel or diphthong (a syllable nucleus).
 fn _shbdk_is_nucleus(p): i64 {
-    if (p < 0) { return 0; }
-    if (p > 19) { return 0; }
+    var c = svara_phoneme_class(p);
+    if (c == SVARA_CLASS_VOWEL || c == SVARA_CLASS_DIPHTHONG) { return 1; }
+    return 0;
+}
+
+# 1 if `p` is one of English's consonants (svara 20..45).
+fn _shbdk_is_english_consonant(p): i64 {
+    if (p >= 20 && p <= 45) { return 1; }
+    return 0;
+}
+
+# Sonority rank for the SSP: stops / affricates / clicks / ejectives / implosives 1,
+# fricatives 2, nasals 3, laterals / trills 4, approximants 5.
+fn _shbdk_sonority(p): i64 {
+    var c = svara_phoneme_class(p);
+    if (c == SVARA_CLASS_FRICATIVE) { return 2; }
+    if (c == SVARA_CLASS_NASAL) { return 3; }
+    if (c == SVARA_CLASS_LATERAL || c == SVARA_CLASS_TRILL) { return 4; }
+    if (c == SVARA_CLASS_APPROXIMANT) { return 5; }
+    return 1;
+}
+
+# 1 if (a, b) is a two-consonant English onset (play, try, quick, few, thread,
+# shrimp, huge, music, new; s + p t k m n l w f j).
+fn _shbdk_en_onset2(a, b): i64 {
+    if (a == SVARA_PH_FRIC_S) {
+        if (b == SVARA_PH_PLOSIVE_P || b == SVARA_PH_PLOSIVE_T || b == SVARA_PH_PLOSIVE_K) { return 1; }
+        if (b == SVARA_PH_NASAL_M || b == SVARA_PH_NASAL_N || b == SVARA_PH_LATERAL_L) { return 1; }
+        if (b == SVARA_PH_APPROX_W || b == SVARA_PH_FRIC_F || b == SVARA_PH_APPROX_J) { return 1; }
+        return 0;
+    }
+    var l = (b == SVARA_PH_LATERAL_L);
+    var r = (b == SVARA_PH_APPROX_R);
+    var w = (b == SVARA_PH_APPROX_W);
+    var j = (b == SVARA_PH_APPROX_J);
+    if (a == SVARA_PH_PLOSIVE_P || a == SVARA_PH_PLOSIVE_B || a == SVARA_PH_FRIC_F) { return l | r | j; }
+    if (a == SVARA_PH_PLOSIVE_T || a == SVARA_PH_PLOSIVE_D) { return r | w | j; }
+    if (a == SVARA_PH_PLOSIVE_K || a == SVARA_PH_PLOSIVE_G) { return l | r | w | j; }
+    if (a == SVARA_PH_FRIC_TH) { return r | w; }
+    if (a == SVARA_PH_FRIC_SH) { return r; }
+    if (a == SVARA_PH_FRIC_V || a == SVARA_PH_FRIC_H || a == SVARA_PH_NASAL_M || a == SVARA_PH_NASAL_N) { return j; }
+    return 0;
+}
+
+# 1 if phonemes v[i..j) can begin a syllable.
+fn _shbdk_onset_ok(v, i, j): i64 {
+    var n = j - i;
+    if (n == 0) { return 1; }
+    if (vec_get(v, i) == SVARA_PH_NASAL_NG) { return 0; }
+    if (n == 1) { return 1; }
+    var english = 1;
+    var k = i;
+    while (k < j) {
+        if (_shbdk_is_english_consonant(vec_get(v, k)) == 0) { english = 0; }
+        k = k + 1;
+    }
+    var a = vec_get(v, i);
+    var b = vec_get(v, i + 1);
+    if (english == 1) {
+        if (n == 2) { return _shbdk_en_onset2(a, b); }
+        if (n == 3) {
+            var c = vec_get(v, i + 2);
+            if (a != SVARA_PH_FRIC_S) { return 0; }
+            var cl = (c == SVARA_PH_LATERAL_L);
+            var cr = (c == SVARA_PH_APPROX_R);
+            var cw = (c == SVARA_PH_APPROX_W);
+            var cj = (c == SVARA_PH_APPROX_J);
+            if (b == SVARA_PH_PLOSIVE_P) { return cl | cr | cj; }
+            if (b == SVARA_PH_PLOSIVE_T) { return cr | cj; }
+            if (b == SVARA_PH_PLOSIVE_K) { return cl | cr | cw | cj; }
+            return 0;
+        }
+        return 0;
+    }
+    # SSP: s + stop may precede a rising run
+    k = i;
+    if (a == SVARA_PH_FRIC_S && svara_phoneme_class(b) == SVARA_CLASS_PLOSIVE) { k = i + 1; }
+    while (k + 1 < j) {
+        if (_shbdk_sonority(vec_get(v, k)) >= _shbdk_sonority(vec_get(v, k + 1))) { return 0; }
+        k = k + 1;
+    }
     return 1;
 }
 
@@ -78,9 +170,10 @@ fn _shbdk_slice(v, start, end): i64 {
 }
 
 # Syllabify a phoneme sequence (Maximal Onset Principle). Returns a vec of
-# ShbdkSyllable*. Empty input -> empty vec; no vowels -> a single whole-sequence
-# syllable; else one syllable per nucleus, splitting inter-vowel consonant runs
-# so at most one consonant stays as coda (the rest form the next onset).
+# ShbdkSyllable*. Empty input -> empty vec; no nucleus -> a single whole-sequence
+# syllable; else one syllable per nucleus, each consonant run between two nuclei
+# split so the next syllable takes the longest legal onset. Consonants before the
+# first nucleus join the first syllable, those after the last join the last.
 #must_use
 fn shbdk_syllabify(phonemes): i64 {
     var out = vec_new();
@@ -105,26 +198,17 @@ fn shbdk_syllabify(phonemes): i64 {
     var start = 0;
     var end = 0;
     var k = 0;
-    var nucleus_idx = 0;
-    var next_nucleus = 0;
     var gap_start = 0;
-    var gap_len = 0;
+    var gap_end = 0;
     while (k < nn) {
-        nucleus_idx = vec_get(nuclei, k);
         if (k + 1 < nn) {
-            next_nucleus = vec_get(nuclei, k + 1);
-            gap_start = nucleus_idx + 1;
-            gap_len = next_nucleus - gap_start;
-            if (gap_len <= 1) {
-                # 0 or 1 consonant between vowels: all go to the next onset
-                end = gap_start;
-            } else {
-                # multiple consonants: first stays as coda, rest form next onset
-                end = gap_start + 1;
-            }
+            gap_start = vec_get(nuclei, k) + 1;
+            gap_end = vec_get(nuclei, k + 1);
+            # the earliest split point whose remainder is a legal onset
+            end = gap_start;
+            while (end < gap_end && _shbdk_onset_ok(phonemes, end, gap_end) == 0) { end = end + 1; }
         } else {
-            # last syllable: take everything to the end
-            end = n;
+            end = n;   # last syllable: take everything to the end
         }
         vec_push(out, shbdk_syllable_new(_shbdk_slice(phonemes, start, end)));
         start = end;

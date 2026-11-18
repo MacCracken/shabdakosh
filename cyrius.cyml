@@ -36,6 +36,7 @@ modules = [
     "src/dictionary/static_dict.cyr",
     "src/dictionary/format/mod.cyr",
     "src/dictionary/format/json.cyr",
+    "src/dictionary/format/records.cyr",
     "src/dictionary/format/pls.cyr",
     "src/dictionary/format/ssml.cyr",
     "src/dictionary/format/binary.cyr",

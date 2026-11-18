@@ -1,53 +1,67 @@
 # ssml.cyr — SSML <phoneme> tag parse / emit.
 #
 # Ports rust-old/src/dictionary/format/ssml.rs. Handles the SSML phoneme element
-# `<phoneme alphabet="ipa" ph="IPA">word</phoneme>`. Reuses the XML scan helpers
-# from pls.cyr (_shbdk_pls_find / _shbdk_pls_extract_attr / _shbdk_pls_ws) and
-# xml_escape/unescape + _shbdk_starts_at / _shbdk_fmt_dup from format/mod.cyr.
+# `<phoneme alphabet="ipa" ph="IPA">word</phoneme>`. Reads it with the XML reader
+# in pls.cyr (_shbdk_xml_tag / _xml_attr / _xml_text) and writes it with
+# shbdk_xml_escape from format/mod.cyr.
 # Included after src/dictionary/format/pls.cyr.
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 #
 # ShbdkSsmlResult layout (16 bytes): [0]=word(cstr) [8]=phonemes(vec of ordinals).
 
-# Parse an SSML <phoneme> tag into a (word, phonemes) result, or 0 on error
-# (not a <phoneme> tag, unsupported alphabet, missing ph, or empty phonemes).
+# Parse an SSML <phoneme> tag into a (word, phonemes) result, or 0 on error with
+# the reason in shbdk_last_error(): not a <phoneme> tag, an alphabet other than
+# ipa, a missing ph, no phonemes in it, markup inside the word, a missing
+# </phoneme>, or anything but white space after it.
+#
+# 3.2: on the shared XML reader (pls.cyr). Attributes may come in any order and
+# either quote style (ph='kæt' was refused), the word's entities, numeric
+# references and CDATA decode, and a malformed tag is refused — `ph="</phoneme>kæt"`
+# returned the word `kæt">cat` with ten junk phonemes, and the Rust panicked.
 #must_use
 fn shbdk_parse_ssml_phoneme(tag): i64 {
+    shbdk_clear_error();
+    if (tag == 0) { return _shbdk_fail("no input"); }
     var len = strlen(tag);
     var s = 0;
-    while (s < len) {
-        if (_shbdk_pls_ws(load8(tag + s)) == 0) { break; }
-        s = s + 1;
+    while (s < len && _shbdk_pls_ws(load8(tag + s)) == 1) { s = s + 1; }
+    var t = alloc(48);
+    if (s >= len || load8(tag + s) != 60 || _shbdk_xml_tag(tag, s, len, t) == 0) {
+        return _shbdk_fail("not an SSML <phoneme> tag");
     }
-    if (_shbdk_starts_at(tag, s, "<phoneme") == 0) { return 0; }
-
-    var alpha = _shbdk_pls_extract_attr(tag, "alphabet");
-    if (alpha != 0) {
-        if (streq(alpha, "ipa") == 0) { return 0; }
+    if (load64(t) == SHBDK_XML_END || _shbdk_xml_is(tag, t, "phoneme") == 0) {
+        return _shbdk_fail("not an SSML <phoneme> tag");
     }
-    var ph = _shbdk_pls_extract_attr(tag, "ph");
-    if (ph == 0) { return 0; }
+    var alpha = _shbdk_xml_attr(tag, t, "alphabet");
+    if (alpha != 0 && streq(alpha, "ipa") == 0) {
+        var sb = str_builder_new();
+        str_builder_add_cstr(sb, "unsupported SSML alphabet: '");
+        str_builder_add_cstr(sb, alpha);
+        str_builder_add_cstr(sb, "' (only 'ipa' is supported)");
+        return _shbdk_fail(str_data(str_builder_build(sb)));
+    }
+    var ph = _shbdk_xml_attr(tag, t, "ph");
+    if (ph == 0) { return _shbdk_fail("missing ph attribute"); }
     var phon = shbdk_parse_ipa_word(ph);
-    if (vec_len(phon) == 0) { return 0; }
+    if (vec_len(phon) == 0) { return _shbdk_fail("no phonemes in the ph attribute"); }
+    if (load64(t) == SHBDK_XML_EMPTY) { return _shbdk_fail("missing </phoneme> close tag"); }
 
-    # word = text between the first '>' and '</phoneme>'
-    var gt = _shbdk_pls_find(tag, s, len, ">");
-    if (gt < 0) { return 0; }
-    var cs = gt + 1;
-    var ce = _shbdk_pls_find(tag, cs, len, "</phoneme>");
-    if (ce < 0) { return 0; }
-    while (cs < ce) {
-        if (_shbdk_pls_ws(load8(tag + cs)) == 0) { break; }
-        cs = cs + 1;
+    # the word: character data up to </phoneme>, with no markup in it
+    var cs = load64(t + 40);
+    var ce = _shbdk_xml_next_markup(tag, cs, len);
+    if (ce >= len) { return _shbdk_fail("missing </phoneme> close tag"); }
+    var t2 = alloc(48);
+    if (_shbdk_xml_tag(tag, ce, len, t2) == 0) { return _shbdk_fail("malformed tag"); }
+    if (load64(t2) != SHBDK_XML_END || _shbdk_xml_is(tag, t2, "phoneme") == 0) {
+        return _shbdk_fail("the word of a <phoneme> holds markup");
     }
-    while (ce > cs) {
-        if (_shbdk_pls_ws(load8(tag + ce - 1)) == 0) { break; }
-        ce = ce - 1;
-    }
+    var rest = load64(t2 + 40);
+    while (rest < len && _shbdk_pls_ws(load8(tag + rest)) == 1) { rest = rest + 1; }
+    if (rest < len) { return _shbdk_fail("content after </phoneme>"); }
 
     var r = alloc(16);
-    store64(r + 0, shbdk_xml_unescape(_shbdk_fmt_dup(tag, cs, ce)));
+    store64(r + 0, _shbdk_xml_trim(_shbdk_xml_text(tag, cs, ce)));
     store64(r + 8, phon);
     return r;
 }
@@ -69,7 +83,7 @@ fn shbdk_ssml_result_phonemes(r): i64 {
 fn shbdk_to_ssml_phoneme(word, phonemes): cstring {
     var sb = str_builder_new();
     str_builder_add_cstr(sb, "<phoneme alphabet=\"ipa\" ph=\"");
-    str_builder_add_cstr(sb, shbdk_phonemes_to_ipa(phonemes));
+    str_builder_add_cstr(sb, shbdk_xml_escape(shbdk_phonemes_to_ipa(phonemes)));
     str_builder_add_cstr(sb, "\">");
     str_builder_add_cstr(sb, shbdk_xml_escape(word));
     str_builder_add_cstr(sb, "</phoneme>");

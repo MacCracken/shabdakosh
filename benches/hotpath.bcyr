@@ -40,8 +40,16 @@ fn b_lookup_hit() { return shbdk_dict_lookup(_dict, "the"); }
 fn b_lookup_miss() { return shbdk_dict_lookup(_dict, "zzzznotword"); }
 # Builds a prefix trie over the whole dictionary.
 fn b_trie_construct() { return shbdk_trie_from_dict(_dict); }
-# Prefix search for "pre".
+# Prefix search for "pre" (builds a trie per call).
 fn b_prefix_search() { return shbdk_dict_prefix_search(_dict, "pre"); }
+# 3.2: prefix search on a prebuilt trie, the Rust bench's workload ("comp", "th", "psych").
+var _trie = 0;
+# Three prefix searches on a trie built once.
+fn b_trie_search() {
+    var n = vec_len(shbdk_trie_search_prefix(_trie, "comp"));
+    n = n + vec_len(shbdk_trie_search_prefix(_trie, "th"));
+    return n + vec_len(shbdk_trie_search_prefix(_trie, "psych"));
+}
 # Serializes the dictionary to the binary format.
 fn b_binary_serialize() { return shbdk_to_binary(_dict); }
 # Deserializes the dictionary from the binary fixture.
@@ -104,6 +112,8 @@ fn main() {
     # trie construction + prefix search (allocate)
     bench("trie construction", &b_trie_construct, 10);
     bench("trie prefix search 'pre'", &b_prefix_search, 500);
+    _trie = shbdk_trie_from_dict(_dict);
+    bench("trie search, prebuilt (comp, th, psych)", &b_trie_search, 500);
 
     # binary serialize / deserialize (each call allocs a ~2 MB buffer / a dict)
     bench("binary serialize", &b_binary_serialize, 20);

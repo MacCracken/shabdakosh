@@ -29,17 +29,10 @@ include "lib/naad.cyr"
 include "lib/svara.cyr"
 include "src/error.cyr"
 include "src/arpabet.cyr"
+include "src/dictionary/entry.cyr"
 include "src/dictionary/phf.cyr"
 
 # Pron accumulator (24 bytes): [0]=phonemes(vec) [8]=freq(cstr or 0) [16]=region(cstr or 0).
-
-# ---- small helpers -----------------------------------------------------------
-fn _gc_is_ws(c): i64 {
-    if (c == 32) { return 1; }
-    if (c == 9) { return 1; }
-    if (c == 13) { return 1; }
-    return 0;
-}
 
 fn _gc_line_end(src, off, end): i64 {
     while (off < end) {
@@ -284,137 +277,140 @@ fn _gc_emit_phf(order, locs): i64 {
     return file_write_all("src/dictionary/_static_phf_data.cyr", out, oo);
 }
 
+# Report a data error at `line` and return 1 (the build fails, as build.rs panicked).
+fn _gc_fail(line, msg): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "gen_cmudict: data/cmudict-5k.txt line ");
+    str_builder_add_int(sb, line);
+    str_builder_add_cstr(sb, ": ");
+    str_builder_add_cstr(sb, msg);
+    _gc_say(str_cstr(str_builder_build(sb)));
+    return 1;
+}
+
+fn _gc_say(s: cstring): i64 { return println(s); }
+
 # ---- main --------------------------------------------------------------------
 fn main() {
     alloc_init();
 
-    # read the data file
-    var src = alloc(524288);
-    var src_len = file_read_all("data/cmudict-5k.txt", src, 524287);
-    if (src_len <= 0) {
-        println("gen_cmudict: failed to read data/cmudict-5k.txt");
-        return 1;
-    }
+    # read the data file, whole (3.2: it was read into a fixed 512 KB buffer and
+    # silently cut beyond that)
+    var path = "data/cmudict-5k.txt";
+    var fd = file_open(path, 0, 0);
+    if (fd < 0) { println("gen_cmudict: failed to read data/cmudict-5k.txt"); return 1; }
+    var fsize = xlseek(fd, 0, 2);
+    file_close(fd);
+    if (fsize <= 0) { println("gen_cmudict: data/cmudict-5k.txt is empty"); return 1; }
+    var src = alloc(fsize + 1);
+    var src_len = file_read_all(path, src, fsize);
+    if (src_len != fsize) { println("gen_cmudict: failed to read data/cmudict-5k.txt"); return 1; }
+    store8(src + src_len, 0);
+    if (shbdk_utf8_valid(src, src_len) == 0) { println("gen_cmudict: the data is not valid UTF-8"); return 1; }
 
     # fold entries: word Str -> entry accumulator (vec of pron*); order vec keeps
     # first-occurrence order for a stable emit.
+    #
+    # 3.2: the rules are the runtime reader's (shbdk_parse_cmudict), and anything it
+    # would refuse stops the build, as build.rs's panics did. The generator used to
+    # take an annotation by its first letter (@frequency= / @r= applied), keep a
+    # word's trailing tab, drop an unknown symbol (`bb  AH3` became a zero-phoneme
+    # entry), store @freq=abc as 0, read @region=GAX as GA, skip a malformed line
+    # (its pending annotations landed on the next entry), and treat any line
+    # starting with `;` as a comment (CMUdict's own ;SEMI-COLON vanished).
     var word_map = map_new_str();
     var order = vec_new();
 
     var pending_freq = 0;     # cstr or 0
     var pending_region = 0;   # cstr or 0
-    var unknown = 0;          # count of unrecognized ARPABET symbols
+    var unknown = 0;          # count of unrecognized ARPABET symbols (always 0: one stops the build)
 
     var pos = 0;
+    var line = 0;
     var le = 0;
     var s = 0;
     var e = 0;
     var c = 0;
-    var symbuf = alloc(16);
+    var fcell = alloc(8);
     while (pos < src_len) {
         le = _gc_line_end(src, pos, src_len);
-        # trim leading ws
+        line = line + 1;
         s = pos;
-        while (s < le) {
-            if (_gc_is_ws(load8(src + s)) == 0) { break; }
-            s = s + 1;
-        }
-        # trim trailing ws
+        while (s < le && shbdk_ws_len(src, s, le) > 0) { s = s + shbdk_ws_len(src, s, le); }
         e = le;
-        while (e > s) {
-            if (_gc_is_ws(load8(src + e - 1)) == 0) { break; }
-            e = e - 1;
-        }
+        while (e > s && shbdk_ws_len_before(src, s, e) > 0) { e = e - shbdk_ws_len_before(src, s, e); }
         if (s >= e) { pos = le + 1; continue; }
 
-        # comment / annotation line?
-        if (load8(src + s) == 59) {   # ';'
-            # scan for @freq= / @region= tokens
-            var ti = s;
+        # comment / annotation line: ";;;", then whitespace-delimited tokens that
+        # START with @freq= / @region=
+        if (e - s >= 3 && load8(src + s) == 59 && load8(src + s + 1) == 59 && load8(src + s + 2) == 59) {
+            var ti = s + 3;
             while (ti < e) {
-                if (load8(src + ti) == 64) {   # '@'
-                    # token key
-                    var ks = ti + 1;
-                    var kv = ks;
-                    while (kv < e) {
-                        if (load8(src + kv) == 61) { break; }   # '='
-                        kv = kv + 1;
-                    }
-                    # value spans kv+1 .. next ws
-                    var vs = kv + 1;
-                    var ve = vs;
-                    while (ve < e) {
-                        if (_gc_is_ws(load8(src + ve)) == 1) { break; }
-                        ve = ve + 1;
-                    }
-                    # key is [ks..kv): "freq" or "region"
-                    if (load8(src + ks) == 102) {   # 'f' -> freq
-                        pending_freq = _gc_dup(src, vs, ve);
-                    }
-                    if (load8(src + ks) == 114) {   # 'r' -> region
-                        pending_region = _gc_dup(src, vs, ve);
-                    }
-                    ti = ve;
+                while (ti < e && shbdk_ws_len(src, ti, e) > 0) { ti = ti + shbdk_ws_len(src, ti, e); }
+                if (ti >= e) { break; }
+                var ve = ti;
+                while (ve < e && shbdk_ws_len(src, ve, e) == 0) { ve = ve + 1; }
+                if (ve - ti >= 6 && memeq(src + ti, "@freq=", 6) == 1) {
+                    if (shbdk_decimal_syntax(src, ti + 6, ve) == 0) { return _gc_fail(line, "invalid @freq value"); }
+                    if (f64_parse_ok(_gc_dup(src, ti + 6, ve), fcell) == 0) { return _gc_fail(line,
+                          "invalid @freq value"); }
+                    if (shbdk_frequency_is_valid(load64(fcell)) == 0) { return _gc_fail(line,
+                          "@freq out of range (0.0-1.0)"); }
+                    pending_freq = _gc_dup(src, ti + 6, ve);
                 } else {
-                    ti = ti + 1;
+                    if (ve - ti >= 8 && memeq(src + ti, "@region=", 8) == 1) {
+                        pending_region = _gc_dup(src, ti + 8, ve);
+                        if (shbdk_region_from_code(pending_region) == SHBDK_REGION_NONE) {
+                            return _gc_fail(line, "unknown region code");
+                        }
+                    }
                 }
+                ti = ve;
             }
             pos = le + 1;
             continue;
         }
 
-        # entry line: find two-space separator
+        # entry line: the first two-space separator
         var sep = s;
         var found = 0;
         while (sep < e - 1) {
-            if (load8(src + sep) == 32) {
-                if (load8(src + sep + 1) == 32) { found = 1; break; }
-            }
+            if (load8(src + sep) == 32 && load8(src + sep + 1) == 32) { found = 1; break; }
             sep = sep + 1;
         }
-        if (found == 0) { pos = le + 1; continue; }
+        if (found == 0) { return _gc_fail(line, "missing two-space separator"); }
 
-        # base word = [s .. wend) where wend stops at '(' or the separator
-        var wend = s;
-        while (wend < sep) {
-            if (load8(src + wend) == 40) { break; }   # '('
-            wend = wend + 1;
+        # the word: trimmed, its trailing (n) variant marker cut, trimmed again
+        var wend = sep;
+        while (wend > s && shbdk_ws_len_before(src, s, wend) > 0) { wend = wend - shbdk_ws_len_before(src, s, wend); }
+        wend = shbdk_cmudict_word_end(src, s, wend);
+        while (wend > s && shbdk_ws_len_before(src, s, wend) > 0) { wend = wend - shbdk_ws_len_before(src, s, wend); }
+        if (wend <= s) { return _gc_fail(line, "empty word"); }
+        if (shbdk_cmudict_word_end(src, s, wend) != wend) { return _gc_fail(line,
+              "a word may not end in a (n) variant marker"); }
+        var wci = s;
+        while (wci < wend) {
+            c = load8(src + wci);
+            if (c == 124) { return _gc_fail(line, "a word holds '|', the packed format's separator"); }
+            if (c < 32 && c != 9) { return _gc_fail(line, "a word holds a control character"); }
+            wci = wci + 1;
         }
 
         # parse phonemes [sep+2 .. e) split on ws -> ordinals
         var phon = vec_new();
         var pp = sep + 2;
         var ss = 0;
-        var ee = 0;
-        var k = 0;
         var ph = 0;
         while (pp < e) {
-            # skip ws
-            while (pp < e) {
-                if (_gc_is_ws(load8(src + pp)) == 0) { break; }
-                pp = pp + 1;
-            }
+            while (pp < e && shbdk_ws_len(src, pp, e) > 0) { pp = pp + shbdk_ws_len(src, pp, e); }
             if (pp >= e) { break; }
             ss = pp;
-            while (pp < e) {
-                if (_gc_is_ws(load8(src + pp)) == 1) { break; }
-                pp = pp + 1;
-            }
-            ee = pp;
-            # copy symbol to symbuf, NUL-terminate
-            k = 0;
-            while (ss + k < ee) {
-                store8(symbuf + k, load8(src + ss + k));
-                k = k + 1;
-            }
-            store8(symbuf + k, 0);
-            ph = shbdk_arpabet_to_phoneme_with_stress(symbuf);
-            if (ph == SHBDK_PH_NONE) {
-                unknown = unknown + 1;
-            } else {
-                vec_push(phon, ph);
-            }
+            while (pp < e && shbdk_ws_len(src, pp, e) == 0) { pp = pp + 1; }
+            ph = shbdk_arpabet_to_phoneme_with_stress(_gc_dup(src, ss, pp));
+            if (ph == SHBDK_PH_NONE) { return _gc_fail(line, "unknown ARPABET symbol"); }
+            vec_push(phon, ph);
         }
+        if (vec_len(phon) == 0) { return _gc_fail(line, "no phonemes"); }
 
         # build pron accumulator
         var pron = alloc(24);
@@ -424,9 +420,9 @@ fn main() {
         pending_freq = 0;
         pending_region = 0;
 
-        # fold into the entry for this base word, lowercased as build.rs does: lookups
-        # lowercase their input, so a key holding an uppercase byte could never be reached
-        var wkey = str_from(str_lower_cstr(_gc_dup(src, s, wend)));
+        # fold into the entry for this base word, lowercased (Unicode) as the runtime
+        # reader and lookups do: a key holding an uppercase letter could never be reached
+        var wkey = str_from(shbdk_lower_n(src + s, wend - s));
         var acc = map_get(word_map, wkey);
         if (acc == 0) {
             acc = vec_new();
@@ -444,7 +440,10 @@ fn main() {
     # Since toolchain 6.4.10 raised `cyrius distlib`'s per-module read cap 256 KB ->
     # 1 MB, the ~283 KB data lives in ONE module again (no sharding). Pieces are
     # still ~24 KB string-literal globals; the COUNT global + accessor follow.
-    var out = alloc(1048576);
+    # 3.2: sized to the input (the packed form is never more than ~2x the text, and
+    # an escaped byte takes 4); was a fixed 1 MB with no bound check
+    var out_cap = src_len * 6 + 65536;
+    var out = alloc(out_cap);
     var oo = 0;
     oo = oo + _gc_emit_cstr(out, oo, "# _cmudict_data.cyr - AUTO-GENERATED by programs/gen_cmudict.cyr from\n");
     oo = oo + _gc_emit_cstr(out, oo, "# data/cmudict-5k.txt. Do NOT edit by hand; regeneration overwrites.\n");
@@ -490,11 +489,22 @@ fn main() {
         var wlen = str_len(wk);
         var bi = 0;
         while (bi < wlen) {
-            store8(out + oo, load8(wdata + bi));
-            oo = oo + 1;
+            # '"' and '\' would end / escape the string literal: write them as \x22 /
+            # \x5c (one byte each once compiled, so piece_bytes counts one)
+            if (load8(wdata + bi) == 34) {
+                oo = oo + _gc_emit_cstr(out, oo, "\\x22");
+            } else {
+                if (load8(wdata + bi) == 92) {
+                    oo = oo + _gc_emit_cstr(out, oo, "\\x5c");
+                } else {
+                    store8(out + oo, load8(wdata + bi));
+                    oo = oo + 1;
+                }
+            }
             bi = bi + 1;
         }
         piece_bytes = piece_bytes + wlen;
+        if (oo > out_cap - 4096) { println("gen_cmudict: output buffer overrun"); return 1; }
 
         # prons
         np = vec_len(acc2);

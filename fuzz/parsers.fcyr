@@ -459,23 +459,6 @@ fn same_vec(a, b): i64 {
     return 1;
 }
 
-# 1 if a key of d is empty or starts or ends with a byte the parsers trim.
-fn has_untrimmed_key(d): i64 {
-    var ks = map_keys(shbdk_dict_entries(d));
-    var i = 0;
-    var k = 0;
-    var n = 0;
-    while (i < vec_len(ks)) {
-        k = vec_get(ks, i);
-        n = str_len(k);
-        if (n == 0) { return 1; }
-        if (_shbdk_fmt_is_ws(load8(str_data(k))) == 1) { return 1; }
-        if (_shbdk_fmt_is_ws(load8(str_data(k) + n - 1)) == 1) { return 1; }
-        i = i + 1;
-    }
-    return 0;
-}
-
 # ---- targets -----------------------------------------------------------------
 # Each answers 1 when the input was accepted, 0 when refused; a broken property fails the run.
 
@@ -487,12 +470,9 @@ fn run_text_dict(t, k, input): i64 {
     if (t == T_JSON) { d = shbdk_from_json(input); }
     if (t == T_PLS) { d = shbdk_parse_pls(input); }
     if (d == 0) { return 0; }
-    # Known, and the Rust's too: the word is what comes before '(' AFTER the line is
-    # trimmed, so "(x  AH0" gives the word "" and "read (1)  R EH1 D" gives "read ".
-    # The text formats write such a key as a line whose word is gone or re-trimmed,
-    # so the export reads back different. Rust's parse_cmudict keeps both keys the
-    # same way; refusing them would be a divergence (roadmap, "Open decisions").
-    if (has_untrimmed_key(d) == 1) { return 1; }
+    # 3.2: no tolerated keys. The word is trimmed after its (n) marker is cut and an
+    # empty word is refused, so every key a reader accepts is one its writer can
+    # write back (the 3.1.2 harness skipped "" and "read " keys here).
     var o1 = 0;
     if (t == T_CMUDICT) { o1 = shbdk_to_cmudict(d); }
     if (t == T_IPA) { o1 = shbdk_to_ipa(d); }
@@ -503,6 +483,7 @@ fn run_text_dict(t, k, input): i64 {
     if (t == T_IPA) { d2 = shbdk_parse_ipa(o1); }
     if (t == T_JSON) { d2 = shbdk_from_json(o1); }
     if (t == T_PLS) { d2 = shbdk_parse_pls(o1); }
+    if (o1 == 0) { return fail(t, k, "the writer refuses what the reader accepted"); }
     if (d2 == 0) { return fail(t, k, "its own export is refused"); }
     var o2 = 0;
     if (t == T_CMUDICT) { o2 = shbdk_to_cmudict(d2); }
@@ -565,14 +546,8 @@ fn run_notation(k, input): i64 {
     var v = shbdk_notation_parse(n, input);
     if (v == 0) { return 0; }
     var s1 = shbdk_notation_render(n, v);
-    # Known, and the Rust's too: ARPABET's render writes stress digits ("OW1",
-    # "AH0") that its parse does not read (Rust's Arpabet::str_to_phoneme is
-    # arpabet_to_phoneme, not _with_stress), so a round trip drops every vowel.
-    # Checked for faults only until that is decided (roadmap, "Open decisions").
-    if (n == SHBDK_NOTATION_ARPABET) {
-        mix(vec_len(v));
-        return 1;
-    }
+    # 3.2: ARPABET is checked like the others: its parse reads the stress digits its
+    # render writes (the 3.1.2 harness checked it for faults only).
     var v2 = shbdk_notation_parse(n, s1);
     if (v2 == 0) { return fail(T_NOTATION, k, "its own rendering is refused"); }
     var s2 = shbdk_notation_render(n, v2);
@@ -609,7 +584,7 @@ fn run_static(k, input): i64 {
     var e = shbdk_static_lookup_entry(input);
     if (e == 0) { return 0; }
     # a hit: the key folds to the input, so the dictionary lookup must agree
-    if (_shbdk_dict_entry_eq(e, shbdk_dict_lookup_entry(shbdk_static_dict(), input)) == 0) {
+    if (shbdk_dict_entry_eq(e, shbdk_dict_lookup_entry(shbdk_static_dict(), input)) == 0) {
         return fail(T_STATIC, k, "static and dictionary lookups disagree");
     }
     mix(shbdk_dict_entry_len(e));
@@ -687,7 +662,9 @@ fn main(): i64 {
     if (cyr_mprotect(_guard + 3 * PAGE, PAGE, PROT_NONE) != 0) { say("fuzz: mprotect failed"); return 1; }
     build_seeds();
 
-    # replay one case: <binary> <target> <case>
+    # replay one case: <binary> <target> <case>. (3.2: args_init() was never called,
+    # so argc() was 0 and the replay this documents never ran.)
+    args_init();
     if (argc() >= 3) {
         _replay = 1;
         var rt = atoi(argv(1));

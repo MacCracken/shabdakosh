@@ -94,14 +94,19 @@ fn _shbdk_bin_dup(buf, off, len): i64 {
 }
 
 # ---- to_binary ---------------------------------------------------------------
+var _SHBDK_BIN_BAD_PHONEME = 0;   # set by _shbdk_bin_put_pron: a phoneme outside 0..100 was met
+
 fn _shbdk_bin_put_pron(buf, off, pron): i64 {
     var start = off;
     var phon = shbdk_pronunciation_phonemes(pron);
     var np = vec_len(phon);
     off = off + _shbdk_bin_put_u16(buf, off, np);
     var i = 0;
+    var ph = 0;
     while (i < np) {
-        store8(buf + off, vec_get(phon, i));
+        ph = vec_get(phon, i);
+        if (ph < 0 || ph > 100) { _SHBDK_BIN_BAD_PHONEME = 1; }
+        store8(buf + off, ph);
         off = off + 1;
         i = i + 1;
     }
@@ -155,14 +160,41 @@ fn _shbdk_bin_put_map(buf, off, map): i64 {
 # ---- exact serialized-size computation (mirrors the put_* layout) ------------
 # SECURITY: size the output buffer to the dict instead of a fixed 2 MB alloc, so a
 # large dict (many/long user entries) can never overflow the write buffer.
+#
+# 3.2: the sizing pass also checks that the dictionary FITS the format, and
+# returns -1 (with the reason recorded) if it does not: a u16 field over 65535 (a
+# word, a phoneme list, a variant count, the language code), or a word / language
+# that is not well-formed UTF-8 or holds a NUL. (A phoneme outside svara's 0..100
+# is caught as it is written.) These used to be written anyway — a 65,536-byte word
+# made the whole file undecodable, and 65,537 variants wrapped to 1.
 fn _shbdk_bin_pron_size(pron): i64 {
-    var sz = 2;   # u16 nphon
-    sz = sz + vec_len(shbdk_pronunciation_phonemes(pron));   # nphon × u8
-    sz = sz + 1;   # freq flag
+    var np = vec_len(shbdk_pronunciation_phonemes(pron));
+    if (np > 65535) { return _shbdk_bin_unfit("a pronunciation has more than 65535 phonemes"); }
+    var sz = 2 + np + 1;   # u16 nphon + nphon x u8 + freq flag (each phoneme is range-checked as it is written)
     if (shbdk_pronunciation_has_frequency(pron) == 1) { sz = sz + 8; }   # u64 freq
     sz = sz + 1;   # region flag
     if (shbdk_pronunciation_has_region(pron) == 1) { sz = sz + 1; }      # u8 region
     return sz;
+}
+
+fn _shbdk_bin_unfit(msg): i64 {
+    _shbdk_fail(msg);
+    return 0 - 1;
+}
+
+# 1 if p[0..n) can be a word / language in the format: well-formed UTF-8, no NUL.
+fn _shbdk_bin_text_ok(p, n): i64 {
+    var i = 0;
+    var c = 0;
+    var wide = 0;
+    while (i < n) {
+        c = load8(p + i);
+        if (c == 0) { return 0; }
+        if (c >= 128) { wide = 1; }
+        i = i + 1;
+    }
+    if (wide == 1) { return shbdk_utf8_valid(p, n); }
+    return 1;
 }
 
 fn _shbdk_bin_map_size(map): i64 {
@@ -174,15 +206,23 @@ fn _shbdk_bin_map_size(map): i64 {
     var prons = 0;
     var np = 0;
     var j = 0;
+    var ps = 0;
     while (i < n) {
         wk = vec_get(keys, i);
+        if (str_len(wk) > 65535) { return _shbdk_bin_unfit("a word is longer than 65535 bytes"); }
+        if (_shbdk_bin_text_ok(str_data(wk), str_len(wk)) == 0) {
+            return _shbdk_bin_unfit("a word is not well-formed UTF-8, or holds a NUL");
+        }
         sz = sz + 2 + str_len(wk);   # u16 wlen + word bytes
         prons = shbdk_dict_entry_all(map_get(map, wk));
         np = vec_len(prons);
+        if (np > 65535) { return _shbdk_bin_unfit("a word has more than 65535 pronunciations"); }
         sz = sz + 2;   # u16 npron
         j = 0;
         while (j < np) {
-            sz = sz + _shbdk_bin_pron_size(vec_get(prons, j));
+            ps = _shbdk_bin_pron_size(vec_get(prons, j));
+            if (ps < 0) { return 0 - 1; }
+            sz = sz + ps;
             j = j + 1;
         }
         i = i + 1;
@@ -194,20 +234,34 @@ fn _shbdk_bin_total_size(dict): i64 {
     var sz = SHBDK_BIN_HEADER;   # magic(4) + version(1)
     sz = sz + 1;   # language flag
     var lang = shbdk_dict_language(dict);
-    if (lang != 0) { sz = sz + 2 + strlen(lang); }   # u16 llen + lang bytes
-    sz = sz + _shbdk_bin_map_size(shbdk_dict_entries(dict));
-    sz = sz + _shbdk_bin_map_size(shbdk_dict_user_entries(dict));
-    return sz;
+    if (lang != 0) {
+        if (strlen(lang) > 65535) { return _shbdk_bin_unfit("the language code is longer than 65535 bytes"); }
+        if (_shbdk_bin_text_ok(lang, strlen(lang)) == 0) {
+            return _shbdk_bin_unfit("the language code is not well-formed UTF-8");
+        }
+        sz = sz + 2 + strlen(lang);   # u16 llen + lang bytes
+    }
+    var ms = _shbdk_bin_map_size(shbdk_dict_entries(dict));
+    if (ms < 0) { return 0 - 1; }
+    sz = sz + ms;
+    ms = _shbdk_bin_map_size(shbdk_dict_user_entries(dict));
+    if (ms < 0) { return 0 - 1; }
+    return sz + ms;
 }
 
-# Serialize a PronunciationDict to a compact binary blob (a Str).
+# Serialize a PronunciationDict to a compact binary blob (a Str). An empty Str
+# means it could not be (out of memory, or a dictionary the format cannot hold);
+# shbdk_last_error() says which.
 #must_use
 fn shbdk_to_binary(dict): i64 {
+    shbdk_clear_error();
+    var total = _shbdk_bin_total_size(dict);
+    if (total < 0) { return str_new(0, 0); }
     # 3.0.4: a dict whose serialized form exceeds ALLOC_MAX makes alloc() return 0,
     # and the header stores below would write to address 0. Fail as an empty Str —
     # from_binary rejects it (len < header) and save_binary_file reports the error.
-    var buf = alloc(_shbdk_bin_total_size(dict) + 16);
-    if (buf == 0) { return str_new(0, 0); }
+    var buf = alloc(total + 16);
+    if (buf == 0) { _shbdk_fail("binary serialize error: out of memory"); return str_new(0, 0); }
     store8(buf + 0, SHBDK_BIN_MAGIC_S);
     store8(buf + 1, SHBDK_BIN_MAGIC_H);
     store8(buf + 2, SHBDK_BIN_MAGIC_B);
@@ -223,60 +277,94 @@ fn shbdk_to_binary(dict): i64 {
         store8(buf + off, 0);
         off = off + 1;
     }
+    _SHBDK_BIN_BAD_PHONEME = 0;
     off = off + _shbdk_bin_put_map(buf, off, shbdk_dict_entries(dict));
     off = off + _shbdk_bin_put_map(buf, off, shbdk_dict_user_entries(dict));
+    if (_SHBDK_BIN_BAD_PHONEME == 1) {
+        _shbdk_fail("a phoneme is not a svara phoneme (0-100)");
+        return str_new(0, 0);
+    }
     return str_new(buf, off);
 }
 
 # ---- from_binary -------------------------------------------------------------
 # SECURITY: every length/count field below is attacker-controlled (the blob may
-# be a corrupt or malicious .bin from disk/mmap). The Rust oracle got this bound
-# for free from postcard's bounds-checked reader; this port must enforce it by
-# hand. `_shbdk_bin_oob(off, need, len)` returns 1 if reading `need` bytes at
-# `off` would run past the blob end (`len`); the get helpers return -1 on any
-# overrun, which propagates up to shbdk_from_binary → 0 (DeserializeUnexpectedEnd).
+# be a corrupt or malicious .bin from disk/mmap). The Rust got this bound for free
+# from postcard's bounds-checked reader; this port enforces it by hand.
+# `_shbdk_bin_oob(off, need, len)` returns 1 if reading `need` bytes at `off`
+# would run past the blob end (`len`); the get helpers return -1 on any overrun,
+# which propagates up to shbdk_from_binary -> 0.
+#
+# 3.2: every VALUE is checked as well as every length, and a failure says what it
+# was. An option flag must be 0 or 1, a phoneme 0..100, a region GA or RP, a
+# frequency 0.0-1.0, a word or language well-formed UTF-8 with no NUL, an entry
+# must have a pronunciation, and nothing may follow the user map. A region byte of
+# 7 used to load and then crash to_cmudict / to_json.
 fn _shbdk_bin_oob(off, need, len): i64 {
     if (off + need > len) { return 1; }
     return 0;
 }
 
+# Record a decode failure and return -1 (the get helpers' error value).
+fn _shbdk_bin_bad(msg): i64 {
+    _shbdk_fail(msg);
+    return 0 - 1;
+}
+
+fn _shbdk_bin_truncated(): i64 {
+    return _shbdk_bin_bad("binary deserialize error: unexpected end of data");
+}
+
 fn _shbdk_bin_get_pron(buf, off, prons, len): i64 {
-    if (_shbdk_bin_oob(off, 2, len) == 1) { return (0 - 1); }
+    if (_shbdk_bin_oob(off, 2, len) == 1) { return _shbdk_bin_truncated(); }
     var np = _shbdk_bin_get_u16(buf, off);
     off = off + 2;
-    if (_shbdk_bin_oob(off, np, len) == 1) { return (0 - 1); }
+    if (_shbdk_bin_oob(off, np, len) == 1) { return _shbdk_bin_truncated(); }
     var phon = vec_new();
     var i = 0;
+    var ph = 0;
     while (i < np) {
-        vec_push(phon, load8(buf + off));
+        ph = load8(buf + off);
+        if (ph > 100) { return _shbdk_bin_bad("binary deserialize error: a phoneme is not a svara phoneme (0-100)"); }
+        vec_push(phon, ph);
         off = off + 1;
         i = i + 1;
     }
     var pron = shbdk_pronunciation_new(phon);
-    if (_shbdk_bin_oob(off, 1, len) == 1) { return (0 - 1); }
-    if (load8(buf + off) == 1) {
-        off = off + 1;
-        if (_shbdk_bin_oob(off, 8, len) == 1) { return (0 - 1); }
-        pron = shbdk_pronunciation_with_frequency(pron, _shbdk_bin_get_u64(buf, off));
+    if (_shbdk_bin_oob(off, 1, len) == 1) { return _shbdk_bin_truncated(); }
+    var flag = load8(buf + off);
+    off = off + 1;
+    var f = 0;
+    if (flag == 1) {
+        if (_shbdk_bin_oob(off, 8, len) == 1) { return _shbdk_bin_truncated(); }
+        f = _shbdk_bin_get_u64(buf, off);
+        if (shbdk_frequency_is_valid(f) == 0) {
+            return _shbdk_bin_bad("binary deserialize error: a frequency is outside 0.0-1.0");
+        }
+        pron = shbdk_pronunciation_with_frequency(pron, f);
         off = off + 8;
     } else {
-        off = off + 1;
+        if (flag != 0) { return _shbdk_bin_bad("binary deserialize error: an option flag is not 0 or 1"); }
     }
-    if (_shbdk_bin_oob(off, 1, len) == 1) { return (0 - 1); }
-    if (load8(buf + off) == 1) {
-        off = off + 1;
-        if (_shbdk_bin_oob(off, 1, len) == 1) { return (0 - 1); }
+    if (_shbdk_bin_oob(off, 1, len) == 1) { return _shbdk_bin_truncated(); }
+    flag = load8(buf + off);
+    off = off + 1;
+    if (flag == 1) {
+        if (_shbdk_bin_oob(off, 1, len) == 1) { return _shbdk_bin_truncated(); }
+        if (shbdk_region_code(load8(buf + off)) == 0) {
+            return _shbdk_bin_bad("binary deserialize error: a region is not GA or RP");
+        }
         pron = shbdk_pronunciation_with_region(pron, load8(buf + off));
         off = off + 1;
     } else {
-        off = off + 1;
+        if (flag != 0) { return _shbdk_bin_bad("binary deserialize error: an option flag is not 0 or 1"); }
     }
     vec_push(prons, pron);
     return off;
 }
 
 fn _shbdk_bin_get_map(dict, buf, off, is_user, len): i64 {
-    if (_shbdk_bin_oob(off, 4, len) == 1) { return (0 - 1); }
+    if (_shbdk_bin_oob(off, 4, len) == 1) { return _shbdk_bin_truncated(); }
     var n = _shbdk_bin_get_u32(buf, off);
     off = off + 4;
     var i = 0;
@@ -287,15 +375,19 @@ fn _shbdk_bin_get_map(dict, buf, off, is_user, len): i64 {
     var j = 0;
     var entry = 0;
     while (i < n) {
-        if (_shbdk_bin_oob(off, 2, len) == 1) { return (0 - 1); }
+        if (_shbdk_bin_oob(off, 2, len) == 1) { return _shbdk_bin_truncated(); }
         wlen = _shbdk_bin_get_u16(buf, off);
         off = off + 2;
-        if (_shbdk_bin_oob(off, wlen, len) == 1) { return (0 - 1); }
+        if (_shbdk_bin_oob(off, wlen, len) == 1) { return _shbdk_bin_truncated(); }
+        if (_shbdk_bin_text_ok(buf + off, wlen) == 0) {
+            return _shbdk_bin_bad("binary deserialize error: a word is not well-formed UTF-8, or holds a NUL");
+        }
         word = _shbdk_bin_dup(buf, off, wlen);
         off = off + wlen;
-        if (_shbdk_bin_oob(off, 2, len) == 1) { return (0 - 1); }
+        if (_shbdk_bin_oob(off, 2, len) == 1) { return _shbdk_bin_truncated(); }
         np = _shbdk_bin_get_u16(buf, off);
         off = off + 2;
+        if (np == 0) { return _shbdk_bin_bad("binary deserialize error: an entry has no pronunciation"); }
         prons = vec_new();
         j = 0;
         while (j < np) {
@@ -304,77 +396,79 @@ fn _shbdk_bin_get_map(dict, buf, off, is_user, len): i64 {
             j = j + 1;
         }
         entry = shbdk_dict_entry_from_pronunciations(prons);
-        if (entry != 0) {
-            if (is_user == 1) {
-                shbdk_dict_insert_user_entry(dict, word, entry);
-            } else {
-                shbdk_dict_insert_entry(dict, word, entry);
-            }
+        if (is_user == 1) {
+            shbdk_dict_insert_user_entry(dict, word, entry);
+        } else {
+            shbdk_dict_insert_entry(dict, word, entry);
         }
         i = i + 1;
     }
     return off;
 }
 
-# Deserialize a PronunciationDict from a binary blob (a Str), or 0 on error
-# (too short, bad magic, bad version, or any length/count field that overruns
-# the blob — a malformed/truncated blob decodes to 0, never an OOB read).
+# Deserialize a PronunciationDict from a binary blob (a Str), or 0 on error with
+# the reason in shbdk_last_error(): too short, bad magic, unsupported version, a
+# field that overruns the blob, a value the format does not allow, or trailing
+# bytes. A malformed blob decodes to 0, never to an OOB read or a bad value.
 #must_use
 fn shbdk_from_binary(data): i64 {
+    shbdk_clear_error();
+    if (data == 0) { return _shbdk_fail("no input"); }
     var buf = str_data(data);
     var len = str_len(data);
-    if (len < SHBDK_BIN_HEADER) { return 0; }
-    if (load8(buf + 0) != SHBDK_BIN_MAGIC_S) { return 0; }
-    if (load8(buf + 1) != SHBDK_BIN_MAGIC_H) { return 0; }
-    if (load8(buf + 2) != SHBDK_BIN_MAGIC_B) { return 0; }
-    if (load8(buf + 3) != SHBDK_BIN_MAGIC_D) { return 0; }
-    if (load8(buf + 4) != SHBDK_BIN_VERSION) { return 0; }
+    if (len < SHBDK_BIN_HEADER) { return _shbdk_fail("binary data too short for header"); }
+    if (load8(buf + 0) != SHBDK_BIN_MAGIC_S || load8(buf + 1) != SHBDK_BIN_MAGIC_H
+      || load8(buf + 2) != SHBDK_BIN_MAGIC_B || load8(buf + 3) != SHBDK_BIN_MAGIC_D) {
+        return _shbdk_fail("invalid magic number: not a shabdakosh binary dictionary");
+    }
+    if (load8(buf + 4) != SHBDK_BIN_VERSION) {
+        return _shbdk_fail("unsupported binary format version (expected 1)");
+    }
     var off = 5;
     var dict = shbdk_dict_new();
-    if (_shbdk_bin_oob(off, 1, len) == 1) { return 0; }
-    if (load8(buf + off) == 1) {
-        off = off + 1;
-        if (_shbdk_bin_oob(off, 2, len) == 1) { return 0; }
+    if (_shbdk_bin_oob(off, 1, len) == 1) { _shbdk_bin_truncated(); return 0; }
+    var flag = load8(buf + off);
+    off = off + 1;
+    if (flag == 1) {
+        if (_shbdk_bin_oob(off, 2, len) == 1) { _shbdk_bin_truncated(); return 0; }
         var llen = _shbdk_bin_get_u16(buf, off);
         off = off + 2;
-        if (_shbdk_bin_oob(off, llen, len) == 1) { return 0; }
+        if (_shbdk_bin_oob(off, llen, len) == 1) { _shbdk_bin_truncated(); return 0; }
+        if (_shbdk_bin_text_ok(buf + off, llen) == 0) {
+            return _shbdk_fail("binary deserialize error: the language is not well-formed UTF-8");
+        }
         shbdk_dict_set_language(dict, _shbdk_bin_dup(buf, off, llen));
         off = off + llen;
     } else {
-        off = off + 1;
+        if (flag != 0) { return _shbdk_fail("binary deserialize error: an option flag is not 0 or 1"); }
     }
     off = _shbdk_bin_get_map(dict, buf, off, 0, len);
     if (off < 0) { return 0; }
     off = _shbdk_bin_get_map(dict, buf, off, 1, len);
     if (off < 0) { return 0; }
+    if (off != len) { return _shbdk_fail("binary deserialize error: trailing bytes after the dictionary"); }
     return dict;
 }
 
 # ---- file I/O ----------------------------------------------------------------
-# Save a dict to a binary file. 0 on success, negative on error.
+# Save a dict to a binary file. 0 on success, negative on error (shbdk_last_error()
+# says why).
 fn shbdk_save_binary_file(dict, path): i64 {
     var blob = shbdk_to_binary(dict);
-    # 3.0.4: an empty blob means to_binary could not allocate — never write a
-    # zero-byte file that would silently decode to "no dictionary".
+    # 3.0.4: an empty blob means to_binary could not — never write a zero-byte
+    # file that would silently decode to "no dictionary".
     if (str_len(blob) == 0) { return (0 - 1); }
     var n = file_write_all(path, str_data(blob), str_len(blob));
-    if (n < 0) { return (0 - 1); }
+    if (n < 0) { _shbdk_fail("failed to write binary file"); return (0 - 1); }
     return 0;
 }
 
-# Load a dict from a binary file, or 0 on read / decode error.
+# Load a dict from a binary file, or 0 on read / decode error (shbdk_last_error()
+# says why). 3.2: no 8 MB ceiling; the buffer is sized to the file.
 #must_use
 fn shbdk_load_binary_file(path): i64 {
-    # 3.0.4: size the read buffer to the FILE (see shbdk_load_cmudict_file) — the
-    # old flat alloc(8 MB) leaked 8 MB of never-freed bump arena per call.
-    var size = _shbdk_file_size_of(path);
-    if (size < 0) { return 0; }
-    # SECURITY: fail loud at the ceiling rather than decode a truncated blob
-    # (from_binary is bounds-checked, but this is explicit).
-    if (size >= SHBDK_MAX_FILE_BYTES) { return 0; }
-    var buf = alloc(size + 1);
-    if (buf == 0) { return 0; }
-    var n = file_read_all(path, buf, size);
-    if (n < 0) { return 0; }
-    return shbdk_from_binary(str_new(buf, n));
+    shbdk_clear_error();
+    var data = _shbdk_read_file_str(path);
+    if (data == 0) { return 0; }
+    return shbdk_from_binary(data);
 }

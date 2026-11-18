@@ -65,5 +65,31 @@ assert_streq(_shbdk_normalize_token("\"world\"", 0, strlen("\"world\"")), "world
 assert_streq(_shbdk_normalize_token("(test)", 0, strlen("(test)")), "test", "(test) -> test");
 assert_eq(load8(_shbdk_normalize_token("...", 0, strlen("..."))), 0, "... -> empty");
 
+# ================================================================
+# 3.2: Unicode whitespace splits tokens; Unicode punctuation and symbols strip from
+# the edges; a typographic apostrophe reads as '; tokens lowercase with Unicode.
+test_group("coverage: Unicode text");
+var ucd = shbdk_dict_new();
+var ucp = vec_new();
+vec_push(ucp, SVARA_PH_VOWEL_A);
+shbdk_dict_insert(ucd, "hello", ucp);
+shbdk_dict_insert(ucd, "world", ucp);
+shbdk_dict_insert(ucd, "the", ucp);
+shbdk_dict_insert(ucd, "don't", ucp);
+shbdk_dict_insert(ucd, "école", ucp);
+var u1 = shbdk_dict_coverage(ucd, "hello\xC2\xA0world");
+assert_eq(shbdk_coverage_total_tokens(u1), 2, "NBSP splits (it was one token)");
+assert_eq(shbdk_coverage_covered_tokens(u1), 2, "both covered");
+var u2 = shbdk_dict_coverage(ucd, "hello\xE3\x80\x80world\xE2\x80\xA8the");
+assert_eq(shbdk_coverage_total_tokens(u2), 3, "U+3000 and U+2028 split");
+var u3 = shbdk_dict_coverage(ucd, "\xE2\x80\x9Cthe\xE2\x80\x9D hello\xE2\x80\xA6 \xC2\xABworld\xC2\xBB");
+assert_eq(shbdk_coverage_is_fully_covered(u3), 1, "curly quotes, ellipsis, guillemets strip");
+var u4 = shbdk_dict_coverage(ucd, "don\xE2\x80\x99t");
+assert_eq(shbdk_coverage_covered_tokens(u4), 1, "don’t finds don't");
+var u5 = shbdk_dict_coverage(ucd, "\xC3\x89COLE");
+assert_eq(shbdk_coverage_covered_tokens(u5), 1, "ÉCOLE finds école");
+var u6 = shbdk_dict_coverage(ucd, "hello\xF0\x9F\x91\x8B");
+assert_eq(shbdk_coverage_covered_tokens(u6), 1, "a trailing emoji strips");
+
 var rc = assert_summary();
 syscall(60, rc);

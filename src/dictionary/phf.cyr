@@ -39,8 +39,9 @@ fn _shbdk_phf_fmix(h): i64 {
 }
 
 # Hash bytes [p, p + n) with `seed`: FNV-1a over the ASCII-lowercased bytes, then
-# fmix64. Folding A-Z here lets a lookup of "Hello" hash as "hello" without a copy,
-# the same ASCII-only fold shbdk_dict_lookup_entry applies.
+# fmix64. Folding A-Z here lets a lookup of "Hello" hash as "hello" without a copy.
+# A word with any non-ASCII byte is lowercased with Unicode semantics before it
+# gets here (static_dict.cyr), so the fold matches shbdk_dict_lookup_entry's.
 fn _shbdk_phf_hash(p, n, seed): i64 {
     var h = 0xCBF29CE484222325 ^ _shbdk_phf_fmix(seed + 1);
     var i = 0;

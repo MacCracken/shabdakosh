@@ -13,40 +13,48 @@ cyrius bench            # auto-discovers benches/
 
 - **Date**: 2026-11-17
 - **Toolchain**: cyrius 6.7.18
-- **Revision**: 3.1.2 working tree (on `7642b9b`)
+- **Revision**: the M3 working tree (unreleased, on `2ef2194`)
 - **Platform**: Linux 7.3.4-arch1-2, x86_64
 - **Dictionary**: base English (`_cmudict_data.cyr`), ~10,617 entries
 
 | Benchmark | Avg | Min | Max | Iters |
 |---|---:|---:|---:|---:|
-| **static first lookup** (3.1.2) | **34.9 µs** | 34.9 µs | 34.9 µs | 1 |
-| dict english construction | 8.184 ms | 8.184 ms | 8.184 ms | 10 |
-| **dict lookup hit** | **144 ns** | 144 ns | 144 ns | 200,000 |
-| **dict lookup miss** | **182 ns** | 182 ns | 182 ns | 200,000 |
-| dict lookup hit, capitals (3.1.2) | 186 ns | 186 ns | 186 ns | 2,000 |
-| **static lookup hit** (3.1.2) | **124 ns** | 124 ns | 124 ns | 200,000 |
-| **static lookup miss** (3.1.2) | **125 ns** | 125 ns | 125 ns | 200,000 |
-| static lookup hit, capitals (3.1.2) | 127 ns | 127 ns | 127 ns | 200,000 |
-| trie construction | 7.347 ms | 7.347 ms | 7.347 ms | 10 |
-| trie prefix search `'pre'` | 6.263 ms | 5.891 ms | 9.579 ms | 500 |
-| binary serialize | 6.196 ms | 6.118 ms | 6.240 ms | 20 |
-| binary deserialize | 6.859 ms | 6.828 ms | 6.884 ms | 20 |
-| to_cmudict | 11.835 ms | 11.835 ms | 11.835 ms | 10 |
-| to_ipa | 10.750 ms | 10.750 ms | 10.750 ms | 10 |
-| to_json | 33.140 ms | 33.140 ms | 33.140 ms | 10 |
+| static first lookup | 39.0 µs | 39.0 µs | 39.0 µs | 1 |
+| dict english construction | 8.822 ms | 8.822 ms | 8.822 ms | 10 |
+| **dict lookup hit** | **150 ns** | 150 ns | 150 ns | 200,000 |
+| dict lookup miss | 228 ns | 228 ns | 228 ns | 200,000 |
+| dict lookup hit, capitals | 192 ns | 192 ns | 192 ns | 2,000 |
+| **static lookup hit** | **116 ns** | 116 ns | 116 ns | 200,000 |
+| static lookup miss | 125 ns | 125 ns | 125 ns | 200,000 |
+| static lookup hit, capitals | 117 ns | 117 ns | 117 ns | 200,000 |
+| trie construction | 8.042 ms | 8.042 ms | 8.042 ms | 10 |
+| trie prefix search `'pre'` | 6.821 ms | 6.312 ms | 8.250 ms | 500 |
+| trie search, prebuilt (`comp`, `th`, `psych`) (new) | 32.2 µs | 31.6 µs | 33.2 µs | 500 |
+| binary serialize | 6.862 ms | 6.781 ms | 6.869 ms | 20 |
+| binary deserialize | 7.928 ms | 7.887 ms | 7.987 ms | 20 |
+| to_cmudict | 13.046 ms | 13.046 ms | 13.046 ms | 10 |
+| to_ipa | 12.673 ms | 12.673 ms | 12.673 ms | 10 |
+| to_json | 34.963 ms | 34.963 ms | 34.963 ms | 10 |
 
 Rows whose min and max equal the average were timed by `lib/bench` as a single window.
 
-`static first lookup` runs first in the process, before any fixture is built, and is timed once:
-it is the cost the perfect hash removed. Run against the 3.1.1 `static_dict.cyr` on the same
-machine, that row read 8.4–9.0 ms (it built the whole dictionary), and the static hit, miss and
-capitals rows read 152, 184–262 and 184 ns.
+**Against 3.1.2**, from alternating runs of this tree and a `git archive` of the 3.1.2 commit on
+the same machine (five pairs). The comparison is the trustworthy part: single runs moved a whole
+column by ~10% at times today.
 
-Against 3.1.1, every row that existed then is within its usual spread. Construction read
-8.2–8.4 ms across today's full runs (7.8 ms recorded for 3.1.1), but alternating runs of the
-3.1.1 and 3.1.2 loaders on their own give ~7.8 ms for both, so it is the session, not the
-loader. `dict lookup miss` stays the noisiest row (182–298 ns today), so a single reading of it
-is not a regression signal.
+- **Construction, dictionary lookups, trie construction and `to_json`** are unchanged within
+  their spread. `dict lookup miss` remains the noisiest row (3.1.2 itself read 167–389 ns today).
+- **Static lookups are faster** (hit ~113–116 ns against ~125–131). A single pass now finds the
+  word's length and whether it needs Unicode lowercasing, where `strlen` used to make its own
+  pass.
+- **The format layer costs more, and the cost is the new checks** (ADR 005):
+  - `to_ipa` +12%: the writer checks whether adjacent symbols would merge, through a precomputed
+    continuation bitmap;
+  - `to_cmudict` +8–10% and the binary serializer +1–8%: they validate each word before
+    writing it;
+  - the binary deserializer +6–14%: it checks every value as well as every length.
+- **The new prebuilt-trie row** is the Rust bench's own workload: three prefix searches on one
+  trie. The `'pre'` row rebuilds the trie per call, so it is mostly construction.
 
 ## Reading the numbers
 

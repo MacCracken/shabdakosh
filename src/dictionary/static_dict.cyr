@@ -32,6 +32,16 @@
 var _SHBDK_STATIC_CACHE = 0;   # slot -> decoded ShbdkDictEntry* (0 = not decoded yet)
 var _SHBDK_STATIC_DICT = 0;    # shbdk_static_dict()'s handle (0 = unbuilt)
 
+# Forget the decoded-entry cache and shbdk_static_dict()'s handle. Both live in the
+# allocator like any other allocation, so a consumer that calls alloc_reset() must
+# call this too before the next static lookup (3.2). The table itself is constant
+# data and is never affected.
+fn shbdk_static_reset(): i64 {
+    _SHBDK_STATIC_CACHE = 0;
+    _SHBDK_STATIC_DICT = 0;
+    return 0;
+}
+
 # The packed-entry locator of `slot`: piece << SHBDK_PHF_OFF_BITS | byte offset.
 fn _shbdk_static_loc(slot): i64 {
     var chunk = _shbdk_phf_loc_piece(slot / SHBDK_PHF_LOC_CHUNK);
@@ -55,7 +65,22 @@ fn _shbdk_static_probe(word, n): i64 {
 fn _shbdk_static_slot(word): i64 {
     if (word == 0) { return 0 - 1; }
     if (_SHBDK_PHF_LEN == 0) { return 0 - 1; }
-    var n = strlen(word);
+    # The hash and the compare fold A-Z in place. A word with any non-ASCII byte is
+    # lowercased with Unicode semantics first (3.2), as shbdk_dict_lookup_entry
+    # does: the KELVIN SIGN U+212A lowercases to "k", so it can still be a key.
+    # One pass finds the length and any non-ASCII byte.
+    var n = 0;
+    var wide = 0;
+    var c = load8(word);
+    while (c != 0) {
+        if (c >= 128) { wide = 1; }
+        n = n + 1;
+        c = load8(word + n);
+    }
+    if (wide == 1) {
+        word = shbdk_lower_n(word, n);
+        n = strlen(word);
+    }
     var slot = _shbdk_static_probe(word, n);
     var loc = _shbdk_static_loc(slot);
     var key = _shbdk_cmudict_piece(loc >> SHBDK_PHF_OFF_BITS) + (loc & ((1 << SHBDK_PHF_OFF_BITS) - 1));

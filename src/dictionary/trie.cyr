@@ -46,9 +46,15 @@ fn _shbdk_trie_get_or_add_child(node, byte): i64 {
     return child;
 }
 
-# Copy buf[0..n) into a fresh NUL-terminated cstr.
-fn _shbdk_trie_dup_n(buf, n): i64 {
-    return shbdk_copyz(buf, n);
+# A result word: a Str over a fresh NUL-terminated copy of buf[0..n), carrying its
+# length, so a key with an embedded NUL comes back whole (3.2: str_from re-measured
+# it with strlen and cut it at the NUL). Allocation failure gives the empty Str.
+fn _shbdk_trie_str(buf, n): i64 {
+    var c = alloc(n + 1);
+    if (c == 0) { return str_from(""); }
+    memcpy(c, buf, n);
+    store8(c + n, 0);
+    return str_new(c, n);
 }
 
 # Creates an empty trie.
@@ -79,6 +85,7 @@ fn _shbdk_trie_insert_bytes(t, data, len): i64 {
 
 # Insert a word (cstr).
 fn shbdk_trie_insert(t, word): i64 {
+    if (word == 0) { return 0; }   # 3.2: a null word is no word (it crashed)
     return _shbdk_trie_insert_bytes(t, word, strlen(word));
 }
 
@@ -110,6 +117,7 @@ fn shbdk_trie_from_dict(dict): i64 {
 # 1 if the trie contains the exact word (cstr).
 #must_use
 fn shbdk_trie_contains(t, word): i64 {
+    if (word == 0) { return 0; }
     var node = load64(t + 0);
     var i = 0;
     while (load8(word + i) != 0) {
@@ -159,7 +167,7 @@ fn _shbdk_trie_collect(node, buf, depth, cap, results): i64 {
     store64(nodes + 0, node);
     store64(idxs + 0, 0);
     if (load64(node + 8) == 1) {
-        vec_push(results, str_from(_shbdk_trie_dup_n(buf, depth)));
+        vec_push(results, _shbdk_trie_str(buf, depth));
     }
     var cur = 0;
     var ci = 0;
@@ -181,7 +189,7 @@ fn _shbdk_trie_collect(node, buf, depth, cap, results): i64 {
                 store8(buf + d, load64(pair + 0));
                 child = load64(pair + 8);
                 if (load64(child + 8) == 1) {
-                    vec_push(results, str_from(_shbdk_trie_dup_n(buf, d + 1)));
+                    vec_push(results, _shbdk_trie_str(buf, d + 1));
                 }
                 sp = sp + 1;
                 store64(nodes + sp * 8, child);
@@ -196,6 +204,7 @@ fn _shbdk_trie_collect(node, buf, depth, cap, results): i64 {
 #must_use
 fn shbdk_trie_search_prefix(t, prefix): i64 {
     var results = vec_new();
+    if (prefix == 0) { return results; }   # 3.2: a null prefix matches nothing (it crashed)
     var node = load64(t + 0);
     var i = 0;
     while (load8(prefix + i) != 0) {

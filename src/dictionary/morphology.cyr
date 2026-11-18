@@ -17,12 +17,13 @@ var SHBDK_MORPH_SUFFIX = 2;
 var SHBDK_MORPH_INFIX  = 3;
 
 # ---- Morpheme ----------------------------------------------------------------
-# new(text, kind, phonemes). The text cstr is stored by reference (caller owns it
-# — in practice a string literal or an interned word).
+# new(text, kind, phonemes). The text is copied, as the Rust's String was (3.2:
+# it was stored by reference, so a caller reusing its buffer rewrote the morpheme).
 #must_use
 fn shbdk_morpheme_new(text, kind, phonemes): i64 {
     var m = alloc(24);
-    store64(m + 0, text);
+    if (text == 0) { text = ""; }
+    store64(m + 0, shbdk_copyz(text, strlen(text)));
     store64(m + 8, kind);
     store64(m + 16, phonemes);
     return m;

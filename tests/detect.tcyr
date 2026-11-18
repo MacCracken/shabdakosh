@@ -58,15 +58,28 @@ assert_eq(shbdk_detect_script_name("12345", oc, on), 0, "digits -> 0 (None)");
 
 # ================================================================
 # SECURITY regression (audit 2026-07-05): a truncated multibyte UTF-8 lead byte
-# followed by the NUL must be consumed as a single opaque byte — no read past the
-# terminator, no cursor advance past NUL. (0xF0/0xC3 land in Latin-1 -> Latn.)
-test_group("truncated UTF-8 lead (no OOB read)");
+# followed by the NUL must be consumed as a single byte — no read past the
+# terminator, no cursor advance past NUL.
+# 3.2: an ill-formed byte is U+FFFD, in no script (it was read as a Latin-1 letter).
+test_group("ill-formed UTF-8: U+FFFD, no OOB read, nothing swallowed");
 var t4 = alloc(4);
 store8(t4 + 0, 240); store8(t4 + 1, 0);   # lone 4-byte lead 0xF0, then NUL
-assert_streq(shbdk_detect_script(t4), "Latn", "lone 4-byte lead -> opaque byte, no crash");
+assert_eq(shbdk_detect_script(t4), 0, "lone 4-byte lead -> no script, no crash");
 var t2 = alloc(4);
 store8(t2 + 0, 195); store8(t2 + 1, 0);   # lone 2-byte lead 0xC3, then NUL
-assert_streq(shbdk_detect_script(t2), "Latn", "lone 2-byte lead -> opaque byte, no crash");
+assert_eq(shbdk_detect_script(t2), 0, "lone 2-byte lead -> no script, no crash");
+var t5 = alloc(4);
+store8(t5 + 0, 193); store8(t5 + 1, 129); store8(t5 + 2, 0);   # overlong C1 81 ("A")
+assert_eq(shbdk_detect_script(t5), 0, "overlong C1 81 is not the letter A");
+var t6 = alloc(8);
+store8(t6 + 0, 195); store8(t6 + 1, 40); store8(t6 + 2, 208); store8(t6 + 3, 191); store8(t6 + 4, 0);
+assert_streq(shbdk_detect_script(t6), "Cyrl", "C3 28 then U+043F: the bad lead swallows nothing");
+var t7 = alloc(8);
+store8(t7 + 0, 128); store8(t7 + 1, 208); store8(t7 + 2, 191); store8(t7 + 3, 0);   # stray continuation
+assert_streq(shbdk_detect_script(t7), "Cyrl", "a stray continuation byte does not eat the next letter");
+var t8 = alloc(8);
+store8(t8 + 0, 237); store8(t8 + 1, 160); store8(t8 + 2, 128); store8(t8 + 3, 0);   # surrogate D800
+assert_eq(shbdk_detect_script(t8), 0, "an encoded surrogate is ill-formed");
 
 # ================================================================
 # 3.1.2 / varna 2.6.0: Glagolitic and Bopomofo are registered scripts, so words in

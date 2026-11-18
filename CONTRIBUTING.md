@@ -18,7 +18,7 @@ dictionary for AGNOS, written in [CYRIUS](https://github.com/MacCracken/cyrius).
 - `cyrius deps` to resolve the git+tag dependencies (svara, varna) into `lib/`.
 
 There is no Rust/cargo toolchain — the Rust original is preserved at `rust-old/` as the
-parity oracle only (do not modify it).
+functionality reference only (do not modify it).
 
 ## Code Quality Requirements
 
@@ -40,15 +40,17 @@ cyrius bench                   # benchmarks (auto-discovers benches/)
 
 ## Code Standards
 
-- **Cross-check against `rust-old/`** — the correctness bar is "matches what the Rust oracle did."
-  Diverge only with an ADR (`docs/adr/`).
-- **Prefix everything** `shabda_` / `SHABDA_` (the distlib links flat).
+- **`rust-old/` is the capability list; accuracy is the oracle** ([ADR 005](docs/adr/005-accuracy-over-rust-parity.md)).
+  Every Rust capability must exist here; where the Rust is wrong the port is right, and a
+  consumer-visible output change goes in the CHANGELOG (an ADR when it is a real design choice).
+- **Prefix everything** `shbdk_` / `SHBDK_` (the distlib links flat). Never `shabda_`: that prefix
+  belongs to the G2P engine shabda.
 - **Additive enums**: give every `match` a `_ =>` catch-all arm (the CYRIUS form of the Rust
   `#[non_exhaustive]` invariant).
 - **`#must_use`** on pure functions.
 - **Zero `unwrap`/`panic`** — errors are **sakshi** packed-i64 codes (`0 == ok`, test with
-  `shabda_is_err`). A fallible function returns a payload pointer (`0` == none/error) or writes its
-  payload to an out-param. String-returning functions must be annotated `: cstring`.
+  `shbdk_is_err`; the reason a parse failed is `shbdk_last_error()`). A fallible function returns
+  a payload pointer (`0` == none/error) or writes its payload to an out-param. String-returning functions must be annotated `: cstring`.
 - **Serialize + Deserialize round-trip** for every type carrying state — hand-written codecs (JSON
   via **bayan**), each with a round-trip test.
 - Dictionary-first, accuracy over speed. O(1) base-dictionary lookup.

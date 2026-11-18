@@ -111,20 +111,23 @@ fn shbdk_fallback_dict_model(f): i64 {
 # (owned) phoneme vec, or 0 if none.
 #must_use
 fn shbdk_fallback_dict_lookup(f, word): i64 {
+    if (word == 0) { return 0; }   # 3.2: a null word is no word (it crashed)
     var phonemes = shbdk_dict_lookup(load64(f + 0), word);
     if (phonemes != 0) { return _shbdk_clone_iv(phonemes); }
-    var key = str_from(str_lower_cstr(word));
+    var key = str_from(shbdk_lower_cstr(word));
     var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
-    return shbdk_g2p_result_into_phonemes(result);
+    # 3.2: a copy, like the dictionary paths — a model may reuse its output vec.
+    return _shbdk_clone_iv(shbdk_g2p_result_into_phonemes(result));
 }
 
 # Look up with source: user overlay -> base -> G2P. Returns a ShbdkLookupResult
 # (phonemes + source tag + confidence), or 0 if none.
 #must_use
 fn shbdk_fallback_dict_lookup_with_source(f, word): i64 {
+    if (word == 0) { return 0; }
     var dict = load64(f + 0);
-    var key = str_from(str_lower_cstr(word));
+    var key = str_from(shbdk_lower_cstr(word));
     var e = map_get(shbdk_dict_user_entries(dict), key);
     if (e != 0) {
         var up = _shbdk_clone_iv(shbdk_dict_entry_primary_phonemes(e));
@@ -137,7 +140,7 @@ fn shbdk_fallback_dict_lookup_with_source(f, word): i64 {
     }
     var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
-    var gp = shbdk_g2p_result_into_phonemes(result);
+    var gp = _shbdk_clone_iv(shbdk_g2p_result_into_phonemes(result));
     var gc = shbdk_g2p_result_confidence(result);
     return _shbdk_lookup_result_new(gp, SHBDK_SOURCE_G2P_MODEL, gc);
 }
@@ -151,9 +154,10 @@ fn shbdk_fallback_dict_lookup_entry(f, word): i64 {
 # Promote a G2P prediction to the user overlay (no-op if already in the dict).
 # Returns 1 if promoted.
 fn shbdk_fallback_dict_promote_prediction(f, word): i64 {
+    if (word == 0) { return 0; }
     var dict = load64(f + 0);
     if (shbdk_dict_lookup_entry(dict, word) != 0) { return 0; }
-    var key = str_from(str_lower_cstr(word));
+    var key = str_from(shbdk_lower_cstr(word));
     var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
     shbdk_dict_insert_user(dict, word, shbdk_g2p_result_phonemes(result));
@@ -162,9 +166,10 @@ fn shbdk_fallback_dict_promote_prediction(f, word): i64 {
 
 # Promote only if confidence >= threshold (f64 bits). Returns 1 if promoted.
 fn shbdk_fallback_dict_promote_if_confident(f, word, threshold): i64 {
+    if (word == 0) { return 0; }
     var dict = load64(f + 0);
     if (shbdk_dict_lookup_entry(dict, word) != 0) { return 0; }
-    var key = str_from(str_lower_cstr(word));
+    var key = str_from(shbdk_lower_cstr(word));
     var result = _shbdk_g2p_predict(f, key);
     if (result == 0) { return 0; }
     if (f64_ge(shbdk_g2p_result_confidence(result), threshold) == 1) {
@@ -188,7 +193,8 @@ var SHBDK_FST_NOTATION_IPA     = 1;
 #must_use
 fn shbdk_fst_model_new(model_path, notation): i64 {
     var m = alloc(16);
-    store64(m + 0, model_path);
+    if (model_path == 0) { model_path = ""; }
+    store64(m + 0, shbdk_copyz(model_path, strlen(model_path)));   # 3.2: copied, as the Rust's String
     store64(m + 8, notation);
     return m;
 }

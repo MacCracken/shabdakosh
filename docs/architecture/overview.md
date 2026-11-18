@@ -7,7 +7,7 @@
 > CMUdict/PLS/SSML/JSON/binary I/O.
 
 This is a Cyrius port of a 7,085-line Rust library (preserved at `rust-old/` as
-the parity oracle). The surface is **flat, C-style, `shbdk_`-prefixed
+the functionality reference; accuracy, not Rust parity, is the correctness bar). The surface is **flat, C-style, `shbdk_`-prefixed
 functions** — no methods, traits, generics, `use`, `Cargo.toml`, or crates.io.
 Consumers pull the bundled `dist/shabdakosh.cyr`.
 
@@ -28,11 +28,12 @@ shabdakosh/
 │   ├── main.cyr                    — smoke entry: include order + real-usage smoke calls
 │   │
 │   │  ── L0 error ──
-│   ├── error.cyr                   — sakshi-packed error codes + shbdk_err_name; SHBDK_PH_NONE sentinel
+│   ├── error.cyr                   — sakshi-packed error codes, shbdk_err_name, shbdk_last_error;
+│   │                                SHBDK_PH_NONE; UTF-8 / White_Space / lowercase text primitives
 │   │
 │   │  ── L1 leaves (notation bridges + record types) ──
 │   ├── arpabet.cyr                 — ARPABET ↔ SVARA_PH_* (with/without stress)
-│   ├── ipa.cyr                     — IPA ↔ SVARA_PH_*, greedy longest-byte-match parser
+│   ├── ipa.cyr                     — IPA ↔ SVARA_PH_* for all 100 phonemes, table-driven greedy parser
 │   ├── notation.cyr                — ARPABET/IPA/X-SAMPA via a notation-TAG (not a trait)
 │   └── dictionary/
 │       ├── entry.cyr               — Pronunciation / Region / DictEntry (freq-desc sorted)
@@ -40,7 +41,7 @@ shabdakosh/
 │       ├── syllable.cyr            — Syllable / StressLevel + syllabify (Maximal Onset)
 │       │
 │       │  ── L2 generated base data ──
-│       ├── _cmudict_data.cyr       — packed-string pieces + count + accessor (~276 KB)
+│       ├── _cmudict_data.cyr       — packed-string pieces + count + accessor (~285 KB)
 │       ├── cmudict.cyr             — loads the data into a lib/hashmap at runtime
 │       │
 │       │  ── L3 keystone ──
@@ -61,6 +62,7 @@ shabdakosh/
 │       └── format/
 │           ├── mod.cyr             — CMUdict + IPA parse/emit, XML escape, file I/O
 │           ├── json.cyr            — hand-written PronunciationDict JSON codec (bayan DOM)
+│           ├── records.cyr         — JSON codec + equality for every other record type
 │           ├── pls.cyr             — W3C PLS XML parse/emit
 │           ├── ssml.cyr            — SSML <phoneme> tag parse/emit
 │           └── binary.cyr          — compact hand-rolled binary (SHBD magic, LE)
@@ -240,9 +242,11 @@ JSON IPA.
   lives in the format layer (sort-on-export).
 - **Additive enums** — the Rust `#[non_exhaustive]` invariant carries over: every
   tag `match`/`switch` keeps a `_ =>` catch-all arm.
-- **cross-checked against `rust-old/`** — the correctness bar is "matches what
-  Rust did"; documented divergences (ASCII-only case-folding, single-pass
-  `xml_unescape`, pointer-sharing `merge`) live in `state.md`, not silent.
+- **Accuracy is the oracle; `rust-old/` is the capability list** — every Rust
+  capability is reachable here, and where the Rust was wrong the port is right (IY is
+  /iː/, every svara phoneme has its IPA, phonotactics is syllable-aware, frequencies are
+  0.0–1.0, the readers check what they read). [ADR 005](../adr/005-accuracy-over-rust-parity.md)
+  lists each place the port's output deliberately differs from the Rust's.
 
 ## Key Handles & Constants
 

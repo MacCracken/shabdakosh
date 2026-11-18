@@ -56,5 +56,14 @@ assert_eq(shbdk_lookup_stream_size_hint(s5), 3, "3 remaining at start");
 shbdk_lookup_stream_next(s5);
 assert_eq(shbdk_lookup_stream_size_hint(s5), 2, "2 remaining after 1");
 
+# ================================================================
+test_group("stream: the lookup of 'the'");
+var sth = shbdk_dict_lookup_stream(shbdk_dict_english(), _w2("the", "zzzz"));
+assert_eq(shbdk_lookup_stream_next(sth), 1, "a first item");
+assert_streq(shbdk_stream_word(sth), "the", "the");
+assert_neq(shbdk_stream_phonemes(sth), 0, "the has phonemes");
+assert_eq(shbdk_lookup_stream_next(sth), 1, "a second item");
+assert_eq(shbdk_stream_phonemes(sth), 0, "zzzz has none");
+
 var rc = assert_summary();
 syscall(60, rc);

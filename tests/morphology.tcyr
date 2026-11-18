@@ -7,6 +7,7 @@ include "lib/hisab.cyr"
 include "lib/goonj.cyr"
 include "lib/naad.cyr"
 include "lib/svara.cyr"
+include "src/error.cyr"
 include "src/dictionary/morphology.cyr"
 
 alloc_init();

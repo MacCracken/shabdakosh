@@ -56,8 +56,8 @@ stdlib = [
     "syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args",
     "assert", "fnptr", "atomic", "sakshi", "math", "ganita", "tagged",
     "hashmap",   # base-dictionary store (the hashbrown replacement)
-    "bayan",     # JSON codecs (shbdk_to_json / shbdk_from_json)
-    "mmap",      # memory-mapped lazy dictionary (shbdk_lazy_open)
+    "bayan",     # JSON codecs, and the Unicode tables the text layer uses
+    "mmap",      # the lazy dictionary (shbdk_lazy_open) and the IPA symbol table
     "slice", "result",   # leaves the varna bundle needs (2.6.0: result + hashmap)
 ]
 ```

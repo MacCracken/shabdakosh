@@ -102,5 +102,36 @@ var fbf = shbdk_dict_with_fallback(shbdk_dict_english_minimal(), &shbdk_fst_mode
 assert_eq(shbdk_fallback_dict_lookup(fbf, "xyzzy"), 0, "FstModel stub -> None for unknown");
 assert_neq(shbdk_fallback_dict_lookup(fbf, "hello"), 0, "hello still from dict");
 
+# ================================================================
+# 3.2: a model may reuse one scratch vec for every prediction; promote and lookup
+# copy, so an earlier promotion is not rewritten by the next prediction.
+var _SCRATCH = 0;
+fn _scratch_predict(word, state): i64 {
+    if (_SCRATCH == 0) { _SCRATCH = vec_new(); }
+    while (vec_len(_SCRATCH) > 0) { vec_pop(_SCRATCH); }
+    if (streq(word, "alpha") == 1) { vec_push(_SCRATCH, SVARA_PH_PLOSIVE_K); }
+    else { vec_push(_SCRATCH, SVARA_PH_PLOSIVE_T); vec_push(_SCRATCH, SVARA_PH_PLOSIVE_T); }
+    return shbdk_g2p_result_new(_SCRATCH, 0x3FF0000000000000);
+}
+test_group("g2p: promotions and predictions are copies");
+var sf = shbdk_fallback_dict_new(shbdk_dict_new(), &_scratch_predict, 0);
+shbdk_fallback_dict_promote_prediction(sf, "alpha");
+shbdk_fallback_dict_promote_prediction(sf, "beta");
+assert_eq(vec_len(shbdk_dict_lookup(shbdk_fallback_dict_dict(sf), "alpha")), 1, "alpha keeps [k] (it became [t t])");
+var la = shbdk_fallback_dict_lookup(sf, "gamma");
+var lb = shbdk_fallback_dict_lookup(sf, "alpha");
+assert_eq(vec_len(la), 2, "a prediction is the caller's own vec");
+assert_eq(shbdk_fallback_dict_lookup(sf, 0), 0, "a null word (it crashed)");
+assert_eq(shbdk_fallback_dict_lookup_with_source(sf, 0), 0, "a null word, with source");
+assert_eq(shbdk_fallback_dict_promote_prediction(sf, 0), 0, "promote a null word");
+assert_eq(shbdk_fallback_dict_promote_if_confident(sf, 0, 0), 0, "promote_if_confident a null word");
+var ipr = shbdk_g2p_result_new(_v2(SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_ASH), 0);
+assert_eq(vec_get(shbdk_g2p_result_into_phonemes(ipr), 1), SVARA_PH_VOWEL_ASH, "into_phonemes is [k æ]");
+var pbuf = alloc(8);
+store8(pbuf, 97); store8(pbuf + 1, 0);
+var fmc = shbdk_fst_model_new(pbuf, SHBDK_FST_NOTATION_IPA);
+store8(pbuf, 98);
+assert_streq(shbdk_fst_model_path(fmc), "a", "the model path is copied");
+
 var rc = assert_summary();
 syscall(60, rc);

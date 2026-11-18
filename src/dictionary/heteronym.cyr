@@ -36,6 +36,12 @@ fn shbdk_heteronym_context_position(c): i64 {
     return load64(c + 8);
 }
 
+# Move the target to index `position` (the Rust's field was public). Returns `c`.
+fn shbdk_heteronym_context_set_position(c, position): i64 {
+    store64(c + 8, position);
+    return c;
+}
+
 # Target word (cstr), or "" if the position is out of bounds.
 #must_use
 fn shbdk_heteronym_target_word(c): cstring {

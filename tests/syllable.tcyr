@@ -85,5 +85,71 @@ assert_eq(_shbdk_is_nucleus(SVARA_PH_PLOSIVE_K), 0, "plosive K not nucleus");
 assert_eq(_shbdk_is_nucleus(SVARA_PH_NASAL_M), 0, "nasal M not nucleus");
 assert_eq(_shbdk_is_nucleus(SVARA_PH_SILENCE), 0, "silence not nucleus");
 
+# ================================================================
+# 3.2: true Maximal Onset (the longest legal onset), and every svara vowel is a
+# nucleus. The Rust kept one consonant as coda whenever two or more sat between
+# vowels, and counted only the 20 English vowels.
+fn _pv(a, b, c, d, e, f, g): i64 {
+    var v = vec_new();
+    if (a >= 0) { vec_push(v, a); } if (b >= 0) { vec_push(v, b); } if (c >= 0) { vec_push(v, c); }
+    if (d >= 0) { vec_push(v, d); } if (e >= 0) { vec_push(v, e); } if (f >= 0) { vec_push(v, f); }
+    if (g >= 0) { vec_push(v, g); }
+    return v;
+}
+fn _sy_lens(sy): i64 {
+    # syllable lengths as decimal digits, e.g. [1, 4] -> 14
+    var r = 0;
+    var i = 0;
+    while (i < vec_len(sy)) { r = r * 10 + shbdk_syllable_len(vec_get(sy, i)); i = i + 1; }
+    return r;
+}
+var X = 0 - 1;
+test_group("Maximal Onset: the longest legal onset");
+# astray /ə s t ɹ eɪ/ -> [ə][s t ɹ eɪ]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_VOWEL_SCHWA, SVARA_PH_FRIC_S, SVARA_PH_PLOSIVE_T, SVARA_PH_APPROX_R,
+        SVARA_PH_DIPH_EI, X, X))), 14, "astray -> [ə][stɹeɪ] (was [əs][tɹeɪ])");
+# handbag /h æ n d b æ g/ -> [h æ n d][b æ g]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_ASH, SVARA_PH_NASAL_N, SVARA_PH_PLOSIVE_D,
+        SVARA_PH_PLOSIVE_B, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_G))), 43, "handbag -> [hænd][bæg] (was /db/ onset)");
+# pumpkin /p ʌ m p k ɪ n/ -> [p ʌ m p][k ɪ n]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_PLOSIVE_P, SVARA_PH_VOWEL_CUP_V, SVARA_PH_NASAL_M, SVARA_PH_PLOSIVE_P,
+        SVARA_PH_PLOSIVE_K, SVARA_PH_VOWEL_NEAR_I, SVARA_PH_NASAL_N))), 43, "pumpkin -> [pʌmp][kɪn] (not /pk/)");
+# extra /ɛ k s t ɹ ə/ -> [ɛ k][s t ɹ ə]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_VOWEL_OPEN_E, SVARA_PH_PLOSIVE_K, SVARA_PH_FRIC_S, SVARA_PH_PLOSIVE_T,
+        SVARA_PH_APPROX_R, SVARA_PH_VOWEL_SCHWA, X))), 24, "extra -> [ɛk][stɹə]");
+# atlas /æ t l ə s/ -> [æ t][l ə s]: English has no /tl/ onset
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T, SVARA_PH_LATERAL_L, SVARA_PH_VOWEL_SCHWA,
+        SVARA_PH_FRIC_S, X, X))), 23, "atlas -> [æt][ləs]");
+# singer /s ɪ ŋ ɚ/ -> [s ɪ ŋ][ɚ]: ŋ never begins a syllable
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_FRIC_S, SVARA_PH_VOWEL_NEAR_I, SVARA_PH_NASAL_NG, SVARA_PH_VOWEL_BIRD,
+        X, X, X))), 31, "singer -> [sɪŋ][ɚ]");
+# hello /h ɛ l oʊ/ -> [h ɛ][l oʊ] (unchanged)
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_OPEN_E, SVARA_PH_LATERAL_L, SVARA_PH_DIPH_OU,
+        X, X, X))), 22, "hello -> [hɛ][loʊ]");
+
+test_group("every svara vowel is a nucleus");
+# über /y b ə/ -> [y][b ə]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_VOWEL_Y, SVARA_PH_PLOSIVE_B, SVARA_PH_VOWEL_SCHWA, X, X, X, X))), 12,
+  "über has 2 syllables (was 1)");
+# Müller /m y l ə ɹ/ -> [m y][l ə ɹ]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_NASAL_M, SVARA_PH_VOWEL_Y, SVARA_PH_LATERAL_L, SVARA_PH_VOWEL_SCHWA,
+        SVARA_PH_APPROX_R, X, X))), 23, "Müller has 2 syllables (was 1)");
+var nuc_ok = 0;
+var pi = 0;
+while (pi < 101) {
+    var c = svara_phoneme_class(pi);
+    if ((c == SVARA_CLASS_VOWEL || c == SVARA_CLASS_DIPHTHONG) == _shbdk_is_nucleus(pi)) { nuc_ok = nuc_ok + 1; }
+    pi = pi + 1;
+}
+assert_eq(nuc_ok, 101, "nucleus == svara vowel or diphthong, all 101");
+
+test_group("non-English clusters: sonority");
+# /a ʈ r a/: ʈ then trill rises -> [a][ʈ r a]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_VOWEL_A, SVARA_PH_PLOSIVE_RETRO_T, SVARA_PH_TRILL_ALVEOLAR,
+        SVARA_PH_VOWEL_A, X, X, X))), 13, "rising sonority is an onset");
+# /a ç t a/: ç then t falls -> [a ç][t a]
+assert_eq(_sy_lens(shbdk_syllabify(_pv(SVARA_PH_VOWEL_A, SVARA_PH_FRIC_PALATAL_C, SVARA_PH_PLOSIVE_T, SVARA_PH_VOWEL_A,
+        X, X, X))), 22, "falling sonority splits");
+
 var rc = assert_summary();
 syscall(60, rc);

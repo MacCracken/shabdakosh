@@ -21,7 +21,7 @@
 #
 # KEY CONTRACT (bit us in 3.0.4 — read this before touching a map key): entry-map
 # keys are `Str`, and they are NOT all NUL-terminated. Keys inserted through
-# shbdk_dict_insert* come from str_from(str_lower_cstr(...)) and happen to be;
+# shbdk_dict_insert* come from str_from(shbdk_lower_cstr(...)) and happen to be;
 # the BASE dictionary's keys come from cmudict.cyr as str_new(piece + s, len) —
 # VIEWS into the packed _cmudict_data string literals, where the byte after the
 # key is '|', not NUL. So a key is only ever safe to use as (str_data, str_len)
@@ -30,20 +30,6 @@
 # shbdk_to_cmudict(shbdk_dict_english()) came to emit 128 MB instead of 300 KB.
 
 # ---- small string helpers ----------------------------------------------------
-# 1 if the cstr has no ASCII uppercase (lookup fast-path — avoids a lowercase copy).
-fn _shbdk_is_lower_cstr(s): i64 {
-    var i = 0;
-    var c = 0;
-    while (load8(s + i) != 0) {
-        c = load8(s + i);
-        if (c >= 65) {
-            if (c <= 90) { return 0; }
-        }
-        i = i + 1;
-    }
-    return 1;
-}
-
 # 1 if Str a sorts before Str b (byte-lexicographic).
 fn _shbdk_str_lt(a, b): i64 {
     var ad = str_data(a);
@@ -267,11 +253,8 @@ fn _shbdk_pv4(a, b, c, d): i64 {
 }
 
 # ---- shared file-load limits / sizing ----------------------------------------
-# Hard ceiling on a dictionary file this library will load, in bytes. A read that
-# reaches it is FAILED LOUD rather than parsed as a truncated prefix (a partial
-# dictionary looks valid). Named here (3.0.4) instead of the 8388608/8388607
-# literals that were repeated across the loaders.
-var SHBDK_MAX_FILE_BYTES = 8388608;
+# 3.2: there is no load ceiling any more. SHBDK_MAX_FILE_BYTES (8 MB, 3.0.4) made
+# every loader refuse files its saver had just written; buffers follow the file.
 
 # Byte size of `path`, or negative if it cannot be opened / sized.
 #
@@ -287,6 +270,22 @@ fn _shbdk_file_size_of(path): i64 {
     var n = xlseek(fd, 0, 2);         # SEEK_END
     file_close(fd);
     return n;
+}
+
+# Read a whole file into a fresh buffer (NUL-terminated past its end) and return
+# it as a Str of the bytes read, or 0 with the reason in shbdk_last_error(). Shared
+# by the CMUdict and binary loaders (3.2).
+fn _shbdk_read_file_str(path): i64 {
+    if (path == 0) { return _shbdk_fail("no path"); }
+    var size = _shbdk_file_size_of(path);
+    if (size < 0) { return _shbdk_fail_line(0, "failed to read file: ", path, 0, strlen(path), 0); }
+    var buf = alloc(size + 1);
+    if (buf == 0) { return _shbdk_fail("failed to read file: out of memory"); }
+    var n = 0;
+    if (size > 0) { n = file_read_all(path, buf, size); }
+    if (n < 0) { return _shbdk_fail_line(0, "failed to read file: ", path, 0, strlen(path), 0); }
+    store8(buf + n, 0);
+    return str_new(buf, n);
 }
 
 # ---- construction ------------------------------------------------------------
@@ -337,33 +336,37 @@ fn shbdk_dict_from_simple_entries(simple): i64 {
 }
 
 # ---- inserts / removal -------------------------------------------------------
+# OWNERSHIP (3.2): insert / insert_user copy the phoneme vec, as the Rust's
+# `&[Phoneme]` did — a caller may reuse its buffer. insert_entry /
+# insert_user_entry take the entry itself (the Rust moved a DictEntry in), so the
+# dictionary owns it afterwards. Keys are lowercased with Unicode semantics.
 fn shbdk_dict_insert(d, word, phonemes): i64 {
-    map_set(load64(d + 0), str_from(str_lower_cstr(word)), shbdk_dict_entry_from_phonemes(phonemes));
+    map_set(load64(d + 0), str_from(shbdk_lower_cstr(word)), shbdk_dict_entry_from_phonemes(phonemes));
     return 0;
 }
 
 # Inserts a full entry into the base dictionary, keyed by the lowercased word.
 fn shbdk_dict_insert_entry(d, word, entry): i64 {
-    map_set(load64(d + 0), str_from(str_lower_cstr(word)), entry);
+    map_set(load64(d + 0), str_from(shbdk_lower_cstr(word)), entry);
     return 0;
 }
 
 # Inserts a word into the user overlay with a single pronunciation. User entries take
 # precedence over base entries during lookup.
 fn shbdk_dict_insert_user(d, word, phonemes): i64 {
-    map_set(load64(d + 8), str_from(str_lower_cstr(word)), shbdk_dict_entry_from_phonemes(phonemes));
+    map_set(load64(d + 8), str_from(shbdk_lower_cstr(word)), shbdk_dict_entry_from_phonemes(phonemes));
     return 0;
 }
 
 # Inserts a full entry into the user overlay, keyed by the lowercased word.
 fn shbdk_dict_insert_user_entry(d, word, entry): i64 {
-    map_set(load64(d + 8), str_from(str_lower_cstr(word)), entry);
+    map_set(load64(d + 8), str_from(shbdk_lower_cstr(word)), entry);
     return 0;
 }
 
 # Remove from the user overlay; 1 if it was present.
 fn shbdk_dict_remove_user(d, word): i64 {
-    return map_delete(load64(d + 8), str_from(str_lower_cstr(word)));
+    return map_delete(load64(d + 8), str_from(shbdk_lower_cstr(word)));
 }
 
 # ---- language ----------------------------------------------------------------
@@ -372,16 +375,18 @@ fn shbdk_dict_language(d): cstring {
     return load64(d + 16);
 }
 
-# Sets the ISO 639 language code. `code` is stored as given, not copied.
+# Sets the ISO 639 language code (copied; a null code clears it).
+# 3.2: was stored as given, so mutating the caller's buffer changed the dictionary.
 fn shbdk_dict_set_language(d, code): i64 {
-    store64(d + 16, code);
+    if (code == 0) { store64(d + 16, 0); return 0; }
+    store64(d + 16, shbdk_copyz(code, strlen(code)));
     return 0;
 }
 
 # Builder form of shbdk_dict_set_language: sets the code on `d` and returns `d`.
 #must_use
 fn shbdk_dict_with_language(d, code): i64 {
-    store64(d + 16, code);
+    shbdk_dict_set_language(d, code);
     return d;
 }
 
@@ -433,10 +438,11 @@ fn shbdk_dict_lookup_entry(d, word): i64 {
     # deref address 0 in the case scan below. One predictable branch on the hot
     # path (measured: no change to the ~130 ns lookup).
     if (word == 0) { return 0; }
-    if (_shbdk_is_lower_cstr(word) == 1) {
+    # 3.2: Unicode lowercase (was ASCII only, so "ÜBER" never found "über").
+    if (shbdk_is_lower_cstr(word) == 1) {
         key = str_from(word);
     } else {
-        key = str_from(str_lower_cstr(word));
+        key = str_from(shbdk_lower_cstr(word));
     }
     return _shbdk_dict_lookup_entry_str(d, key);
 }
@@ -506,6 +512,17 @@ fn shbdk_dict_merge_conservative(d, other): i64 {
     return 0;
 }
 
+# Deep copy of a dictionary: both layers' entries are cloned, the language code is
+# copied. (The Rust derived Clone on PronunciationDict.)
+#must_use
+fn shbdk_dict_clone(d): i64 {
+    var c = shbdk_dict_new();
+    _shbdk_map_merge_into(load64(c + 0), load64(d + 0));
+    _shbdk_map_merge_into(load64(c + 8), load64(d + 8));
+    shbdk_dict_set_language(c, load64(d + 16));
+    return c;
+}
+
 # ---- english_minimal ---------------------------------------------------------
 # ~29 common function words (testing / memory-constrained use).
 #must_use
@@ -527,9 +544,9 @@ fn shbdk_dict_english_minimal(): i64 {
     shbdk_dict_insert(d, "that", _shbdk_pv3(SVARA_PH_FRIC_DH, SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T));
     shbdk_dict_insert(d, "for", _shbdk_pv3(SVARA_PH_FRIC_F, SVARA_PH_VOWEL_OPEN_O, SVARA_PH_APPROX_R));
     shbdk_dict_insert(d, "you", _shbdk_pv2(SVARA_PH_APPROX_J, SVARA_PH_VOWEL_U));
-    shbdk_dict_insert(d, "he", _shbdk_pv2(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_E));
-    shbdk_dict_insert(d, "she", _shbdk_pv2(SVARA_PH_FRIC_SH, SVARA_PH_VOWEL_E));
-    shbdk_dict_insert(d, "we", _shbdk_pv2(SVARA_PH_APPROX_W, SVARA_PH_VOWEL_E));
+    shbdk_dict_insert(d, "he", _shbdk_pv2(SVARA_PH_FRIC_H, SVARA_PH_VOWEL_LONG_I));
+    shbdk_dict_insert(d, "she", _shbdk_pv2(SVARA_PH_FRIC_SH, SVARA_PH_VOWEL_LONG_I));
+    shbdk_dict_insert(d, "we", _shbdk_pv2(SVARA_PH_APPROX_W, SVARA_PH_VOWEL_LONG_I));
     shbdk_dict_insert(d, "they", _shbdk_pv2(SVARA_PH_FRIC_DH, SVARA_PH_DIPH_EI));
     shbdk_dict_insert(d, "this", _shbdk_pv3(SVARA_PH_FRIC_DH, SVARA_PH_VOWEL_NEAR_I, SVARA_PH_FRIC_S));
     shbdk_dict_insert(d, "with", _shbdk_pv3(SVARA_PH_APPROX_W, SVARA_PH_VOWEL_NEAR_I, SVARA_PH_FRIC_TH));
@@ -582,9 +599,20 @@ fn shbdk_dict_diff_is_empty(dd): i64 {
     return 0;
 }
 
-# Deep pronunciation equality (phonemes + freq bits + region).
-fn _shbdk_pron_eq(a, b): i64 {
-    if (load64(a + 8) != load64(b + 8)) { return 0; }
+# Frequency equality: the same value. 0.0 equals -0.0 (IEEE), and a NaN equals
+# the same NaN — a dictionary diffed against itself has no changes. (3.2: was a bit
+# compare, which split 0.0 / -0.0; the Rust's f32 `==` instead never matched a NaN.)
+fn _shbdk_freq_eq(a, b): i64 {
+    if (a == b) { return 1; }
+    if (f64_ge(a, b) == 1 && f64_ge(b, a) == 1) { return 1; }
+    return 0;
+}
+
+# Deep pronunciation equality (phonemes + frequency + region). The Rust derived
+# PartialEq on Pronunciation.
+#must_use
+fn shbdk_pronunciation_eq(a, b): i64 {
+    if (_shbdk_freq_eq(load64(a + 8), load64(b + 8)) == 0) { return 0; }
     if (load64(a + 16) != load64(b + 16)) { return 0; }
     var pa = load64(a + 0);
     var pb = load64(b + 0);
@@ -598,15 +626,17 @@ fn _shbdk_pron_eq(a, b): i64 {
     return 1;
 }
 
-# Deep DictEntry equality (same pronunciations in order).
-fn _shbdk_dict_entry_eq(a, b): i64 {
+# Deep DictEntry equality (same pronunciations in order). The Rust derived
+# PartialEq on DictEntry.
+#must_use
+fn shbdk_dict_entry_eq(a, b): i64 {
     var pa = shbdk_dict_entry_all(a);
     var pb = shbdk_dict_entry_all(b);
     var na = vec_len(pa);
     if (na != vec_len(pb)) { return 0; }
     var i = 0;
     while (i < na) {
-        if (_shbdk_pron_eq(vec_get(pa, i), vec_get(pb, i)) == 0) { return 0; }
+        if (shbdk_pronunciation_eq(vec_get(pa, i), vec_get(pb, i)) == 0) { return 0; }
         i = i + 1;
     }
     return 1;
@@ -653,7 +683,7 @@ fn shbdk_dict_diff(left, right): i64 {
             if (r == 0) {
                 vec_push(load64(dd + 8), w);
             } else {
-                if (_shbdk_dict_entry_eq(l, r) == 0) { vec_push(load64(dd + 16), w); }
+                if (shbdk_dict_entry_eq(l, r) == 0) { vec_push(load64(dd + 16), w); }
             }
         }
         i = i + 1;

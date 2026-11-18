@@ -22,7 +22,7 @@ assert_eq(shbdk_arpabet_to_phoneme("EH"), SVARA_PH_VOWEL_OPEN_E, "EH");
 assert_eq(shbdk_arpabet_to_phoneme("ER"), SVARA_PH_VOWEL_BIRD, "ER");
 assert_eq(shbdk_arpabet_to_phoneme("EY"), SVARA_PH_DIPH_EI, "EY");
 assert_eq(shbdk_arpabet_to_phoneme("IH"), SVARA_PH_VOWEL_NEAR_I, "IH");
-assert_eq(shbdk_arpabet_to_phoneme("IY"), SVARA_PH_VOWEL_E, "IY");
+assert_eq(shbdk_arpabet_to_phoneme("IY"), SVARA_PH_VOWEL_LONG_I, "IY is FLEECE /iː/ (3.2; was /e/)");
 assert_eq(shbdk_arpabet_to_phoneme("OW"), SVARA_PH_DIPH_OU, "OW");
 assert_eq(shbdk_arpabet_to_phoneme("OY"), SVARA_PH_DIPH_OI, "OY");
 assert_eq(shbdk_arpabet_to_phoneme("UH"), SVARA_PH_VOWEL_NEAR_U, "UH");
@@ -79,7 +79,7 @@ assert_eq(shbdk_arpabet_to_phoneme_with_stress("AH2"), SVARA_PH_VOWEL_CUP_V, "AH
 # ================================================================
 test_group("with_stress strips digits");
 assert_eq(shbdk_arpabet_to_phoneme_with_stress("AA1"), SVARA_PH_VOWEL_OPEN_A, "AA1 -> open-a");
-assert_eq(shbdk_arpabet_to_phoneme_with_stress("IY0"), SVARA_PH_VOWEL_E, "IY0 -> vowel-e");
+assert_eq(shbdk_arpabet_to_phoneme_with_stress("IY0"), SVARA_PH_VOWEL_LONG_I, "IY0 -> long i");
 assert_eq(shbdk_arpabet_to_phoneme_with_stress("B"), SVARA_PH_PLOSIVE_B, "B -> plosive-b");
 
 # ================================================================
@@ -91,6 +91,17 @@ assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_PLOSIVE_K), "K", "plosive-k -> K"
 assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_NASAL_NG), "NG", "nasal-ng -> NG");
 assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_APPROX_J), "Y", "approx-j -> Y");
 assert_eq(shbdk_phoneme_to_arpabet(SVARA_PH_SILENCE), 0, "silence has no arpabet");
+
+# ================================================================
+# 3.2: /iː/ and /i/ write IY1; /e/ has no ARPABET symbol (EY is /eɪ/).
+test_group("IY both ways");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_VOWEL_LONG_I), "IY1", "long i -> IY1");
+assert_streq(shbdk_phoneme_to_arpabet(SVARA_PH_VOWEL_I), "IY1", "i -> IY1");
+assert_eq(shbdk_phoneme_to_arpabet(SVARA_PH_VOWEL_E), 0, "e has no ARPABET symbol");
+assert_eq(shbdk_arpabet_base_len("AH1"), 2, "base of AH1 is AH");
+assert_eq(shbdk_arpabet_base_len("AH2"), 2, "base of AH2 is AH");
+assert_eq(shbdk_arpabet_base_len(""), 0, "base of empty is empty");
+assert_eq(shbdk_arpabet_stress(""), SHBDK_PH_NONE, "empty has no stress");
 
 var rc = assert_summary();
 syscall(60, rc);

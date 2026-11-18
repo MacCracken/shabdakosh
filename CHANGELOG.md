@@ -1,5 +1,146 @@
 # Changelog
 
+## [Unreleased]
+
+Roadmap M3, the final sweep against `rust-old/`, run on a new footing: **`rust-old/` is the list
+of capabilities the port must have, and accuracy — not "matches what Rust did" — decides whether a
+result is right** ([ADR 005](docs/adr/005-accuracy-over-rust-parity.md)). Seven parallel reviews
+ran the same inputs through a built copy of the Rust crate and through the port. They found the
+Rust capabilities the port lacked, the port's own defects, and the places where both were wrong.
+Every one is fixed below, including the five *Open decisions* the roadmap held back because Rust
+behaved the same way.
+
+**1,426 assertions / 28 suites** (997 / 26 in 3.1.2). The new suites are `integration.tcyr`, all 53
+Rust integration tests one for one, and `records.tcyr`. Several outputs change, deliberately and
+for accuracy (see *Changed*). This is a minor-version change.
+
+### Changed (output differs from 3.1.2, deliberately)
+
+- **ARPABET `IY` is the FLEECE vowel /iː/** (`SVARA_PH_VOWEL_LONG_I`). It was `SVARA_PH_VOWEL_E`,
+  /e/, which svara synthesises with /e/ formants ("see" was said as "say") and which varna's English
+  inventory does not have. 2,306 built-in words change; `english_minimal()`'s *he*, *she* and *we*
+  too. `/iː/` and `/i/` write `IY1`. `/e/` writes nothing, since ARPABET has no plain /e/ (`EY` is
+  /eɪ/). The generated data is regenerated.
+- **The IPA bridge covers every svara phoneme with a symbol: 100, where the Rust covered 46.** The
+  extended vowels (y ø œ ɯ ɤ ɨ ʉ) and the uvular, retroflex, pharyngeal, lateral, trill, click,
+  ejective and implosive consonants were dropped on export and skipped on parse. So German ç, Hindi
+  ɦ and a Spanish trill vanished from lexicons (Hindi नहीं is now [n ə ɦ i]). X-SAMPA covers all 100
+  too. The parser is table-driven and also reads the ligatures (ʧ ʤ ʦ ʣ), the tie below (t͜ʃ), ɚ and
+  ɫ.
+- **IPA affricates are written with their tie bar** (`t͡ʃ`, `d͡ʒ`), the unambiguous IPA and varna's
+  spelling. A bare `tʃ` / `dʒ` still reads as the affricate, as 3.1 wrote it. A bare `ts` / `dz` /
+  `pf` is a cluster ("cats" is t + s); only the tie bar or a ligature makes it an affricate. **`r` is
+  the alveolar trill** in IPA and X-SAMPA, as both define it (it read as the approximant ɹ). Where two
+  adjacent symbols would read back as one (`[a, ɪ]` as `aɪ`, `[t, ʃ]` as the affricate), the writer
+  puts a syllable break between them (`a.ɪ`).
+- **A frequency is 0.0–1.0, enforced.** `shbdk_frequency_is_valid` is new. `with_frequency` stores only
+  a valid value, and every reader (CMUdict `@freq`, JSON, binary) refuses an invalid one, so `@freq=inf`,
+  `nan`, `5` and `-1` no longer load. As a result:
+  - a NaN no longer makes the variant sort non-total (the Rust panicked on one past 20 variants);
+  - an exact -1.0 no longer collides with the "no frequency" sentinel (open decision 5);
+  - the writers emit the shortest text that reads back exactly, so 1/3 is `0.3333333333333333`, not
+    `0.333333`, and 1e-9 is no longer written as `0`. This closes the gated `@freq` precision item.
+- **Phonotactic validation is syllable-aware and covers every language varna profiles.** Each
+  pronunciation is syllabified and checked by position: onsets, nuclei, codas and syllable
+  boundaries, with onset and coda sizes held to the profile. Every run of segments is looked up, so
+  one- and three-segment constraints fire. The Rust checked adjacent pairs against onset
+  constraints: all 182 violations it reported for the built-in English dictionary were false
+  (mid-word `tl` / `dl`), and the dictionary now has 0. English's onset-`ŋ` ban could never fire
+  before, and now does. `shbdk_dict_validate_phonotactics` covers en ar zh hi ja es fr de ru ko pt
+  sa (open decision 4; it was en / sa / ja), and a regional tag (`pt-BR`) falls back to its language.
+- **Inventory validation treats `t͡ʃ` / `tʃ` as one phoneme.** `is_consonant` follows svara's classes,
+  so /iː/ and the extended vowels are vowels; the Rust called them consonants. English
+  `validate()` flags **3,113** entries (5,468 in 3.1.2). Every remaining flag is /ɜ/, /aɪ/, /aʊ/ or
+  /ɔɪ/, which varna's English inventory lacks (open decision 1).
+- **`syllabify` is true Maximal Onset, and every svara vowel is a nucleus.** The Rust kept one
+  consonant as coda whenever there were two or more, so "astray" split as `əs.tɹeɪ` and "handbag"
+  got the onset /db/. Now English onsets apply when every consonant is English, the Sonority
+  Sequencing Principle applies otherwise, and ŋ never begins a syllable. "über" has two syllables.
+- **ARPABET notation parse reads stress digits** (open decision 2), so `parse(render(v)) == v`. It
+  kept only the consonants.
+- **Text is Unicode.** Whitespace is Unicode White_Space everywhere it is split or trimmed: notation,
+  coverage, and the CMUdict and IPA readers. Lookups, keys and coverage lowercase with Rust's
+  `to_lowercase` rules (`"ÜBER"` finds `"über"`; a word-final Σ is ς). Coverage strips Unicode
+  punctuation and symbols from token edges and reads `’` / `ʼ` as `'`. Script detection reads
+  ill-formed UTF-8 as U+FFFD, in no script; it was read as Latin-1 letters.
+- **Readers check what they read and say why they fail.**
+  - **CMUdict:** `@freq` is a number by Rust's f32 grammar (`1.2.3`, `1e`, `.e5` loaded as their
+    prefix). The word is trimmed after its `(n)` marker is cut (open decision 3: `read (1)` stored
+    `"read "`). Only a trailing `(digits)` is a marker, so CMUdict's own `(PAREN` and `;SEMI-COLON`
+    are words. An empty word is refused.
+  - **JSON:** the schema is checked. It loaded 16 of 40 malformed documents, reading a stray string
+    as phoneme 0 and `"frequency":"0.5"` as 0.0. Unknown fields are still ignored.
+  - **Binary:** every value is checked, not just every length. A region byte of 7 loaded, then crashed
+    `to_cmudict` / `to_json`. Trailing bytes are refused.
+  - **PLS / SSML:** a real XML reader replaces substring search. A lexeme keeps every `<grapheme>`;
+    `prefer="true"` orders its phonemes; attributes may use either quote and any order. Comments, PIs,
+    a DOCTYPE, CDATA and numeric references are read, and malformed XML is an error.
+    `ph="</phoneme>kæt"` returned a junk word, and the Rust panicked.
+  - **Report JSON:** the validation-report readers check their schema too.
+- **Writers refuse what would not load back.** `to_cmudict` / `to_ipa` return 0 for a word with a
+  newline, a two-space run, a trailing `(n)` or (IPA) a `/`, or a pronunciation with no ARPABET / IPA
+  symbol at all. `to_binary` returns an empty Str for a field over 65,535 or a phoneme outside 0–100:
+  a 65,536-byte word made the whole file undecodable, and 65,537 variants wrapped to 1.
+- **`gen_cmudict` is as strict as the runtime reader**, and a bad line stops the build with its line
+  number, as `build.rs` panicked. It applied annotations by their first letter, dropped unknown
+  symbols, skipped malformed lines (their annotations landed on the next entry) and read every `;`
+  line as a comment. It now escapes `"` / `\` in words, and the loader reads a word containing `;`.
+- **No 8 MB load ceiling** (`SHBDK_MAX_FILE_BYTES` is gone). It made every loader refuse files the
+  savers had just written; buffers follow the file.
+
+### Fixed
+
+- **`from_lexicon` took the frequency from the Swadesh *index*** (a concept number), not the frequency
+  rank. Every Swadesh word got an invented `1/(1+index)`, and a ranked entry with no index got +inf.
+- **Shared buffers.** `insert`, `insert_user` and `from_phonemes` stored the caller's phoneme vec, and
+  `promote_prediction` / `promote_if_confident` the model's: a reused buffer rewrote earlier entries.
+  `set_language`, `Morpheme` text and the `FstModel` path were stored by reference. All are now copied
+  (`shbdk_pronunciation_new` takes the vec over, as the Rust's `new(Vec)` did).
+- `diff` compares frequencies by value: 0.0 == -0.0, and a dictionary diffed against itself is empty
+  even with a NaN. It compared bits.
+- `for_region(SHBDK_REGION_NONE)` returned the first unregioned variant; `with_region` stored any
+  value. A null word crashed the G2P and trie entry points. A trie key holding a NUL came back
+  truncated. `shbdk_err_name` called a category-only error "ok".
+- The fuzz harness's replay mode (`<binary> <target> <case>`) never ran, because `args_init()` was
+  missing.
+
+### Added
+
+- **A JSON codec and an equality function for every record type the Rust derived them for**, in the new
+  `src/dictionary/format/records.cyr`. It covers Pronunciation, DictEntry, Region, DictDiff,
+  MorphemeKind / Morpheme / Decomposition, StressLevel / Syllable, CoverageReport, PrefixTrie (as its
+  sorted words), HeteronymContext, G2PResult, LookupSource, FstNotation / FstModel and the error.
+  InvalidEntry / PhonotacticViolation also get standalone codecs, and each report type gets an `_eq`.
+  `shbdk_pronunciation_eq` and `shbdk_dict_entry_eq` are public.
+- **Parse diagnostics**: `shbdk_last_error()` holds the reason for the last failure, the detail the
+  Rust carried in `DictParseError(String)`, e.g. `line 3: unknown ARPABET symbol 'XX1'`. Every parse
+  and load entry point sets it. `shbdk_clear_error()`.
+- `shbdk_dict_clone`, `shbdk_coverage_report_new`, `shbdk_heteronym_context_set_position`,
+  `shbdk_phonemes_clone`, `shbdk_static_reset` (for consumers that `alloc_reset()`),
+  `shbdk_frequency_text`, and the v0.1 JSON entry shape (`{"cat":[24,7,22]}`, the Rust's
+  `EntryCompat::Old`).
+- L0 text primitives in `error.cyr`, from the stdlib's Unicode tables, which the bayan fold already
+  carries: strict UTF-8 decode, White_Space, punctuation, and Rust-semantics lowercase.
+- `tests/integration.tcyr` (the 53 Rust integration tests), `tests/records.tcyr`, and the Rust unit
+  tests the suites had not carried. A bench for prefix search on a prebuilt trie, the Rust's workload.
+
+### Verified
+
+- **Tests:** 28 suites, 1,426 assertions, 0 failures. `cyrius audit` is clean: fmt, lint, docs,
+  tests, bench.
+- **Fuzz:** `cyrius fuzz` passes with every round-trip property enforced; the 3.1.2 harness had
+  tolerated the ARPABET and untrimmed-key cases. The run found an off-by-one in the new UTF-8
+  decoder, and a parse table the harness's `alloc_reset()` freed. Both are fixed; the table now lives
+  in its own mapping.
+- **dist:** `dist/shabdakosh.cyr` was rebuilt and linked by a consumer.
+- **Rust comparison:** the English dictionary dump, every export and every API scenario were diffed
+  against the built Rust crate. All matched except the changes listed above.
+- **Benchmarks**, A/B against the 3.1.2 tree on the same machine:
+  - static lookups are faster (hit ~113 ns against 125; a single pass finds length and case);
+  - construction and dictionary lookups are unchanged within noise;
+  - the format layer's new checks cost `to_ipa` +12%, `to_cmudict` +8–10%, binary serialize +1–8%
+    and deserialize +6–14% ([benchmarks](docs/benchmarks.md)).
+
 ## [3.1.2] — 2026-11-17
 
 Dependency refresh, the perfect-hash static dictionary, and a fuzz harness. `svara` 3.6.3 ->

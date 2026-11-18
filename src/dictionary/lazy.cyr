@@ -26,19 +26,19 @@ fn _shbdk_file_size(fd): i64 {
 }
 
 # Open a binary dictionary file, mmap-backed with a file_read_all fallback.
-# Returns a dict handle, or 0 on open / decode failure (Rust Err(DictParseError):
-# the open / mmap / decode failure modes all collapse to the single 0 sentinel).
+# Returns a dict handle, or 0 on open / decode failure, with the reason in
+# shbdk_last_error() (Rust Err(DictParseError(..))).
 #must_use
 fn shbdk_lazy_open(path): i64 {
+    shbdk_clear_error();
+    if (path == 0) { return _shbdk_fail("no path"); }
     var fd = file_open(path, 0, 0);           # O_RDONLY
-    if (fd < 0) { return 0; }                 # Rust: "failed to open file"
+    if (fd < 0) { return _shbdk_fail("failed to open file"); }
     var len = _shbdk_file_size(fd);
-    if (len <= 0) { file_close(fd); return 0; }
-    # SECURITY (3.0.4): apply the same ceiling the non-mmap loaders enforce. Without
-    # it, mmapping a huge (or sparse) file handed shbdk_from_binary a multi-GB blob
-    # whose bounded-but-length-proportional decode loop is a hang, and whose mapping
-    # is faulted in page by page. shbdk_load_binary_file always capped; this did not.
-    if (len >= SHBDK_MAX_FILE_BYTES) { file_close(fd); return 0; }
+    if (len <= 0) { file_close(fd); return _shbdk_fail("binary data too short for header"); }
+    # 3.2: no 8 MB ceiling (3.0.4 added one to match the other loaders, which have
+    # dropped theirs): a file the saver wrote always opens. Decoding is linear in
+    # the file and bounds-checked.
     var addr = mmap_file_ro(fd, len);         # 0 on failure (incl. AGNOS)
     file_close(fd);                           # the mapping outlives the fd
     if (addr == 0) {

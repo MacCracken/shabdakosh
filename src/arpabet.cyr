@@ -6,8 +6,15 @@
 # (0/1/2) stripped before lookup; unstressed AH (0) is schwa, stressed AH is
 # cup-v.
 #
-# NOTE: this mapping is duplicated by gen_cmudict.cyr (the base-dict codegen) —
-# keep the two in sync (as the Rust arpabet.rs/build.rs pair were).
+# programs/gen_cmudict.cyr (the base-dict codegen) includes THIS file, so the
+# generated data and the runtime share one mapping (the Rust duplicated it in
+# build.rs).
+#
+# 3.2: IY is the FLEECE vowel /iː/ (SVARA_PH_VOWEL_LONG_I). The Rust mapped it to
+# SVARA_PH_VOWEL_E, /e/, which svara synthesises with /e/ formants ("see" said as
+# "say") and which varna's English inventory does not have. In the other direction
+# /iː/ and /i/ both write IY1 (ARPABET marks no length), and /e/ writes nothing:
+# ARPABET has no plain /e/ (EY is the diphthong /eɪ/), as it has no /a/ or /o/.
 #
 # Included after lib/svara.cyr (SVARA_PH_*) and src/error.cyr (SHBDK_PH_NONE) —
 # the entry file orders it.
@@ -39,7 +46,7 @@ fn _shbdk_arpabet_lookup(sym, len): i64 {
     if (_shbdk_arp_eq(sym, len, "ER")) { return SVARA_PH_VOWEL_BIRD; }
     if (_shbdk_arp_eq(sym, len, "EY")) { return SVARA_PH_DIPH_EI; }
     if (_shbdk_arp_eq(sym, len, "IH")) { return SVARA_PH_VOWEL_NEAR_I; }
-    if (_shbdk_arp_eq(sym, len, "IY")) { return SVARA_PH_VOWEL_E; }
+    if (_shbdk_arp_eq(sym, len, "IY")) { return SVARA_PH_VOWEL_LONG_I; }   # FLEECE /iː/ (3.2; was /e/)
     if (_shbdk_arp_eq(sym, len, "OW")) { return SVARA_PH_DIPH_OU; }
     if (_shbdk_arp_eq(sym, len, "OY")) { return SVARA_PH_DIPH_OI; }
     if (_shbdk_arp_eq(sym, len, "UH")) { return SVARA_PH_VOWEL_NEAR_U; }
@@ -135,7 +142,8 @@ fn shbdk_phoneme_to_arpabet(ph): cstring {
     if (ph == SVARA_PH_VOWEL_BIRD)   { return "ER1"; }
     if (ph == SVARA_PH_DIPH_EI)      { return "EY1"; }
     if (ph == SVARA_PH_VOWEL_NEAR_I) { return "IH1"; }
-    if (ph == SVARA_PH_VOWEL_E)      { return "IY1"; }
+    if (ph == SVARA_PH_VOWEL_LONG_I) { return "IY1"; }
+    if (ph == SVARA_PH_VOWEL_I)      { return "IY1"; }   # ARPABET marks no length: /i/ is IY too
     if (ph == SVARA_PH_DIPH_OU)      { return "OW1"; }
     if (ph == SVARA_PH_DIPH_OI)      { return "OY1"; }
     if (ph == SVARA_PH_VOWEL_NEAR_U) { return "UH1"; }

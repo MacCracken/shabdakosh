@@ -86,82 +86,154 @@ fn shbdk_to_json(dict): cstring {
 }
 
 # ---- from_json (parse via the DOM) -------------------------------------------
-fn _shbdk_pron_from_jsonv(pobj): i64 {
+# 3.2: the reader checks the document against the schema instead of defaulting
+# whatever it did not recognise. It used to load `{}`, `"entries":5`, a missing
+# or non-array `phonemes`, a phoneme of 9999 or "Bogus" (read as 0, VowelA), a
+# `"frequency":"0.5"` (read as 0.0), a region "XX" (dropped), and an entry with no
+# pronunciations (dropped) — 16 of 40 malformed documents in the 3.2 sweep. Each
+# is now an error with a reason. Unknown fields are still ignored, as serde does.
+#
+# It also reads the v0.1 shape the Rust accepted (EntryCompat::Old), where an
+# entry is just its phoneme array: {"entries":{"cat":[24,7,22]}}.
+
+# Read a JSON phoneme array into a fresh vec, or 0 (reason recorded) if `arr` is
+# not an array of integers 0..100.
+fn _shbdk_phonemes_from_jsonv(arr, word): i64 {
+    if (arr == 0 || json_v_is_arr(arr) == 0) { return _shbdk_json_bad(word, "\"phonemes\" must be an array"); }
     var phon = vec_new();
-    var pharr = bayan_json_v_obj_get_by_cstr(pobj, "phonemes");
-    if (pharr != 0) {
-        var n = json_v_arr_len(pharr);
-        var i = 0;
-        while (i < n) {
-            vec_push(phon, json_v_int(json_v_arr_get(pharr, i)));
-            i = i + 1;
-        }
+    var n = json_v_arr_len(arr);
+    var i = 0;
+    var el = 0;
+    var ph = 0;
+    while (i < n) {
+        el = json_v_arr_get(arr, i);
+        if (json_v_is_int(el) == 0) { return _shbdk_json_bad(word, "a phoneme must be an integer"); }
+        ph = json_v_int(el);
+        if (ph < 0 || ph > 100) { return _shbdk_json_bad(word, "a phoneme is not a svara phoneme (0-100)"); }
+        vec_push(phon, ph);
+        i = i + 1;
     }
+    return phon;
+}
+
+# Record "JSON parse error: entry '<word>': <msg>" (or without the entry when
+# word is 0) and return 0.
+fn _shbdk_json_bad(word, msg): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "JSON parse error: ");
+    if (word != 0) {
+        str_builder_add_cstr(sb, "entry '");
+        str_builder_add_cstr(sb, word);
+        str_builder_add_cstr(sb, "': ");
+    }
+    str_builder_add_cstr(sb, msg);
+    return _shbdk_fail(str_data(str_builder_build(sb)));
+}
+
+fn _shbdk_pron_from_jsonv(pobj, word): i64 {
+    if (json_v_is_obj(pobj) == 0) { return _shbdk_json_bad(word, "a pronunciation must be an object"); }
+    var phon = _shbdk_phonemes_from_jsonv(bayan_json_v_obj_get_by_cstr(pobj, "phonemes"), word);
+    if (phon == 0) { return 0; }
     var pron = shbdk_pronunciation_new(phon);
     var fq = bayan_json_v_obj_get_by_cstr(pobj, "frequency");
-    if (fq != 0) {
-        if (json_v_is_null(fq) == 0) {
-            pron = shbdk_pronunciation_with_frequency(pron, json_v_float(fq));
+    if (fq != 0 && json_v_is_null(fq) == 0) {
+        if (json_v_is_int(fq) == 0 && json_v_is_float(fq) == 0) {
+            return _shbdk_json_bad(word, "\"frequency\" must be a number");
         }
+        if (shbdk_frequency_is_valid(json_v_float(fq)) == 0) {
+            return _shbdk_json_bad(word, "\"frequency\" is outside 0.0-1.0");
+        }
+        pron = shbdk_pronunciation_with_frequency(pron, json_v_float(fq));
     }
     var rg = bayan_json_v_obj_get_by_cstr(pobj, "region");
-    if (rg != 0) {
-        # SECURITY: require a STRING (not just non-null) — json_v_str on a wrong-typed
-        # node returns a 0 Str, and str_cstr(0) would deref null (audit 2026-07-05).
-        if (json_v_is_str(rg) == 1) {
-            pron = shbdk_pronunciation_with_region(pron, shbdk_region_from_code(str_cstr(json_v_str(rg))));
-        }
+    if (rg != 0 && json_v_is_null(rg) == 0) {
+        # SECURITY: require a STRING — json_v_str on a wrong-typed node returns a 0
+        # Str, and str_cstr(0) would deref null (audit 2026-07-05).
+        if (json_v_is_str(rg) == 0) { return _shbdk_json_bad(word, "\"region\" must be a string"); }
+        var region = shbdk_region_from_code(str_cstr(json_v_str(rg)));
+        if (region == SHBDK_REGION_NONE) { return _shbdk_json_bad(word, "unknown region code"); }
+        pron = shbdk_pronunciation_with_region(pron, region);
     }
     return pron;
 }
 
-fn _shbdk_entry_from_jsonv(eobj): i64 {
-    var parr = bayan_json_v_obj_get_by_cstr(eobj, "pronunciations");
-    if (parr == 0) { return 0; }
-    var prons = vec_new();
+fn _shbdk_entry_from_jsonv(ev, word): i64 {
+    # v0.1 shape: the entry is its phoneme array (Rust EntryCompat::Old)
+    if (json_v_is_arr(ev) == 1) {
+        var old = _shbdk_phonemes_from_jsonv(ev, word);
+        if (old == 0) { return 0; }
+        return shbdk_dict_entry_new(shbdk_pronunciation_new(old));
+    }
+    if (json_v_is_obj(ev) == 0) { return _shbdk_json_bad(word, "an entry must be an object or a phoneme array"); }
+    var parr = bayan_json_v_obj_get_by_cstr(ev, "pronunciations");
+    if (parr == 0 || json_v_is_arr(parr) == 0) { return _shbdk_json_bad(word, "\"pronunciations\" must be an array"); }
     var n = json_v_arr_len(parr);
+    if (n == 0) { return _shbdk_json_bad(word, "an entry needs at least one pronunciation"); }
+    var prons = vec_new();
     var i = 0;
+    var pron = 0;
     while (i < n) {
-        vec_push(prons, _shbdk_pron_from_jsonv(json_v_arr_get(parr, i)));
+        pron = _shbdk_pron_from_jsonv(json_v_arr_get(parr, i), word);
+        if (pron == 0) { return 0; }
+        vec_push(prons, pron);
         i = i + 1;
     }
     return shbdk_dict_entry_from_pronunciations(prons);
 }
 
-fn _shbdk_parse_entries_into(dict, obj, is_user): i64 {
+# Parse the word -> entry object `obj` into the base (is_user 0) or the overlay.
+# Returns 1, or 0 with the reason recorded.
+fn _shbdk_parse_entries_into(dict, obj, is_user, field): i64 {
+    if (json_v_is_obj(obj) == 0) {
+        var sb = str_builder_new();
+        str_builder_add_cstr(sb, "\"");
+        str_builder_add_cstr(sb, field);
+        str_builder_add_cstr(sb, "\" must be an object");
+        return _shbdk_json_bad(0, str_data(str_builder_build(sb)));
+    }
     var n = json_v_obj_len(obj);
     var i = 0;
     var entry = 0;
+    var word = 0;
     while (i < n) {
-        entry = _shbdk_entry_from_jsonv(json_v_obj_val(obj, i));
-        if (entry != 0) {
-            if (is_user == 1) {
-                shbdk_dict_insert_user_entry(dict, str_cstr(json_v_obj_key(obj, i)), entry);
-            } else {
-                shbdk_dict_insert_entry(dict, str_cstr(json_v_obj_key(obj, i)), entry);
-            }
+        word = str_cstr(json_v_obj_key(obj, i));
+        if (load8(word) == 0) { return _shbdk_json_bad(0, "an entry has an empty word"); }
+        entry = _shbdk_entry_from_jsonv(json_v_obj_val(obj, i), word);
+        if (entry == 0) { return 0; }
+        if (is_user == 1) {
+            shbdk_dict_insert_user_entry(dict, word, entry);
+        } else {
+            shbdk_dict_insert_entry(dict, word, entry);
         }
         i = i + 1;
     }
-    return 0;
+    return 1;
 }
 
-# Parse a JSON string into a PronunciationDict, or 0 on error.
+# Parse a JSON string into a PronunciationDict, or 0 on error with the reason in
+# shbdk_last_error(). "entries" is required; "user_entries" and "language" are
+# optional (a null language is no language), as in the Rust's schema.
 #must_use
 fn shbdk_from_json(input): i64 {
+    shbdk_clear_error();
+    if (input == 0) { return _shbdk_fail("no input"); }
     var root = json_v_parse_buf(input, strlen(input));
-    if (root == 0) { return 0; }
-    if (json_v_is_obj(root) == 0) { return 0; }
+    if (root == 0) { return _shbdk_fail("JSON parse error: not valid JSON"); }
+    if (json_v_is_obj(root) == 0) { return _shbdk_json_bad(0, "the document must be an object"); }
     var dict = shbdk_dict_new();
     var lang = bayan_json_v_obj_get_by_cstr(root, "language");
-    if (lang != 0) {
+    if (lang != 0 && json_v_is_null(lang) == 0) {
         # SECURITY: require a STRING — a wrong-typed language (e.g. {"language":42})
         # makes json_v_str return a 0 Str, and str_cstr(0) would deref null.
-        if (json_v_is_str(lang) == 1) { shbdk_dict_set_language(dict, str_cstr(json_v_str(lang))); }
+        if (json_v_is_str(lang) == 0) { return _shbdk_json_bad(0, "\"language\" must be a string"); }
+        shbdk_dict_set_language(dict, str_cstr(json_v_str(lang)));
     }
     var entries = bayan_json_v_obj_get_by_cstr(root, "entries");
-    if (entries != 0) { _shbdk_parse_entries_into(dict, entries, 0); }
+    if (entries == 0) { return _shbdk_json_bad(0, "missing field \"entries\""); }
+    if (_shbdk_parse_entries_into(dict, entries, 0, "entries") == 0) { return 0; }
     var user = bayan_json_v_obj_get_by_cstr(root, "user_entries");
-    if (user != 0) { _shbdk_parse_entries_into(dict, user, 1); }
+    if (user != 0) {
+        if (_shbdk_parse_entries_into(dict, user, 1, "user_entries") == 0) { return 0; }
+    }
     return dict;
 }

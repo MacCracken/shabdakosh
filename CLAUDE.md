@@ -29,8 +29,8 @@ component needing pronunciation lookup. Will pull `dist/shabdakosh.cyr`.
 
 ## Scaffolding
 
-Scaffolded with `cyrius port`. Original Rust at `rust-old/` is the reference oracle —
-do not modify it; cross-check the port against it.
+Scaffolded with `cyrius port`. Original Rust at `rust-old/` is the **functionality reference** —
+it says what the port must be able to do, not whether a result is right. Do not modify it.
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ cyrius test tests                              # run all .tcyr
 
 ## Work Loop
 
-1. Read the `rust-old/` module before porting it (it is the parity oracle)
+1. Read the `rust-old/` module before porting it (it defines the capability to cover)
 2. Port the module; keep `src/main.cyr` including it and building at every step
 3. `cyrius fmt <file>`
 4. `cyrius lint <file>`
@@ -54,8 +54,12 @@ cyrius test tests                              # run all .tcyr
 
 ## Key Principles (durable)
 
-- **Cross-check against `rust-old/`** — the correctness bar is "matches what Rust did." Diverge only with an ADR.
-- **Correctness over cleverness** — a silent divergence from Rust means the bug wins.
+- **`rust-old/` is functionality coverage, not the oracle — accuracy is the oracle.** Every capability the
+  Rust had must exist in the port; whether a result is *right* is judged by accuracy (the linguistics, the
+  spec — CMUdict / IPA / XML / IEEE — and what a consumer would expect), never by "matches what Rust did".
+  Do not bring over broken Rust: where the Rust is wrong, the port is right, and the CHANGELOG says so.
+- **Correctness over cleverness** — a consumer-visible output change is recorded (CHANGELOG; an ADR when
+  it is a real design choice), never silent.
 - Test after every change; ONE change at a time.
 - Build with `cyrius build` (the manifest auto-resolves deps), not `cat | cc5`.
 - Source files only need project `include`s — stdlib auto-resolves from `cyrius.cyml`.
@@ -88,14 +92,16 @@ cyrius test tests                              # run all .tcyr
 points into those pieces; scheme in `src/dictionary/phf.cyr`). One module — `cyrius distlib`'s per-module read cap is 1 MB since toolchain 6.4.10,
 so the ~283 KB data no longer needs sharding. It `include`s `src/arpabet.cyr` and reuses that
 mapping — one source of truth (no Rust-style table duplication). `src/dictionary/cmudict.cyr`
-loads the pieces into a `lib/hashmap` at runtime. **Regenerate after editing the data:**
+loads the pieces into a `lib/hashmap` at runtime. The generator reads the data by the runtime
+reader's rules (`shbdk_parse_cmudict`), and a bad line stops it with its line number, as `build.rs`
+panicked. **Regenerate after editing the data:**
 `cyrius build programs/gen_cmudict.cyr build/gen_cmudict && ./build/gen_cmudict`.
 
 ## Rules (Hard Constraints)
 
 - **Do not commit or push** — the user handles all git operations.
 - **Never use `gh` CLI** — use `curl` to the GitHub API if needed.
-- Do not modify `rust-old/` (parity oracle) or `lib/` (vendored stdlib/deps).
+- Do not modify `rust-old/` (functionality reference) or `lib/` (vendored stdlib/deps).
 - Do not add unnecessary dependencies.
 - Do not hardcode toolchain versions in CI YAML — `cyrius = "X.Y.Z"` in `cyrius.cyml` is the source of truth.
 

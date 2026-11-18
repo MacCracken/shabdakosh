@@ -101,7 +101,7 @@ while (ki < nk) {
     se = shbdk_static_lookup_entry(kw);
     if (se != 0) {
         found = found + 1;
-        if (_shbdk_dict_entry_eq(se, shbdk_dict_lookup_entry(dynamic, kw)) == 1) { same = same + 1; }
+        if (shbdk_dict_entry_eq(se, shbdk_dict_lookup_entry(dynamic, kw)) == 1) { same = same + 1; }
     }
     ki = ki + 1;
 }
@@ -114,7 +114,7 @@ test_group("variants keep the generator's frequency order");
 var rd = shbdk_static_lookup_entry("read");
 var rd_dyn = shbdk_dict_lookup_entry(dynamic, "read");
 assert_eq(shbdk_dict_entry_len(rd), 2, "read has 2 pronunciations");
-assert_eq(_shbdk_dict_entry_eq(rd, rd_dyn), 1, "read: same order, phonemes, frequencies");
+assert_eq(shbdk_dict_entry_eq(rd, rd_dyn), 1, "read: same order, phonemes, frequencies");
 
 # ================================================================
 test_group("a hit returns the same entry every time");
@@ -232,7 +232,23 @@ var sd = shbdk_static_dict();
 assert_eq(shbdk_dict_len(sd), 10617, "built on request");
 assert_eq(shbdk_static_dict(), sd, "and cached");
 var sd_hello = shbdk_dict_lookup_entry(sd, "hello");
-assert_eq(_shbdk_dict_entry_eq(sd_hello, shbdk_static_lookup_entry("hello")), 1, "same entries as the lookups");
+assert_eq(shbdk_dict_entry_eq(sd_hello, shbdk_static_lookup_entry("hello")), 1, "same entries as the lookups");
+
+# ================================================================
+# 3.2: a non-ASCII word is lowercased with Unicode semantics before the hash, as
+# the dynamic lookup does — the KELVIN SIGN U+212A lowercases to an ASCII k.
+test_group("static: Unicode lowercase");
+assert_eq(shbdk_static_lookup("\xE2\x84\xAAAT") == 0, shbdk_dict_lookup(shbdk_dict_english(), "\xE2\x84\xAAAT") == 0,
+  "the static and dynamic lookups agree");
+assert_neq(shbdk_static_lookup("\xE2\x84\xAAEY"), 0, "U+212A EY finds key");
+assert_eq(shbdk_static_lookup("caf\xC3\xA9"), 0, "café is not an English key");
+
+test_group("shbdk_static_reset");
+var before_reset = shbdk_static_lookup_entry("hello");
+shbdk_static_reset();
+var after_reset = shbdk_static_lookup_entry("hello");
+assert_neq(after_reset, 0, "lookups work after a reset");
+assert_eq(shbdk_dict_entry_eq(before_reset, after_reset), 1, "and decode the same entry");
 
 var rc = assert_summary();
 syscall(60, rc);

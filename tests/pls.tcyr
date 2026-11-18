@@ -60,5 +60,68 @@ var ed = shbdk_dict_new();
 shbdk_dict_insert(ed, "a&b", _v1(SVARA_PH_VOWEL_A));
 assert_gte(_contains(shbdk_to_pls(ed, "en-US"), "a&amp;b"), 0, "grapheme escaped as a&amp;b");
 
+# ================================================================
+# 3.2: a real XML reader (the Rust searched for substrings).
+fn _find(s, sub): i64 {
+    var n = strlen(sub);
+    var i = 0;
+    while (load8(s + i) != 0) {
+        if (memeq(s + i, sub, n) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+fn _cat(a, b): cstring {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, a);
+    str_builder_add_cstr(sb, b);
+    return str_data(str_builder_build(sb));
+}
+test_group("PLS: several graphemes, prefer, attributes, quoting");
+var pl1 = shbdk_parse_pls(_cat(_cat(
+      "<?xml version=\"1.0\"?>\n<!-- a comment -->\n<lexicon version='1.0' alphabet='ipa' xml:lang='en-US'>\n",
+      "<lexeme role=\"x\"><grapheme>colour</grapheme><grapheme>color</grapheme>\n"),
+    "<phoneme>kʌlɚ</phoneme><phoneme prefer=\"true\">kʌlə</phoneme></lexeme>\n</lexicon>"));
+assert_neq(pl1, 0, "parses");
+assert_neq(shbdk_dict_lookup_entry(pl1, "colour"), 0, "first grapheme");
+assert_neq(shbdk_dict_lookup_entry(pl1, "color"), 0, "second grapheme too (it was dropped)");
+assert_eq(shbdk_dict_entry_len(shbdk_dict_lookup_entry(pl1, "color")), 2,
+  "both phonemes (prefer= made one vanish)");
+assert_eq(vec_get(shbdk_dict_lookup(pl1, "color"), 3), SVARA_PH_VOWEL_SCHWA, "the preferred one is primary");
+var plxs = _cat("<lexicon alphabet='x-sampa'><lexeme><grapheme>a</grapheme>",
+  "<phoneme>a</phoneme></lexeme></lexicon>");
+assert_eq(shbdk_parse_pls(plxs), 0, "single-quoted x-sampa is still refused");
+var plpa = _cat("<lexicon><lexeme><grapheme>a</grapheme>",
+  "<phoneme alphabet=\"x-sampa\">a</phoneme></lexeme></lexicon>");
+assert_eq(shbdk_parse_pls(plpa), 0, "a phoneme in another alphabet is refused, not read as IPA");
+
+test_group("PLS: CDATA, references, malformed XML");
+var pl2 = shbdk_parse_pls(_cat(
+    "<lexicon><lexeme><grapheme><![CDATA[r&b]]></grapheme><phoneme>&#x251;&#114;</phoneme></lexeme>",
+    "<lexeme><grapheme>caf&#233;</grapheme><phoneme>kafe</phoneme></lexeme></lexicon>"));
+assert_neq(shbdk_dict_lookup_entry(pl2, "r&b"), 0, "CDATA grapheme");
+assert_eq(vec_get(shbdk_dict_lookup(pl2, "r&b"), 0), SVARA_PH_VOWEL_OPEN_A, "hex reference in the phoneme");
+assert_neq(shbdk_dict_lookup_entry(pl2, "café"), 0, "decimal reference in the grapheme");
+assert_eq(shbdk_parse_pls("<lexicon><lexeme><grapheme>a</grapheme></lexicon>"), 0, "mismatched end tag");
+assert_eq(shbdk_parse_pls("<lexicon><lexeme><grapheme>a</grapheme>"), 0, "unclosed elements");
+assert_eq(shbdk_parse_pls("<foo/>"), 0, "the root is not <lexicon>");
+assert_eq(shbdk_parse_pls("<lexicon><!-- open"), 0, "an unterminated comment");
+var plns = shbdk_parse_pls(_cat("<pls:lexicon xmlns:pls=\"u\"><pls:lexeme><pls:grapheme>a</pls:grapheme>",
+    "<pls:phoneme>ə</pls:phoneme></pls:lexeme></pls:lexicon>"));
+assert_neq(shbdk_dict_lookup_entry(plns, "a"), 0, "prefixed element names");
+var plx = shbdk_to_pls(shbdk_dict_new(), "en\"US");
+assert_eq(_find(plx, "xml:lang=\"en&quot;US\""), 1, "lang is escaped");
+
+test_group("to_pls_with_user");
+var pwu = shbdk_dict_new();
+var pwv = vec_new();
+vec_push(pwv, SVARA_PH_PLOSIVE_K);
+shbdk_dict_insert(pwu, "base", pwv);
+shbdk_dict_insert_user(pwu, "user", pwv);
+var pwx = shbdk_to_pls_with_user(pwu, "en");
+assert_eq(_find(pwx, "<grapheme>base</grapheme>"), 1, "base word");
+assert_eq(_find(pwx, "<grapheme>user</grapheme>"), 1, "overlay word");
+assert_eq(_find(shbdk_to_pls(pwu, "en"), "<grapheme>user</grapheme>"), 0, "to_pls leaves the overlay out");
+
 var rc = assert_summary();
 syscall(60, rc);

@@ -360,5 +360,64 @@ assert_neq(shbdk_dict_lookup(pt, "portuguese"), 0, "portuguese");
 assert_neq(shbdk_dict_lookup(pt, "Portuguese"), 0, "Portuguese");
 assert_neq(shbdk_dict_lookup(pt, "PORTUGUESE"), 0, "PORTUGUESE");
 
+# ================================================================
+# 3.2 accuracy fixes in the keystone.
+test_group("insert copies the caller's phonemes; the language is owned");
+var cbuf = vec_new();
+vec_push(cbuf, SVARA_PH_PLOSIVE_K); vec_push(cbuf, SVARA_PH_VOWEL_ASH); vec_push(cbuf, SVARA_PH_PLOSIVE_T);
+var cd = shbdk_dict_new();
+shbdk_dict_insert(cd, "cat", cbuf);
+vec_set(cbuf, 0, SVARA_PH_PLOSIVE_B);
+shbdk_dict_insert(cd, "bat", cbuf);
+assert_eq(vec_get(shbdk_dict_lookup(cd, "cat"), 0), SVARA_PH_PLOSIVE_K, "cat keeps K (it became B)");
+shbdk_dict_insert_user(cd, "user", cbuf);
+vec_push(cbuf, SVARA_PH_FRIC_S);
+assert_eq(vec_len(shbdk_dict_lookup(cd, "user")), 3, "insert_user copies too");
+var lbuf = alloc(4);
+store8(lbuf, 101); store8(lbuf + 1, 110); store8(lbuf + 2, 0);   # "en"
+shbdk_dict_set_language(cd, lbuf);
+store8(lbuf, 120);
+assert_streq(shbdk_dict_language(cd), "en", "the language was copied (it became xn)");
+shbdk_dict_set_language(cd, 0);
+assert_eq(shbdk_dict_language(cd), 0, "a null language clears it");
+
+test_group("lookups lowercase with Unicode semantics");
+var ud = shbdk_dict_new();
+shbdk_dict_insert(ud, "über", _v1(SVARA_PH_VOWEL_Y));
+assert_neq(shbdk_dict_lookup(ud, "ÜBER"), 0, "ÜBER finds über (ASCII-only folding missed it)");
+assert_neq(shbdk_dict_lookup(ud, "Über"), 0, "Über");
+shbdk_dict_insert(ud, "ΟΔΟΣ", _v1(SVARA_PH_VOWEL_O));
+assert_neq(shbdk_dict_lookup(ud, "οδος"), 0, "a word-final capital sigma lowercases to ς");
+assert_eq(shbdk_dict_lookup(ud, "οδοσ"), 0, "not to σ");
+
+test_group("diff: frequencies compared by value");
+fn _fd(f): i64 {
+    var d = shbdk_dict_new();
+    shbdk_dict_insert_entry(d, "w", shbdk_dict_entry_new(
+        shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_A)), f)));
+    return d;
+}
+assert_eq(shbdk_dict_diff_len(shbdk_dict_diff(_fd(0.0), _fd(0x8000000000000000))), 0,
+  "0.0 and -0.0 are the same frequency (bits differ)");
+assert_eq(shbdk_dict_diff_len(shbdk_dict_diff(_fd(0.5), _fd(0.25))), 1, "0.5 vs 0.25 changed");
+assert_eq(shbdk_pronunciation_eq(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_A)),
+    shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_A))),
+  1, "pronunciation equality is public");
+
+test_group("clone");
+var cl = shbdk_dict_with_language(shbdk_dict_new(), "en");
+shbdk_dict_insert(cl, "a", _v1(SVARA_PH_VOWEL_A));
+shbdk_dict_insert_user(cl, "b", _v1(SVARA_PH_VOWEL_E));
+var cl2 = shbdk_dict_clone(cl);
+shbdk_dict_entry_add_pronunciation(shbdk_dict_lookup_entry(cl, "a"), shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_I)));
+assert_eq(shbdk_dict_entry_len(shbdk_dict_lookup_entry(cl2, "a")), 1, "the clone is deep");
+assert_eq(shbdk_dict_user_len(cl2), 1, "overlay cloned");
+assert_streq(shbdk_dict_language(cl2), "en", "language cloned");
+
+test_group("english_minimal: he / she / we have the FLEECE vowel");
+assert_eq(vec_get(shbdk_dict_lookup(shbdk_dict_english_minimal(), "he"), 1), SVARA_PH_VOWEL_LONG_I,
+  "he /hiː/ (was /he/)");
+assert_eq(vec_get(shbdk_dict_lookup(shbdk_dict_english(), "see"), 1), SVARA_PH_VOWEL_LONG_I, "see /siː/ (was /se/)");
+
 var rc = assert_summary();
 syscall(60, rc);

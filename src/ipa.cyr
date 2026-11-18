@@ -20,194 +20,391 @@ fn _shbdk_ipa_starts_with(ipa, pos, lit): i64 {
     return 1;
 }
 
-# Exact whole-string IPA symbol -> svara phoneme ordinal, or SHBDK_PH_NONE.
-# (Rust ipa_to_phoneme.) Includes the accepted alternates (ɜ|ɝ, ɡ|g, ɹ|r,
-# tʃ|t͡ʃ, dʒ|d͡ʒ).
-#must_use
-fn shbdk_ipa_to_phoneme(ipa): i64 {
-    # Vowels
-    if (streq(ipa, "a") == 1) { return SVARA_PH_VOWEL_A; }
-    if (streq(ipa, "e") == 1) { return SVARA_PH_VOWEL_E; }
-    if (streq(ipa, "i") == 1) { return SVARA_PH_VOWEL_I; }
-    if (streq(ipa, "o") == 1) { return SVARA_PH_VOWEL_O; }
-    if (streq(ipa, "u") == 1) { return SVARA_PH_VOWEL_U; }
-    if (streq(ipa, "ə") == 1) { return SVARA_PH_VOWEL_SCHWA; }
-    if (streq(ipa, "ɔ") == 1) { return SVARA_PH_VOWEL_OPEN_O; }
-    if (streq(ipa, "æ") == 1) { return SVARA_PH_VOWEL_ASH; }
-    if (streq(ipa, "ɪ") == 1) { return SVARA_PH_VOWEL_NEAR_I; }
-    if (streq(ipa, "ʊ") == 1) { return SVARA_PH_VOWEL_NEAR_U; }
-    if (streq(ipa, "ɑ") == 1) { return SVARA_PH_VOWEL_OPEN_A; }
-    if (streq(ipa, "ɛ") == 1) { return SVARA_PH_VOWEL_OPEN_E; }
-    if (streq(ipa, "ʌ") == 1) { return SVARA_PH_VOWEL_CUP_V; }
-    if (streq(ipa, "ɜ") == 1) { return SVARA_PH_VOWEL_BIRD; }
-    if (streq(ipa, "ɝ") == 1) { return SVARA_PH_VOWEL_BIRD; }
-    if (streq(ipa, "iː") == 1) { return SVARA_PH_VOWEL_LONG_I; }
-    # Diphthongs
-    if (streq(ipa, "aɪ") == 1) { return SVARA_PH_DIPH_AI; }
-    if (streq(ipa, "aʊ") == 1) { return SVARA_PH_DIPH_AU; }
-    if (streq(ipa, "ɔɪ") == 1) { return SVARA_PH_DIPH_OI; }
-    if (streq(ipa, "eɪ") == 1) { return SVARA_PH_DIPH_EI; }
-    if (streq(ipa, "oʊ") == 1) { return SVARA_PH_DIPH_OU; }
-    # Plosives
-    if (streq(ipa, "p") == 1) { return SVARA_PH_PLOSIVE_P; }
-    if (streq(ipa, "b") == 1) { return SVARA_PH_PLOSIVE_B; }
-    if (streq(ipa, "t") == 1) { return SVARA_PH_PLOSIVE_T; }
-    if (streq(ipa, "d") == 1) { return SVARA_PH_PLOSIVE_D; }
-    if (streq(ipa, "k") == 1) { return SVARA_PH_PLOSIVE_K; }
-    if (streq(ipa, "ɡ") == 1) { return SVARA_PH_PLOSIVE_G; }
-    if (streq(ipa, "g") == 1) { return SVARA_PH_PLOSIVE_G; }
-    # Fricatives
-    if (streq(ipa, "f") == 1) { return SVARA_PH_FRIC_F; }
-    if (streq(ipa, "v") == 1) { return SVARA_PH_FRIC_V; }
-    if (streq(ipa, "s") == 1) { return SVARA_PH_FRIC_S; }
-    if (streq(ipa, "z") == 1) { return SVARA_PH_FRIC_Z; }
-    if (streq(ipa, "ʃ") == 1) { return SVARA_PH_FRIC_SH; }
-    if (streq(ipa, "ʒ") == 1) { return SVARA_PH_FRIC_ZH; }
-    if (streq(ipa, "θ") == 1) { return SVARA_PH_FRIC_TH; }
-    if (streq(ipa, "ð") == 1) { return SVARA_PH_FRIC_DH; }
-    if (streq(ipa, "h") == 1) { return SVARA_PH_FRIC_H; }
-    # Nasals
-    if (streq(ipa, "m") == 1) { return SVARA_PH_NASAL_M; }
-    if (streq(ipa, "n") == 1) { return SVARA_PH_NASAL_N; }
-    if (streq(ipa, "ŋ") == 1) { return SVARA_PH_NASAL_NG; }
-    # Affricates
-    if (streq(ipa, "tʃ") == 1) { return SVARA_PH_AFFR_CH; }
-    if (streq(ipa, "t͡ʃ") == 1) { return SVARA_PH_AFFR_CH; }
-    if (streq(ipa, "dʒ") == 1) { return SVARA_PH_AFFR_J; }
-    if (streq(ipa, "d͡ʒ") == 1) { return SVARA_PH_AFFR_J; }
-    # Other
-    if (streq(ipa, "ʔ") == 1) { return SVARA_PH_GLOTTAL_STOP; }
-    if (streq(ipa, "ɾ") == 1) { return SVARA_PH_TAP_FLAP; }
-    # Approximants
-    if (streq(ipa, "l") == 1) { return SVARA_PH_LATERAL_L; }
-    if (streq(ipa, "ɹ") == 1) { return SVARA_PH_APPROX_R; }
-    if (streq(ipa, "r") == 1) { return SVARA_PH_APPROX_R; }
-    if (streq(ipa, "w") == 1) { return SVARA_PH_APPROX_W; }
-    if (streq(ipa, "j") == 1) { return SVARA_PH_APPROX_J; }
-    return SHBDK_PH_NONE;
-}
+# ---- The symbol table --------------------------------------------------------
+# 3.2: the bridge covers every svara phoneme that has an IPA symbol (0..99; 100 is
+# silence). The Rust's, and the port's through 3.1, covered 46: the extended vowels
+# (y ø œ ɯ ɤ ɨ ʉ), the uvular / retroflex / pharyngeal / lateral consonants, the
+# trills, clicks, ejectives and implosives were dropped on export and skipped on
+# parse, so German ç, Hindi ɦ or a Spanish trill vanished from a lexicon.
+#
+# Two more accuracy fixes ride along: an affricate is written with its tie bar
+# (t͡ʃ, d͡ʒ — the unambiguous IPA, and varna's spelling), and `r` is the alveolar
+# TRILL, as IPA defines it (it read as the English approximant ɹ). The parser
+# still reads a bare tʃ / dʒ as the affricate (the common broad spelling, and what
+# 3.1 wrote), but a bare ts / dz / pf is a cluster ("cats" is t + s): only the tie
+# bar or a ligature (ʦ ʣ ʧ ʤ) makes those an affricate.
 
-# svara phoneme ordinal -> IPA cstr (canonical form), or 0 (null cstr) for
-# phonemes with no IPA equivalent. (Rust phoneme_to_ipa.)
+# Canonical IPA for a svara phoneme ordinal, or 0 (null cstr) for silence / an
+# out-of-range value. (Rust phoneme_to_ipa.)
 #must_use
 fn shbdk_phoneme_to_ipa(ph): cstring {
-    # Vowels
-    if (ph == SVARA_PH_VOWEL_A)       { return "a"; }
-    if (ph == SVARA_PH_VOWEL_E)       { return "e"; }
-    if (ph == SVARA_PH_VOWEL_I)       { return "i"; }
-    if (ph == SVARA_PH_VOWEL_O)       { return "o"; }
-    if (ph == SVARA_PH_VOWEL_U)       { return "u"; }
-    if (ph == SVARA_PH_VOWEL_SCHWA)   { return "ə"; }
-    if (ph == SVARA_PH_VOWEL_OPEN_O)  { return "ɔ"; }
-    if (ph == SVARA_PH_VOWEL_ASH)     { return "æ"; }
-    if (ph == SVARA_PH_VOWEL_NEAR_I)  { return "ɪ"; }
-    if (ph == SVARA_PH_VOWEL_NEAR_U)  { return "ʊ"; }
-    if (ph == SVARA_PH_VOWEL_OPEN_A)  { return "ɑ"; }
-    if (ph == SVARA_PH_VOWEL_OPEN_E)  { return "ɛ"; }
-    if (ph == SVARA_PH_VOWEL_CUP_V)   { return "ʌ"; }
-    if (ph == SVARA_PH_VOWEL_BIRD)    { return "ɜ"; }
-    if (ph == SVARA_PH_VOWEL_LONG_I)  { return "iː"; }
-    # Diphthongs
-    if (ph == SVARA_PH_DIPH_AI)       { return "aɪ"; }
-    if (ph == SVARA_PH_DIPH_AU)       { return "aʊ"; }
-    if (ph == SVARA_PH_DIPH_OI)       { return "ɔɪ"; }
-    if (ph == SVARA_PH_DIPH_EI)       { return "eɪ"; }
-    if (ph == SVARA_PH_DIPH_OU)       { return "oʊ"; }
-    # Plosives
-    if (ph == SVARA_PH_PLOSIVE_P)     { return "p"; }
-    if (ph == SVARA_PH_PLOSIVE_B)     { return "b"; }
-    if (ph == SVARA_PH_PLOSIVE_T)     { return "t"; }
-    if (ph == SVARA_PH_PLOSIVE_D)     { return "d"; }
-    if (ph == SVARA_PH_PLOSIVE_K)     { return "k"; }
-    if (ph == SVARA_PH_PLOSIVE_G)     { return "ɡ"; }
-    # Fricatives
-    if (ph == SVARA_PH_FRIC_F)        { return "f"; }
-    if (ph == SVARA_PH_FRIC_V)        { return "v"; }
-    if (ph == SVARA_PH_FRIC_S)        { return "s"; }
-    if (ph == SVARA_PH_FRIC_Z)        { return "z"; }
-    if (ph == SVARA_PH_FRIC_SH)       { return "ʃ"; }
-    if (ph == SVARA_PH_FRIC_ZH)       { return "ʒ"; }
-    if (ph == SVARA_PH_FRIC_TH)       { return "θ"; }
-    if (ph == SVARA_PH_FRIC_DH)       { return "ð"; }
-    if (ph == SVARA_PH_FRIC_H)        { return "h"; }
-    # Nasals
-    if (ph == SVARA_PH_NASAL_M)       { return "m"; }
-    if (ph == SVARA_PH_NASAL_N)       { return "n"; }
-    if (ph == SVARA_PH_NASAL_NG)      { return "ŋ"; }
-    # Affricates
-    if (ph == SVARA_PH_AFFR_CH)       { return "tʃ"; }
-    if (ph == SVARA_PH_AFFR_J)        { return "dʒ"; }
-    # Other
-    if (ph == SVARA_PH_GLOTTAL_STOP)  { return "ʔ"; }
-    if (ph == SVARA_PH_TAP_FLAP)      { return "ɾ"; }
-    # Approximants
-    if (ph == SVARA_PH_LATERAL_L)     { return "l"; }
-    if (ph == SVARA_PH_APPROX_R)      { return "ɹ"; }
-    if (ph == SVARA_PH_APPROX_W)      { return "w"; }
-    if (ph == SVARA_PH_APPROX_J)      { return "j"; }
+    if (ph == SVARA_PH_VOWEL_A) { return "a"; }
+    if (ph == SVARA_PH_VOWEL_E) { return "e"; }
+    if (ph == SVARA_PH_VOWEL_I) { return "i"; }
+    if (ph == SVARA_PH_VOWEL_O) { return "o"; }
+    if (ph == SVARA_PH_VOWEL_U) { return "u"; }
+    if (ph == SVARA_PH_VOWEL_SCHWA) { return "ə"; }
+    if (ph == SVARA_PH_VOWEL_OPEN_O) { return "ɔ"; }
+    if (ph == SVARA_PH_VOWEL_ASH) { return "æ"; }
+    if (ph == SVARA_PH_VOWEL_NEAR_I) { return "ɪ"; }
+    if (ph == SVARA_PH_VOWEL_NEAR_U) { return "ʊ"; }
+    if (ph == SVARA_PH_VOWEL_OPEN_A) { return "ɑ"; }
+    if (ph == SVARA_PH_VOWEL_OPEN_E) { return "ɛ"; }
+    if (ph == SVARA_PH_VOWEL_CUP_V) { return "ʌ"; }
+    if (ph == SVARA_PH_VOWEL_BIRD) { return "ɜ"; }
+    if (ph == SVARA_PH_VOWEL_LONG_I) { return "iː"; }
+    if (ph == SVARA_PH_DIPH_AI) { return "aɪ"; }
+    if (ph == SVARA_PH_DIPH_AU) { return "aʊ"; }
+    if (ph == SVARA_PH_DIPH_OI) { return "ɔɪ"; }
+    if (ph == SVARA_PH_DIPH_EI) { return "eɪ"; }
+    if (ph == SVARA_PH_DIPH_OU) { return "oʊ"; }
+    if (ph == SVARA_PH_PLOSIVE_P) { return "p"; }
+    if (ph == SVARA_PH_PLOSIVE_B) { return "b"; }
+    if (ph == SVARA_PH_PLOSIVE_T) { return "t"; }
+    if (ph == SVARA_PH_PLOSIVE_D) { return "d"; }
+    if (ph == SVARA_PH_PLOSIVE_K) { return "k"; }
+    if (ph == SVARA_PH_PLOSIVE_G) { return "ɡ"; }
+    if (ph == SVARA_PH_FRIC_F) { return "f"; }
+    if (ph == SVARA_PH_FRIC_V) { return "v"; }
+    if (ph == SVARA_PH_FRIC_S) { return "s"; }
+    if (ph == SVARA_PH_FRIC_Z) { return "z"; }
+    if (ph == SVARA_PH_FRIC_SH) { return "ʃ"; }
+    if (ph == SVARA_PH_FRIC_ZH) { return "ʒ"; }
+    if (ph == SVARA_PH_FRIC_TH) { return "θ"; }
+    if (ph == SVARA_PH_FRIC_DH) { return "ð"; }
+    if (ph == SVARA_PH_FRIC_H) { return "h"; }
+    if (ph == SVARA_PH_NASAL_M) { return "m"; }
+    if (ph == SVARA_PH_NASAL_N) { return "n"; }
+    if (ph == SVARA_PH_NASAL_NG) { return "ŋ"; }
+    if (ph == SVARA_PH_AFFR_CH) { return "t͡ʃ"; }
+    if (ph == SVARA_PH_AFFR_J) { return "d͡ʒ"; }
+    if (ph == SVARA_PH_GLOTTAL_STOP) { return "ʔ"; }
+    if (ph == SVARA_PH_TAP_FLAP) { return "ɾ"; }
+    if (ph == SVARA_PH_LATERAL_L) { return "l"; }
+    if (ph == SVARA_PH_APPROX_R) { return "ɹ"; }
+    if (ph == SVARA_PH_APPROX_W) { return "w"; }
+    if (ph == SVARA_PH_APPROX_J) { return "j"; }
+    if (ph == SVARA_PH_VOWEL_Y) { return "y"; }
+    if (ph == SVARA_PH_VOWEL_FRONT_ROUND_O) { return "ø"; }
+    if (ph == SVARA_PH_VOWEL_OPEN_FRONT_ROUND_O) { return "œ"; }
+    if (ph == SVARA_PH_VOWEL_CLOSE_BACK_UNROUNDED) { return "ɯ"; }
+    if (ph == SVARA_PH_VOWEL_MID_BACK_UNROUNDED) { return "ɤ"; }
+    if (ph == SVARA_PH_VOWEL_CLOSE_CENTRAL) { return "ɨ"; }
+    if (ph == SVARA_PH_VOWEL_CLOSE_CENTRAL_ROUNDED) { return "ʉ"; }
+    if (ph == SVARA_PH_PLOSIVE_UVULAR_Q) { return "q"; }
+    if (ph == SVARA_PH_PLOSIVE_UVULAR_G) { return "ɢ"; }
+    if (ph == SVARA_PH_PLOSIVE_RETRO_T) { return "ʈ"; }
+    if (ph == SVARA_PH_PLOSIVE_RETRO_D) { return "ɖ"; }
+    if (ph == SVARA_PH_FRIC_BILABIAL_PH) { return "ɸ"; }
+    if (ph == SVARA_PH_FRIC_BILABIAL_B) { return "β"; }
+    if (ph == SVARA_PH_FRIC_PALATAL_C) { return "ç"; }
+    if (ph == SVARA_PH_FRIC_PALATAL_J) { return "ʝ"; }
+    if (ph == SVARA_PH_FRIC_UVULAR_CH) { return "χ"; }
+    if (ph == SVARA_PH_FRIC_UVULAR_R) { return "ʁ"; }
+    if (ph == SVARA_PH_FRIC_PHARYNGEAL_H) { return "ħ"; }
+    if (ph == SVARA_PH_FRIC_PHARYNGEAL_A) { return "ʕ"; }
+    if (ph == SVARA_PH_FRIC_RETRO_S) { return "ʂ"; }
+    if (ph == SVARA_PH_FRIC_RETRO_Z) { return "ʐ"; }
+    if (ph == SVARA_PH_FRIC_LATERAL_S) { return "ɬ"; }
+    if (ph == SVARA_PH_FRIC_LATERAL_Z) { return "ɮ"; }
+    if (ph == SVARA_PH_FRIC_GLOTTAL_H) { return "ɦ"; }
+    if (ph == SVARA_PH_NASAL_RETRO) { return "ɳ"; }
+    if (ph == SVARA_PH_NASAL_PALATAL) { return "ɲ"; }
+    if (ph == SVARA_PH_NASAL_UVULAR) { return "ɴ"; }
+    if (ph == SVARA_PH_TRILL_BILABIAL) { return "ʙ"; }
+    if (ph == SVARA_PH_TRILL_ALVEOLAR) { return "r"; }
+    if (ph == SVARA_PH_TRILL_UVULAR) { return "ʀ"; }
+    if (ph == SVARA_PH_APPROX_RETRO) { return "ɻ"; }
+    if (ph == SVARA_PH_LATERAL_PALATAL) { return "ʎ"; }
+    if (ph == SVARA_PH_LATERAL_VELAR) { return "ʟ"; }
+    if (ph == SVARA_PH_FLAP_RETRO) { return "ɽ"; }
+    if (ph == SVARA_PH_FLAP_LATERAL) { return "ɺ"; }
+    if (ph == SVARA_PH_AFFR_TS) { return "t͡s"; }
+    if (ph == SVARA_PH_AFFR_DZ) { return "d͡z"; }
+    if (ph == SVARA_PH_AFFR_RETRO) { return "ʈ͡ʂ"; }
+    if (ph == SVARA_PH_AFFR_RETRO_VOICED) { return "ɖ͡ʐ"; }
+    if (ph == SVARA_PH_AFFR_PF) { return "p͡f"; }
+    if (ph == SVARA_PH_AFFR_LATERAL) { return "t͡ɬ"; }
+    if (ph == SVARA_PH_CLICK_BILABIAL) { return "ʘ"; }
+    if (ph == SVARA_PH_CLICK_DENTAL) { return "ǀ"; }
+    if (ph == SVARA_PH_CLICK_ALVEOLAR) { return "ǃ"; }
+    if (ph == SVARA_PH_CLICK_PALATAL) { return "ǂ"; }
+    if (ph == SVARA_PH_CLICK_LATERAL) { return "ǁ"; }
+    if (ph == SVARA_PH_EJECTIVE_P) { return "pʼ"; }
+    if (ph == SVARA_PH_EJECTIVE_T) { return "tʼ"; }
+    if (ph == SVARA_PH_EJECTIVE_K) { return "kʼ"; }
+    if (ph == SVARA_PH_EJECTIVE_S) { return "sʼ"; }
+    if (ph == SVARA_PH_EJECTIVE_CH) { return "t͡ʃʼ"; }
+    if (ph == SVARA_PH_IMPLOSIVE_B) { return "ɓ"; }
+    if (ph == SVARA_PH_IMPLOSIVE_D) { return "ɗ"; }
+    if (ph == SVARA_PH_IMPLOSIVE_G) { return "ɠ"; }
     return 0;   # null cstr == None
 }
 
+# The parse table lives in its own anonymous mapping (never the bump arena: a
+# consumer's alloc_reset() must not pull it out from under the next lookup; and not
+# static data, which would add 22 KB to every binary). Rows are sorted by first
+# byte, then longest symbol first, so the greedy match takes t͡ʃ before t and aɪ
+# before a; START[b] .. START[b + 1] are the rows that start with byte b. Each
+# table below is an address inside the mapping, in 8-byte slots.
+var _SHBDK_IPA_SYM = 0;     # 128 rows: symbol cstr (a string literal)
+var _SHBDK_IPA_PH = 0;      # 128 rows: svara phoneme
+var _SHBDK_IPA_LEN = 0;     # 128 rows: symbol byte length
+var _SHBDK_IPA_START = 0;   # 257 slots: first byte -> first row
+var _SHBDK_IPA_EXT = 0;     # 101 slots: phoneme -> how many longer symbols start with its canonical one
+var _SHBDK_IPA_CONT = 0;    # 101 * 16 slots: phoneme * 16 + j -> the rest of the j-th such symbol
+var _SHBDK_IPA_CB = 0;      # 101 * 32 bytes: phoneme * 32 + byte / 8 -> bitmap of those rests' first bytes
+var _SHBDK_IPA_BYTES = 24576;
+var _SHBDK_IPA_ROWS = 0;
+var _SHBDK_IPA_READY = 0;
+
+fn _shbdk_ipa_add(sym, ph): i64 {
+    var r = _SHBDK_IPA_ROWS;
+    if (r >= 128) { return 0; }   # the mapping holds 128 rows (120 are used)
+    store64(_SHBDK_IPA_SYM + r * 8, sym);
+    store64(_SHBDK_IPA_PH + r * 8, ph);
+    store64(_SHBDK_IPA_LEN + r * 8, strlen(sym));
+    _SHBDK_IPA_ROWS = r + 1;
+    return 0;
+}
+
+# 1 if row a sorts before row b: first byte ascending, then longer symbol first.
+fn _shbdk_ipa_row_before(a, b): i64 {
+    var fa = load8(load64(_SHBDK_IPA_SYM + a * 8));
+    var fb = load8(load64(_SHBDK_IPA_SYM + b * 8));
+    if (fa != fb) { return fa < fb; }
+    return load64(_SHBDK_IPA_LEN + a * 8) > load64(_SHBDK_IPA_LEN + b * 8);
+}
+
+fn _shbdk_ipa_swap(a, b): i64 {
+    var t = load64(_SHBDK_IPA_SYM + a * 8);
+    store64(_SHBDK_IPA_SYM + a * 8, load64(_SHBDK_IPA_SYM + b * 8));
+    store64(_SHBDK_IPA_SYM + b * 8, t);
+    t = load64(_SHBDK_IPA_PH + a * 8);
+    store64(_SHBDK_IPA_PH + a * 8, load64(_SHBDK_IPA_PH + b * 8));
+    store64(_SHBDK_IPA_PH + b * 8, t);
+    t = load64(_SHBDK_IPA_LEN + a * 8);
+    store64(_SHBDK_IPA_LEN + a * 8, load64(_SHBDK_IPA_LEN + b * 8));
+    store64(_SHBDK_IPA_LEN + b * 8, t);
+    return 0;
+}
+
+fn _shbdk_ipa_tab(): i64 {
+    if (_SHBDK_IPA_READY == 1) { return 1; }
+    var mem = mmap_anon(_SHBDK_IPA_BYTES);
+    if (mem == 0) {
+        # no anonymous mapping (AGNOS): fall back to the allocator, zeroed
+        mem = alloc(_SHBDK_IPA_BYTES);
+        var z = 0;
+        while (z < _SHBDK_IPA_BYTES) { store64(mem + z, 0); z = z + 8; }
+    }
+    _SHBDK_IPA_SYM = mem;
+    _SHBDK_IPA_PH = mem + 1024;
+    _SHBDK_IPA_LEN = mem + 2048;
+    _SHBDK_IPA_START = mem + 3072;
+    _SHBDK_IPA_EXT = mem + 5128;
+    _SHBDK_IPA_CONT = mem + 5936;
+    _SHBDK_IPA_CB = mem + 18864;
+    _SHBDK_IPA_ROWS = 0;
+    # canonical symbols first, so an exact lookup finds the canonical row
+    _shbdk_ipa_add("a", SVARA_PH_VOWEL_A);
+    _shbdk_ipa_add("e", SVARA_PH_VOWEL_E);
+    _shbdk_ipa_add("i", SVARA_PH_VOWEL_I);
+    _shbdk_ipa_add("o", SVARA_PH_VOWEL_O);
+    _shbdk_ipa_add("u", SVARA_PH_VOWEL_U);
+    _shbdk_ipa_add("ə", SVARA_PH_VOWEL_SCHWA);
+    _shbdk_ipa_add("ɔ", SVARA_PH_VOWEL_OPEN_O);
+    _shbdk_ipa_add("æ", SVARA_PH_VOWEL_ASH);
+    _shbdk_ipa_add("ɪ", SVARA_PH_VOWEL_NEAR_I);
+    _shbdk_ipa_add("ʊ", SVARA_PH_VOWEL_NEAR_U);
+    _shbdk_ipa_add("ɑ", SVARA_PH_VOWEL_OPEN_A);
+    _shbdk_ipa_add("ɛ", SVARA_PH_VOWEL_OPEN_E);
+    _shbdk_ipa_add("ʌ", SVARA_PH_VOWEL_CUP_V);
+    _shbdk_ipa_add("ɜ", SVARA_PH_VOWEL_BIRD);
+    _shbdk_ipa_add("iː", SVARA_PH_VOWEL_LONG_I);
+    _shbdk_ipa_add("aɪ", SVARA_PH_DIPH_AI);
+    _shbdk_ipa_add("aʊ", SVARA_PH_DIPH_AU);
+    _shbdk_ipa_add("ɔɪ", SVARA_PH_DIPH_OI);
+    _shbdk_ipa_add("eɪ", SVARA_PH_DIPH_EI);
+    _shbdk_ipa_add("oʊ", SVARA_PH_DIPH_OU);
+    _shbdk_ipa_add("p", SVARA_PH_PLOSIVE_P);
+    _shbdk_ipa_add("b", SVARA_PH_PLOSIVE_B);
+    _shbdk_ipa_add("t", SVARA_PH_PLOSIVE_T);
+    _shbdk_ipa_add("d", SVARA_PH_PLOSIVE_D);
+    _shbdk_ipa_add("k", SVARA_PH_PLOSIVE_K);
+    _shbdk_ipa_add("ɡ", SVARA_PH_PLOSIVE_G);
+    _shbdk_ipa_add("f", SVARA_PH_FRIC_F);
+    _shbdk_ipa_add("v", SVARA_PH_FRIC_V);
+    _shbdk_ipa_add("s", SVARA_PH_FRIC_S);
+    _shbdk_ipa_add("z", SVARA_PH_FRIC_Z);
+    _shbdk_ipa_add("ʃ", SVARA_PH_FRIC_SH);
+    _shbdk_ipa_add("ʒ", SVARA_PH_FRIC_ZH);
+    _shbdk_ipa_add("θ", SVARA_PH_FRIC_TH);
+    _shbdk_ipa_add("ð", SVARA_PH_FRIC_DH);
+    _shbdk_ipa_add("h", SVARA_PH_FRIC_H);
+    _shbdk_ipa_add("m", SVARA_PH_NASAL_M);
+    _shbdk_ipa_add("n", SVARA_PH_NASAL_N);
+    _shbdk_ipa_add("ŋ", SVARA_PH_NASAL_NG);
+    _shbdk_ipa_add("t͡ʃ", SVARA_PH_AFFR_CH);
+    _shbdk_ipa_add("d͡ʒ", SVARA_PH_AFFR_J);
+    _shbdk_ipa_add("ʔ", SVARA_PH_GLOTTAL_STOP);
+    _shbdk_ipa_add("ɾ", SVARA_PH_TAP_FLAP);
+    _shbdk_ipa_add("l", SVARA_PH_LATERAL_L);
+    _shbdk_ipa_add("ɹ", SVARA_PH_APPROX_R);
+    _shbdk_ipa_add("w", SVARA_PH_APPROX_W);
+    _shbdk_ipa_add("j", SVARA_PH_APPROX_J);
+    _shbdk_ipa_add("y", SVARA_PH_VOWEL_Y);
+    _shbdk_ipa_add("ø", SVARA_PH_VOWEL_FRONT_ROUND_O);
+    _shbdk_ipa_add("œ", SVARA_PH_VOWEL_OPEN_FRONT_ROUND_O);
+    _shbdk_ipa_add("ɯ", SVARA_PH_VOWEL_CLOSE_BACK_UNROUNDED);
+    _shbdk_ipa_add("ɤ", SVARA_PH_VOWEL_MID_BACK_UNROUNDED);
+    _shbdk_ipa_add("ɨ", SVARA_PH_VOWEL_CLOSE_CENTRAL);
+    _shbdk_ipa_add("ʉ", SVARA_PH_VOWEL_CLOSE_CENTRAL_ROUNDED);
+    _shbdk_ipa_add("q", SVARA_PH_PLOSIVE_UVULAR_Q);
+    _shbdk_ipa_add("ɢ", SVARA_PH_PLOSIVE_UVULAR_G);
+    _shbdk_ipa_add("ʈ", SVARA_PH_PLOSIVE_RETRO_T);
+    _shbdk_ipa_add("ɖ", SVARA_PH_PLOSIVE_RETRO_D);
+    _shbdk_ipa_add("ɸ", SVARA_PH_FRIC_BILABIAL_PH);
+    _shbdk_ipa_add("β", SVARA_PH_FRIC_BILABIAL_B);
+    _shbdk_ipa_add("ç", SVARA_PH_FRIC_PALATAL_C);
+    _shbdk_ipa_add("ʝ", SVARA_PH_FRIC_PALATAL_J);
+    _shbdk_ipa_add("χ", SVARA_PH_FRIC_UVULAR_CH);
+    _shbdk_ipa_add("ʁ", SVARA_PH_FRIC_UVULAR_R);
+    _shbdk_ipa_add("ħ", SVARA_PH_FRIC_PHARYNGEAL_H);
+    _shbdk_ipa_add("ʕ", SVARA_PH_FRIC_PHARYNGEAL_A);
+    _shbdk_ipa_add("ʂ", SVARA_PH_FRIC_RETRO_S);
+    _shbdk_ipa_add("ʐ", SVARA_PH_FRIC_RETRO_Z);
+    _shbdk_ipa_add("ɬ", SVARA_PH_FRIC_LATERAL_S);
+    _shbdk_ipa_add("ɮ", SVARA_PH_FRIC_LATERAL_Z);
+    _shbdk_ipa_add("ɦ", SVARA_PH_FRIC_GLOTTAL_H);
+    _shbdk_ipa_add("ɳ", SVARA_PH_NASAL_RETRO);
+    _shbdk_ipa_add("ɲ", SVARA_PH_NASAL_PALATAL);
+    _shbdk_ipa_add("ɴ", SVARA_PH_NASAL_UVULAR);
+    _shbdk_ipa_add("ʙ", SVARA_PH_TRILL_BILABIAL);
+    _shbdk_ipa_add("r", SVARA_PH_TRILL_ALVEOLAR);
+    _shbdk_ipa_add("ʀ", SVARA_PH_TRILL_UVULAR);
+    _shbdk_ipa_add("ɻ", SVARA_PH_APPROX_RETRO);
+    _shbdk_ipa_add("ʎ", SVARA_PH_LATERAL_PALATAL);
+    _shbdk_ipa_add("ʟ", SVARA_PH_LATERAL_VELAR);
+    _shbdk_ipa_add("ɽ", SVARA_PH_FLAP_RETRO);
+    _shbdk_ipa_add("ɺ", SVARA_PH_FLAP_LATERAL);
+    _shbdk_ipa_add("t͡s", SVARA_PH_AFFR_TS);
+    _shbdk_ipa_add("d͡z", SVARA_PH_AFFR_DZ);
+    _shbdk_ipa_add("ʈ͡ʂ", SVARA_PH_AFFR_RETRO);
+    _shbdk_ipa_add("ɖ͡ʐ", SVARA_PH_AFFR_RETRO_VOICED);
+    _shbdk_ipa_add("p͡f", SVARA_PH_AFFR_PF);
+    _shbdk_ipa_add("t͡ɬ", SVARA_PH_AFFR_LATERAL);
+    _shbdk_ipa_add("ʘ", SVARA_PH_CLICK_BILABIAL);
+    _shbdk_ipa_add("ǀ", SVARA_PH_CLICK_DENTAL);
+    _shbdk_ipa_add("ǃ", SVARA_PH_CLICK_ALVEOLAR);
+    _shbdk_ipa_add("ǂ", SVARA_PH_CLICK_PALATAL);
+    _shbdk_ipa_add("ǁ", SVARA_PH_CLICK_LATERAL);
+    _shbdk_ipa_add("pʼ", SVARA_PH_EJECTIVE_P);
+    _shbdk_ipa_add("tʼ", SVARA_PH_EJECTIVE_T);
+    _shbdk_ipa_add("kʼ", SVARA_PH_EJECTIVE_K);
+    _shbdk_ipa_add("sʼ", SVARA_PH_EJECTIVE_S);
+    _shbdk_ipa_add("t͡ʃʼ", SVARA_PH_EJECTIVE_CH);
+    _shbdk_ipa_add("ɓ", SVARA_PH_IMPLOSIVE_B);
+    _shbdk_ipa_add("ɗ", SVARA_PH_IMPLOSIVE_D);
+    _shbdk_ipa_add("ɠ", SVARA_PH_IMPLOSIVE_G);
+    # accepted alternates (parse only)
+    _shbdk_ipa_add("ɝ", SVARA_PH_VOWEL_BIRD);
+    _shbdk_ipa_add("ɚ", SVARA_PH_VOWEL_BIRD);
+    _shbdk_ipa_add("g", SVARA_PH_PLOSIVE_G);
+    _shbdk_ipa_add("tʃ", SVARA_PH_AFFR_CH);
+    _shbdk_ipa_add("dʒ", SVARA_PH_AFFR_J);
+    _shbdk_ipa_add("t͜ʃ", SVARA_PH_AFFR_CH);
+    _shbdk_ipa_add("d͜ʒ", SVARA_PH_AFFR_J);
+    _shbdk_ipa_add("t͜s", SVARA_PH_AFFR_TS);
+    _shbdk_ipa_add("d͜z", SVARA_PH_AFFR_DZ);
+    _shbdk_ipa_add("ʈ͜ʂ", SVARA_PH_AFFR_RETRO);
+    _shbdk_ipa_add("ɖ͜ʐ", SVARA_PH_AFFR_RETRO_VOICED);
+    _shbdk_ipa_add("p͜f", SVARA_PH_AFFR_PF);
+    _shbdk_ipa_add("t͜ɬ", SVARA_PH_AFFR_LATERAL);
+    _shbdk_ipa_add("t͜ʃʼ", SVARA_PH_EJECTIVE_CH);
+    _shbdk_ipa_add("tʃʼ", SVARA_PH_EJECTIVE_CH);
+    _shbdk_ipa_add("ʧ", SVARA_PH_AFFR_CH);
+    _shbdk_ipa_add("ʤ", SVARA_PH_AFFR_J);
+    _shbdk_ipa_add("ʦ", SVARA_PH_AFFR_TS);
+    _shbdk_ipa_add("ʣ", SVARA_PH_AFFR_DZ);
+    _shbdk_ipa_add("ɫ", SVARA_PH_LATERAL_L);
+    # stable insertion sort (canonical rows stay ahead of alternates of equal length)
+    var n = _SHBDK_IPA_ROWS;
+    var i = 1;
+    var j = 0;
+    while (i < n) {
+        j = i;
+        while (j > 0 && _shbdk_ipa_row_before(j, j - 1) == 1) { _shbdk_ipa_swap(j, j - 1); j = j - 1; }
+        i = i + 1;
+    }
+    var b = 0;
+    var r = 0;
+    while (b <= 256) {
+        while (r < n && load8(load64(_SHBDK_IPA_SYM + r * 8)) < b) { r = r + 1; }
+        store64(_SHBDK_IPA_START + b * 8, r);
+        b = b + 1;
+    }
+    # which canonical symbols are a strict prefix of another symbol: only those can
+    # merge with the next one, so only those need _shbdk_ipa_would_merge
+    var p = 0;
+    var cs = 0;
+    var cl = 0;
+    var q = 0;
+    var ext = 0;
+    while (p < 101) {
+        ext = 0;
+        cs = shbdk_phoneme_to_ipa(p);
+        if (cs != 0) {
+            cl = strlen(cs);
+            q = load64(_SHBDK_IPA_START + load8(cs) * 8);
+            while (q < load64(_SHBDK_IPA_START + (load8(cs) + 1) * 8)) {
+                if (ext < 16 && load64(_SHBDK_IPA_LEN + q * 8) > cl && memeq(load64(_SHBDK_IPA_SYM + q * 8), cs,
+                    cl) == 1) {
+                    store64(_SHBDK_IPA_CONT + (p * 16 + ext) * 8, load64(_SHBDK_IPA_SYM + q * 8) + cl);
+                    var fb = load8(load64(_SHBDK_IPA_SYM + q * 8) + cl);
+                    var cbi = _SHBDK_IPA_CB + p * 32 + (fb >> 3);
+                    store8(cbi, load8(cbi) | (1 << (fb & 7)));
+                    ext = ext + 1;
+                }
+                q = q + 1;
+            }
+        }
+        store64(_SHBDK_IPA_EXT + p * 8, ext);
+        p = p + 1;
+    }
+    _SHBDK_IPA_READY = 1;
+    return 1;
+}
+
+# Exact whole-string IPA symbol -> svara phoneme ordinal, or SHBDK_PH_NONE.
+# (Rust ipa_to_phoneme.) Accepts the canonical symbols and the alternates above.
+#must_use
+fn shbdk_ipa_to_phoneme(ipa): i64 {
+    if (ipa == 0) { return SHBDK_PH_NONE; }
+    _shbdk_ipa_tab();
+    var f = load8(ipa);
+    var r = load64(_SHBDK_IPA_START + f * 8);
+    var e = load64(_SHBDK_IPA_START + (f + 1) * 8);
+    while (r < e) {
+        if (streq(load64(_SHBDK_IPA_SYM + r * 8), ipa) == 1) { return load64(_SHBDK_IPA_PH + r * 8); }
+        r = r + 1;
+    }
+    return SHBDK_PH_NONE;
+}
+
 # Longest phoneme match at byte `pos`. Returns (byte_len << 8) | phoneme on a
-# match (phoneme is 0..100, fits the low byte), or 0 if nothing matches. Ordered
-# longest byte-sequence first so greedy matching prefers multi-symbol units.
+# match (phoneme is 0..100, fits the low byte), or 0 if nothing matches.
 fn _shbdk_ipa_match_at(ipa, pos): i64 {
-    # 5-byte tie-bar affricates
-    if (_shbdk_ipa_starts_with(ipa, pos, "t͡ʃ") == 1) { return (5 << 8) | SVARA_PH_AFFR_CH; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "d͡ʒ") == 1) { return (5 << 8) | SVARA_PH_AFFR_J; }
-    # 4-byte diphthong
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɔɪ") == 1) { return (4 << 8) | SVARA_PH_DIPH_OI; }
-    # 3-byte diphthongs / long vowel / 2-char affricates
-    if (_shbdk_ipa_starts_with(ipa, pos, "aɪ") == 1) { return (3 << 8) | SVARA_PH_DIPH_AI; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "aʊ") == 1) { return (3 << 8) | SVARA_PH_DIPH_AU; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "eɪ") == 1) { return (3 << 8) | SVARA_PH_DIPH_EI; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "oʊ") == 1) { return (3 << 8) | SVARA_PH_DIPH_OU; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "iː") == 1) { return (3 << 8) | SVARA_PH_VOWEL_LONG_I; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "tʃ") == 1) { return (3 << 8) | SVARA_PH_AFFR_CH; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "dʒ") == 1) { return (3 << 8) | SVARA_PH_AFFR_J; }
-    # 2-byte single symbols
-    if (_shbdk_ipa_starts_with(ipa, pos, "ə") == 1) { return (2 << 8) | SVARA_PH_VOWEL_SCHWA; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɔ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_O; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "æ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_ASH; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɪ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_NEAR_I; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ʊ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_NEAR_U; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɑ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_A; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɛ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_OPEN_E; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ʌ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_CUP_V; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɜ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_BIRD; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɝ") == 1) { return (2 << 8) | SVARA_PH_VOWEL_BIRD; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ŋ") == 1) { return (2 << 8) | SVARA_PH_NASAL_NG; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ʃ") == 1) { return (2 << 8) | SVARA_PH_FRIC_SH; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ʒ") == 1) { return (2 << 8) | SVARA_PH_FRIC_ZH; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "θ") == 1) { return (2 << 8) | SVARA_PH_FRIC_TH; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ð") == 1) { return (2 << 8) | SVARA_PH_FRIC_DH; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɡ") == 1) { return (2 << 8) | SVARA_PH_PLOSIVE_G; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ʔ") == 1) { return (2 << 8) | SVARA_PH_GLOTTAL_STOP; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɾ") == 1) { return (2 << 8) | SVARA_PH_TAP_FLAP; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "ɹ") == 1) { return (2 << 8) | SVARA_PH_APPROX_R; }
-    # 1-byte ASCII single symbols
-    if (_shbdk_ipa_starts_with(ipa, pos, "a") == 1) { return (1 << 8) | SVARA_PH_VOWEL_A; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "e") == 1) { return (1 << 8) | SVARA_PH_VOWEL_E; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "i") == 1) { return (1 << 8) | SVARA_PH_VOWEL_I; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "o") == 1) { return (1 << 8) | SVARA_PH_VOWEL_O; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "u") == 1) { return (1 << 8) | SVARA_PH_VOWEL_U; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "p") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_P; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "b") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_B; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "t") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_T; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "d") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_D; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "k") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_K; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "g") == 1) { return (1 << 8) | SVARA_PH_PLOSIVE_G; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "f") == 1) { return (1 << 8) | SVARA_PH_FRIC_F; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "v") == 1) { return (1 << 8) | SVARA_PH_FRIC_V; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "s") == 1) { return (1 << 8) | SVARA_PH_FRIC_S; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "z") == 1) { return (1 << 8) | SVARA_PH_FRIC_Z; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "h") == 1) { return (1 << 8) | SVARA_PH_FRIC_H; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "m") == 1) { return (1 << 8) | SVARA_PH_NASAL_M; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "n") == 1) { return (1 << 8) | SVARA_PH_NASAL_N; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "l") == 1) { return (1 << 8) | SVARA_PH_LATERAL_L; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "r") == 1) { return (1 << 8) | SVARA_PH_APPROX_R; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "w") == 1) { return (1 << 8) | SVARA_PH_APPROX_W; }
-    if (_shbdk_ipa_starts_with(ipa, pos, "j") == 1) { return (1 << 8) | SVARA_PH_APPROX_J; }
+    _shbdk_ipa_tab();
+    var f = load8(ipa + pos);
+    var r = load64(_SHBDK_IPA_START + f * 8);
+    var e = load64(_SHBDK_IPA_START + (f + 1) * 8);
+    while (r < e) {
+        if (_shbdk_ipa_starts_with(ipa, pos, load64(_SHBDK_IPA_SYM + r * 8)) == 1) {
+            return (load64(_SHBDK_IPA_LEN + r * 8) << 8) | load64(_SHBDK_IPA_PH + r * 8);
+        }
+        r = r + 1;
+    }
     return 0;
 }
 
@@ -251,15 +448,52 @@ fn shbdk_parse_ipa_word(ipa): i64 {
 }
 
 # Convert a vec of svara phoneme ordinals to an IPA cstr. (Rust phonemes_to_ipa.)
+#
+# 3.2: where two adjacent symbols would read back as ONE longer symbol — [a, ɪ] as
+# the diphthong aɪ, [t, ʃ] as the affricate (a bare tʃ still reads as one, the
+# common broad spelling and what 3.1 wrote) — a syllable break "." goes between
+# them, so the transcription reads back as the same phonemes. Two vowels that do
+# not form a diphthong are in hiatus, and an English t + ʃ that is not the
+# affricate spans a syllable boundary, so the "." is also the right IPA there.
 #must_use
 fn shbdk_phonemes_to_ipa(phonemes): cstring {
     var sb = str_builder_new();
     var n = vec_len(phonemes);
     var i = 0;
+    var prev = 0;
+    var s = 0;
+    var ph = 0;
+    var prev_ph = 0 - 1;
+    _shbdk_ipa_tab();
     while (i < n) {
-        var s = shbdk_phoneme_to_ipa(vec_get(phonemes, i));
-        if (s != 0) { str_builder_add_cstr(sb, s); }
+        ph = vec_get(phonemes, i);
+        s = shbdk_phoneme_to_ipa(ph);
+        if (s != 0) {
+            if (prev_ph >= 0 && _shbdk_ipa_would_merge(prev_ph, s) == 1) { str_builder_add_cstr(sb, "."); }
+            str_builder_add_cstr(sb, s);
+            prev_ph = ph;
+        }
         i = i + 1;
     }
     return str_data(str_builder_build(sb));
+}
+
+# 1 if the reader, at the start of phoneme `a`'s symbol directly followed by the
+# symbol `b`, would take a longer symbol than `a`'s: some symbol is `a`'s followed
+# by a continuation that `b` begins with.
+fn _shbdk_ipa_would_merge(a, b): i64 {
+    var n = load64(_SHBDK_IPA_EXT + a * 8);
+    if (n == 0) { return 0; }
+    var c0 = load8(b);
+    if (((load8(_SHBDK_IPA_CB + a * 32 + (c0 >> 3)) >> (c0 & 7)) & 1) == 0) { return 0; }
+    var j = 0;
+    var cont = 0;
+    while (j < n) {
+        cont = load64(_SHBDK_IPA_CONT + (a * 16 + j) * 8);
+        if (load8(cont) == c0) {
+            if (_shbdk_ipa_starts_with(b, 0, cont) == 1) { return 1; }
+        }
+        j = j + 1;
+    }
+    return 0;
 }

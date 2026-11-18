@@ -178,5 +178,86 @@ assert_eq(_in_order(sp, sl, _words("argon", "iron", "neon", "tin", "zinc")), 1, 
 assert_lt(_pos(sp, sl, "ñu"), _pos(sp, sl, "argon"), "base block before overlay block");
 assert_eq(vec_len(shbdk_dict_lookup(shbdk_from_binary(sb), "yak")), 1, "sorted output decodes");
 
+# ================================================================
+# 3.2: every value is checked, not only every length, and a failure says why.
+# Layout of the blob below (no language, one base word "cat", one pronunciation
+# [K] with a frequency and a region, empty overlay):
+#   0-3 magic  4 version  5 lang flag  6-9 count  10-11 wlen  12-14 "cat"
+#   15-16 npron  17-18 nphon  19 phoneme  20 freq flag  21-28 freq  29 region flag
+#   30 region  31-34 user count   (35 bytes)
+test_group("decoder checks every value");
+var vd = shbdk_dict_new();
+shbdk_dict_insert_entry(vd, "cat", shbdk_dict_entry_new(shbdk_pronunciation_with_region(
+      shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_PLOSIVE_K)), 0.5), SHBDK_REGION_RP)));
+var vb = shbdk_to_binary(vd);
+assert_eq(str_len(vb), 35, "35-byte blob");
+assert_neq(shbdk_from_binary(vb), 0, "the clean blob decodes");
+fn _mut(blob, off, byte): i64 {
+    var n = str_len(blob);
+    var c = alloc(n + 8);
+    memcpy(c, str_data(blob), n);
+    store8(c + off, byte);
+    return shbdk_from_binary(str_new(c, n));
+}
+fn _err_has(sub): i64 {
+    var e = shbdk_last_error();
+    var n = strlen(sub);
+    var i = 0;
+    while (load8(e + i) != 0) {
+        if (memeq(e + i, sub, n) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+assert_eq(_mut(vb, 30, 7), 0, "region byte 7 refused (it loaded, then to_cmudict / to_json crashed)");
+assert_eq(_err_has("region is not GA or RP"), 1, "region reason");
+assert_eq(_mut(vb, 29, 2), 0, "region flag 2 refused (it read as no region)");
+assert_eq(_err_has("option flag"), 1, "flag reason");
+assert_eq(_mut(vb, 20, 9), 0, "frequency flag 9 refused");
+assert_eq(_mut(vb, 19, 200), 0, "phoneme 200 refused (it loaded, then vanished on export)");
+assert_eq(_err_has("svara phoneme"), 1, "phoneme reason");
+assert_eq(_mut(vb, 28, 127), 0, "a frequency far outside 0.0-1.0 refused");
+assert_eq(_err_has("frequency"), 1, "frequency reason");
+assert_eq(_mut(vb, 13, 255), 0, "a word that is not UTF-8 refused");
+assert_eq(_mut(vb, 5, 3), 0, "language flag 3 refused");
+assert_eq(_mut(vb, 15, 0), 0, "an entry with no pronunciation refused (it was dropped)");
+var longer = alloc(40);
+memcpy(longer, str_data(vb), 35);
+store8(longer + 35, 0);
+assert_eq(shbdk_from_binary(str_new(longer, 36)), 0, "a trailing byte refused");
+assert_eq(_err_has("trailing bytes"), 1, "trailing reason");
+assert_eq(shbdk_from_binary(str_new(str_data(vb), 4)), 0, "too short");
+assert_eq(_err_has("too short for header"), 1, "short reason, as Rust's");
+var vback = shbdk_from_binary(vb);
+var vbp = shbdk_dict_entry_primary(shbdk_dict_lookup_entry(vback, "cat"));
+assert_eq(shbdk_pronunciation_frequency(vbp), 0.5, "frequency survives");
+assert_eq(shbdk_pronunciation_region(vbp), SHBDK_REGION_RP, "region survives");
+
+test_group("writer refuses what the format cannot hold");
+var wd = shbdk_dict_new();
+shbdk_dict_insert(wd, "bad", _v1(280));
+assert_eq(str_len(shbdk_to_binary(wd)), 0, "phoneme 280 refused (it went out as 24)");
+assert_eq(_err_has("svara phoneme"), 1, "named");
+var wl = shbdk_dict_new();
+var big = alloc(65537);
+memset(big, 97, 65536);
+store8(big + 65536, 0);
+shbdk_dict_insert(wl, big, _v1(SVARA_PH_PLOSIVE_K));
+assert_eq(str_len(shbdk_to_binary(wl)), 0, "a 65,536-byte word refused (it made the whole file undecodable)");
+assert_eq(_err_has("longer than 65535"), 1, "named");
+
+test_group("a two-variant entry round-trips in order");
+var tv = shbdk_dict_new();
+var tp = vec_new();
+vec_push(tp, shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_LONG_I)), 0.7));
+vec_push(tp, shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_OPEN_E)), 0.3));
+shbdk_dict_insert_entry(tv, "read", shbdk_dict_entry_from_pronunciations(tp));
+var tvb = shbdk_from_binary(shbdk_to_binary(tv));
+assert_eq(shbdk_dict_entry_eq(shbdk_dict_lookup_entry(tvb, "read"), shbdk_dict_lookup_entry(tv, "read")), 1,
+  "same variants, frequencies, order");
+
+test_group("roundtrip minimal: lookup the");
+assert_neq(shbdk_dict_lookup(shbdk_from_binary(shbdk_to_binary(shbdk_dict_english_minimal())), "the"), 0, "the");
+
 var rc = assert_summary();
 syscall(60, rc);

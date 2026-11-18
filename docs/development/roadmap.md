@@ -10,7 +10,7 @@ v0.x/v1.0 sequencing collapsed into a single parity milestone.
 ## Release criteria (v3.0.0)
 
 - [x] Rust → Cyrius surface parity verified (function-level against `rust-old/`; every module ✅ or consciously dropped)
-- [x] Test coverage adequate for the surface area (689 assertions at the 3.0.0 gate; 997 / 26 suites at 3.1.2)
+- [x] Test coverage adequate for the surface area (689 assertions at the 3.0.0 gate; 1,426 / 28 suites after M3)
 - [x] Benchmarks captured in [`docs/benchmarks.md`](../benchmarks.md)
 - [x] At least one downstream consumer green (`dist/shabdakosh.cyr` linked + exercised by a consumer smoke)
 - [x] CHANGELOG complete (3.0.0 entry)
@@ -46,57 +46,39 @@ from ~8.7 ms to ~33 µs.
 Shipped alongside: `fuzz/parsers.fcyr`, a real fuzz harness over every untrusted-input parser (it
 replaced the scaffold stub and runs in CI), which found and fixed one round-trip defect.
 
-### M3 — Retire `rust-old/` — next
+### M3 — Retire `rust-old/` — sweep done; removal awaits the go-ahead
 
-Unblocked by M2: the perfect hash was the last gate the old backlog put in front of this.
+The bar changed for this milestone: **`rust-old/` is the list of capabilities the port must have;
+accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over-rust-parity.md)).
 
-1. **A final function-for-function parity sweep** of every ported module against `rust-old/`.
-   Anything that diverges either gets fixed or joins *Open decisions* below.
-2. **Settle the open decisions** below. Each one is a place the oracle itself is wrong or
-   limited; once `rust-old/` is gone, the ADR is the only record of why the port differs.
-3. **Remove `rust-old/`.** It needs the maintainer's go-ahead: CLAUDE.md protects it as the
-   parity oracle. CLAUDE.md, ADR 004, `state.md` and many test comments cite `rust-old/` paths;
-   re-point them at a tag of this repository that still has it.
-
-## Open decisions
-
-Each would be a deliberate divergence from `rust-old/`, so each needs an ADR before code changes.
-The fuzz harness tolerates the two it can reach (2 and 3), with a comment pointing here.
-
-1. **`dict.validate()` reports 5,468 of 10,617 built-in English entries as invalid.** Measured and
-   written up in [architecture note 001](../architecture/001-phoneme-ipa-bridge-and-validation.md);
-   `rust-old/` behaves identically, and the count is unchanged on varna 2.6.0 (measured in 3.1.2).
-   Three causes: varna spells affricates with the tie bar (`t͡ʃ`) while the port emits bare `tʃ`
-   (1,070 entries); ARPABET `IY` maps to `SVARA_PH_VOWEL_E` → IPA `e` rather than `iː` (2,306);
-   and varna's `en` inventory has no NURSE vowel and only two of five English diphthongs (3,358).
-   Only the first is this crate's to fix. Decide before any consumer relies on `validate()`.
-2. **The ARPABET notation drops every vowel on a round trip** (found by the 3.1.2 fuzz harness).
-   `shbdk_notation_render(ARPABET, …)` writes stress digits (`OW1`, `AH0`) and
-   `shbdk_notation_parse(ARPABET, …)` reads through `arpabet_to_phoneme`, which takes none, so
-   `parse(render(v))` keeps only the consonants. The Rust's `Arpabet::str_to_phoneme` does the
-   same. The fix is to parse through `shbdk_arpabet_to_phoneme_with_stress`, as CMUdict text does.
-3. **Some CMUdict words do not survive a round trip** (found by the 3.1.2 fuzz harness). The word
-   is what comes before `(` after the line is trimmed, so `(x  AH0` stores the word `""` and
-   `read (1)  R EH1 D` stores `"read "`. Their export is a line whose word is gone or re-trimmed,
-   so it reads back as a different dictionary. The Rust stores both the same way. The fix is to
-   trim after stripping the `(n)` suffix and refuse an empty word.
-4. **Phonotactic validation covers English, Sanskrit and Japanese only**, the Rust's three
-   profiles. varna 2.6.0 has `phonotactics_by_code` for twelve languages and more than one
-   inventory per language (`registry_inventories`, e.g. Brazilian Portuguese as `pt-BR`).
-   Extending `shbdk_dict_validate_phonotactics` would be additive, but still a divergence.
-5. **A frequency of exactly -1.0 reads back as no frequency.** `SHBDK_FREQ_NONE` is the f64 -1.0
-   bit pattern, chosen because the Rust sorts a missing frequency as `unwrap_or(-1.0)`. -1.0 is
-   outside the documented 0.0–1.0 contract. Moving the sentinel to a NaN payload would change what
-   `shbdk_pronunciation_frequency` returns for an unset frequency, which a consumer may sort on,
-   so it is not a patch-release change.
+1. ✅ **The function-for-function sweep** (2026-11-17). Seven parallel reviews ran the same inputs
+   through a built copy of the Rust crate and through the port: the full English dump, every
+   export, the formats' edge cases, the API surface, and the Rust's 178 unit, 53 integration and
+   27 doc tests. Every missing capability was ported, every port defect fixed, and every Rust
+   inaccuracy corrected (the CHANGELOG's *Unreleased* entry lists them). The 53 Rust integration tests are
+   `tests/integration.tcyr`, one test group each.
+2. ✅ **The open decisions are settled**, each by what is accurate:
+   - `validate()` affricates and `IY` are fixed; the rest is varna's inventory (see below).
+   - ARPABET notation parse reads stress digits.
+   - CMUdict words are trimmed after their `(n)` marker and an empty word is refused.
+   - Phonotactics covers every language varna profiles.
+   - A frequency must be 0.0–1.0, so -1.0 is no longer a frequency that collides with "none".
+3. **Remove `rust-old/`.** Nothing in the port depends on it any more. It needs the maintainer's
+   go-ahead: CLAUDE.md protects it. CLAUDE.md, ADR 004 / 005, `state.md` and many source and test
+   comments cite `rust-old/` paths; re-point them at a tag of this repository that still has it.
 
 ## Gated on something outside this repository
 
-- **`@freq` precision.** A value needing more than six decimals is written rounded to six
-  (`1/3` → `0.333333`, and `1e-9` → `0`), where the Rust writes the shortest f32 form
-  (`0.33333334`). Closing it needs an f32 shortest-round-trip formatter, which neither the stdlib
-  (`fmt_float_buf` is fixed-decimal) nor bayan (Grisu2 is shortest-or-*near*-shortest, and pairs
-  badly with `f64_parse`'s 1-ULP error) provides. Out of contract in practice.
+- **varna's English inventory lacks four phonemes**: the NURSE vowel `ɜ` (or `ɜː`) and the
+  diphthongs `aɪ`, `aʊ`, `ɔɪ`. They are the whole of `validate()`'s remaining 3,113 flags on the
+  English dictionary ([architecture note 001](../architecture/001-phoneme-ipa-bridge-and-validation.md)).
+  This is varna's data to add.
+- **varna's script data**:
+  - the Latin range stops at U+024F, so Vietnamese precomposed letters (U+1E00–1EFF) detect as no
+    script;
+  - `ja`'s registry entry has no `Hani`, so a kanji-only word never hints `ja`.
+- **Nasal vowels.** svara has no nasalised-vowel phonemes, so the IPA reader keeps a nasal vowel's
+  base vowel and drops the tilde (`ĩ` reads as `i`). A phoneme for each would be svara's to add.
 - **`lazy_open`'s blob fallback is not exercised on Linux**, where mmap always succeeds. Opening a
   directory bails earlier (`xlseek` gives EINVAL), so reaching the branch needs an AGNOS run. The
   contract it must keep (`lazy_open` and `load_binary_file` decode a file to the same dictionary)
@@ -105,9 +87,10 @@ The fuzz harness tolerates the two it can reach (2 and 3), with a comment pointi
   - **bayan**: shabdakosh folds the 995 KB `bayan` monolith (with 353 KB of unicode tables at
     cyrius 6.7.18), where `dist/bayan-json.cyr` would do. shabda folds the monolith too, and a
     consumer must not hold both, so it is a stack decision, not a pin bump. varna 2.6.0's
-    optional JSON support already uses `bayan-json`.
-  - **svara**: shabdakosh uses only svara's `SVARA_PH_*` ordinals, but folds the whole synthesis
-    bundle. A phoneme-only svara sub-bundle would be svara's to ship.
+    optional JSON support already uses `bayan-json`. (Since 3.2 the text layer uses the unicode
+    casefold and category tables the monolith carries, so a lighter bundle would need those too.)
+  - **svara**: shabdakosh uses only svara's `SVARA_PH_*` ordinals and its phoneme classes, but folds
+    the whole synthesis bundle. A phoneme-only svara sub-bundle would be svara's to ship.
 
 ## By design (not gaps)
 
@@ -123,7 +106,17 @@ The fuzz harness tolerates the two it can reach (2 and 3), with a comment pointi
 - **`bench` is in `[deps].stdlib`**: `cyrius bench` resolves `bench_*` from the project stdlib list.
   It does not reach the shipped bundle, which is built from `[lib].modules`.
 
+- **Inputs are NUL-terminated cstrings.** A byte 0 ends a word or a text, where a Rust `&str`
+  could hold one. Every public text input is a cstr by the port's calling convention.
+- **ARPABET is an English phoneme set.** A phoneme with no ARPABET symbol is left out of a CMUdict
+  export (and a pronunciation with none at all is refused), and ARPABET marks no vowel length, so
+  /i/ and /iː/ both write `IY1`.
+
 ## Out of scope
 
 - **C FFI** (`ffi.rs`) — dropped as redundant: CYRIUS interops with C directly, so a dedicated FFI
   shim buys nothing, and there are no C-ABI consumers today. A backdoor exists to add one if needed.
+- **The `shabdakosh-cli` binary and the criterion harness** — removed at 3.0.0. Every CLI
+  subcommand maps onto library calls (import / export: the `shbdk_load_*` / `shbdk_parse_*` and
+  `shbdk_to_*` / `shbdk_save_*` functions; `merge`, `diff`, `coverage`, `info`: their `shbdk_dict_*`
+  functions), and the benches are `benches/hotpath.bcyr`.

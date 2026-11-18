@@ -239,34 +239,93 @@ assert_neq(vtrim, 0, "leading VT / trailing FF are trimmed off the line");
 assert_neq(shbdk_dict_lookup(vtrim, "cat"), 0, "word key has no VT glued to it");
 
 # ================================================================
-# 3.1.2 (found by fuzz/parsers.fcyr): `@freq=1e999` parsed to infinity and to_cmudict
-# wrote `@freq=inf`, which the parser then refused: a dictionary it accepted could not
-# be loaded back. Rust's f32::from_str takes an optional sign and inf / infinity / nan
-# in any case, and its Display writes inf, -inf and NaN; both sides now do the same.
-test_group("non-finite @freq: Rust's spellings, and the export loads back");
-# As _freq_dump, but a refused input gives "" rather than a null dict to export.
-fn _freq_dump_or_empty(txt): cstring {
-    var d = shbdk_parse_cmudict(txt);
-    if (d == 0) { return ""; }
-    return shbdk_to_cmudict(d);
+# 3.1.2 (found by fuzz/parsers.fcyr): `@freq=1e999` parsed to infinity, was written
+# as `@freq=inf`, and could not be loaded back. 3.2: a frequency is 0.0-1.0, so a
+# non-finite or out-of-range value is refused where it is read, with the reason.
+test_group("@freq: the 0.0-1.0 contract, a strict number, the reason");
+fn _cm(txt): i64 { return shbdk_parse_cmudict(txt); }
+fn _cat_ph(): i64 {
+    var v = vec_new();
+    vec_push(v, SVARA_PH_PLOSIVE_K); vec_push(v, SVARA_PH_VOWEL_ASH); vec_push(v, SVARA_PH_PLOSIVE_T);
+    return v;
 }
-var fbig = _freq_dump_or_empty(";;; @freq=1e999\ncat  K AE1 T\n");
-assert_eq(_find(fbig, ";;; @freq=inf\n"), 1, "1e999 -> inf");
-assert_neq(shbdk_parse_cmudict(fbig), 0, "the 1e999 export loads back");
-var finf = _freq_dump_or_empty(";;; @freq=inf\ncat  K AE1 T\n");
-assert_eq(_find(finf, ";;; @freq=inf\n"), 1, "inf is accepted, written as inf");
-var fninf = _freq_dump_or_empty(";;; @freq=-Infinity\ncat  K AE1 T\n");
-assert_eq(_find(fninf, ";;; @freq=-inf\n"), 1, "-Infinity -> -inf");
-assert_eq(_find(_freq_dump_or_empty(";;; @freq=+INF\ncat  K AE1 T\n"), ";;; @freq=inf\n"), 1, "+INF -> inf");
-var fnan = _freq_dump_or_empty(";;; @freq=nan\ncat  K AE1 T\n");
-assert_eq(_find(fnan, ";;; @freq=NaN\n"), 1, "nan is written as NaN, as Rust's Display does");
-assert_neq(shbdk_parse_cmudict(fnan), 0, "the NaN export loads back");
-assert_eq(_find(_freq_dump_or_empty(";;; @freq=-NaN\ncat  K AE1 T\n"), ";;; @freq=NaN\n"), 1, "-NaN -> NaN");
-assert_eq(shbdk_parse_cmudict(";;; @freq=infx\ncat  K AE1 T\n"), 0, "infx is junk");
-assert_eq(shbdk_parse_cmudict(";;; @freq=in\ncat  K AE1 T\n"), 0, "in is junk");
-assert_eq(shbdk_parse_cmudict(";;; @freq=nan0\ncat  K AE1 T\n"), 0, "nan0 is junk");
-assert_eq(shbdk_parse_cmudict(";;; @freq=inf.5\ncat  K AE1 T\n"), 0, "inf.5 is junk");
-assert_eq(shbdk_parse_cmudict(";;; @freq=\ncat  K AE1 T\n"), 0, "empty value is refused");
+assert_eq(_cm(";;; @freq=1e999\ncat  K AE1 T\n"), 0, "1e999 (inf) refused");
+assert_eq(_find(shbdk_last_error(), "line 1: @freq out of range (0.0-1.0): 1e999"), 1,
+  "the reason names line and value");
+assert_eq(_cm(";;; @freq=inf\ncat  K AE1 T\n"), 0, "inf refused");
+assert_eq(_cm(";;; @freq=nan\ncat  K AE1 T\n"), 0, "nan refused");
+assert_eq(_cm(";;; @freq=-1\ncat  K AE1 T\n"), 0, "-1 refused (it collided with 'no frequency')");
+assert_eq(_cm(";;; @freq=1.5\ncat  K AE1 T\n"), 0, "1.5 refused");
+assert_neq(_cm(";;; @freq=1\ncat  K AE1 T\n"), 0, "1 accepted");
+assert_neq(_cm(";;; @freq=0\ncat  K AE1 T\n"), 0, "0 accepted");
+assert_neq(_cm(";;; @freq=.5\ncat  K AE1 T\n"), 0, ".5 accepted (Rust's f32 grammar)");
+assert_neq(_cm(";;; @freq=5e-1\ncat  K AE1 T\n"), 0, "5e-1 accepted");
+assert_neq(_cm(";;; @freq=1.\ncat  K AE1 T\n"), 0, "1. accepted");
+assert_eq(_cm(";;; @freq=1.2.3\ncat  K AE1 T\n"), 0, "1.2.3 refused (it loaded as 1.2)");
+assert_eq(_find(shbdk_last_error(), "invalid @freq value: 1.2.3"), 1, "invalid value named");
+assert_eq(_cm(";;; @freq=1e\ncat  K AE1 T\n"), 0, "1e refused");
+assert_eq(_cm(";;; @freq=.\ncat  K AE1 T\n"), 0, ". refused");
+assert_eq(_cm(";;; @freq=1-2\ncat  K AE1 T\n"), 0, "1-2 refused");
+assert_eq(_cm(";;; @freq=1e+\ncat  K AE1 T\n"), 0, "1e+ refused");
+assert_eq(_cm(";;; @freq=.e5\ncat  K AE1 T\n"), 0, ".e5 refused");
+assert_eq(_cm(";;; @freq=infx\ncat  K AE1 T\n"), 0, "infx is junk");
+assert_eq(_cm(";;; @freq=\ncat  K AE1 T\n"), 0, "empty value is refused");
+
+test_group("@freq written shortest, read back exactly");
+var third_d = shbdk_dict_new();
+var third_p = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_cat_ph()), f64_div(f64_from(1), f64_from(3)));
+shbdk_dict_insert_entry(third_d, "cat", shbdk_dict_entry_new(third_p));
+var third_back = _cm(shbdk_to_cmudict(third_d));
+assert_eq(shbdk_pronunciation_frequency(shbdk_dict_entry_primary(shbdk_dict_lookup_entry(third_back, "cat"))),
+  f64_div(f64_from(1), f64_from(3)), "1/3 survives its export (it came back 0.333333)");
+
+test_group("CMUdict words: trimming, variant markers, the empty word");
+var rsp = _cm("read (1)  R IY1 D\nread (2)  R EH1 D\n");
+assert_neq(rsp, 0, "read (1) / read (2) parse");
+assert_neq(shbdk_dict_lookup_entry(rsp, "read"), 0, "the key is read, not 'read '");
+assert_eq(shbdk_dict_entry_len(shbdk_dict_lookup_entry(rsp, "read")), 2, "both variants under read");
+assert_neq(shbdk_dict_lookup_entry(_cm("(x  AH0\n"), "(x"), 0, "(x is a word: a leading ( is not a marker");
+var paren = _cm("(PAREN  P ER0 EH1 N\n");
+assert_neq(paren, 0, "real CMUdict (PAREN parses");
+assert_neq(shbdk_dict_lookup_entry(paren, "(paren"), 0, "and keeps its paren (it stored the empty word)");
+var mid = _cm("a(b  AH0\n");
+assert_neq(shbdk_dict_lookup_entry(mid, "a(b"), 0, "a ( inside a word is part of it");
+assert_neq(shbdk_dict_lookup_entry(_cm("(2)  AH0\n"), "(2)"), 0, "a marker with no word before it is the word");
+assert_eq(shbdk_parse_ipa("  /kæt/\n"), 0, "IPA: a line with no word is refused (it stored the key \"\")");
+assert_eq(shbdk_parse_ipa("/kæt/\n"), 0, "IPA: no word");
+assert_eq(_find(shbdk_last_error(), "line 1: empty word"), 1, "named");
+var tabw = _cm("cat\t  K AE1 T\n");
+assert_neq(shbdk_dict_lookup_entry(tabw, "cat"), 0, "a tab before the separator is trimmed (key was 'cat\\t')");
+var nbw = _cm("cat\xC2\xA0  K\xE2\x80\x83AE1 T\n");
+assert_neq(shbdk_dict_lookup_entry(nbw, "cat"), 0, "NBSP trimmed, U+2003 splits phonemes");
+assert_eq(_cm("caf\xE9  K AE1 F\n"), 0, "input that is not UTF-8 is refused");
+assert_eq(_cm("cat  K XX1 T\n"), 0, "unknown symbol");
+assert_eq(_find(shbdk_last_error(), "line 1: unknown ARPABET symbol 'XX1'"), 1, "named, as Rust's message");
+var unic = _cm("ÉCOLE  EY0 K OW1 L\n");
+assert_neq(shbdk_dict_lookup_entry(unic, "école"), 0, "the word lowercases with Unicode semantics");
+
+test_group("writers refuse what would not load back");
+var bad = shbdk_dict_new();
+shbdk_dict_insert(bad, "two  spaces", _cat_ph());
+assert_eq(shbdk_to_cmudict(bad), 0, "a two-space run in a word");
+assert_eq(_find(shbdk_last_error(), "cannot write the word 'two  spaces'"), 1, "named");
+var bad2 = shbdk_dict_new();
+shbdk_dict_insert(bad2, "a\nb", _cat_ph());
+assert_eq(shbdk_to_cmudict(bad2), 0, "a newline in a word");
+assert_eq(shbdk_to_ipa(bad2), 0, "a newline in a word (IPA)");
+var bad3 = shbdk_dict_new();
+shbdk_dict_insert(bad3, "a/b", _cat_ph());
+assert_neq(shbdk_to_cmudict(bad3), 0, "a slash is fine in CMUdict");
+assert_eq(shbdk_to_ipa(bad3), 0, "but not in the IPA format");
+var bad4 = shbdk_dict_new();
+var sil = vec_new();
+vec_push(sil, SVARA_PH_SILENCE);
+shbdk_dict_insert(bad4, "hush", sil);
+assert_eq(shbdk_to_cmudict(bad4), 0, "a pronunciation with no ARPABET symbol");
+assert_eq(shbdk_to_ipa(bad4), 0, "a pronunciation with no IPA");
+var okw = shbdk_dict_new();
+shbdk_dict_insert(okw, "ice cream", _cat_ph());
+assert_neq(_cm(shbdk_to_cmudict(okw)), 0, "one space inside a word is fine");
 
 var rc = assert_summary();
 syscall(60, rc);

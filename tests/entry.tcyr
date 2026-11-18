@@ -88,17 +88,66 @@ assert_eq(shbdk_dict_entry_len(ae), 2, "len 2");
 assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(ae), 0), SVARA_PH_VOWEL_E, "new high-freq E is primary");
 
 # ================================================================
-# Regression (parity audit): a NaN frequency must stay in place, not bubble to
-# primary — matching Rust's partial_cmp().unwrap_or(Equal) + stable sort.
-test_group("NaN frequency stays in place");
+# 3.2: a NaN is not a frequency (the contract is 0.0-1.0), so with_frequency does
+# not store it; the variant has no frequency and sorts after the ones that do. (The
+# parity audit had kept a stored NaN in place, as Rust's unwrap_or(Equal) did — and
+# Rust's sort panicked on that comparator past 20 variants.)
+test_group("NaN is not stored; the order stays total");
 var nan_bits = 0x7FF8000000000000;
 var nf1 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_A)), 0.7);
 var nf2 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), nan_bits);
 var nf3 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_I)), 0.3);
+assert_eq(shbdk_pronunciation_has_frequency(nf2), 0, "NaN not stored");
 var nfe = shbdk_dict_entry_from_pronunciations(_v3(nf1, nf2, nf3));
-assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(nfe), 0), SVARA_PH_VOWEL_A, "primary stays 0.7/A despite NaN");
+assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(nfe), 0), SVARA_PH_VOWEL_A, "primary 0.7/A");
 assert_eq(vec_get(shbdk_pronunciation_phonemes(vec_get(shbdk_dict_entry_all(nfe), 1)), 0),
-  SVARA_PH_VOWEL_E, "NaN stays in middle");
+  SVARA_PH_VOWEL_I, "0.3/I second");
+assert_eq(vec_get(shbdk_pronunciation_phonemes(vec_get(shbdk_dict_entry_all(nfe), 2)), 0),
+  SVARA_PH_VOWEL_E, "the unset one last");
+
+test_group("frequency contract 0.0-1.0");
+assert_eq(shbdk_frequency_is_valid(0.0), 1, "0.0");
+assert_eq(shbdk_frequency_is_valid(1.0), 1, "1.0");
+assert_eq(shbdk_frequency_is_valid(0.5), 1, "0.5");
+assert_eq(shbdk_frequency_is_valid(0x8000000000000000), 1, "-0.0");
+assert_eq(shbdk_frequency_is_valid(nan_bits), 0, "NaN");
+assert_eq(shbdk_frequency_is_valid(0x7FF0000000000000), 0, "inf");
+assert_eq(shbdk_frequency_is_valid(SHBDK_FREQ_NONE), 0, "-1.0 (the sentinel) is no frequency");
+assert_eq(shbdk_frequency_is_valid(1.5), 0, "1.5");
+var kept = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_A)), 0.25);
+kept = shbdk_pronunciation_with_frequency(kept, 5.0);
+assert_eq(shbdk_pronunciation_frequency(kept), 0.25, "an invalid value leaves the old frequency");
+
+test_group("frequency text: shortest that reads back exactly");
+var ftb = alloc(32);
+shbdk_frequency_text(0.5, ftb);
+assert_streq(ftb, "0.5", "0.5");
+shbdk_frequency_text(0.85, ftb);
+assert_streq(ftb, "0.85", "0.85");
+shbdk_frequency_text(1.0, ftb);
+assert_streq(ftb, "1", "1");
+shbdk_frequency_text(0.0, ftb);
+assert_streq(ftb, "0", "0");
+var third = f64_div(f64_from(1), f64_from(3));
+shbdk_frequency_text(third, ftb);
+assert_eq(f64_parse(ftb), third, "1/3 reads back exactly (was 0.333333)");
+var tiny = f64_div(f64_from(1), f64_from(1000000000));
+shbdk_frequency_text(tiny, ftb);
+assert_eq(f64_parse(ftb), tiny, "1e-9 reads back exactly (was 0)");
+
+test_group("for_region: no region matches nothing");
+var fre = shbdk_dict_entry_from_pronunciations(_v3(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_A)),
+    shbdk_pronunciation_with_region(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_E)), SHBDK_REGION_GA),
+    shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_I))));
+assert_eq(shbdk_dict_entry_for_region(fre, SHBDK_REGION_NONE), 0, "NONE finds nothing (it found the unregioned A)");
+assert_neq(shbdk_dict_entry_for_region(fre, SHBDK_REGION_GA), 0, "GA found");
+var badr = shbdk_pronunciation_with_region(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_A)), 7);
+assert_eq(shbdk_pronunciation_has_region(badr), 0, "a stray region value is not stored");
+test_group("from_phonemes copies; pronunciation_new takes the vec");
+var fpv = _v1(SVARA_PH_VOWEL_A);
+var fpe = shbdk_dict_entry_from_phonemes(fpv);
+vec_push(fpv, SVARA_PH_VOWEL_E);
+assert_eq(vec_len(shbdk_dict_entry_primary_phonemes(fpe)), 1, "copied");
 
 var rc = assert_summary();
 syscall(60, rc);

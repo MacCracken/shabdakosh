@@ -10,6 +10,7 @@ include "src/error.cyr"
 include "src/arpabet.cyr"
 include "src/ipa.cyr"
 include "src/dictionary/entry.cyr"
+include "src/dictionary/syllable.cyr"
 include "src/dictionary/_cmudict_data.cyr"
 include "src/dictionary/cmudict.cyr"
 include "src/dictionary/mod.cyr"
@@ -19,6 +20,12 @@ alloc_init();
 
 fn _v1(a): i64 { var v = vec_new(); vec_push(v, a); return v; }
 fn _v3(a, b, c): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); vec_push(v, c); return v; }
+fn _v2(a, b): i64 { var v = vec_new(); vec_push(v, a); vec_push(v, b); return v; }
+fn _v5(a, b, c, d, e): i64 {
+    var v = vec_new();
+    vec_push(v, a); vec_push(v, b); vec_push(v, c); vec_push(v, d); vec_push(v, e);
+    return v;
+}
 fn _has_int(v, x): i64 { return _shbdk_vec_has_int(v, x); }
 fn _e0(r): i64 { return vec_get(shbdk_validation_report_invalid_entries(r), 0); }
 fn _inv_valid(d, inv): i64 { return shbdk_validation_report_is_valid(shbdk_validate_inventory(d, inv)); }
@@ -142,15 +149,110 @@ assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_SCHWA), 0, "schwa vowel");
 
 # ================================================================
 # SECURITY regression (audit 2026-07-05): malformed JSON must not null-deref on a
-# missing/mistyped required field (Rust serde errored; this port defaults empty /
-# returns 0 on an unparseable root).
-test_group("malformed JSON (no null deref)");
-assert_neq(shbdk_validation_report_from_json("{}"), 0, "empty object -> report (missing language ok)");
-assert_streq(shbdk_validation_report_language(shbdk_validation_report_from_json("{}")),
-  "", "missing language -> empty");
+# missing/mistyped required field. 3.2: such a document is refused, as serde did
+# (it used to default the field: a missing language read as "", "Bogus" as 0).
+test_group("malformed report JSON: refused, no null deref");
+assert_eq(shbdk_validation_report_from_json("{}"), 0, "missing language refused");
 assert_eq(shbdk_validation_report_from_json("not valid json"), 0, "unparseable -> 0");
-assert_neq(shbdk_phonotactic_report_from_json("{\"violations\":[]}"), 0, "missing language -> report (no crash)");
-assert_neq(shbdk_validation_report_from_json("{\"language\":123}"), 0, "mistyped language -> report (no crash)");
+assert_eq(shbdk_phonotactic_report_from_json("{\"violations\":[]}"), 0, "missing language refused");
+assert_eq(shbdk_validation_report_from_json("{\"language\":123,\"invalid_entries\":[]}"), 0, "mistyped language");
+assert_eq(shbdk_validation_report_from_json("{\"language\":\"en\"}"), 0, "missing invalid_entries");
+assert_eq(shbdk_validation_report_from_json("{\"language\":\"en\",\"invalid_entries\":null}"), 0, "null entries");
+assert_eq(shbdk_validation_report_from_json("{\"language\":\"en\",\"invalid_entries\":[5]}"), 0, "a number entry");
+assert_eq(shbdk_validation_report_from_json(
+    "{\"language\":\"en\",\"invalid_entries\":[{\"word\":\"x\",\"invalid_phonemes\":[\"Bogus\"]}]}"), 0,
+  "a string phoneme (it read as 0)");
+assert_eq(shbdk_validation_report_from_json(
+    "{\"language\":\"en\",\"invalid_entries\":[{\"word\":\"x\",\"invalid_phonemes\":[999]}]}"), 0, "phoneme 999");
+assert_eq(shbdk_validation_report_from_json("[\"es\",[]]"), 0, "an array is not a report");
+var empty_rt = shbdk_validation_report_from_json(shbdk_validation_report_to_json(shbdk_validation_report_new("en",
+      vec_new())));
+assert_neq(empty_rt, 0, "an empty report round-trips");
+assert_eq(shbdk_validation_report_invalid_count(empty_rt), 0, "with no entries");
 
+test_group("record codecs and equality");
+var ie1 = shbdk_invalid_entry_new("cat", _v1(SVARA_PH_NASAL_NG));
+var ie2 = shbdk_invalid_entry_from_json(shbdk_invalid_entry_to_json(ie1));
+assert_eq(shbdk_invalid_entry_eq(ie1, ie2), 1, "InvalidEntry round-trips");
+var pv1 = shbdk_phonotactic_violation_new("w", "d", "s");
+assert_eq(shbdk_phonotactic_violation_eq(pv1,
+    shbdk_phonotactic_violation_from_json(shbdk_phonotactic_violation_to_json(pv1))),
+  1, "PhonotacticViolation round-trips");
+var vr2 = shbdk_validation_report_new("en", _v1(ie1));
+assert_eq(shbdk_validation_report_eq(vr2, shbdk_validation_report_from_json(shbdk_validation_report_to_json(vr2))), 1,
+  "ValidationReport equality after a round trip");
+assert_eq(shbdk_phonotactic_report_eq(pr, prt), 1, "PhonotacticReport equality after a round trip");
+
+# ================================================================
+# 3.2: is_consonant asks svara's class, so /iː/ and the extended vowels are vowels
+# (the Rust's list omitted them and called them consonants).
+test_group("is_consonant: every svara vowel is a vowel");
+assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_LONG_I), 0, "iː is a vowel (was a consonant)");
+assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_Y), 0, "y is a vowel");
+assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_CLOSE_BACK_UNROUNDED), 0, "ɯ is a vowel");
+assert_eq(_shbdk_is_consonant(SVARA_PH_SILENCE), 0, "silence is not a consonant");
+assert_eq(_shbdk_is_consonant(SVARA_PH_TRILL_ALVEOLAR), 1, "r is a consonant");
+
+# ================================================================
+# 3.2: phonotactics is syllable-aware. Constraints apply to onsets, codas, nuclei
+# and syllable boundaries, every run inside them is checked (so one- and
+# three-segment constraints fire), and onset / coda sizes are held to the profile.
+test_group("phonotactics: positions, not adjacent pairs");
+fn _viol(word_ph, prof): i64 {
+    var d = shbdk_dict_new();
+    shbdk_dict_insert(d, "w", word_ph);
+    return shbdk_phonotactic_report_violation_count(shbdk_validate_phonotactics(d, prof));
+}
+var en = phonotactics_english();
+# atlas: /tl/ sits across a syllable boundary (æt.ləs), not in an onset
+assert_eq(_viol(_v5(SVARA_PH_VOWEL_ASH, SVARA_PH_PLOSIVE_T, SVARA_PH_LATERAL_L, SVARA_PH_VOWEL_SCHWA, SVARA_PH_FRIC_S),
+    en), 0, "atlas: mid-word tl is no onset (it was flagged)");
+# a word-initial /tl/ onset is
+assert_eq(_viol(_v3(SVARA_PH_PLOSIVE_T, SVARA_PH_LATERAL_L, SVARA_PH_VOWEL_A), en), 1, "tla-: onset tl flagged");
+# a word-initial ŋ: a one-segment constraint, which never fired
+assert_eq(_viol(_v2(SVARA_PH_NASAL_NG, SVARA_PH_VOWEL_A), en), 1, "ŋa: onset ŋ flagged (never fired before)");
+assert_eq(_viol(_v3(SVARA_PH_FRIC_S, SVARA_PH_VOWEL_NEAR_I, SVARA_PH_NASAL_NG), en), 0, "sing: coda ŋ is fine");
+# /iː/ is a vowel now: [iː t t t t] is a 4-consonant coda against max coda 4 -> fine
+assert_eq(_viol(_v5(SVARA_PH_VOWEL_LONG_I, SVARA_PH_PLOSIVE_T, SVARA_PH_PLOSIVE_T, SVARA_PH_PLOSIVE_T,
+      SVARA_PH_PLOSIVE_T),
+    en), 0, "iː + 4 consonants is within max coda (iː read as a consonant made it 5)");
+# a 4-consonant onset exceeds English's max onset of 3
+var o4 = vec_new();
+vec_push(o4, SVARA_PH_FRIC_S); vec_push(o4, SVARA_PH_PLOSIVE_T); vec_push(o4, SVARA_PH_APPROX_R);
+vec_push(o4, SVARA_PH_APPROX_W); vec_push(o4, SVARA_PH_VOWEL_A);
+assert_eq(_viol(o4, en), 1, "a 4-consonant word-initial onset exceeds max onset 3");
+var enr = shbdk_validate_phonotactics(shbdk_dict_english(), en);
+assert_eq(shbdk_phonotactic_report_violation_count(enr), 0,
+  "the English dictionary has no English phonotactic violation (was 182 false ones)");
+
+test_group("phonotactics: every varna language, regional codes");
+var lang_ok = 0;
+var codes = phonotactics_all_codes();
+var ci = 0;
+while (ci < vec_len(codes)) {
+    var dl = shbdk_dict_with_language(shbdk_dict_new(), vec_get(codes, ci));
+    if (shbdk_dict_validate_phonotactics(dl) != 0) { lang_ok = lang_ok + 1; }
+    ci = ci + 1;
+}
+assert_eq(lang_ok, vec_len(codes), "a report for every language varna profiles (was en / sa / ja)");
+assert_gt(vec_len(codes), 3, "more than three");
+assert_neq(shbdk_dict_validate_phonotactics(shbdk_dict_with_language(shbdk_dict_new(), "pt-BR")), 0,
+  "pt-BR uses pt's profile");
+assert_neq(shbdk_dict_validate(shbdk_dict_with_language(shbdk_dict_new(), "en-US")), 0, "en-US uses en's inventory");
+
+test_group("inventory: affricate tie bar either way");
+var dtie = shbdk_dict_new();
+shbdk_dict_insert(dtie, "church", _v3(SVARA_PH_AFFR_CH, SVARA_PH_VOWEL_BIRD, SVARA_PH_AFFR_CH));
+var rtie = shbdk_validate_inventory(dtie, phoneme_english());
+var tie_bad = 0;
+var ti = 0;
+while (ti < shbdk_validation_report_invalid_count(rtie)) {
+    var tie_e = vec_get(shbdk_validation_report_invalid_entries(rtie), ti);
+    if (_shbdk_vec_has_int(shbdk_invalid_entry_invalid_phonemes(tie_e),
+        SVARA_PH_AFFR_CH) == 1) { tie_bad = 1; }
+    ti = ti + 1;
+}
+assert_eq(tie_bad, 0, "t͡ʃ is in varna's English inventory");
+assert_eq(_shbdk_inventory_has_normalized(phoneme_english(), "tʃ"), 1, "a bare tʃ matches t͡ʃ");
 var rc = assert_summary();
 syscall(60, rc);

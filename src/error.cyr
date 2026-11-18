@@ -97,6 +97,400 @@ fn shbdk_cstrcmp(a, b): i64 {
 }
 
 # ================================================================
+# Shared L0 text primitives: UTF-8, Unicode whitespace / punctuation, lowercase.
+#
+# 3.2: the tokenizers (notation parse, coverage, the CMUdict / IPA readers) split
+# and trimmed on ASCII whitespace only, coverage stripped ASCII punctuation only,
+# and lookups lowercased ASCII only, so "hello<NBSP>world" was one token, a
+# curly-quoted word never matched, and "ÉCOLE" never found "école". These give
+# every module the Unicode behaviour from one definition. The tables are the
+# stdlib's lib/unicode (casefold + categories), which the bayan fold carries.
+# ================================================================
+# Decode the code point at p[i] (p[i..n) readable) into store64(out). Returns its
+# byte length (1..4). An ill-formed sequence (stray continuation byte, overlong,
+# surrogate, > U+10FFFF, truncated) decodes as U+FFFD with length 1, so the byte
+# after it is never swallowed (Unicode 3.9, "maximal subpart" substitution).
+fn shbdk_utf8_decode(p, i, n, out): i64 {
+    var b0 = load8(p + i);
+    if (b0 < 128) { store64(out, b0); return 1; }
+    var need = 0;
+    var cp = 0;
+    var lo = 128;
+    var hi = 191;
+    if (b0 >= 194 && b0 <= 223) { need = 1; cp = b0 & 31; }
+    if (b0 >= 224 && b0 <= 239) {
+        need = 2;
+        cp = b0 & 15;
+        if (b0 == 224) { lo = 160; }   # E0 A0..BF: no overlongs
+        if (b0 == 237) { hi = 159; }   # ED 80..9F: no surrogates
+    }
+    if (b0 >= 240 && b0 <= 244) {
+        need = 3;
+        cp = b0 & 7;
+        if (b0 == 240) { lo = 144; }   # F0 90..BF: no overlongs
+        if (b0 == 244) { hi = 143; }   # F4 80..8F: <= U+10FFFF
+    }
+    if (need == 0 || i + need >= n) { store64(out, 65533); return 1; }   # bytes i+1..i+need must be < n
+    var k = 1;
+    var c = 0;
+    while (k <= need) {
+        c = load8(p + i + k);
+        if (k == 1) {
+            if (c < lo || c > hi) { store64(out, 65533); return 1; }
+        } else {
+            if ((c & 192) != 128) { store64(out, 65533); return 1; }
+        }
+        cp = (cp << 6) | (c & 63);
+        k = k + 1;
+    }
+    store64(out, cp);
+    return need + 1;
+}
+
+# Decode the code point that ENDS at p[e] (bytes [s, e) readable) into out.
+# Returns its byte length, or 0 if e <= s. A malformed tail decodes as one byte.
+fn shbdk_utf8_decode_before(p, s, e, out): i64 {
+    if (e <= s) { store64(out, 0); return 0; }
+    var j = e - 1;
+    while (j > s && e - j < 4 && (load8(p + j) & 192) == 128) { j = j - 1; }
+    if (shbdk_utf8_decode(p, j, e, out) == e - j) { return e - j; }
+    store64(out, 65533);
+    return 1;
+}
+
+# 1 if `cp` has the Unicode White_Space property (what Rust's split_whitespace
+# and trim use): TAB..CR, space, NEL, NBSP, OGHAM SPACE, U+2000..200A, LINE and
+# PARAGRAPH SEPARATOR, NNBSP, MMSP, IDEOGRAPHIC SPACE.
+#must_use
+fn shbdk_cp_is_ws(cp): i64 {
+    if (cp == 32) { return 1; }
+    if (cp >= 9 && cp <= 13) { return 1; }
+    if (cp < 133) { return 0; }
+    if (cp == 133 || cp == 160 || cp == 5760) { return 1; }
+    if (cp >= 8192 && cp <= 8202) { return 1; }
+    if (cp == 8232 || cp == 8233 || cp == 8239 || cp == 8287 || cp == 12288) { return 1; }
+    return 0;
+}
+
+# Byte length of the whitespace code point at p[i] (p[i..n) readable), or 0.
+#must_use
+fn shbdk_ws_len(p, i, n): i64 {
+    var b = load8(p + i);
+    if (b < 128) { return shbdk_cp_is_ws(b); }
+    var cpb[8];
+    var k = shbdk_utf8_decode(p, i, n, &cpb);
+    if (shbdk_cp_is_ws(load64(&cpb)) == 1) { return k; }
+    return 0;
+}
+
+# Byte length of the whitespace code point ending at p[e] (bytes [s, e)), or 0.
+#must_use
+fn shbdk_ws_len_before(p, s, e): i64 {
+    if (e <= s) { return 0; }
+    var b = load8(p + e - 1);
+    if (b < 128) { return shbdk_cp_is_ws(b); }
+    var cpb[8];
+    var k = shbdk_utf8_decode_before(p, s, e, &cpb);
+    if (shbdk_cp_is_ws(load64(&cpb)) == 1) { return k; }
+    return 0;
+}
+
+# 1 if `cp` is punctuation or a symbol: in ASCII exactly Rust's
+# is_ascii_punctuation set, elsewhere General Category P* or S* (curly quotes,
+# guillemets, dashes, the ellipsis, CJK and fullwidth punctuation, currency, emoji).
+#must_use
+fn shbdk_cp_is_punct(cp): i64 {
+    if (cp < 128) {
+        if (cp >= 33 && cp <= 47) { return 1; }    # ! " # $ % & ' ( ) * + , - . /
+        if (cp >= 58 && cp <= 64) { return 1; }    # : ; < = > ? @
+        if (cp >= 91 && cp <= 96) { return 1; }    # [ \ ] ^ _ `
+        if (cp >= 123 && cp <= 126) { return 1; }  # { | } ~
+        return 0;
+    }
+    var gc = unicode_category(cp);
+    if (gc >= GC_PC && gc <= GC_SO) { return 1; }
+    return 0;
+}
+
+# 1 if `cp` is a cased letter (for the final-sigma rule).
+fn _shbdk_cp_is_cased(cp): i64 {
+    var gc = unicode_category(cp);
+    if (gc == GC_LU || gc == GC_LL || gc == GC_LT) { return 1; }
+    return 0;
+}
+
+# 1 if `cp` is case-ignorable (marks, format characters, modifiers, and the
+# word-internal apostrophes / periods / colons Unicode lists).
+fn _shbdk_cp_is_case_ignorable(cp): i64 {
+    if (cp == 39 || cp == 46 || cp == 58 || cp == 94 || cp == 96 || cp == 183) { return 1; }
+    if (cp == 8216 || cp == 8217 || cp == 8228 || cp == 8231) { return 1; }
+    var gc = unicode_category(cp);
+    if (gc == GC_MN || gc == GC_ME || gc == GC_CF || gc == GC_LM || gc == GC_SK) { return 1; }
+    return 0;
+}
+
+# Is the capital sigma at p[i..i+2) word-final? (Rust's to_lowercase rule: a cased
+# letter before it and none after it, skipping case-ignorable code points.)
+fn _shbdk_sigma_is_final(p, i, n): i64 {
+    var cpb[8];
+    var j = i;
+    var k = 0;
+    var before = 0;
+    while (j > 0) {
+        k = shbdk_utf8_decode_before(p, 0, j, &cpb);
+        if (_shbdk_cp_is_case_ignorable(load64(&cpb)) == 0) {
+            before = _shbdk_cp_is_cased(load64(&cpb));
+            break;
+        }
+        j = j - k;
+    }
+    if (before == 0) { return 0; }
+    j = i + 2;
+    while (j < n) {
+        k = shbdk_utf8_decode(p, j, n, &cpb);
+        if (_shbdk_cp_is_case_ignorable(load64(&cpb)) == 0) {
+            if (_shbdk_cp_is_cased(load64(&cpb)) == 1) { return 0; }
+            return 1;
+        }
+        j = j + k;
+    }
+    return 1;
+}
+
+# Fresh NUL-terminated lowercase copy of the n bytes at p, with Rust's
+# str::to_lowercase semantics: every code point's Unicode lowercase mapping, U+0130
+# to "i" + U+0307, and a capital sigma to final ς at the end of a word. ASCII input
+# takes a byte loop. On allocation failure returns "" (as shbdk_copyz does).
+#must_use
+fn shbdk_lower_n(p, n): cstring {
+    var i = 0;
+    var ascii = 1;
+    while (i < n) {
+        if (load8(p + i) >= 128) { ascii = 0; break; }
+        i = i + 1;
+    }
+    var out = 0;
+    var c = 0;
+    if (ascii == 1) {
+        out = alloc(n + 1);
+        if (out == 0) { return ""; }
+        i = 0;
+        while (i < n) {
+            c = load8(p + i);
+            if (c >= 65 && c <= 90) { c = c + 32; }
+            store8(out + i, c);
+            i = i + 1;
+        }
+        store8(out + n, 0);
+        return out;
+    }
+    out = alloc(n * 2 + 4);   # a lowercase mapping grows a code point by at most 1 byte
+    if (out == 0) { return ""; }
+    var cpb[8];
+    var o = 0;
+    var k = 0;
+    var cp = 0;
+    i = 0;
+    while (i < n) {
+        k = shbdk_utf8_decode(p, i, n, &cpb);
+        cp = load64(&cpb);
+        if (cp == 65533 && k == 1 && load8(p + i) >= 128) {
+            store8(out + o, load8(p + i));   # keep an ill-formed byte as it was
+            o = o + 1;
+        } else {
+            if (cp == 304) {
+                o = o + _uc_emit_utf8(out + o, 105);
+                o = o + _uc_emit_utf8(out + o, 775);
+            } else {
+                if (cp == 931) {
+                    if (_shbdk_sigma_is_final(p, i, n) == 1) { cp = 962; } else { cp = 963; }
+                } else {
+                    cp = unicode_to_lower(cp);
+                }
+                o = o + _uc_emit_utf8(out + o, cp);
+            }
+        }
+        i = i + k;
+    }
+    store8(out + o, 0);
+    return out;
+}
+
+# shbdk_lower_n over a whole cstr. A null cstr gives "".
+#must_use
+fn shbdk_lower_cstr(s): cstring {
+    if (s == 0) { return ""; }
+    return shbdk_lower_n(s, strlen(s));
+}
+
+# 1 if lowercasing the cstr would leave it unchanged (the lookup fast path: no
+# copy). One pass over ASCII; at the first non-ASCII byte the rest is decoded and
+# each code point must be its own lowercase mapping.
+#must_use
+fn shbdk_is_lower_cstr(s): i64 {
+    var i = 0;
+    var c = load8(s);
+    while (c != 0) {
+        if (c >= 65) {
+            if (c <= 90) { return 0; }
+            if (c >= 128) { return _shbdk_is_lower_tail(s, i); }
+        }
+        i = i + 1;
+        c = load8(s + i);
+    }
+    return 1;
+}
+
+# The non-ASCII half of shbdk_is_lower_cstr, from byte i.
+fn _shbdk_is_lower_tail(s, i): i64 {
+    var n = i + strlen(s + i);
+    var c = 0;
+    var k = 0;
+    var cpb[8];
+    while (i < n) {
+        c = load8(s + i);
+        if (c < 128) {
+            if (c >= 65 && c <= 90) { return 0; }
+            i = i + 1;
+        } else {
+            k = shbdk_utf8_decode(s, i, n, &cpb);
+            c = load64(&cpb);
+            if (c == 304 || c == 931) { return 0; }
+            if (c != 65533 && unicode_to_lower(c) != c) { return 0; }
+            i = i + k;
+        }
+    }
+    return 1;
+}
+
+# ================================================================
+# Diagnostics (3.2) — the detail the Rust carried in DictParseError(String).
+#
+# A parser that fails still returns 0 (or a packed error); the reason is now kept
+# here, as the Rust's message was: "line 3: unknown ARPABET symbol 'XX1'". Each
+# parse entry point clears it on entry, so after a failed call it describes that
+# failure; after a successful one it is "".
+# ================================================================
+var _SHBDK_LAST_ERROR = "";
+
+# Why the last failed parse / load failed, or "" (never null).
+#must_use
+fn shbdk_last_error(): cstring {
+    return _SHBDK_LAST_ERROR;
+}
+
+# Forget the last diagnostic.
+fn shbdk_clear_error(): i64 {
+    _SHBDK_LAST_ERROR = "";
+    return 0;
+}
+
+# Record `msg` and return 0, so a failing parser can `return _shbdk_fail("...")`.
+fn _shbdk_fail(msg): i64 {
+    _SHBDK_LAST_ERROR = msg;
+    return 0;
+}
+
+# Record "line N: <msg><detail><tail>" and return 0. `detail` / `tail` may be 0
+# (omitted); `detail` is a cstr, or a byte range [ds, de) of `src` when src != 0.
+fn _shbdk_fail_line(line, msg, src, ds, de, tail): i64 {
+    var sb = str_builder_new();
+    if (line > 0) {
+        str_builder_add_cstr(sb, "line ");
+        str_builder_add_int(sb, line);
+        str_builder_add_cstr(sb, ": ");
+    }
+    str_builder_add_cstr(sb, msg);
+    if (src != 0) {
+        var i = ds;
+        while (i < de) { str_builder_add_byte(sb, load8(src + i)); i = i + 1; }
+    }
+    if (tail != 0) { str_builder_add_cstr(sb, tail); }
+    _SHBDK_LAST_ERROR = str_data(str_builder_build(sb));
+    return 0;
+}
+
+# 1 if p[0..n) is well-formed UTF-8 (no stray continuation, overlong, surrogate or
+# truncated sequence). Text inputs must be: an ill-formed byte would otherwise
+# reach a key and every export after it (JSON / XML) would be invalid.
+#must_use
+fn shbdk_utf8_valid(p, n): i64 {
+    var cpb[8];
+    var i = 0;
+    var k = 0;
+    while (i < n) {
+        if (load8(p + i) < 128) {
+            i = i + 1;
+        } else {
+            k = shbdk_utf8_decode(p, i, n, &cpb);
+            if (k == 1 && load64(&cpb) == 65533) {
+                # U+FFFD itself is 3 bytes, so a 1-byte U+FFFD is always a decode failure
+                return 0;
+            }
+            i = i + k;
+        }
+    }
+    return 1;
+}
+
+# ================================================================
+# CMUdict text rules shared by the runtime reader (format/mod.cyr) and the data
+# generator (programs/gen_cmudict.cyr), so the two read a file the same way (3.2).
+# ================================================================
+# 1 if input[vs..ve) is a decimal number as Rust's f32::from_str reads one:
+# [+-] then digits[.digits] | .digits, then an optional [eE][+-]digits.
+#
+# 3.2: the old check only looked at the character set, so `1.2.3`, `1e`, `.`,
+# `1-2`, `1e+` and `.e5` loaded as the numeric prefix f64_parse_ok took.
+fn shbdk_decimal_syntax(input, vs, ve): i64 {
+    var i = vs;
+    var c = 0;
+    if (i < ve) {
+        c = load8(input + i);
+        if (c == 43 || c == 45) { i = i + 1; }
+    }
+    var int_digits = 0;
+    while (i < ve && load8(input + i) >= 48 && load8(input + i) <= 57) { int_digits = int_digits + 1; i = i + 1; }
+    var frac_digits = 0;
+    if (i < ve && load8(input + i) == 46) {
+        i = i + 1;
+        while (i < ve && load8(input + i) >= 48 && load8(input + i) <= 57) { frac_digits = frac_digits + 1; i = i + 1; }
+    }
+    if (int_digits + frac_digits == 0) { return 0; }
+    if (i < ve) {
+        c = load8(input + i);
+        if (c != 101 && c != 69) { return 0; }
+        i = i + 1;
+        if (i < ve) {
+            c = load8(input + i);
+            if (c == 43 || c == 45) { i = i + 1; }
+        }
+        var exp_digits = 0;
+        while (i < ve && load8(input + i) >= 48 && load8(input + i) <= 57) { exp_digits = exp_digits + 1; i = i + 1; }
+        if (exp_digits == 0) { return 0; }
+    }
+    if (i != ve) { return 0; }
+    return 1;
+}
+
+# End of the word in input[s..e) once a trailing CMUdict variant marker `(digits)`
+# is cut, or e if there is none. Only a marker AFTER at least one character counts,
+# so the real CMUdict words "(PAREN" and ")CLOSE-PAREN" stay whole.
+#
+# 3.2: the word was everything before the first '(' (as in the Rust), so
+# "(PAREN" stored the empty word and "a(b" stored "a".
+fn shbdk_cmudict_word_end(input, s, e): i64 {
+    if (e - s < 4) { return e; }
+    if (load8(input + e - 1) != 41) { return e; }   # ')'
+    var j = e - 2;
+    while (j > s && load8(input + j) >= 48 && load8(input + j) <= 57) { j = j - 1; }
+    if (j == e - 2) { return e; }                    # no digits
+    if (load8(input + j) != 40) { return e; }        # '('
+    if (j == s) { return e; }                        # nothing before the marker
+    return j;
+}
+
+# ================================================================
 # Constructors — pack the shabda code + a sakshi category into an i64 error.
 # ================================================================
 #must_use
@@ -148,6 +542,6 @@ fn shbdk_err_name(err): cstring {
     if (code == SHBDK_ERR_UNKNOWN_SYMBOL)     { return "unknown ARPABET symbol"; }
     if (code == SHBDK_ERR_PHONEME_NOT_IN_INV) { return "phoneme not in inventory"; }
     if (code == SHBDK_ERR_UNKNOWN_LANGUAGE)   { return "unknown language"; }
-    if (code == 0)                             { return "ok"; }
-    return "unknown error";
+    if (sakshi_is_err(err) == 0)               { return "ok"; }   # 3.2: was `code == 0`, which
+    return "unknown error";                    # named a category-only error "ok"
 }

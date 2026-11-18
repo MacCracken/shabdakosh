@@ -98,17 +98,88 @@ assert_eq(shbdk_dict_language(de2), 0, "no language");
 
 # ================================================================
 test_group("from_json error");
+fn _jerr(sub): i64 {
+    var e = shbdk_last_error();
+    var n = strlen(sub);
+    var i = 0;
+    while (load8(e + i) != 0) {
+        if (memeq(e + i, sub, n) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
 assert_eq(shbdk_from_json("not valid json {{{"), 0, "invalid JSON -> 0");
+assert_eq(_jerr("JSON parse error"), 1, "the reason says so");
 
 # ================================================================
 # SECURITY regression (2026-07-05 audit): a present-but-wrong-typed
 # language/region must not null-deref (json_v_str on a non-string returns a 0 Str,
-# and str_cstr(0) would crash). Now gated on json_v_is_str.
-test_group("wrong-typed JSON fields (no null deref)");
-assert_neq(shbdk_from_json("{\"language\":42,\"entries\":{}}"), 0, "int language -> dict (no crash)");
-assert_eq(shbdk_dict_language(shbdk_from_json("{\"language\":42}")), 0, "int language ignored -> no language");
-assert_neq(shbdk_from_json("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"region\":[]}]}}}"),
-  0, "array region -> dict (no crash)");
+# and str_cstr(0) would crash). 3.2: such a document is refused with a reason.
+test_group("wrong-typed JSON fields: refused, no null deref");
+assert_eq(shbdk_from_json("{\"language\":42,\"entries\":{}}"), 0, "int language refused (it was ignored)");
+assert_eq(_jerr("\"language\" must be a string"), 1, "named");
+assert_eq(shbdk_from_json("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"region\":[]}]}}}"),
+  0, "array region refused");
+assert_neq(shbdk_from_json("{\"language\":null,\"entries\":{}}"), 0, "a null language is no language");
+
+# 3.2: the reader checks the schema (it loaded 16 of 40 malformed documents).
+fn _cat(a, b): cstring {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, a);
+    str_builder_add_cstr(sb, b);
+    return str_data(str_builder_build(sb));
+}
+test_group("from_json: the schema is checked, with a reason");
+fn _fj(t): i64 { return shbdk_from_json(t); }
+assert_eq(_fj("{}"), 0, "missing entries");
+assert_eq(_jerr("missing field \"entries\""), 1, "named");
+assert_eq(_fj("{\"entries\":5}"), 0, "entries not an object");
+assert_eq(_fj("{\"entries\":[]}"), 0, "entries an array");
+assert_eq(_fj("{\"entries\":null}"), 0, "entries null");
+assert_eq(_fj("{\"entries\":{},\"user_entries\":null}"), 0, "user_entries null");
+assert_eq(_fj("{\"entries\":{\"cat\":{}}}"), 0, "an entry with no pronunciations field");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[]}}}"), 0, "an entry with no pronunciation (it was dropped)");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":{}}}}"), 0, "pronunciations an object");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[5]}}}"), 0, "a pronunciation that is a number");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{}]}}}"), 0, "no phonemes field");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":5}]}}}"), 0, "phonemes not an array");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[9999]}]}}}"), 0, "phoneme 9999");
+assert_eq(_jerr("entry 'cat': a phoneme is not a svara phoneme (0-100)"), 1, "named with the entry");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[\"Bogus\"]}]}}}"), 0,
+  "a string phoneme (it read as 0, VowelA)");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[3.7]}]}}}"), 0, "a float phoneme");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"frequency\":\"0.5\"}]}}}"), 0,
+  "a string frequency (it read as 0.0)");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"frequency\":1e400}]}}}"), 0,
+  "an infinite frequency");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"frequency\":-1}]}}}"), 0,
+  "-1 (it collided with 'no frequency')");
+assert_eq(_fj("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"region\":\"XX\"}]}}}"), 0,
+  "region XX (it was dropped)");
+assert_eq(_fj("{\"entries\":{\"\":{\"pronunciations\":[{\"phonemes\":[24]}]}}}"), 0, "an empty word");
+var fjok = _fj(_cat("{\"entries\":{\"cat\":{\"pronunciations\":[{\"phonemes\":[24],\"frequency\":1,",
+    "\"region\":null,\"x\":1}]}}}"));
+assert_neq(fjok, 0, "an int frequency, a null region and an unknown field are fine");
+
+# The v0.1 shape the Rust read (EntryCompat::Old): an entry that is its phoneme array.
+test_group("from_json: the v0.1 entry shape");
+var v01 = _fj("{\"entries\":{\"cat\":[24,7,22]},\"user_entries\":{\"dog\":[23,6,25]}}");
+assert_neq(v01, 0, "loads");
+assert_eq(vec_len(shbdk_dict_lookup(v01, "cat")), 3, "cat [k æ t]");
+assert_eq(vec_get(shbdk_dict_lookup(v01, "cat"), 1), SVARA_PH_VOWEL_ASH, "cat[1] æ");
+assert_eq(shbdk_dict_user_len(v01), 1, "overlay entry too");
+assert_eq(_fj("{\"entries\":{\"cat\":[24,\"x\"]}}"), 0, "a bad v0.1 phoneme is refused");
+
+test_group("from_json: a two-variant entry round-trips");
+var jv = shbdk_dict_new();
+var jvp = vec_new();
+var jv1 = shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_LONG_I)), 0.6);
+vec_push(jvp, shbdk_pronunciation_with_region(jv1, SHBDK_REGION_GA));
+vec_push(jvp, shbdk_pronunciation_with_frequency(shbdk_pronunciation_new(_v1(SVARA_PH_VOWEL_OPEN_E)), 0.4));
+shbdk_dict_insert_entry(jv, "read", shbdk_dict_entry_from_pronunciations(jvp));
+var jvb = _fj(shbdk_to_json(jv));
+assert_eq(shbdk_dict_entry_eq(shbdk_dict_lookup_entry(jvb, "read"), shbdk_dict_lookup_entry(jv, "read")), 1,
+  "frequency + region + order survive");
 
 # ================================================================
 # user_entries is a BTreeMap in Rust, so it serializes sorted. Rust leaves entries (a HashMap)

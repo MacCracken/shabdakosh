@@ -130,5 +130,48 @@ assert_streq(shbdk_notation_render(UNKNOWN, _v3(SVARA_PH_PLOSIVE_K, SVARA_PH_VOW
 assert_eq(shbdk_notation_name(0 - 1), 0, "negative tag -> 0");
 assert_eq(shbdk_notation_str_to_phoneme(0 - 1, "K"), SHBDK_PH_NONE, "negative tag -> NONE");
 
+# ================================================================
+# 3.2: ARPABET parse reads the stress digits render writes, so a round trip keeps
+# the vowels (it kept only the consonants), and AH0 stays schwa.
+test_group("arpabet parse(render(v)) == v");
+var arv = vec_new();
+vec_push(arv, SVARA_PH_FRIC_H); vec_push(arv, SVARA_PH_VOWEL_SCHWA); vec_push(arv, SVARA_PH_LATERAL_L);
+vec_push(arv, SVARA_PH_DIPH_OU); vec_push(arv, SVARA_PH_VOWEL_CUP_V); vec_push(arv, SVARA_PH_VOWEL_LONG_I);
+var arr = shbdk_notation_render(SHBDK_NOTATION_ARPABET, arv);
+assert_streq(arr, "HH AH0 L OW1 AH1 IY1", "rendered with stress digits");
+var arb = shbdk_notation_parse(SHBDK_NOTATION_ARPABET, arr);
+assert_eq(vec_len(arb), 6, "all six back");
+var ari = 0;
+var ars = 0;
+while (ari < 6) { if (vec_get(arb, ari) == vec_get(arv, ari)) { ars = ars + 1; } ari = ari + 1; }
+assert_eq(ars, 6, "same phonemes, same order (AH0 schwa, AH1 cup-v)");
+assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_ARPABET, "K"), SVARA_PH_PLOSIVE_K,
+  "a bare consonant still reads");
+
+# 3.2: whitespace is Unicode White_Space, as Rust's split_whitespace.
+test_group("notation parse splits on Unicode whitespace");
+var nb = shbdk_notation_parse(SHBDK_NOTATION_ARPABET, "K\xC2\xA0AE1\xE3\x80\x80T");
+assert_eq(vec_len(nb), 3, "NBSP and U+3000 separate tokens");
+var xb = shbdk_notation_parse(SHBDK_NOTATION_XSAMPA, "a\xE2\x80\x83b");
+assert_eq(vec_len(xb), 2, "U+2003 separates X-SAMPA tokens");
+
+# 3.2: X-SAMPA covers every svara phoneme with a symbol (the Rust's covered 46),
+# and `r` is the trill.
+test_group("every svara phoneme round-trips through X-SAMPA");
+var xi = 0;
+var xok = 0;
+var xall = vec_new();
+while (xi < 100) {
+    var xs = shbdk_notation_phoneme_to_str(SHBDK_NOTATION_XSAMPA, xi);
+    if (xs != 0) { if (shbdk_notation_str_to_phoneme(SHBDK_NOTATION_XSAMPA, xs) == xi) { xok = xok + 1; } }
+    vec_push(xall, xi);
+    xi = xi + 1;
+}
+assert_eq(xok, 100, "str_to_phoneme(phoneme_to_str(p)) == p for all 100");
+var xback = shbdk_notation_parse(SHBDK_NOTATION_XSAMPA, shbdk_notation_render(SHBDK_NOTATION_XSAMPA, xall));
+assert_eq(vec_len(xback), 100, "render then parse keeps all 100");
+assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_XSAMPA, "r"), SVARA_PH_TRILL_ALVEOLAR, "r is the trill");
+assert_eq(shbdk_notation_str_to_phoneme(SHBDK_NOTATION_XSAMPA, "r\\"), SVARA_PH_APPROX_R, "r\\ is the approximant");
+
 var rc = assert_summary();
 syscall(60, rc);

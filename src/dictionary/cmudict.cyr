@@ -79,8 +79,10 @@ fn _shbdk_cmudict_decode_entry(piece, wsep, e): i64 {
         }
 
         var pron = shbdk_pronunciation_new(phon);
-        if (freq != SHBDK_FREQ_NONE) { pron = shbdk_pronunciation_with_frequency(pron, freq); }
-        if (region != SHBDK_REGION_NONE) { pron = shbdk_pronunciation_with_region(pron, region); }
+        # generator-checked data: gen_cmudict refuses an invalid @freq and writes only
+        # GA / RP, so the stores skip the builders' validation (3.2)
+        if (freq != SHBDK_FREQ_NONE) { store64(pron + 8, freq); }
+        if (region != SHBDK_REGION_NONE) { store64(pron + 16, region); }
         vec_push(prons, pron);
     }
 
@@ -113,16 +115,17 @@ fn shbdk_cmudict_load(m): i64 {
     while (pi < np) {
         piece = _shbdk_cmudict_piece(pi);
         len = strlen(piece);
+        # An entry is word|pron|...; — find the word's '|' first, then the ';' after
+        # it, so a word may itself hold ';' (CMUdict's ;SEMI-COLON). 3.2: every ';'
+        # was taken as an entry boundary.
         s = 0;
-        i = 0;
-        while (i < len) {
-            if (load8(piece + i) == 59) {   # ';' entry boundary
-                if (i > s) { _shbdk_cmudict_parse_entry(m, piece, s, i); }
-                s = i + 1;
-            }
-            i = i + 1;
+        while (s < len) {
+            i = s;
+            while (i < len && load8(piece + i) != 124) { i = i + 1; }   # '|'
+            while (i < len && load8(piece + i) != 59) { i = i + 1; }    # ';'
+            if (i > s) { _shbdk_cmudict_parse_entry(m, piece, s, i); }
+            s = i + 1;
         }
-        if (s < len) { _shbdk_cmudict_parse_entry(m, piece, s, len); }
         pi = pi + 1;
     }
     return map_size(m);

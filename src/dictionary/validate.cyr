@@ -2,14 +2,17 @@
 # phonotactics (ports rust-old/src/dictionary/validate.rs).
 #
 # Two validators: validate_inventory (every entry's phonemes must exist in a
-# language's varna PhonemeInventory, with length-mark normalization) and
-# validate_phonotactics (forbidden adjacent IPA pairs + consonant-run ceiling).
+# language's varna PhonemeInventory, with length-mark and affricate-tie
+# normalization) and validate_phonotactics (each pronunciation syllabified, then
+# its onsets / nuclei / codas / syllable boundaries checked against the profile's
+# Forbidden constraints and its onset / coda size limits).
 # Four report structs, each with a hand-written bayan JSON codec (String/Vec
 # fields → not #derive; mirrors format/json.cyr). varna is unconditionally linked
 # (the Rust `varna` feature gate is dropped).
 #
 # Requires: lib/varna.cyr (phoneme_*/phonotactics_*/registry_*), src/ipa.cyr
-# (shbdk_phoneme_to_ipa), dictionary/entry.cyr + mod.cyr, bayan json_v_*.
+# (shbdk_phoneme_to_ipa), dictionary/syllable.cyr (shbdk_syllabify),
+# dictionary/entry.cyr + mod.cyr, bayan json_v_*.
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
@@ -137,9 +140,58 @@ fn _shbdk_sort_by_word(v): i64 {
 }
 
 # ---- inventory validation ----------------------------------------------------
+# `ipa` with every tie bar (U+0361, bytes 0xCD 0xA1) removed, or 0 if it has none.
+fn _shbdk_strip_tie(ipa): cstring {
+    var n = strlen(ipa);
+    var out = alloc(n + 1);
+    if (out == 0) { return 0; }
+    var i = 0;
+    var o = 0;
+    var found = 0;
+    while (i < n) {
+        if (i + 1 < n && load8(ipa + i) == 205 && load8(ipa + i + 1) == 161) {
+            found = 1;
+            i = i + 2;
+        } else {
+            store8(out + o, load8(ipa + i));
+            o = o + 1;
+            i = i + 1;
+        }
+    }
+    store8(out + o, 0);
+    if (found == 0) { return 0; }
+    return out;
+}
+
+# `ipa` as a tied affricate (first code point + U+0361 + the rest) when it is a
+# bare two-code-point stop + fricative like "tʃ", else 0.
+fn _shbdk_add_tie(ipa): cstring {
+    var n = strlen(ipa);
+    if (n < 2 || load8(ipa) >= 128) { return 0; }
+    var cpb[8];
+    if (shbdk_utf8_decode(ipa, 1, n, &cpb) != n - 1) { return 0; }   # exactly two code points
+    var sb = str_builder_new();
+    str_builder_add_byte(sb, load8(ipa));
+    str_builder_add_cstr(sb, "͡");
+    str_builder_add_cstr(sb, ipa + 1);
+    return str_data(str_builder_build(sb));
+}
+
 # Membership with length-mark normalization: exact, then +ː, then strip trailing
-# ː (U+02D0 = bytes 0xCB 0x90). Matches Rust inventory_has_normalized.
+# ː (U+02D0 = bytes 0xCB 0x90), as Rust's inventory_has_normalized; then (3.2) the
+# affricate tie bar either way, so t͡ʃ and tʃ are one phoneme. The port wrote bare
+# tʃ / dʒ while varna lists t͡ʃ / d͡ʒ, which flagged 1,070 English entries.
 fn _shbdk_inventory_has_normalized(inv, ipa): i64 {
+    if (_shbdk_inventory_has_len(inv, ipa) == 1) { return 1; }
+    var alt = _shbdk_strip_tie(ipa);
+    if (alt != 0) { if (_shbdk_inventory_has_len(inv, alt) == 1) { return 1; } }
+    alt = _shbdk_add_tie(ipa);
+    if (alt != 0) { if (_shbdk_inventory_has_len(inv, alt) == 1) { return 1; } }
+    return 0;
+}
+
+# The length-mark half of _shbdk_inventory_has_normalized.
+fn _shbdk_inventory_has_len(inv, ipa): i64 {
     var sb = 0;
     var with_long = 0;
     var n = 0;
@@ -233,121 +285,145 @@ fn shbdk_validate_inventory(dict, inventory): i64 {
 }
 
 # ---- phonotactics validation -------------------------------------------------
-# Is a phoneme a consonant? Returns 0 for vowels/diphthongs/silence, else 1.
-# PARITY QUIRK: SVARA_PH_VOWEL_LONG_I (14) is deliberately NOT excluded — the Rust
-# list omits it, so it reads as a consonant. Do not "fix" this.
+# 3.2: rewritten for accuracy; the Rust and the port through 3.1 both
+# (a) checked every ADJACENT PAIR of the word against the onset constraints, so
+#     the English ban on onset /tl/ and /dl/ fired mid-word — all 182 violations
+#     the built-in English dictionary produced ("abruptly", "deadline") were false;
+# (b) could never fire a one-segment constraint (English's onset /ŋ/) or a
+#     three-segment one, and ignored Nucleus and AcrossBoundary constraints;
+# (c) held every consonant run to max_onset + max_coda, so a word-initial cluster
+#     was never held to max_onset nor a word-final one to max_coda;
+# (d) counted /iː/ and the extended vowels (y ø œ ɯ ɤ ɨ ʉ) as consonants.
+# Now each pronunciation is syllabified (shbdk_syllabify, Maximal Onset), and each
+# syllable's onset, nucleus and coda — and each coda + next onset pair — is checked
+# against the constraints for that position: every contiguous run of segments in
+# it is looked up, so one-, two- and three-segment constraints all apply. An onset
+# longer than max_onset or a coda longer than max_coda is a violation. Silence is
+# not a segment and is skipped.
+
+# Is a phoneme a consonant? 0 for vowels, diphthongs and silence (by svara's class).
 #must_use
 fn _shbdk_is_consonant(ph): i64 {
-    if (ph == SVARA_PH_VOWEL_A) { return 0; }
-    if (ph == SVARA_PH_VOWEL_E) { return 0; }
-    if (ph == SVARA_PH_VOWEL_I) { return 0; }
-    if (ph == SVARA_PH_VOWEL_O) { return 0; }
-    if (ph == SVARA_PH_VOWEL_U) { return 0; }
-    if (ph == SVARA_PH_VOWEL_OPEN_A) { return 0; }
-    if (ph == SVARA_PH_VOWEL_OPEN_E) { return 0; }
-    if (ph == SVARA_PH_VOWEL_OPEN_O) { return 0; }
-    if (ph == SVARA_PH_VOWEL_NEAR_I) { return 0; }
-    if (ph == SVARA_PH_VOWEL_NEAR_U) { return 0; }
-    if (ph == SVARA_PH_VOWEL_ASH) { return 0; }
-    if (ph == SVARA_PH_VOWEL_SCHWA) { return 0; }
-    if (ph == SVARA_PH_VOWEL_CUP_V) { return 0; }
-    if (ph == SVARA_PH_VOWEL_BIRD) { return 0; }
-    if (ph == SVARA_PH_DIPH_AI) { return 0; }
-    if (ph == SVARA_PH_DIPH_AU) { return 0; }
-    if (ph == SVARA_PH_DIPH_EI) { return 0; }
-    if (ph == SVARA_PH_DIPH_OI) { return 0; }
-    if (ph == SVARA_PH_DIPH_OU) { return 0; }
-    if (ph == SVARA_PH_SILENCE) { return 0; }
+    var c = svara_phoneme_class(ph);
+    if (c == SVARA_CLASS_VOWEL || c == SVARA_CLASS_DIPHTHONG || c == SVARA_CLASS_SILENCE) { return 0; }
     return 1;
 }
 
-# Build a forbidden-pair violation.
-fn _shbdk_mk_pair_violation(word, position, sequence): i64 {
+# IPA of phonemes v[i..j) concatenated, or 0 if one of them has no IPA.
+fn _shbdk_ipa_span(v, i, j): cstring {
     var sb = str_builder_new();
-    str_builder_add_cstr(sb, "forbidden ");
-    str_builder_add_cstr(sb, position);
-    str_builder_add_cstr(sb, " sequence '");
-    str_builder_add_cstr(sb, sequence);
-    str_builder_add_cstr(sb, "'");
-    return shbdk_phonotactic_violation_new(word, str_data(str_builder_build(sb)), sequence);
+    var k = i;
+    var s = 0;
+    while (k < j) {
+        s = shbdk_phoneme_to_ipa(vec_get(v, k));
+        if (s == 0) { return 0; }
+        str_builder_add_cstr(sb, s);
+        k = k + 1;
+    }
+    return str_data(str_builder_build(sb));
 }
 
-# Build a consonant-run ceiling violation.
-fn _shbdk_mk_run_violation(word, run, max_onset, max_coda): i64 {
+fn _shbdk_position_name(position): cstring {
+    if (position == SyllablePosition.Onset) { return "onset"; }
+    if (position == SyllablePosition.Coda) { return "coda"; }
+    if (position == SyllablePosition.Nucleus) { return "nucleus"; }
+    return "cross-syllable";
+}
+
+# Push a violation for every contiguous run inside v[i..j) that the profile forbids
+# at `position`. With `must_span` set (AcrossBoundary), only runs that cross the
+# boundary at index `split` count.
+fn _shbdk_check_runs(word, v, i, j, phonotactics, position, must_span, split, violations): i64 {
+    var a = i;
+    var b = 0;
+    var seq = 0;
+    var sb = 0;
+    while (a < j) {
+        b = a + 1;
+        while (b <= j) {
+            if (must_span == 0 || (a < split && b > split)) {
+                seq = _shbdk_ipa_span(v, a, b);
+                if (seq != 0 && phonotactics_is_permitted(phonotactics, seq, position) == 0) {
+                    sb = str_builder_new();
+                    str_builder_add_cstr(sb, "forbidden ");
+                    str_builder_add_cstr(sb, _shbdk_position_name(position));
+                    str_builder_add_cstr(sb, " sequence '");
+                    str_builder_add_cstr(sb, seq);
+                    str_builder_add_cstr(sb, "'");
+                    vec_push(violations, shbdk_phonotactic_violation_new(word, str_data(str_builder_build(sb)), seq));
+                }
+            }
+            b = b + 1;
+        }
+        a = a + 1;
+    }
+    return 0;
+}
+
+# Push a violation if v[i..j) (an onset or a coda) is longer than `limit`.
+fn _shbdk_check_size(word, v, i, j, limit, what, violations): i64 {
+    if (j - i <= limit) { return 0; }
     var sb = str_builder_new();
-    var sb2 = 0;
-    str_builder_add_cstr(sb, "consonant cluster of ");
-    str_builder_add_int(sb, run);
-    str_builder_add_cstr(sb, " exceeds max onset (");
-    str_builder_add_int(sb, max_onset);
-    str_builder_add_cstr(sb, ") + coda (");
-    str_builder_add_int(sb, max_coda);
+    str_builder_add_cstr(sb, what);
+    str_builder_add_cstr(sb, " of ");
+    str_builder_add_int(sb, j - i);
+    str_builder_add_cstr(sb, " consonants exceeds max ");
+    str_builder_add_cstr(sb, what);
+    str_builder_add_cstr(sb, " (");
+    str_builder_add_int(sb, limit);
     str_builder_add_cstr(sb, ")");
-    sb2 = str_builder_new();
-    str_builder_add_cstr(sb2, "(");
-    str_builder_add_int(sb2, run);
-    str_builder_add_cstr(sb2, " consonants)");
-    return shbdk_phonotactic_violation_new(word, str_data(str_builder_build(sb)), str_data(str_builder_build(sb2)));
+    var seq = _shbdk_ipa_span(v, i, j);
+    if (seq == 0) { seq = ""; }
+    vec_push(violations, shbdk_phonotactic_violation_new(word, str_data(str_builder_build(sb)), seq));
+    return 0;
 }
 
 # Check one pronunciation's phonemes against a phonotactics profile, pushing any
-# violations. (Rust check_pronunciation) is_permitted is tri-state (1/0/-1);
-# forbidden == exactly 0, -1 (unspecified) is NOT forbidden.
+# violations. (Rust check_pronunciation, made syllable-aware in 3.2.)
 fn _shbdk_check_pronunciation(word, phonemes, phonotactics, violations): i64 {
+    # silence is not a segment
+    var v = vec_new();
     var n = vec_len(phonemes);
     var i = 0;
-    var a = 0;
-    var b = 0;
-    var seq = 0;
-    var fon = 0;
-    var fcoda = 0;
-    var pos = 0;
-    var max_onset = 0;
-    var max_coda = 0;
-    var run = 0;
-    var k = 0;
-    var done = 0;
-    # Pass A — forbidden adjacent IPA pairs.
-    while (i + 1 < n) {
-        a = shbdk_phoneme_to_ipa(vec_get(phonemes, i));
-        b = shbdk_phoneme_to_ipa(vec_get(phonemes, i + 1));
-        if (a != 0) {
-            if (b != 0) {
-                seq = _shbdk_concat2(a, b);
-                fon = 0;
-                fcoda = 0;
-                if (phonotactics_is_permitted(phonotactics, seq, 0) == 0) { fon = 1; }
-                if (phonotactics_is_permitted(phonotactics, seq, 1) == 0) { fcoda = 1; }
-                if (fon == 1) {
-                    if (fcoda == 1) { pos = "onset/coda"; } else { pos = "onset"; }
-                    vec_push(violations, _shbdk_mk_pair_violation(word, pos, seq));
-                } else {
-                    if (fcoda == 1) {
-                        vec_push(violations, _shbdk_mk_pair_violation(word, "coda", seq));
-                    }
-                }
-            }
-        }
+    while (i < n) {
+        if (vec_get(phonemes, i) != SVARA_PH_SILENCE) { vec_push(v, vec_get(phonemes, i)); }
         i = i + 1;
     }
-    # Pass B — consonant-run cluster ceiling (first over-run only).
-    max_onset = phonotactics_max_onset(phonotactics);
-    max_coda = phonotactics_max_coda(phonotactics);
-    run = 0;
-    k = 0;
-    done = 0;
-    while (k < n) {
-        if (done == 0) {
-            if (_shbdk_is_consonant(vec_get(phonemes, k)) == 1) {
-                run = run + 1;
-                if (run > max_onset + max_coda) {
-                    vec_push(violations, _shbdk_mk_run_violation(word, run, max_onset, max_coda));
-                    done = 1;
-                }
-            } else {
-                run = 0;
+    var syl = shbdk_syllabify(v);
+    var ns = vec_len(syl);
+    var max_onset = phonotactics_max_onset(phonotactics);
+    var max_coda = phonotactics_max_coda(phonotactics);
+    # walk the syllables over `v`, tracking each one's onset / nucleus / coda span
+    var at = 0;
+    var k = 0;
+    var len = 0;
+    var nuc = 0;
+    var cend = 0;
+    var prev_coda_start = 0 - 1;
+    var prev_coda_end = 0;
+    while (k < ns) {
+        len = shbdk_syllable_len(vec_get(syl, k));
+        nuc = at;
+        while (nuc < at + len && _shbdk_is_consonant(vec_get(v, nuc)) == 1) { nuc = nuc + 1; }
+        cend = at + len;
+        if (nuc == at + len) {
+            # no nucleus: the whole syllable is a consonant cluster, held as an onset
+            _shbdk_check_runs(word, v, at, nuc, phonotactics, SyllablePosition.Onset, 0, 0, violations);
+            _shbdk_check_size(word, v, at, nuc, max_onset, "onset", violations);
+        } else {
+            _shbdk_check_runs(word, v, at, nuc, phonotactics, SyllablePosition.Onset, 0, 0, violations);
+            _shbdk_check_size(word, v, at, nuc, max_onset, "onset", violations);
+            _shbdk_check_runs(word, v, nuc, nuc + 1, phonotactics, SyllablePosition.Nucleus, 0, 0, violations);
+            _shbdk_check_runs(word, v, nuc + 1, cend, phonotactics, SyllablePosition.Coda, 0, 0, violations);
+            _shbdk_check_size(word, v, nuc + 1, cend, max_coda, "coda", violations);
+            if (prev_coda_start >= 0 && (prev_coda_end > prev_coda_start || nuc > at)) {
+                _shbdk_check_runs(word, v, prev_coda_start, nuc, phonotactics, SyllablePosition.AcrossBoundary,
+                  1, prev_coda_end, violations);
             }
+            prev_coda_start = nuc + 1;
+            prev_coda_end = cend;
         }
+        at = at + len;
         k = k + 1;
     }
     return 0;
@@ -394,28 +470,45 @@ fn shbdk_validate_phonotactics(dict, phonotactics): i64 {
 }
 
 # ---- convenience methods (dict.language -> pick inventory / profile) ----------
+# The primary subtag of a BCP 47 code ("pt-BR" -> "pt", "en_US" -> "en"), or 0
+# when the code has none.
+fn _shbdk_lang_primary(code): cstring {
+    var n = 0;
+    while (load8(code + n) != 0 && load8(code + n) != 45 && load8(code + n) != 95) { n = n + 1; }
+    if (load8(code + n) == 0) { return 0; }
+    return shbdk_copyz(code, n);
+}
+
 # Validate against the dict's language inventory (registry_phonemes), or 0 (None)
-# if the dict has no language or the code is unknown. (Rust PronunciationDict::validate)
+# if the dict has no language or varna has no inventory for it. A regional code
+# ("pt-BR") uses its own inventory when varna has one, else its language's (3.2).
+# (Rust PronunciationDict::validate)
 #must_use
 fn shbdk_dict_validate(dict): i64 {
     var code = shbdk_dict_language(dict);
-    var inventory = 0;
     if (code == 0) { return 0; }
-    inventory = registry_phonemes(code);
+    var inventory = registry_phonemes(code);
+    if (inventory == 0) {
+        var base = _shbdk_lang_primary(code);
+        if (base != 0) { inventory = registry_phonemes(base); }
+    }
     if (inventory == 0) { return 0; }
     return shbdk_validate_inventory(dict, inventory);
 }
 
-# Validate against the dict language's phonotactics ({en,sa,ja} only), or 0 (None).
-# (Rust PronunciationDict::validate_phonotactics)
+# Validate against the dict language's phonotactics profile, or 0 (None) when
+# varna has none for it. 3.2: every language varna profiles (en ar zh hi ja es fr
+# de ru ko pt sa) — the Rust's (and the port's) only knew en / sa / ja. A regional
+# code uses its language's profile. (Rust PronunciationDict::validate_phonotactics)
 #must_use
 fn shbdk_dict_validate_phonotactics(dict): i64 {
     var code = shbdk_dict_language(dict);
-    var phono = 0;
     if (code == 0) { return 0; }
-    if (streq(code, "en") == 1) { phono = phonotactics_english(); }
-    if (streq(code, "sa") == 1) { phono = phonotactics_sanskrit(); }
-    if (streq(code, "ja") == 1) { phono = phonotactics_japanese(); }
+    var phono = phonotactics_by_code(code);
+    if (phono == 0) {
+        var base = _shbdk_lang_primary(code);
+        if (base != 0) { phono = phonotactics_by_code(base); }
+    }
     if (phono == 0) { return 0; }
     return shbdk_validate_phonotactics(dict, phono);
 }
@@ -436,26 +529,55 @@ fn _shbdk_invalid_entry_to_jsonv(e): i64 {
     return obj;
 }
 
-# Safe JSON string field: the field's cstr, or "" if the key is absent or the
-# value isn't a string. Guards the null/typed deref — Rust serde would error on a
-# missing required field; this port defaults to empty rather than dereferencing a
-# null node (a malformed/partial JSON blob decodes leniently, never crashes).
+# 3.2: the report readers check the schema, as serde did, instead of defaulting a
+# missing or wrong-typed field ("Bogus" read as phoneme 0, a missing word as "").
+# A failure returns 0 with the reason in shbdk_last_error().
+
+# The string field `key` of `obj` as a cstr, or 0 (reason recorded) if it is
+# missing or not a string.
 fn _shbdk_json_field_str(obj, key): cstring {
     var v = bayan_json_v_obj_get_by_cstr(obj, key);
-    if (v == 0) { return ""; }
-    if (json_v_is_str(v) == 0) { return ""; }
+    if (v == 0 || json_v_is_str(v) == 0) {
+        var sb = str_builder_new();
+        str_builder_add_cstr(sb, "JSON parse error: \"");
+        str_builder_add_cstr(sb, key);
+        str_builder_add_cstr(sb, "\" must be a string");
+        return _shbdk_fail(str_data(str_builder_build(sb)));
+    }
     return str_cstr(json_v_str(v));
 }
 
-fn _shbdk_invalid_entry_from_jsonv(obj): i64 {
+# The array field `key` of `obj`, or 0 (reason recorded).
+fn _shbdk_json_field_arr(obj, key): i64 {
+    var v = bayan_json_v_obj_get_by_cstr(obj, key);
+    if (v == 0 || json_v_is_arr(v) == 0) {
+        var sb = str_builder_new();
+        str_builder_add_cstr(sb, "JSON parse error: \"");
+        str_builder_add_cstr(sb, key);
+        str_builder_add_cstr(sb, "\" must be an array");
+        return _shbdk_fail(str_data(str_builder_build(sb)));
+    }
+    return v;
+}
+
+# A ShbdkInvalidEntry from a parsed JSON object (bayan DOM node), or 0 with the reason recorded.
+#must_use
+fn shbdk_invalid_entry_from_jsonv(obj): i64 {
+    if (json_v_is_obj(obj) == 0) { return _shbdk_fail("JSON parse error: an invalid entry must be an object"); }
     var word = _shbdk_json_field_str(obj, "word");
-    var arr = bayan_json_v_obj_get_by_cstr(obj, "invalid_phonemes");
+    if (word == 0) { return 0; }
+    var arr = _shbdk_json_field_arr(obj, "invalid_phonemes");
+    if (arr == 0) { return 0; }
     var ph = vec_new();
-    var n = 0;
+    var n = json_v_arr_len(arr);
     var i = 0;
-    if (arr != 0) { n = json_v_arr_len(arr); }
+    var el = 0;
     while (i < n) {
-        vec_push(ph, json_v_int(json_v_arr_get(arr, i)));
+        el = json_v_arr_get(arr, i);
+        if (json_v_is_int(el) == 0 || json_v_int(el) < 0 || json_v_int(el) > 100) {
+            return _shbdk_fail("JSON parse error: an invalid phoneme must be a svara phoneme (0-100)");
+        }
+        vec_push(ph, json_v_int(el));
         i = i + 1;
     }
     return shbdk_invalid_entry_new(word, ph);
@@ -478,19 +600,26 @@ fn shbdk_validation_report_to_json(r): cstring {
     return str_data(json_v_build(root));
 }
 
-# Deserialize a ShbdkValidationReport from JSON.
+# Deserialize a ShbdkValidationReport from JSON, or 0 (shbdk_last_error() says why).
 #must_use
 fn shbdk_validation_report_from_json(input): i64 {
+    shbdk_clear_error();
+    if (input == 0) { return _shbdk_fail("no input"); }
     var root = json_v_parse_buf(input, strlen(input));
-    if (root == 0) { return 0; }
+    if (root == 0) { return _shbdk_fail("JSON parse error: not valid JSON"); }
+    if (json_v_is_obj(root) == 0) { return _shbdk_fail("JSON parse error: the document must be an object"); }
     var lang = _shbdk_json_field_str(root, "language");
-    var arr = bayan_json_v_obj_get_by_cstr(root, "invalid_entries");
+    if (lang == 0) { return 0; }
+    var arr = _shbdk_json_field_arr(root, "invalid_entries");
+    if (arr == 0) { return 0; }
     var ie = vec_new();
-    var n = 0;
+    var n = json_v_arr_len(arr);
     var i = 0;
-    if (arr != 0) { n = json_v_arr_len(arr); }
+    var e = 0;
     while (i < n) {
-        vec_push(ie, _shbdk_invalid_entry_from_jsonv(json_v_arr_get(arr, i)));
+        e = shbdk_invalid_entry_from_jsonv(json_v_arr_get(arr, i));
+        if (e == 0) { return 0; }
+        vec_push(ie, e);
         i = i + 1;
     }
     return shbdk_validation_report_new(lang, ie);
@@ -504,10 +633,16 @@ fn _shbdk_phonotactic_violation_to_jsonv(v): i64 {
     return obj;
 }
 
-fn _shbdk_phonotactic_violation_from_jsonv(obj): i64 {
+# A ShbdkPhonotacticViolation from a parsed JSON object, or 0 with the reason recorded.
+#must_use
+fn shbdk_phonotactic_violation_from_jsonv(obj): i64 {
+    if (json_v_is_obj(obj) == 0) { return _shbdk_fail("JSON parse error: a violation must be an object"); }
     var word = _shbdk_json_field_str(obj, "word");
+    if (word == 0) { return 0; }
     var desc = _shbdk_json_field_str(obj, "description");
+    if (desc == 0) { return 0; }
     var seq = _shbdk_json_field_str(obj, "sequence");
+    if (seq == 0) { return 0; }
     return shbdk_phonotactic_violation_new(word, desc, seq);
 }
 
@@ -528,20 +663,109 @@ fn shbdk_phonotactic_report_to_json(r): cstring {
     return str_data(json_v_build(root));
 }
 
-# Deserialize a ShbdkPhonotacticReport from JSON.
+# Deserialize a ShbdkPhonotacticReport from JSON, or 0 (shbdk_last_error() says why).
 #must_use
 fn shbdk_phonotactic_report_from_json(input): i64 {
+    shbdk_clear_error();
+    if (input == 0) { return _shbdk_fail("no input"); }
     var root = json_v_parse_buf(input, strlen(input));
-    if (root == 0) { return 0; }
+    if (root == 0) { return _shbdk_fail("JSON parse error: not valid JSON"); }
+    if (json_v_is_obj(root) == 0) { return _shbdk_fail("JSON parse error: the document must be an object"); }
     var lang = _shbdk_json_field_str(root, "language");
-    var arr = bayan_json_v_obj_get_by_cstr(root, "violations");
+    if (lang == 0) { return 0; }
+    var arr = _shbdk_json_field_arr(root, "violations");
+    if (arr == 0) { return 0; }
     var vs = vec_new();
-    var n = 0;
+    var n = json_v_arr_len(arr);
     var i = 0;
-    if (arr != 0) { n = json_v_arr_len(arr); }
+    var v = 0;
     while (i < n) {
-        vec_push(vs, _shbdk_phonotactic_violation_from_jsonv(json_v_arr_get(arr, i)));
+        v = shbdk_phonotactic_violation_from_jsonv(json_v_arr_get(arr, i));
+        if (v == 0) { return 0; }
+        vec_push(vs, v);
         i = i + 1;
     }
     return shbdk_phonotactic_report_new(lang, vs);
+}
+
+# ---- standalone record codecs + equality (the Rust derived Serialize, Deserialize
+# and PartialEq on InvalidEntry and PhonotacticViolation, and PartialEq on the
+# reports) -------------------------------------------------------------------
+# InvalidEntry <-> JSON text {"word":..,"invalid_phonemes":[..]}.
+#must_use
+fn shbdk_invalid_entry_to_json(e): cstring { return str_data(json_v_build(_shbdk_invalid_entry_to_jsonv(e))); }
+# JSON text -> a ShbdkInvalidEntry, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_invalid_entry_from_json(input): i64 {
+    shbdk_clear_error();
+    if (input == 0) { return _shbdk_fail("no input"); }
+    var root = json_v_parse_buf(input, strlen(input));
+    if (root == 0) { return _shbdk_fail("JSON parse error: not valid JSON"); }
+    return shbdk_invalid_entry_from_jsonv(root);
+}
+# PhonotacticViolation <-> JSON text {"word":..,"description":..,"sequence":..}.
+#must_use
+fn shbdk_phonotactic_violation_to_json(v): cstring {
+    return str_data(json_v_build(_shbdk_phonotactic_violation_to_jsonv(v)));
+}
+# JSON text -> a ShbdkPhonotacticViolation, or 0 (shbdk_last_error() says why).
+#must_use
+fn shbdk_phonotactic_violation_from_json(input): i64 {
+    shbdk_clear_error();
+    if (input == 0) { return _shbdk_fail("no input"); }
+    var root = json_v_parse_buf(input, strlen(input));
+    if (root == 0) { return _shbdk_fail("JSON parse error: not valid JSON"); }
+    return shbdk_phonotactic_violation_from_jsonv(root);
+}
+
+# 1 if two invalid entries have the same word and the same phonemes in order.
+#must_use
+fn shbdk_invalid_entry_eq(a, b): i64 {
+    if (streq(shbdk_invalid_entry_word(a), shbdk_invalid_entry_word(b)) == 0) { return 0; }
+    var pa = shbdk_invalid_entry_invalid_phonemes(a);
+    var pb = shbdk_invalid_entry_invalid_phonemes(b);
+    if (vec_len(pa) != vec_len(pb)) { return 0; }
+    var i = 0;
+    while (i < vec_len(pa)) {
+        if (vec_get(pa, i) != vec_get(pb, i)) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+# 1 if two validation reports have the same language and equal entries in order.
+#must_use
+fn shbdk_validation_report_eq(a, b): i64 {
+    if (streq(shbdk_validation_report_language(a), shbdk_validation_report_language(b)) == 0) { return 0; }
+    var ea = shbdk_validation_report_invalid_entries(a);
+    var eb = shbdk_validation_report_invalid_entries(b);
+    if (vec_len(ea) != vec_len(eb)) { return 0; }
+    var i = 0;
+    while (i < vec_len(ea)) {
+        if (shbdk_invalid_entry_eq(vec_get(ea, i), vec_get(eb, i)) == 0) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+# 1 if two violations have the same word, description and sequence.
+#must_use
+fn shbdk_phonotactic_violation_eq(a, b): i64 {
+    if (streq(shbdk_phonotactic_violation_word(a), shbdk_phonotactic_violation_word(b)) == 0) { return 0; }
+    if (streq(shbdk_phonotactic_violation_description(a),
+        shbdk_phonotactic_violation_description(b)) == 0) { return 0; }
+    if (streq(shbdk_phonotactic_violation_sequence(a), shbdk_phonotactic_violation_sequence(b)) == 0) { return 0; }
+    return 1;
+}
+# 1 if two phonotactic reports have the same language and equal violations in order.
+#must_use
+fn shbdk_phonotactic_report_eq(a, b): i64 {
+    if (streq(shbdk_phonotactic_report_language(a), shbdk_phonotactic_report_language(b)) == 0) { return 0; }
+    var va = shbdk_phonotactic_report_violations(a);
+    var vb = shbdk_phonotactic_report_violations(b);
+    if (vec_len(va) != vec_len(vb)) { return 0; }
+    var i = 0;
+    while (i < vec_len(va)) {
+        if (shbdk_phonotactic_violation_eq(vec_get(va, i), vec_get(vb, i)) == 0) { return 0; }
+        i = i + 1;
+    }
+    return 1;
 }
