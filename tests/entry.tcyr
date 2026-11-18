@@ -1,4 +1,4 @@
-# entry.tcyr — tests for src/dictionary/entry.cyr (ports rust-old/src/dictionary/entry.rs).
+# entry.tcyr — tests for src/dictionary/entry.cyr (ports 3.1.3:rust-old/src/dictionary/entry.rs).
 # Needs svara for SVARA_PH_* test data. The Rust serde-roundtrip tests
 # (Pronunciation / DictEntry) are covered by the format layer (L5) per the
 # locked serde stance; Region round-trips via its code here.

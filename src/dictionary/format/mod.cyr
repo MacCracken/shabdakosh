@@ -1,7 +1,7 @@
 # format/mod.cyr — dictionary import/export: CMUdict + IPA text formats, XML
 # escape helpers (shared by pls/ssml), and file I/O.
 #
-# Ports rust-old/src/dictionary/format/mod.rs (minus the JSON codec, which is its
+# Ports 3.1.3:rust-old/src/dictionary/format/mod.rs (minus the JSON codec, which is its
 # own bite per the serde stance). Parsers return a PronunciationDict pointer, or
 # 0 on a parse error (Rust's Err(DictParseError)); shbdk_last_error() then says
 # why, with the line number, as the Rust's message did. Writers return 0 when the

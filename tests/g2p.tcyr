@@ -1,4 +1,4 @@
-# g2p.tcyr — tests for src/dictionary/g2p.cyr (ports rust-old/src/dictionary/g2p.rs).
+# g2p.tcyr — tests for src/dictionary/g2p.cyr (ports 3.1.3:rust-old/src/dictionary/g2p.rs).
 # Models are (predict_fp, state) pairs; state carries the mock confidence.
 
 include "lib/hisab.cyr"

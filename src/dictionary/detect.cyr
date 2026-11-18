@@ -1,4 +1,4 @@
-# detect.cyr — script + language detection (ports rust-old/src/dictionary/detect.rs).
+# detect.cyr — script + language detection (ports 3.1.3:rust-old/src/dictionary/detect.rs).
 #
 # Matches a word's Unicode code points against varna's script ranges (majority
 # vote), then suggests languages registered for the winning script. Pure-function

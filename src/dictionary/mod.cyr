@@ -1,6 +1,6 @@
 # mod.cyr — PronunciationDict: the dictionary keystone.
 #
-# Ports rust-old/src/dictionary/mod.rs (the core surface). A two-layer store:
+# Ports 3.1.3:rust-old/src/dictionary/mod.rs (the core surface). A two-layer store:
 # a base hashmap + a user-overlay hashmap (Rust's BTreeMap — Cyrius has no
 # ordered map, so a hashmap here; sorted export lives in the format layer L5),
 # plus an optional language code. Lookups check the overlay first, then base.

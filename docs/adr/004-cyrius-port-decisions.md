@@ -5,7 +5,8 @@
 
 ## Context
 
-shabdakosh v3.0.0 is a full-parity port of the Rust crate (preserved at `rust-old/`) to the
+shabdakosh v3.0.0 is a full-parity port of the Rust crate (preserved at `rust-old/` until 3.1.3, and
+at that tag since) to the
 CYRIUS language. CYRIUS is deliberately minimal — everything is `i64`, raw memory (`load8`/
 `store8`, no bounds checks), a flat global namespace (no modules; textual `include`), no
 generics/traits, no `serde`/proc-macros/const-eval, no `build.rs`, and a bump allocator that

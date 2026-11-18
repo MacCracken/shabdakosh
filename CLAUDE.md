@@ -8,7 +8,7 @@
 ## Project Identity
 
 **shabdakosh** (Sanskrit: *dictionary*) — pronunciation dictionary for AGNOS.
-Cyrius port of a 7,085-line Rust library (preserved at `rust-old/`).
+Cyrius port of a 7,085-line Rust library (kept in git at tag `3.1.3`, as `rust-old/`).
 
 - **Type**: Port (Rust → Cyrius), flat library crate
 - **License**: GPL-3.0-only
@@ -29,8 +29,10 @@ component needing pronunciation lookup. Will pull `dist/shabdakosh.cyr`.
 
 ## Scaffolding
 
-Scaffolded with `cyrius port`. Original Rust at `rust-old/` is the **functionality reference** —
-it says what the port must be able to do, not whether a result is right. Do not modify it.
+Scaffolded with `cyrius port`, which moved the Rust tree to `rust-old/`. That tree was removed after
+3.1.3 (roadmap M3); it lives on at tag `3.1.3` — read a file with `git show 3.1.3:rust-old/<path>` —
+and comments cite it as `3.1.3:rust-old/<path>`. It is the **functionality reference**: it says what
+the port must be able to do, not whether a result is right. Do not restore it to the tree.
 
 ## Quick Start
 
@@ -43,7 +45,8 @@ cyrius test tests                              # run all .tcyr
 
 ## Work Loop
 
-1. Read the `rust-old/` module before porting it (it defines the capability to cover)
+1. For a capability the Rust had, read its module at tag 3.1.3 (`git show 3.1.3:rust-old/<path>`) first —
+   it defines the capability to cover
 2. Port the module; keep `src/main.cyr` including it and building at every step
 3. `cyrius fmt <file>`
 4. `cyrius lint <file>`
@@ -54,7 +57,8 @@ cyrius test tests                              # run all .tcyr
 
 ## Key Principles (durable)
 
-- **`rust-old/` is functionality coverage, not the oracle — accuracy is the oracle.** Every capability the
+- **The Rust original (`3.1.3:rust-old/`) is functionality coverage, not the oracle — accuracy is the
+  oracle.** Every capability the
   Rust had must exist in the port; whether a result is *right* is judged by accuracy (the linguistics, the
   spec — CMUdict / IPA / XML / IEEE — and what a consumer would expect), never by "matches what Rust did".
   Do not bring over broken Rust: where the Rust is wrong, the port is right, and the CHANGELOG says so.
@@ -101,7 +105,7 @@ panicked. **Regenerate after editing the data:**
 
 - **Do not commit or push** — the user handles all git operations.
 - **Never use `gh` CLI** — use `curl` to the GitHub API if needed.
-- Do not modify `rust-old/` (functionality reference) or `lib/` (vendored stdlib/deps).
+- Do not modify `lib/` (vendored stdlib/deps). Do not restore `rust-old/`: read it at tag `3.1.3`.
 - Do not add unnecessary dependencies.
 - Do not hardcode toolchain versions in CI YAML — `cyrius = "X.Y.Z"` in `cyrius.cyml` is the source of truth.
 

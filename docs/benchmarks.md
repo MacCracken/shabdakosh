@@ -1,7 +1,7 @@
 # Benchmarks
 
 Hot-path benchmarks for shabdakosh, ported from the Rust oracle
-(`rust-old/benches/benchmarks.rs`, criterion) to `benches/hotpath.bcyr`.
+(`3.1.3:rust-old/benches/benchmarks.rs`, criterion) to `benches/hotpath.bcyr`.
 
 Run with:
 

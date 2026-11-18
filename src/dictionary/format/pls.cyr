@@ -1,7 +1,7 @@
 # pls.cyr — W3C PLS (Pronunciation Lexicon Specification) XML import/export, and
 # the small XML reader it and ssml.cyr share.
 #
-# Ports rust-old/src/dictionary/format/pls.rs. Only the `ipa` alphabet is
+# Ports 3.1.3:rust-old/src/dictionary/format/pls.rs. Only the `ipa` alphabet is
 # supported. Reuses shbdk_xml_escape / _shbdk_xml_decode_at, _shbdk_starts_at and
 # _shbdk_fmt_dup from format/mod.cyr, and _shbdk_sort_strs / _shbdk_collect_keys /
 # _shbdk_dict_lookup_entry_str from mod.cyr. Included after format/mod.cyr.

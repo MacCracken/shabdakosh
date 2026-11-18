@@ -1,6 +1,6 @@
 # coverage.cyr — text-corpus coverage analysis against a PronunciationDict.
 #
-# Ports rust-old/src/dictionary/coverage.rs. Extends the keystone: tokenizes
+# Ports 3.1.3:rust-old/src/dictionary/coverage.rs. Extends the keystone: tokenizes
 # text, strips punctuation, lowercases, and checks each token against the dict.
 # Included after src/dictionary/mod.cyr (uses shbdk_dict_lookup_entry +
 # _shbdk_sort_strs). Phoneme-agnostic.

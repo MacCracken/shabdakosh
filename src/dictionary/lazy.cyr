@@ -1,4 +1,4 @@
-# lazy.cyr — lazy-loading dictionary (ports rust-old/src/dictionary/lazy.rs).
+# lazy.cyr — lazy-loading dictionary (ports 3.1.3:rust-old/src/dictionary/lazy.rs).
 #
 # PARITY NOTE: Rust's LazyDict mmap'd the binary file but decoded it EAGERLY in
 # open() (from_binary over the whole map), so every accessor read the owned dict

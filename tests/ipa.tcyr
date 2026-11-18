@@ -1,4 +1,4 @@
-# ipa.tcyr — tests for src/ipa.cyr (ports rust-old/src/ipa.rs #[test]s).
+# ipa.tcyr — tests for src/ipa.cyr (ports 3.1.3:rust-old/src/ipa.rs #[test]s).
 # Needs the svara bundle (SVARA_PH_*) + error.cyr (SHBDK_PH_NONE).
 
 include "lib/hisab.cyr"

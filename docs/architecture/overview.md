@@ -6,9 +6,10 @@
 > svara `SVARA_PH_*` phonemes, with ARPABET/IPA/X-SAMPA bridges and
 > CMUdict/PLS/SSML/JSON/binary I/O.
 
-This is a Cyrius port of a 7,085-line Rust library (preserved at `rust-old/` as
-the functionality reference; accuracy, not Rust parity, is the correctness bar). The surface is **flat, C-style, `shbdk_`-prefixed
-functions** — no methods, traits, generics, `use`, `Cargo.toml`, or crates.io.
+This is a Cyrius port of a 7,085-line Rust library (kept at tag `3.1.3` as
+`rust-old/`, the functionality reference; accuracy, not Rust parity, is the correctness bar).
+The surface is **flat, C-style, `shbdk_`-prefixed functions** — no methods, traits,
+generics, `use`, `Cargo.toml`, or crates.io.
 Consumers pull the bundled `dist/shabdakosh.cyr`.
 
 ## Module Map
@@ -242,7 +243,7 @@ JSON IPA.
   lives in the format layer (sort-on-export).
 - **Additive enums** — the Rust `#[non_exhaustive]` invariant carries over: every
   tag `match`/`switch` keeps a `_ =>` catch-all arm.
-- **Accuracy is the oracle; `rust-old/` is the capability list** — every Rust
+- **Accuracy is the oracle; the Rust original (`3.1.3:rust-old/`) is the capability list** — every Rust
   capability is reachable here, and where the Rust was wrong the port is right (IY is
   /iː/, every svara phoneme has its IPA, phonotactics is syllable-aware, frequencies are
   0.0–1.0, the readers check what they read). [ADR 005](../adr/005-accuracy-over-rust-parity.md)

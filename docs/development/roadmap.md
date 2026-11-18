@@ -46,10 +46,11 @@ from ~8.7 ms to ~33 µs.
 Shipped alongside: `fuzz/parsers.fcyr`, a real fuzz harness over every untrusted-input parser (it
 replaced the scaffold stub and runs in CI), which found and fixed one round-trip defect.
 
-### M3 — Retire `rust-old/` — sweep shipped in 3.1.3; removal follows the release
+### M3 — Retire `rust-old/` — ✅ done 2026-11-17 (sweep in 3.1.3, tree removed after it)
 
-The bar changed for this milestone: **`rust-old/` is the list of capabilities the port must have;
-accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over-rust-parity.md)).
+The bar changed for this milestone: **the Rust original is the list of capabilities the port must
+have; accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over-rust-parity.md)).
+It now lives only at tag `3.1.3`: `git show 3.1.3:rust-old/<path>`.
 
 1. ✅ **The function-for-function sweep** (2026-11-17). Seven parallel reviews ran the same inputs
    through a built copy of the Rust crate and through the port: the full English dump, every
@@ -63,9 +64,10 @@ accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over
    - CMUdict words are trimmed after their `(n)` marker and an empty word is refused.
    - Phonotactics covers every language varna profiles.
    - A frequency must be 0.0–1.0, so -1.0 is no longer a frequency that collides with "none".
-3. **Remove `rust-old/`.** Nothing in the port depends on it any more. It needs the maintainer's
-   go-ahead: CLAUDE.md protects it. CLAUDE.md, ADR 004 / 005, `state.md` and many source and test
-   comments cite `rust-old/` paths; re-point them at a tag of this repository that still has it.
+3. ✅ **`rust-old/` removed** (after the 3.1.3 tag, with the maintainer's go-ahead). Source, test and
+   bench comments cite the Rust files as `3.1.3:rust-old/<path>`, git's own spelling of a file at a
+   tag, and CLAUDE.md, CONTRIBUTING, the ADRs and the guides point there too. The historical records
+   (CHANGELOG entries, the 2026-07-05 audit) keep the paths they were written with.
 
 ## Gated on something outside this repository
 

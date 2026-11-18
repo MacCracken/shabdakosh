@@ -12,13 +12,15 @@ cyrius test tests                        # run every .tcyr suite
 
 - `src/main.cyr` — entry point. Top-level `var r = main(); syscall(SYS_EXIT, r);`.
 - `tests/` — test suite (`.tcyr` files, auto-discovered by `cyrius test tests`).
-- `rust-old/` — original Rust source preserved for parity checks. Do not modify; it's the reference oracle.
+- The original Rust source was removed after 3.1.3 and lives at that tag: `git show 3.1.3:rust-old/<path>`. It is
+  the functionality reference (what the port must be able to do); accuracy decides whether a result is right.
 
 ## Adding a feature
 
 1. Edit `src/main.cyr` (or add a new module and `include` it).
-2. Cross-check parity against `rust-old/`.
-3. Add a test case to `tests/shabdakosh.tcyr`.
+2. If the Rust had the capability, read it at tag 3.1.3 (`git show 3.1.3:rust-old/<path>`); make the port accurate,
+   not merely the same ([ADR 005](../adr/005-accuracy-over-rust-parity.md)).
+3. Add test cases to the module's suite, `tests/<module>.tcyr`.
 4. Run `cyrius test tests/<suite>.tcyr` (one suite) or `cyrius test tests` (all).
 5. Bump `VERSION` and add a CHANGELOG entry before tagging.
 

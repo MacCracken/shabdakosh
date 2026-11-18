@@ -1,6 +1,6 @@
 # json.cyr — PronunciationDict JSON codec (the hand-written serde replacement).
 #
-# Ports from_json/to_json of rust-old/src/dictionary/format/mod.rs. Per the locked
+# Ports from_json/to_json of 3.1.3:rust-old/src/dictionary/format/mod.rs. Per the locked
 # serde stance this is PERMANENT format-layer code (not a throwaway #derive stub);
 # it uses bayan's typed json_v_* DOM for BOTH directions. Included after
 # src/dictionary/mod.cyr (+ bayan stdlib).

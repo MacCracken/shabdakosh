@@ -1,6 +1,6 @@
 # syllable.cyr — syllable structure + Maximal Onset Principle syllabification.
 #
-# Ports rust-old/src/dictionary/syllable.rs. Operates on svara phoneme ordinals
+# Ports 3.1.3:rust-old/src/dictionary/syllable.rs. Operates on svara phoneme ordinals
 # and asks svara which class each is (svara_phoneme_class), so it needs
 # lib/svara.cyr ahead of it (3.1.3; it was stdlib only).
 #

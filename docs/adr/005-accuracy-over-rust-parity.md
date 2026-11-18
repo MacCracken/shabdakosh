@@ -3,6 +3,7 @@
 **Status**: Accepted
 **Date**: 2026-11-17
 **Amends**: [004](004-cyrius-port-decisions.md) ("the correctness bar is 'matches what Rust did'")
+**Note**: `rust-old/` was removed after 3.1.3; it lives at that tag (`git show 3.1.3:rust-old/<path>`).
 
 ## Context
 
@@ -78,7 +79,7 @@ standing record of why the port's output differs from the Rust's.
 - **Positive**:
   - The port is more correct than the Rust everywhere they differ, and each difference is written
     down.
-  - `rust-old/` can be retired without losing anything. Its 53 integration tests live on in
+  - `rust-old/` could be retired without losing anything, and was, after 3.1.3. Its 53 integration tests live on in
     `tests/integration.tcyr`, and its unit tests are carried in the module suites.
   - The five *Open decisions* are settled.
 - **Negative**:

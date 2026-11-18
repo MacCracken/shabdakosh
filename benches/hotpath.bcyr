@@ -1,5 +1,5 @@
 # hotpath.bcyr — hot-path benchmarks for shabdakosh. Run: cyrius bench (auto-discovers benches/).
-# Reproduces the intent of rust-old/benches/benchmarks.rs: dictionary construction,
+# Reproduces the intent of 3.1.3:rust-old/benches/benchmarks.rs: dictionary construction,
 # lookup hit/miss, trie construction + prefix search, and binary serialize/deserialize.
 #
 # The CYRIUS bump allocator never frees, so alloc-heavy ops (construction, binary,

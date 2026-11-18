@@ -1,5 +1,5 @@
 # coverage.tcyr — tests for src/dictionary/coverage.cyr
-# (ports rust-old/src/dictionary/coverage.rs). Uses english_minimal.
+# (ports 3.1.3:rust-old/src/dictionary/coverage.rs). Uses english_minimal.
 
 include "lib/hisab.cyr"
 include "lib/goonj.cyr"

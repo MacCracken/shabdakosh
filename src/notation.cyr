@@ -1,6 +1,6 @@
 # notation.cyr — unified phoneme-notation bridge (ARPABET / IPA / X-SAMPA).
 #
-# Ports rust-old/src/notation.rs. CYRIUS has no traits, so the Rust
+# Ports 3.1.3:rust-old/src/notation.rs. CYRIUS has no traits, so the Rust
 # `PhonemeNotation` trait + its three ZST impls become a NOTATION TAG
 # (SHBDK_NOTATION_*) plus dispatch functions that switch on the tag and delegate
 # to arpabet.cyr / ipa.cyr (already ported) and the X-SAMPA table below.

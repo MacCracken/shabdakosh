@@ -39,8 +39,8 @@ Membership (`_shbdk_inventory_has_normalized`) treats two spellings as one phone
 | `aʊ` | 250 | 250 | (same) |
 | `ɔɪ` | 87 | 87 | (same) |
 
-Both fixed rows were the Rust's behaviour too: `rust-old/` emitted bare affricates and mapped `IY`
-to /e/. They are fixed for accuracy ([ADR 005](../adr/005-accuracy-over-rust-parity.md)), not
+Both fixed rows were the Rust's behaviour too: the Rust original (`3.1.3:rust-old/`) emitted bare
+affricates and mapped `IY` to /e/. They are fixed for accuracy ([ADR 005](../adr/005-accuracy-over-rust-parity.md)), not
 parity.
 
 varna's English inventory is 36 phonemes:

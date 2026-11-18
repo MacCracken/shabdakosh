@@ -5,6 +5,9 @@
 
 ## Version
 
+**Unreleased** — `rust-old/` removed (roadmap M3 step 3). The Rust original lives at tag `3.1.3`
+(`git show 3.1.3:rust-old/<path>`); every source, test and doc reference points there. No code,
+API or output change: the suite, the fuzz digest and the dist bundle's code are as in 3.1.3.
 **3.1.3** (2026-11-17) — roadmap M3. The sweep against `rust-old/` is done, on the bar
 [ADR 005](../adr/005-accuracy-over-rust-parity.md) sets: `rust-old/` is the capability list, and
 accuracy is the oracle. It fixed every missing capability, port defect and Rust inaccuracy found
@@ -15,7 +18,7 @@ accuracy is the oracle. It fixed every missing capability, port defect and Rust 
 - phonotactics are syllable-aware (0 English violations, was 182 false ones);
 - the readers are strict, with diagnostics.
 
-Suite **1,426 assertions / 28 suites**; fuzz, audit and dist are clean. `rust-old/` is removed
+Suite **1,426 assertions / 28 suites**; fuzz, audit and dist are clean. `rust-old/` was removed
 after this release (M3 step 3).
 **3.1.2** (2026-11-17) — dependency refresh plus two roadmap items. svara 3.14.0, varna 2.6.0, with
 hisab 3.5.0 / naad 2.3.5 / goonj 2.3.2 transitively; cyrius stays 6.7.18 (still the newest, and

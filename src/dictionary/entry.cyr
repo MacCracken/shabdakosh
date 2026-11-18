@@ -1,6 +1,6 @@
 # entry.cyr — dictionary entry types: pronunciations with frequency + region.
 #
-# Ports rust-old/src/dictionary/entry.rs (Pronunciation, Region, DictEntry).
+# Ports 3.1.3:rust-old/src/dictionary/entry.rs (Pronunciation, Region, DictEntry).
 # Phoneme-agnostic: a Pronunciation stores a vec of svara phoneme ordinals (i64)
 # and never references SVARA_PH_* itself, so this module needs only stdlib
 # (vec / str / math). Option<f32> frequency and Option<Region> use sentinels.

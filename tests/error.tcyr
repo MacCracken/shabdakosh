@@ -1,4 +1,4 @@
-# error.tcyr — tests for src/error.cyr (ports rust-old/src/error.rs).
+# error.tcyr — tests for src/error.cyr (ports 3.1.3:rust-old/src/error.rs).
 # The Rust enum carried no #[test] blocks; these are the parity-meaningful
 # behavioural checks for the sakshi-backed error codes.
 

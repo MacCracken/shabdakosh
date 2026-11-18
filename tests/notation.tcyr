@@ -1,4 +1,4 @@
-# notation.tcyr — tests for src/notation.cyr (ports rust-old/src/notation.rs).
+# notation.tcyr — tests for src/notation.cyr (ports 3.1.3:rust-old/src/notation.rs).
 # Needs svara + error (SHBDK_PH_NONE) + arpabet + ipa (notation delegates to them).
 
 include "lib/hisab.cyr"

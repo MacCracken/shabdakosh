@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+Roadmap M3 step 3: the Rust original leaves the tree. No code, API or output change.
+
+### Removed
+
+- **`rust-old/`**, the Rust crate the port was made from (39 files). Nothing built from it or
+  depended on it. Its capabilities are all ported, its 53 integration tests are
+  `tests/integration.tcyr`, and its unit tests are carried in the module suites. It lives on at tag
+  **`3.1.3`**: `git show 3.1.3:rust-old/<path>`.
+
+### Changed
+
+- Every reference to it now points at the tag. Source, test and bench headers cite
+  `3.1.3:rust-old/<path>`, and CLAUDE.md, CONTRIBUTING, ADR 004 / 005, the architecture notes and
+  the guides say where it is. CLAUDE.md's rule "do not modify `rust-old/`" becomes "do not
+  restore it".
+
 ## [3.1.3] — 2026-11-17
 
 Roadmap M3, the final sweep against `rust-old/`, run on a new footing: **`rust-old/` is the list

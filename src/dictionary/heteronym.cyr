@@ -1,6 +1,6 @@
 # heteronym.cyr — heteronym disambiguation via a resolver callback.
 #
-# Ports rust-old/src/dictionary/heteronym.rs. Rust's `&dyn HeteronymResolver`
+# Ports 3.1.3:rust-old/src/dictionary/heteronym.rs. Rust's `&dyn HeteronymResolver`
 # trait object becomes a FN POINTER: a resolver is `fn(word, context) -> i64`
 # returning a variant index, or -1 (Rust's None) to fall back to the primary.
 # lookup_with_context calls it via fncall2. Extends the keystone; included after

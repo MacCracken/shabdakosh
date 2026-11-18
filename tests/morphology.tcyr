@@ -1,5 +1,5 @@
 # morphology.tcyr — tests for src/dictionary/morphology.cyr
-# (ports rust-old/src/dictionary/morphology.rs). Needs svara for SVARA_PH_* test
+# (ports 3.1.3:rust-old/src/dictionary/morphology.rs). Needs svara for SVARA_PH_* test
 # data. Container serde-roundtrip tests belong to the format layer (L5) per the
 # locked serde stance.
 

@@ -17,7 +17,7 @@ include "lib/mmap.cyr"
 # Also the home of the crate's shared L0 primitives (SHBDK_PH_NONE, shbdk_copyz)
 # — see the sections below.
 #
-# Ports rust-old/src/error.rs (the `ShabdakoshError` enum — #[non_exhaustive],
+# Ports 3.1.3:rust-old/src/error.rs (the `ShabdakoshError` enum — #[non_exhaustive],
 # 4 variants). Rust carried a String payload per variant + a thiserror Display;
 # the Cyrius port drops the payloads and builds on sakshi (साक्षी — the AGNOS
 # error/tracing substrate): each error is a packed i64 `[ctx][category][code]`.
@@ -560,7 +560,7 @@ fn shbdk_err_name(err): cstring {
 
 # arpabet.cyr — ARPABET <-> svara phoneme mapping.
 #
-# Ports rust-old/src/arpabet.rs. svara phonemes are the SVARA_PH_* integer
+# Ports 3.1.3:rust-old/src/arpabet.rs. svara phonemes are the SVARA_PH_* integer
 # ordinals (0..100) provided by the svara bundle; "no phoneme" is the sentinel
 # SHBDK_PH_NONE (-1) (Rust's Option::None). ARPABET vowels carry a stress digit
 # (0/1/2) stripped before lookup; unstressed AH (0) is schwa, stressed AH is
@@ -740,7 +740,7 @@ fn shbdk_phoneme_to_arpabet(ph): cstring {
 
 # ipa.cyr — IPA <-> svara phoneme mapping + a greedy IPA-transcription parser.
 #
-# Ports rust-old/src/ipa.rs. IPA symbols are multi-byte UTF-8, so where the Rust
+# Ports 3.1.3:rust-old/src/ipa.rs. IPA symbols are multi-byte UTF-8, so where the Rust
 # parser sliced on Unicode chars this works on BYTES: exact lookups compare whole
 # cstrs (streq), and the parser does greedy LONGEST-BYTE-PREFIX matching
 # (5-byte tie-bar affricates down to 1-byte ASCII). svara phonemes are SVARA_PH_*
@@ -1242,7 +1242,7 @@ fn _shbdk_ipa_would_merge(a, b): i64 {
 
 # entry.cyr — dictionary entry types: pronunciations with frequency + region.
 #
-# Ports rust-old/src/dictionary/entry.rs (Pronunciation, Region, DictEntry).
+# Ports 3.1.3:rust-old/src/dictionary/entry.rs (Pronunciation, Region, DictEntry).
 # Phoneme-agnostic: a Pronunciation stores a vec of svara phoneme ordinals (i64)
 # and never references SVARA_PH_* itself, so this module needs only stdlib
 # (vec / str / math). Option<f32> frequency and Option<Region> use sentinels.
@@ -1582,7 +1582,7 @@ fn shbdk_dict_entry_is_empty(e): i64 {
 
 # morphology.cyr — morphological decomposition (prefix / root / suffix / infix).
 #
-# Ports rust-old/src/dictionary/morphology.rs. Phoneme-agnostic (stores phoneme
+# Ports 3.1.3:rust-old/src/dictionary/morphology.rs. Phoneme-agnostic (stores phoneme
 # ordinals in vecs) — stdlib only, no svara. Container serde (Morpheme /
 # Decomposition) is handled by the format layer (L5) per the serde stance.
 #
@@ -1739,7 +1739,7 @@ fn shbdk_decomposition_suffixes(d): i64 {
 
 # syllable.cyr — syllable structure + Maximal Onset Principle syllabification.
 #
-# Ports rust-old/src/dictionary/syllable.rs. Operates on svara phoneme ordinals
+# Ports 3.1.3:rust-old/src/dictionary/syllable.rs. Operates on svara phoneme ordinals
 # and asks svara which class each is (svara_phoneme_class), so it needs
 # lib/svara.cyr ahead of it (3.1.3; it was stdlib only).
 #
@@ -1960,7 +1960,7 @@ fn shbdk_syllabify(phonemes): i64 {
 
 # notation.cyr — unified phoneme-notation bridge (ARPABET / IPA / X-SAMPA).
 #
-# Ports rust-old/src/notation.rs. CYRIUS has no traits, so the Rust
+# Ports 3.1.3:rust-old/src/notation.rs. CYRIUS has no traits, so the Rust
 # `PhonemeNotation` trait + its three ZST impls become a NOTATION TAG
 # (SHBDK_NOTATION_*) plus dispatch functions that switch on the tag and delegate
 # to arpabet.cyr / ipa.cyr (already ported) and the X-SAMPA table below.
@@ -2490,7 +2490,7 @@ fn shbdk_cmudict_english(): i64 {
 
 # mod.cyr — PronunciationDict: the dictionary keystone.
 #
-# Ports rust-old/src/dictionary/mod.rs (the core surface). A two-layer store:
+# Ports 3.1.3:rust-old/src/dictionary/mod.rs (the core surface). A two-layer store:
 # a base hashmap + a user-overlay hashmap (Rust's BTreeMap — Cyrius has no
 # ordered map, so a hashmap here; sorted export lives in the format layer L5),
 # plus an optional language code. Lookups check the overlay first, then base.
@@ -3185,7 +3185,7 @@ fn shbdk_dict_diff(left, right): i64 {
 
 # coverage.cyr — text-corpus coverage analysis against a PronunciationDict.
 #
-# Ports rust-old/src/dictionary/coverage.rs. Extends the keystone: tokenizes
+# Ports 3.1.3:rust-old/src/dictionary/coverage.rs. Extends the keystone: tokenizes
 # text, strips punctuation, lowercases, and checks each token against the dict.
 # Included after src/dictionary/mod.cyr (uses shbdk_dict_lookup_entry +
 # _shbdk_sort_strs). Phoneme-agnostic.
@@ -3362,7 +3362,7 @@ fn shbdk_dict_coverage(d, text): i64 {
 
 # stream.cyr — streaming word-to-phoneme lookup.
 #
-# Ports rust-old/src/dictionary/stream.rs (the LookupStream iterator). CYRIUS has
+# Ports 3.1.3:rust-old/src/dictionary/stream.rs (the LookupStream iterator). CYRIUS has
 # no Iterator trait, so this is a stateful cursor over a vec of word cstrs: each
 # shbdk_lookup_stream_next(s) advances and stashes the current (word, phonemes)
 # in the stream struct — zero-alloc per step (no per-item tuple). Extends the
@@ -3420,7 +3420,7 @@ fn shbdk_lookup_stream_size_hint(s): i64 {
 
 # trie.cyr — prefix trie for word lookup / autocomplete.
 #
-# Ports rust-old/src/dictionary/trie.rs (PrefixTrie). Rust keyed children by
+# Ports 3.1.3:rust-old/src/dictionary/trie.rs (PrefixTrie). Rust keyed children by
 # `char`; this keys by BYTE — equivalent for ASCII words, and correct at the
 # byte level for UTF-8 (prefix search over bytes). Each node's children are a
 # small vec of (byte, node) pairs (sparse fan-out; linear scan is fine). Extends
@@ -3664,7 +3664,7 @@ fn shbdk_dict_prefix_search(d, prefix): i64 {
 
 # heteronym.cyr — heteronym disambiguation via a resolver callback.
 #
-# Ports rust-old/src/dictionary/heteronym.rs. Rust's `&dyn HeteronymResolver`
+# Ports 3.1.3:rust-old/src/dictionary/heteronym.rs. Rust's `&dyn HeteronymResolver`
 # trait object becomes a FN POINTER: a resolver is `fn(word, context) -> i64`
 # returning a variant index, or -1 (Rust's None) to fall back to the primary.
 # lookup_with_context calls it via fncall2. Extends the keystone; included after
@@ -3774,7 +3774,7 @@ fn shbdk_dict_lookup_with_context(d, word, resolver, context): i64 {
 
 # g2p.cyr — grapheme-to-phoneme model integration + fallback dictionary.
 #
-# Ports rust-old/src/dictionary/g2p.rs. Rust's G2PModel trait objects carry state
+# Ports 3.1.3:rust-old/src/dictionary/g2p.rs. Rust's G2PModel trait objects carry state
 # (MockG2PModel's confidence, FstModel's path), so a bare fn-pointer is not
 # enough: a "model" here is a (predict_fp, model_state) PAIR — predict_fp is
 # fn(word, state) -> G2PResult* (or 0 for None), invoked via fncall2. Extends the
@@ -4121,7 +4121,7 @@ fn _shbdk_phf_loc_piece(i): cstring {
 # --- static_dict.cyr ---
 
 # static_dict.cyr — static English dictionary over a compile-time perfect hash
-# (ports rust-old/src/dictionary/static_dict.rs).
+# (ports 3.1.3:rust-old/src/dictionary/static_dict.rs).
 #
 # The Rust baked the dictionary into a phf::Map with build.rs + phf_codegen. Since
 # 3.1.2 this is the same thing: programs/gen_cmudict.cyr computes a CHD perfect
@@ -4307,7 +4307,7 @@ fn shbdk_static_dict(): i64 {
 # format/mod.cyr — dictionary import/export: CMUdict + IPA text formats, XML
 # escape helpers (shared by pls/ssml), and file I/O.
 #
-# Ports rust-old/src/dictionary/format/mod.rs (minus the JSON codec, which is its
+# Ports 3.1.3:rust-old/src/dictionary/format/mod.rs (minus the JSON codec, which is its
 # own bite per the serde stance). Parsers return a PronunciationDict pointer, or
 # 0 on a parse error (Rust's Err(DictParseError)); shbdk_last_error() then says
 # why, with the line number, as the Rust's message did. Writers return 0 when the
@@ -4921,7 +4921,7 @@ fn shbdk_save_cmudict_file(dict, path): i64 {
 
 # json.cyr — PronunciationDict JSON codec (the hand-written serde replacement).
 #
-# Ports from_json/to_json of rust-old/src/dictionary/format/mod.rs. Per the locked
+# Ports from_json/to_json of 3.1.3:rust-old/src/dictionary/format/mod.rs. Per the locked
 # serde stance this is PERMANENT format-layer code (not a throwaway #derive stub);
 # it uses bayan's typed json_v_* DOM for BOTH directions. Included after
 # src/dictionary/mod.cyr (+ bayan stdlib).
@@ -5775,7 +5775,7 @@ fn shbdk_err_from_json(input, detail_out): i64 {
 # pls.cyr — W3C PLS (Pronunciation Lexicon Specification) XML import/export, and
 # the small XML reader it and ssml.cyr share.
 #
-# Ports rust-old/src/dictionary/format/pls.rs. Only the `ipa` alphabet is
+# Ports 3.1.3:rust-old/src/dictionary/format/pls.rs. Only the `ipa` alphabet is
 # supported. Reuses shbdk_xml_escape / _shbdk_xml_decode_at, _shbdk_starts_at and
 # _shbdk_fmt_dup from format/mod.cyr, and _shbdk_sort_strs / _shbdk_collect_keys /
 # _shbdk_dict_lookup_entry_str from mod.cyr. Included after format/mod.cyr.
@@ -6205,7 +6205,7 @@ fn shbdk_to_pls_with_user(dict, lang): cstring {
 
 # ssml.cyr — SSML <phoneme> tag parse / emit.
 #
-# Ports rust-old/src/dictionary/format/ssml.rs. Handles the SSML phoneme element
+# Ports 3.1.3:rust-old/src/dictionary/format/ssml.rs. Handles the SSML phoneme element
 # `<phoneme alphabet="ipa" ph="IPA">word</phoneme>`. Reads it with the XML reader
 # in pls.cyr (_shbdk_xml_tag / _xml_attr / _xml_text) and writes it with
 # shbdk_xml_escape from format/mod.cyr.
@@ -6299,7 +6299,7 @@ fn shbdk_to_ssml_phoneme(word, phonemes): cstring {
 
 # binary.cyr — compact binary serialization for pronunciation dictionaries.
 #
-# Ports rust-old/src/dictionary/format/binary.rs. The Rust used postcard; CYRIUS
+# Ports 3.1.3:rust-old/src/dictionary/format/binary.rs. The Rust used postcard; CYRIUS
 # has no postcard, so this is a hand-rolled little-endian binary format (the
 # maximal-scope decision). Layout: "SHBD" magic (4) + version (1), then
 #   lang: u8 flag [+ u16 len + bytes]
@@ -6774,7 +6774,7 @@ fn shbdk_load_binary_file(path): i64 {
 
 # --- lazy.cyr ---
 
-# lazy.cyr — lazy-loading dictionary (ports rust-old/src/dictionary/lazy.rs).
+# lazy.cyr — lazy-loading dictionary (ports 3.1.3:rust-old/src/dictionary/lazy.rs).
 #
 # PARITY NOTE: Rust's LazyDict mmap'd the binary file but decoded it EAGERLY in
 # open() (from_binary over the whole map), so every accessor read the owned dict
@@ -6865,7 +6865,7 @@ fn shbdk_lazy_debug(l): cstring {
 
 # --- detect.cyr ---
 
-# detect.cyr — script + language detection (ports rust-old/src/dictionary/detect.rs).
+# detect.cyr — script + language detection (ports 3.1.3:rust-old/src/dictionary/detect.rs).
 #
 # Matches a word's Unicode code points against varna's script ranges (majority
 # vote), then suggests languages registered for the winning script. Pure-function
@@ -7028,7 +7028,7 @@ fn shbdk_detect_script_name(word, out_code, out_name): i64 {
 # --- validate.cyr ---
 
 # validate.cyr — dictionary validation against varna phoneme inventories +
-# phonotactics (ports rust-old/src/dictionary/validate.rs).
+# phonotactics (ports 3.1.3:rust-old/src/dictionary/validate.rs).
 #
 # Two validators: validate_inventory (every entry's phonemes must exist in a
 # language's varna PhonemeInventory, with length-mark and affricate-tie
@@ -7802,7 +7802,7 @@ fn shbdk_phonotactic_report_eq(a, b): i64 {
 # --- lexicon.cyr ---
 
 # lexicon.cyr — varna-lexicon dictionary constructors
-# (ports rust-old/src/dictionary/mod.rs from_lexicon / spanish / hindi / german / sanskrit).
+# (ports 3.1.3:rust-old/src/dictionary/mod.rs from_lexicon / spanish / hindi / german / sanskrit).
 #
 # Builds a PronunciationDict from a varna lexicon: each entry's IPA is parsed to
 # svara phonemes, its frequency rank (if any) becomes a 1/(1+rank) frequency, keyed
@@ -7876,7 +7876,7 @@ fn shbdk_dict_sanskrit(): i64 { return shbdk_dict_with_language(shbdk_dict_new()
 
 # --- wasm.cyr ---
 
-# wasm.cyr — WebAssembly-facing dictionary bindings (ports rust-old/src/wasm.rs).
+# wasm.cyr — WebAssembly-facing dictionary bindings (ports 3.1.3:rust-old/src/wasm.rs).
 #
 # The Rust used wasm-bindgen to expose a JS-friendly WasmDict over
 # PronunciationDict; phoneme arrays and reports cross the boundary as JSON

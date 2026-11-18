@@ -1,6 +1,6 @@
 # arpabet.cyr — ARPABET <-> svara phoneme mapping.
 #
-# Ports rust-old/src/arpabet.rs. svara phonemes are the SVARA_PH_* integer
+# Ports 3.1.3:rust-old/src/arpabet.rs. svara phonemes are the SVARA_PH_* integer
 # ordinals (0..100) provided by the svara bundle; "no phoneme" is the sentinel
 # SHBDK_PH_NONE (-1) (Rust's Option::None). ARPABET vowels carry a stress digit
 # (0/1/2) stripped before lookup; unstressed AH (0) is schwa, stressed AH is

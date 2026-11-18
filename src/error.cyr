@@ -7,7 +7,7 @@
 # Also the home of the crate's shared L0 primitives (SHBDK_PH_NONE, shbdk_copyz)
 # — see the sections below.
 #
-# Ports rust-old/src/error.rs (the `ShabdakoshError` enum — #[non_exhaustive],
+# Ports 3.1.3:rust-old/src/error.rs (the `ShabdakoshError` enum — #[non_exhaustive],
 # 4 variants). Rust carried a String payload per variant + a thiserror Display;
 # the Cyrius port drops the payloads and builds on sakshi (साक्षी — the AGNOS
 # error/tracing substrate): each error is a packed i64 `[ctx][category][code]`.

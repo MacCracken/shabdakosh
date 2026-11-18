@@ -1,5 +1,5 @@
 # static_dict.cyr — static English dictionary over a compile-time perfect hash
-# (ports rust-old/src/dictionary/static_dict.rs).
+# (ports 3.1.3:rust-old/src/dictionary/static_dict.rs).
 #
 # The Rust baked the dictionary into a phf::Map with build.rs + phf_codegen. Since
 # 3.1.2 this is the same thing: programs/gen_cmudict.cyr computes a CHD perfect

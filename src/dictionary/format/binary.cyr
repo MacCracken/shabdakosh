@@ -1,6 +1,6 @@
 # binary.cyr — compact binary serialization for pronunciation dictionaries.
 #
-# Ports rust-old/src/dictionary/format/binary.rs. The Rust used postcard; CYRIUS
+# Ports 3.1.3:rust-old/src/dictionary/format/binary.rs. The Rust used postcard; CYRIUS
 # has no postcard, so this is a hand-rolled little-endian binary format (the
 # maximal-scope decision). Layout: "SHBD" magic (4) + version (1), then
 #   lang: u8 flag [+ u16 len + bytes]

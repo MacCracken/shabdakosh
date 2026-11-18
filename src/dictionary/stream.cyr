@@ -1,6 +1,6 @@
 # stream.cyr — streaming word-to-phoneme lookup.
 #
-# Ports rust-old/src/dictionary/stream.rs (the LookupStream iterator). CYRIUS has
+# Ports 3.1.3:rust-old/src/dictionary/stream.rs (the LookupStream iterator). CYRIUS has
 # no Iterator trait, so this is a stateful cursor over a vec of word cstrs: each
 # shbdk_lookup_stream_next(s) advances and stashes the current (word, phonemes)
 # in the stream struct — zero-alloc per step (no per-item tuple). Extends the

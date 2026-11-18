@@ -17,8 +17,8 @@ dictionary for AGNOS, written in [CYRIUS](https://github.com/MacCracken/cyrius).
   [`cyrius.cyml`](cyrius.cyml) under `[package].cyrius` — do not hardcode it elsewhere.
 - `cyrius deps` to resolve the git+tag dependencies (svara, varna) into `lib/`.
 
-There is no Rust/cargo toolchain — the Rust original is preserved at `rust-old/` as the
-functionality reference only (do not modify it).
+There is no Rust/cargo toolchain. The Rust original was removed after 3.1.3 and lives at that tag
+as the functionality reference: `git show 3.1.3:rust-old/<path>`.
 
 ## Code Quality Requirements
 
@@ -40,8 +40,8 @@ cyrius bench                   # benchmarks (auto-discovers benches/)
 
 ## Code Standards
 
-- **`rust-old/` is the capability list; accuracy is the oracle** ([ADR 005](docs/adr/005-accuracy-over-rust-parity.md)).
-  Every Rust capability must exist here; where the Rust is wrong the port is right, and a
+- **The Rust original (`3.1.3:rust-old/`) is the capability list; accuracy is the oracle**
+  ([ADR 005](docs/adr/005-accuracy-over-rust-parity.md)). Every Rust capability must exist here; where the Rust is wrong the port is right, and a
   consumer-visible output change goes in the CHANGELOG (an ADR when it is a real design choice).
 - **Prefix everything** `shbdk_` / `SHBDK_` (the distlib links flat). Never `shabda_`: that prefix
   belongs to the G2P engine shabda.

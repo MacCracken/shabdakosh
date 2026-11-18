@@ -1,5 +1,5 @@
 # heteronym.tcyr — tests for src/dictionary/heteronym.cyr
-# (ports rust-old/src/dictionary/heteronym.rs). Resolvers are fn-pointers.
+# (ports 3.1.3:rust-old/src/dictionary/heteronym.rs). Resolvers are fn-pointers.
 
 include "lib/hisab.cyr"
 include "lib/goonj.cyr"

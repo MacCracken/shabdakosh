@@ -1,6 +1,6 @@
 # ipa.cyr — IPA <-> svara phoneme mapping + a greedy IPA-transcription parser.
 #
-# Ports rust-old/src/ipa.rs. IPA symbols are multi-byte UTF-8, so where the Rust
+# Ports 3.1.3:rust-old/src/ipa.rs. IPA symbols are multi-byte UTF-8, so where the Rust
 # parser sliced on Unicode chars this works on BYTES: exact lookups compare whole
 # cstrs (streq), and the parser does greedy LONGEST-BYTE-PREFIX matching
 # (5-byte tie-bar affricates down to 1-byte ASCII). svara phonemes are SVARA_PH_*

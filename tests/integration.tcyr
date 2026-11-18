@@ -1,5 +1,5 @@
 # integration.tcyr — the Rust crate's tests/integration.rs, all 53 tests, one
-# test_group each under the Rust name (3.1.3, M3). With rust-old/ retired, this file
+# test_group each under the Rust name (3.1.3, M3). With rust-old/ removed (it lives at tag 3.1.3), this file
 # is where its cross-module expectations live. Where the Rust's expectation was
 # inaccurate the port is accurate, and the group says so (IY is /iː/ here, so
 # `read`'s first variant is written R IY1 D, not R <VowelE> D).

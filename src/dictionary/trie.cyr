@@ -1,6 +1,6 @@
 # trie.cyr — prefix trie for word lookup / autocomplete.
 #
-# Ports rust-old/src/dictionary/trie.rs (PrefixTrie). Rust keyed children by
+# Ports 3.1.3:rust-old/src/dictionary/trie.rs (PrefixTrie). Rust keyed children by
 # `char`; this keys by BYTE — equivalent for ASCII words, and correct at the
 # byte level for UTF-8 (prefix search over bytes). Each node's children are a
 # small vec of (byte, node) pairs (sparse fan-out; linear scan is fine). Extends
