@@ -46,7 +46,7 @@ from ~8.7 ms to ~33 µs.
 Shipped alongside: `fuzz/parsers.fcyr`, a real fuzz harness over every untrusted-input parser (it
 replaced the scaffold stub and runs in CI), which found and fixed one round-trip defect.
 
-### M3 — Retire `rust-old/` — ✅ done 2026-11-17 (sweep in 3.1.3, tree removed after it)
+### M3 — Retire `rust-old/` — ✅ done 2026-11-17 (sweep in 3.1.3, tree removed in 3.1.4)
 
 The bar changed for this milestone: **the Rust original is the list of capabilities the port must
 have; accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over-rust-parity.md)).
@@ -64,7 +64,7 @@ It now lives only at tag `3.1.3`: `git show 3.1.3:rust-old/<path>`.
    - CMUdict words are trimmed after their `(n)` marker and an empty word is refused.
    - Phonotactics covers every language varna profiles.
    - A frequency must be 0.0–1.0, so -1.0 is no longer a frequency that collides with "none".
-3. ✅ **`rust-old/` removed** (after the 3.1.3 tag, with the maintainer's go-ahead). Source, test and
+3. ✅ **`rust-old/` removed** in 3.1.4 (after the 3.1.3 tag, with the maintainer's go-ahead). Source, test and
    bench comments cite the Rust files as `3.1.3:rust-old/<path>`, git's own spelling of a file at a
    tag, and CLAUDE.md, CONTRIBUTING, the ADRs and the guides point there too. The historical records
    (CHANGELOG entries, the 2026-07-05 audit) keep the paths they were written with.
@@ -74,11 +74,22 @@ It now lives only at tag `3.1.3`: `git show 3.1.3:rust-old/<path>`.
 - **varna's English inventory lacks four phonemes**: the NURSE vowel `ɜ` (or `ɜː`) and the
   diphthongs `aɪ`, `aʊ`, `ɔɪ`. They are the whole of `validate()`'s remaining 3,113 flags on the
   English dictionary ([architecture note 001](../architecture/001-phoneme-ipa-bridge-and-validation.md)).
-  This is varna's data to add.
-- **varna's script data**:
-  - the Latin range stops at U+024F, so Vietnamese precomposed letters (U+1E00–1EFF) detect as no
-    script;
-  - `ja`'s registry entry has no `Hani`, so a kanji-only word never hints `ja`.
+  This is varna's data to add. **Filed upstream** (2026-11-17) as varna
+  `docs/development/issues/2026-11-17-english-inventory-lacks-nurse-and-three-diphthongs.md`, with a
+  repro. When varna ships the fix: bump `[deps.varna]`, add `ɜ` ↔ `ɝ` to
+  `_shbdk_inventory_has_normalized` if varna spells NURSE `ɝ`, and re-measure (expected: 0 flags).
+- **varna's script data.** Both filed upstream (2026-11-17), each with a repro:
+  - **Script ranges cover part of each Unicode script**
+    (varna `docs/development/issues/2026-11-17-script-ranges-cover-part-of-each-unicode-script.md`).
+    Measured against Unicode 17.0 `Scripts.txt`: Latin has 450 of 1,492 code points, so Vietnamese
+    (`1E00–1EFF`), IPA (`0250–02B8`) and fullwidth letters detect as no script, while `×` / `÷` count as
+    Latin. Han misses 33,047, Kana its halfwidth forms, and Arabic, Cyrillic, Greek and Egyptian
+    hundreds each. The proposal is to generate the ranges from `Scripts.txt` + `ScriptExtensions.txt`.
+  - **Japanese is registered with Kana only**
+    (varna `docs/development/issues/2026-11-17-japanese-registry-lists-only-kana.md`). A kanji word
+    never hints `ja`. Also, varna's `Kana` holds Hiragana, where ISO 15924 `Kana` is Katakana only.
+  - When varna ships either: bump `[deps.varna]` and add `detect.tcyr` cases for the words in the
+    issues (`ở`, `ʃə`, `ＡＢＣ`, `ｶﾀｶﾅ`, `×`; `日本`, `人々`, `ひらがな`).
 - **Nasal vowels.** svara has no nasalised-vowel phonemes, so the IPA reader keeps a nasal vowel's
   base vowel and drops the tilde (`ĩ` reads as `i`). A phoneme for each would be svara's to add.
 - **`lazy_open`'s blob fallback is not exercised on Linux**, where mmap always succeeds. Opening a

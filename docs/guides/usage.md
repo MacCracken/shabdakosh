@@ -512,6 +512,8 @@ coda. The built-in English dictionary has no English phonotactic violation.
 
 ```
 var script = shbdk_detect_script("hello");   # "Latn" (cstr), or 0 if undetermined
+# A majority vote over the word's code points, except that Han mixed with kana reports "Kana"
+# (ひら漢字) and Han mixed with Hangul reports "Hang": Han is shared, kana and Hangul name the language.
 var hints  = shbdk_detect_language_hint("नमस्ते");   # vec of language codes (cstr), sorted
 
 # script name via out-params; returns 1 on success, 0 otherwise.

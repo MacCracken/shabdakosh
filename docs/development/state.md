@@ -5,9 +5,10 @@
 
 ## Version
 
-**Unreleased** — `rust-old/` removed (roadmap M3 step 3). The Rust original lives at tag `3.1.3`
-(`git show 3.1.3:rust-old/<path>`); every source, test and doc reference points there. No code,
-API or output change: the suite, the fuzz digest and the dist bundle's code are as in 3.1.3.
+**3.1.4** (2026-11-17) — `rust-old/` removed (roadmap M3 step 3). The Rust original lives at tag `3.1.3`
+(`git show 3.1.3:rust-old/<path>`); every source, test and doc reference points there. One output
+change: `shbdk_detect_script` reports Kana / Hangul for a word mixing it with Han (ひら漢字 is `Kana`,
+hinting `ja`). Three varna data gaps were filed upstream (the roadmap's *Gated* section).
 **3.1.3** (2026-11-17) — roadmap M3. The sweep against `rust-old/` is done, on the bar
 [ADR 005](../adr/005-accuracy-over-rust-parity.md) sets: `rust-old/` is the capability list, and
 accuracy is the oracle. It fixed every missing capability, port defect and Rust inaccuracy found

@@ -50,7 +50,9 @@ p b t d k ɡ f v θ ð s z ʃ ʒ h m n ŋ ɹ l w j t͡ʃ d͡ʒ iː ɪ eɪ ɛ æ 
 ```
 
 The four remaining rejections are all its gaps: the NURSE vowel and the diphthongs `aɪ aʊ ɔɪ`.
-They are reported upstream rather than worked around. Dropping them from the check here would
+They are reported upstream rather than worked around: varna
+`docs/development/issues/2026-11-17-english-inventory-lacks-nurse-and-three-diphthongs.md` (filed
+2026-11-17, with a repro). Dropping them from the check here would
 hide a real inventory question from every other varna consumer.
 
 ## Reading a report

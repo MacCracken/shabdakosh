@@ -12,7 +12,7 @@ cyrius test tests                        # run every .tcyr suite
 
 - `src/main.cyr` — entry point. Top-level `var r = main(); syscall(SYS_EXIT, r);`.
 - `tests/` — test suite (`.tcyr` files, auto-discovered by `cyrius test tests`).
-- The original Rust source was removed after 3.1.3 and lives at that tag: `git show 3.1.3:rust-old/<path>`. It is
+- The original Rust source was removed in 3.1.4 and lives at tag 3.1.3: `git show 3.1.3:rust-old/<path>`. It is
   the functionality reference (what the port must be able to do); accuracy decides whether a result is right.
 
 ## Adding a feature

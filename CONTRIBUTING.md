@@ -17,7 +17,7 @@ dictionary for AGNOS, written in [CYRIUS](https://github.com/MacCracken/cyrius).
   [`cyrius.cyml`](cyrius.cyml) under `[package].cyrius` — do not hardcode it elsewhere.
 - `cyrius deps` to resolve the git+tag dependencies (svara, varna) into `lib/`.
 
-There is no Rust/cargo toolchain. The Rust original was removed after 3.1.3 and lives at that tag
+There is no Rust/cargo toolchain. The Rust original was removed in 3.1.4 and lives at tag 3.1.3
 as the functionality reference: `git show 3.1.3:rust-old/<path>`.
 
 ## Code Quality Requirements

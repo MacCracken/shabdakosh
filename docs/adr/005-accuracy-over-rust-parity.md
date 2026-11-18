@@ -3,7 +3,7 @@
 **Status**: Accepted
 **Date**: 2026-11-17
 **Amends**: [004](004-cyrius-port-decisions.md) ("the correctness bar is 'matches what Rust did'")
-**Note**: `rust-old/` was removed after 3.1.3; it lives at that tag (`git show 3.1.3:rust-old/<path>`).
+**Note**: `rust-old/` was removed in 3.1.4; it lives at tag 3.1.3 (`git show 3.1.3:rust-old/<path>`).
 
 ## Context
 
@@ -73,13 +73,14 @@ standing record of why the port's output differs from the Rust's.
 | readers | default on bad input | refuse, with a reason | silent VowelA / 0.0 / dropped regions |
 | writers | write anything | refuse what would not load back | unreadable files, a u16 wrap |
 | `from_lexicon` | 1/(1+Swadesh index) | 1/(1+frequency rank) | the index is a concept number |
+| script detection (3.1.4) | Han wins a kana / Han tie | kana or Hangul mixed with Han reports that script | Han is shared; kana / Hangul name the language (ISO 15924 `Jpan`, `Kore`) |
 
 ## Consequences
 
 - **Positive**:
   - The port is more correct than the Rust everywhere they differ, and each difference is written
     down.
-  - `rust-old/` could be retired without losing anything, and was, after 3.1.3. Its 53 integration tests live on in
+  - `rust-old/` could be retired without losing anything, and was, in 3.1.4. Its 53 integration tests live on in
     `tests/integration.tcyr`, and its unit tests are carried in the module suites.
   - The five *Open decisions* are settled.
 - **Negative**:

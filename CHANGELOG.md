@@ -1,8 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [3.1.4] — 2026-11-17
 
-Roadmap M3 step 3: the Rust original leaves the tree. No code, API or output change.
+Roadmap M3 step 3: the Rust original leaves the tree, plus one detection fix. Three varna data gaps
+are filed upstream.
 
 ### Removed
 
@@ -17,6 +18,21 @@ Roadmap M3 step 3: the Rust original leaves the tree. No code, API or output cha
   `3.1.3:rust-old/<path>`, and CLAUDE.md, CONTRIBUTING, ADR 004 / 005, the architecture notes and
   the guides say where it is. CLAUDE.md's rule "do not modify `rust-old/`" becomes "do not
   restore it".
+- **`shbdk_detect_script` reports the kana or Hangul script for a word that mixes it with Han.** Han is
+  shared by Chinese, Japanese and Korean, while kana writes only Japanese and Hangul only Korean;
+  ISO 15924 calls such writing `Jpan` and `Kore`. The plain majority vote (the Rust's) made ひら漢字
+  (two kana, two kanji) Han, so its language hints were Chinese only. It is now `Kana`, hinting `ja`,
+  and 韓國語는 is `Hang`. A word of Han alone is still `Hani`.
+
+### Filed upstream
+
+varna, each in `docs/development/issues/` with a repro that exits 1 on varna 2.6.0:
+
+- `2026-11-17-english-inventory-lacks-nurse-and-three-diphthongs.md`: the cause of all 3,113 English
+  `validate()` flags.
+- `2026-11-17-script-ranges-cover-part-of-each-unicode-script.md`: measured against Unicode 17.0.
+  Latin has 450 of 1,492 code points, and Han misses 33,047.
+- `2026-11-17-japanese-registry-lists-only-kana.md`: a kanji word never hints `ja`.
 
 ## [3.1.3] — 2026-11-17
 

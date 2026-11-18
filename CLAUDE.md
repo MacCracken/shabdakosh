@@ -29,8 +29,8 @@ component needing pronunciation lookup. Will pull `dist/shabdakosh.cyr`.
 
 ## Scaffolding
 
-Scaffolded with `cyrius port`, which moved the Rust tree to `rust-old/`. That tree was removed after
-3.1.3 (roadmap M3); it lives on at tag `3.1.3` — read a file with `git show 3.1.3:rust-old/<path>` —
+Scaffolded with `cyrius port`, which moved the Rust tree to `rust-old/`. That tree was removed in
+3.1.4 (roadmap M3); it lives on at tag `3.1.3` — read a file with `git show 3.1.3:rust-old/<path>` —
 and comments cite it as `3.1.3:rust-old/<path>`. It is the **functionality reference**: it says what
 the port must be able to do, not whether a result is right. Do not restore it to the tree.
 

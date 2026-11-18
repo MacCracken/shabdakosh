@@ -90,5 +90,22 @@ assert_streq(shbdk_detect_script("ⰀⰁⰂ"), "Glag", "Glagolitic -> Glag");
 assert_streq(shbdk_detect_script("ㄋㄧˇ"), "Bopo", "Bopomofo -> Bopo");
 assert_eq(vec_len(shbdk_detect_language_hint("ㄋㄧˇ")), 0, "no language uses Bopo");
 
+# ================================================================
+# 3.1.4: Han is shared by Chinese, Japanese and Korean; kana writes only Japanese
+# and Hangul only Korean. A word mixing Han with either reports that script, so its
+# hints name the language (ISO 15924 Jpan / Kore). The Rust's plain vote made ひら漢字
+# Han, with Chinese-only hints.
+test_group("Han mixed with kana or Hangul");
+assert_streq(shbdk_detect_script("ひら漢字"), "Kana", "a kana / kanji tie is Japanese (it was Hani)");
+assert_eq(_has(shbdk_detect_language_hint("ひら漢字"), "ja"), 1, "and hints ja");
+assert_eq(_has(shbdk_detect_language_hint("ひら漢字"), "zh"), 0, "not zh");
+assert_streq(shbdk_detect_script("漢字か"), "Kana", "two kanji and one kana is still Japanese");
+assert_streq(shbdk_detect_script("食べる"), "Kana", "a verb with okurigana");
+assert_streq(shbdk_detect_script("韓國語는"), "Hang", "Hanja with Hangul is Korean");
+assert_eq(_has(shbdk_detect_language_hint("韓國語는"), "ko"), 1, "and hints ko");
+assert_streq(shbdk_detect_script("你好"), "Hani", "Han alone is still Hani");
+assert_streq(shbdk_detect_script("ひらがな"), "Kana", "kana alone is still Kana");
+assert_streq(shbdk_detect_script("abc漢"), "Latn", "a Latin majority is untouched");
+
 var rc = assert_summary();
 syscall(60, rc);
