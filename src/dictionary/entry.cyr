@@ -54,8 +54,8 @@ fn shbdk_pronunciation_new(phonemes): i64 {
 # 1 if `f` (f64 bits) is a frequency: 0.0 <= f <= 1.0. NaN, the infinities and
 # anything outside the range are not.
 #
-# 3.2: the documented contract is now enforced. The Rust (and the port through
-# 3.1) stored any f32, so `@freq=5`, `nan` or `-1` loaded; a NaN made the variant
+# 3.1.3: the documented contract is now enforced. The Rust (and the port through
+# 3.1.2) stored any f32, so `@freq=5`, `nan` or `-1` loaded; a NaN made the variant
 # sort non-total (the Rust panicked on one past 20 variants), and an exact -1.0
 # collided with the "no frequency" sentinel. No valid frequency equals the
 # sentinel now.
@@ -79,7 +79,7 @@ fn shbdk_pronunciation_with_frequency(p, frequency): i64 {
 # exactly `f` into buf (>= 32 bytes, NUL-terminated); returns its length. "0.5",
 # "0.85", "1", "0.3333333333333333".
 #
-# 3.2: this replaces a fixed 6 decimals, which wrote 1/3 as 0.333333 and 1e-9 as
+# 3.1.3: this replaces a fixed 6 decimals, which wrote 1/3 as 0.333333 and 1e-9 as
 # 0 — a frequency did not survive its own export. A value too small for 18
 # decimals (below 1e-18) is written with 18.
 fn shbdk_frequency_text(f, buf): i64 {
@@ -110,7 +110,7 @@ fn _shbdk_freq_fixed(f, buf, d): i64 {
 # SHBDK_REGION_* region leaves the pronunciation's region as it was.
 #must_use
 fn shbdk_pronunciation_with_region(p, region): i64 {
-    # 3.2: only a real region is stored (a stray value reached the exporters,
+    # 3.1.3: only a real region is stored (a stray value reached the exporters,
     # where shbdk_region_code gave a null cstr and to_cmudict / to_json crashed).
     if (shbdk_region_code(region) == 0) { return p; }
     store64(p + 16, region);
@@ -242,7 +242,7 @@ fn shbdk_phonemes_clone(v): i64 {
 }
 
 # Entry from a phoneme vec (single pronunciation, no metadata). The vec is copied,
-# as the Rust's `from_phonemes(&[Phoneme])` did (3.2: it was shared, so a caller
+# as the Rust's `from_phonemes(&[Phoneme])` did (3.1.3: it was shared, so a caller
 # reusing its buffer rewrote the entry). shbdk_pronunciation_new, like the Rust's
 # `Pronunciation::new(Vec)`, takes the vec over instead.
 #must_use
@@ -307,7 +307,7 @@ fn shbdk_dict_entry_all(e): i64 {
 }
 
 # First pronunciation matching `region`, or 0 (None). SHBDK_REGION_NONE is not a
-# region, so it matches nothing (3.2: it returned the first unregioned variant, so
+# region, so it matches nothing (3.1.3: it returned the first unregioned variant, so
 # for_region(region_from_code("XX")) found a pronunciation).
 #must_use
 fn shbdk_dict_entry_for_region(e, region): i64 {

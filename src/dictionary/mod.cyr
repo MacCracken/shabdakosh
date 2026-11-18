@@ -253,7 +253,7 @@ fn _shbdk_pv4(a, b, c, d): i64 {
 }
 
 # ---- shared file-load limits / sizing ----------------------------------------
-# 3.2: there is no load ceiling any more. SHBDK_MAX_FILE_BYTES (8 MB, 3.0.4) made
+# 3.1.3: there is no load ceiling any more. SHBDK_MAX_FILE_BYTES (8 MB, 3.0.4) made
 # every loader refuse files its saver had just written; buffers follow the file.
 
 # Byte size of `path`, or negative if it cannot be opened / sized.
@@ -274,7 +274,7 @@ fn _shbdk_file_size_of(path): i64 {
 
 # Read a whole file into a fresh buffer (NUL-terminated past its end) and return
 # it as a Str of the bytes read, or 0 with the reason in shbdk_last_error(). Shared
-# by the CMUdict and binary loaders (3.2).
+# by the CMUdict and binary loaders (3.1.3).
 fn _shbdk_read_file_str(path): i64 {
     if (path == 0) { return _shbdk_fail("no path"); }
     var size = _shbdk_file_size_of(path);
@@ -336,7 +336,7 @@ fn shbdk_dict_from_simple_entries(simple): i64 {
 }
 
 # ---- inserts / removal -------------------------------------------------------
-# OWNERSHIP (3.2): insert / insert_user copy the phoneme vec, as the Rust's
+# OWNERSHIP (3.1.3): insert / insert_user copy the phoneme vec, as the Rust's
 # `&[Phoneme]` did — a caller may reuse its buffer. insert_entry /
 # insert_user_entry take the entry itself (the Rust moved a DictEntry in), so the
 # dictionary owns it afterwards. Keys are lowercased with Unicode semantics.
@@ -376,7 +376,7 @@ fn shbdk_dict_language(d): cstring {
 }
 
 # Sets the ISO 639 language code (copied; a null code clears it).
-# 3.2: was stored as given, so mutating the caller's buffer changed the dictionary.
+# 3.1.3: was stored as given, so mutating the caller's buffer changed the dictionary.
 fn shbdk_dict_set_language(d, code): i64 {
     if (code == 0) { store64(d + 16, 0); return 0; }
     store64(d + 16, shbdk_copyz(code, strlen(code)));
@@ -438,7 +438,7 @@ fn shbdk_dict_lookup_entry(d, word): i64 {
     # deref address 0 in the case scan below. One predictable branch on the hot
     # path (measured: no change to the ~130 ns lookup).
     if (word == 0) { return 0; }
-    # 3.2: Unicode lowercase (was ASCII only, so "ÜBER" never found "über").
+    # 3.1.3: Unicode lowercase (was ASCII only, so "ÜBER" never found "über").
     if (shbdk_is_lower_cstr(word) == 1) {
         key = str_from(word);
     } else {
@@ -600,7 +600,7 @@ fn shbdk_dict_diff_is_empty(dd): i64 {
 }
 
 # Frequency equality: the same value. 0.0 equals -0.0 (IEEE), and a NaN equals
-# the same NaN — a dictionary diffed against itself has no changes. (3.2: was a bit
+# the same NaN — a dictionary diffed against itself has no changes. (3.1.3: was a bit
 # compare, which split 0.0 / -0.0; the Rust's f32 `==` instead never matched a NaN.)
 fn _shbdk_freq_eq(a, b): i64 {
     if (a == b) { return 1; }

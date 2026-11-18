@@ -294,7 +294,7 @@ fn _gc_say(s: cstring): i64 { return println(s); }
 fn main() {
     alloc_init();
 
-    # read the data file, whole (3.2: it was read into a fixed 512 KB buffer and
+    # read the data file, whole (3.1.3: it was read into a fixed 512 KB buffer and
     # silently cut beyond that)
     var path = "data/cmudict-5k.txt";
     var fd = file_open(path, 0, 0);
@@ -311,7 +311,7 @@ fn main() {
     # fold entries: word Str -> entry accumulator (vec of pron*); order vec keeps
     # first-occurrence order for a stable emit.
     #
-    # 3.2: the rules are the runtime reader's (shbdk_parse_cmudict), and anything it
+    # 3.1.3: the rules are the runtime reader's (shbdk_parse_cmudict), and anything it
     # would refuse stops the build, as build.rs's panics did. The generator used to
     # take an annotation by its first letter (@frequency= / @r= applied), keep a
     # word's trailing tab, drop an unknown symbol (`bb  AH3` became a zero-phoneme
@@ -440,7 +440,7 @@ fn main() {
     # Since toolchain 6.4.10 raised `cyrius distlib`'s per-module read cap 256 KB ->
     # 1 MB, the ~283 KB data lives in ONE module again (no sharding). Pieces are
     # still ~24 KB string-literal globals; the COUNT global + accessor follow.
-    # 3.2: sized to the input (the packed form is never more than ~2x the text, and
+    # 3.1.3: sized to the input (the packed form is never more than ~2x the text, and
     # an escaped byte takes 4); was a fixed 1 MB with no bound check
     var out_cap = src_len * 6 + 65536;
     var out = alloc(out_cap);

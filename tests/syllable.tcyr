@@ -86,7 +86,7 @@ assert_eq(_shbdk_is_nucleus(SVARA_PH_NASAL_M), 0, "nasal M not nucleus");
 assert_eq(_shbdk_is_nucleus(SVARA_PH_SILENCE), 0, "silence not nucleus");
 
 # ================================================================
-# 3.2: true Maximal Onset (the longest legal onset), and every svara vowel is a
+# 3.1.3: true Maximal Onset (the longest legal onset), and every svara vowel is a
 # nucleus. The Rust kept one consonant as coda whenever two or more sat between
 # vowels, and counted only the 20 English vowels.
 fn _pv(a, b, c, d, e, f, g): i64 {

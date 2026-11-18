@@ -86,11 +86,11 @@ fn shbdk_to_json(dict): cstring {
 }
 
 # ---- from_json (parse via the DOM) -------------------------------------------
-# 3.2: the reader checks the document against the schema instead of defaulting
+# 3.1.3: the reader checks the document against the schema instead of defaulting
 # whatever it did not recognise. It used to load `{}`, `"entries":5`, a missing
 # or non-array `phonemes`, a phoneme of 9999 or "Bogus" (read as 0, VowelA), a
 # `"frequency":"0.5"` (read as 0.0), a region "XX" (dropped), and an entry with no
-# pronunciations (dropped) — 16 of 40 malformed documents in the 3.2 sweep. Each
+# pronunciations (dropped) — 16 of 40 malformed documents in the 3.1.3 sweep. Each
 # is now an error with a reason. Unknown fields are still ignored, as serde does.
 #
 # It also reads the v0.1 shape the Rust accepted (EntryCompat::Old), where an

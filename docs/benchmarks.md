@@ -13,7 +13,7 @@ cyrius bench            # auto-discovers benches/
 
 - **Date**: 2026-11-17
 - **Toolchain**: cyrius 6.7.18
-- **Revision**: the M3 working tree (unreleased, on `2ef2194`)
+- **Revision**: 3.1.3 (the M3 sweep)
 - **Platform**: Linux 7.3.4-arch1-2, x86_64
 - **Dictionary**: base English (`_cmudict_data.cyr`), ~10,617 entries
 

@@ -10,7 +10,7 @@
 # ShbdkCoverageReport layout (24 bytes): [0]=total_tokens [8]=covered_tokens
 #   [16]=uncovered_words(vec of Str, sorted, unique).
 
-# 3.2: tokens split on Unicode White_Space (was ASCII only, so "hello<NBSP>world"
+# 3.1.3: tokens split on Unicode White_Space (was ASCII only, so "hello<NBSP>world"
 # was one uncovered token); the edges strip Unicode punctuation and symbols too
 # (curly quotes, the ellipsis, guillemets: "\u201Cthe\u201D" was uncovered); a
 # word-internal U+2019 / U+02BC apostrophe reads as the dictionary's ASCII `'`
@@ -67,7 +67,7 @@ fn _shbdk_normalize_token(text, start, end): i64 {
 
 # ---- CoverageReport ----------------------------------------------------------
 # A report from its fields: token counts and the uncovered words (vec of Str,
-# sorted, unique). The Rust's fields were public; this is the constructor (3.2).
+# sorted, unique). The Rust's fields were public; this is the constructor (3.1.3).
 #must_use
 fn shbdk_coverage_report_new(total, covered, uncovered): i64 {
     return _shbdk_coverage_report_new(total, covered, uncovered);

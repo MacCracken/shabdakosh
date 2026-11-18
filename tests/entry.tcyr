@@ -88,7 +88,7 @@ assert_eq(shbdk_dict_entry_len(ae), 2, "len 2");
 assert_eq(vec_get(shbdk_dict_entry_primary_phonemes(ae), 0), SVARA_PH_VOWEL_E, "new high-freq E is primary");
 
 # ================================================================
-# 3.2: a NaN is not a frequency (the contract is 0.0-1.0), so with_frequency does
+# 3.1.3: a NaN is not a frequency (the contract is 0.0-1.0), so with_frequency does
 # not store it; the variant has no frequency and sorts after the ones that do. (The
 # parity audit had kept a stored NaN in place, as Rust's unwrap_or(Equal) did — and
 # Rust's sort panicked on that comparator past 20 variants.)

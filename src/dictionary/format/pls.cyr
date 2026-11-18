@@ -6,7 +6,7 @@
 # _shbdk_fmt_dup from format/mod.cyr, and _shbdk_sort_strs / _shbdk_collect_keys /
 # _shbdk_dict_lookup_entry_str from mod.cyr. Included after format/mod.cyr.
 #
-# 3.2: the Rust (and the port through 3.1) found elements by substring search, so
+# 3.1.3: the Rust (and the port through 3.1.2) found elements by substring search, so
 # a lexeme kept only its FIRST <grapheme> (PLS 1.0 allows several, all sharing the
 # pronunciations), an attribute on <phoneme> (`prefer="true"`) made that phoneme
 # vanish, single-quoted attributes were missed (alphabet='x-sampa' slipped past
@@ -359,7 +359,7 @@ fn _shbdk_pls_header(sb, lang): i64 {
     str_builder_add_cstr(sb, "<lexicon version=\"1.0\" ");
     str_builder_add_cstr(sb, "xmlns=\"http://www.w3.org/2005/01/pronunciation-lexicon\" ");
     str_builder_add_cstr(sb, "alphabet=\"ipa\" xml:lang=\"");
-    str_builder_add_cstr(sb, shbdk_xml_escape(lang));   # 3.2: escaped (en"US broke the XML)
+    str_builder_add_cstr(sb, shbdk_xml_escape(lang));   # 3.1.3: escaped (en"US broke the XML)
     str_builder_add_cstr(sb, "\">\n");
     return 0;
 }

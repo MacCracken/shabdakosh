@@ -8,7 +8,7 @@
 # CYRIUS strings are cstr byte pointers, so words decode through error.cyr's strict
 # shbdk_utf8_decode (Rust got char scalars free from `str::chars()`).
 #
-# 3.2: the old local decoder read ill-formed UTF-8 as real code points (a lone
+# 3.1.3: the old local decoder read ill-formed UTF-8 as real code points (a lone
 # 0xF0 as U+00F0, so "Latn"; 0xC3 0x28 as one letter that swallowed the "(").
 # Ill-formed bytes now decode as U+FFFD, which is in no script, and never consume
 # the byte after them.

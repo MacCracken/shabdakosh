@@ -47,7 +47,7 @@ fn _shbdk_trie_get_or_add_child(node, byte): i64 {
 }
 
 # A result word: a Str over a fresh NUL-terminated copy of buf[0..n), carrying its
-# length, so a key with an embedded NUL comes back whole (3.2: str_from re-measured
+# length, so a key with an embedded NUL comes back whole (3.1.3: str_from re-measured
 # it with strlen and cut it at the NUL). Allocation failure gives the empty Str.
 fn _shbdk_trie_str(buf, n): i64 {
     var c = alloc(n + 1);
@@ -85,7 +85,7 @@ fn _shbdk_trie_insert_bytes(t, data, len): i64 {
 
 # Insert a word (cstr).
 fn shbdk_trie_insert(t, word): i64 {
-    if (word == 0) { return 0; }   # 3.2: a null word is no word (it crashed)
+    if (word == 0) { return 0; }   # 3.1.3: a null word is no word (it crashed)
     return _shbdk_trie_insert_bytes(t, word, strlen(word));
 }
 
@@ -204,7 +204,7 @@ fn _shbdk_trie_collect(node, buf, depth, cap, results): i64 {
 #must_use
 fn shbdk_trie_search_prefix(t, prefix): i64 {
     var results = vec_new();
-    if (prefix == 0) { return results; }   # 3.2: a null prefix matches nothing (it crashed)
+    if (prefix == 0) { return results; }   # 3.1.3: a null prefix matches nothing (it crashed)
     var node = load64(t + 0);
     var i = 0;
     while (load8(prefix + i) != 0) {

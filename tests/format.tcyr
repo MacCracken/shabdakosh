@@ -240,7 +240,7 @@ assert_neq(shbdk_dict_lookup(vtrim, "cat"), 0, "word key has no VT glued to it")
 
 # ================================================================
 # 3.1.2 (found by fuzz/parsers.fcyr): `@freq=1e999` parsed to infinity, was written
-# as `@freq=inf`, and could not be loaded back. 3.2: a frequency is 0.0-1.0, so a
+# as `@freq=inf`, and could not be loaded back. 3.1.3: a frequency is 0.0-1.0, so a
 # non-finite or out-of-range value is refused where it is read, with the reason.
 test_group("@freq: the 0.0-1.0 contract, a strict number, the reason");
 fn _cm(txt): i64 { return shbdk_parse_cmudict(txt); }

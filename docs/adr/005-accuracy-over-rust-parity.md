@@ -52,9 +52,9 @@ Each difference from the Rust falls in one of three classes:
 A consumer-visible output change is never silent. The CHANGELOG lists it, and this ADR is the
 standing record of why the port's output differs from the Rust's.
 
-### The output changes this decision made (3.2)
+### The output changes this decision made (3.1.3)
 
-| Area | Rust / 3.1 | Now | Why |
+| Area | Rust / 3.1.2 | Now | Why |
 |---|---|---|---|
 | ARPABET `IY` | /e/ (`VOWEL_E`) | /iː/ (`VOWEL_LONG_I`) | IY is FLEECE; svara synthesised "see" as "say" |
 | IPA bridge | 46 of 100 phonemes | all 100 | the rest were dropped on export, skipped on parse |
@@ -82,7 +82,7 @@ standing record of why the port's output differs from the Rust's.
     `tests/integration.tcyr`, and its unit tests are carried in the module suites.
   - The five *Open decisions* are settled.
 - **Negative**:
-  - Outputs change for consumers, which makes this a minor-version release:
+  - Outputs change for consumers (released as 3.1.3, with the changes listed in the CHANGELOG):
     - English pronunciations with `IY`;
     - IPA text: tie bars, the extended symbols, syllable breaks;
     - inputs the readers used to accept.
@@ -100,7 +100,7 @@ standing record of why the port's output differs from the Rust's.
 - **Keep Rust parity, record each defect as an ADR'd divergence** (ADR 004's rule). It was
   rejected because it ships the Rust's bugs to every AGNOS consumer, and an ADR per bug documents a
   defect instead of removing it.
-- **Strict IPA reading (a bare `tʃ` is t + ʃ).** It was rejected because files written before 3.2,
+- **Strict IPA reading (a bare `tʃ` is t + ʃ).** It was rejected because files written before 3.1.3,
   and the common broad transcriptions, spell the affricate without a tie bar. The writer's syllable
   break keeps the port's own round trip lossless instead.
 - **Clamping an out-of-range frequency.** It was rejected because a silent change to the value is

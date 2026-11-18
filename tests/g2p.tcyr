@@ -103,7 +103,7 @@ assert_eq(shbdk_fallback_dict_lookup(fbf, "xyzzy"), 0, "FstModel stub -> None fo
 assert_neq(shbdk_fallback_dict_lookup(fbf, "hello"), 0, "hello still from dict");
 
 # ================================================================
-# 3.2: a model may reuse one scratch vec for every prediction; promote and lookup
+# 3.1.3: a model may reuse one scratch vec for every prediction; promote and lookup
 # copy, so an earlier promotion is not rewritten by the next prediction.
 var _SCRATCH = 0;
 fn _scratch_predict(word, state): i64 {

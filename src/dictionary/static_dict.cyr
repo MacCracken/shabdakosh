@@ -34,7 +34,7 @@ var _SHBDK_STATIC_DICT = 0;    # shbdk_static_dict()'s handle (0 = unbuilt)
 
 # Forget the decoded-entry cache and shbdk_static_dict()'s handle. Both live in the
 # allocator like any other allocation, so a consumer that calls alloc_reset() must
-# call this too before the next static lookup (3.2). The table itself is constant
+# call this too before the next static lookup (3.1.3). The table itself is constant
 # data and is never affected.
 fn shbdk_static_reset(): i64 {
     _SHBDK_STATIC_CACHE = 0;
@@ -66,7 +66,7 @@ fn _shbdk_static_slot(word): i64 {
     if (word == 0) { return 0 - 1; }
     if (_SHBDK_PHF_LEN == 0) { return 0 - 1; }
     # The hash and the compare fold A-Z in place. A word with any non-ASCII byte is
-    # lowercased with Unicode semantics first (3.2), as shbdk_dict_lookup_entry
+    # lowercased with Unicode semantics first (3.1.3), as shbdk_dict_lookup_entry
     # does: the KELVIN SIGN U+212A lowercases to "k", so it can still be a key.
     # One pass finds the length and any non-ASCII byte.
     var n = 0;

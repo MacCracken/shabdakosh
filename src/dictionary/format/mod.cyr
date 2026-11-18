@@ -15,7 +15,7 @@
 # Whitespace is Unicode White_Space (error.cyr's shbdk_ws_len), what Rust's trim()
 # and split_whitespace() use; LF never reaches these, since it ends the line.
 #
-# 3.2: this was ASCII only, so a word followed by NBSP or U+3000 kept it in its
+# 3.1.3: this was ASCII only, so a word followed by NBSP or U+3000 kept it in its
 # key, and a phoneme list split on U+2003 failed as one unknown symbol.
 
 # First non-whitespace offset in s[i..e).
@@ -57,7 +57,7 @@ fn _shbdk_fmt_line_end(s, off, end): i64 {
     return off;
 }
 
-# Lowercased NUL-terminated copy of s[start..end), Unicode semantics (3.2; it
+# Lowercased NUL-terminated copy of s[start..end), Unicode semantics (3.1.3; it
 # folded ASCII only). shbdk_lower_n returns "" on allocation failure.
 fn _shbdk_fmt_lower_dup(s, start, end): i64 {
     return shbdk_lower_n(s + start, end - start);
@@ -137,7 +137,7 @@ fn _shbdk_xml_numref(s, i, out): i64 {
 }
 
 # Decode one unit at s[i]: append the decoded byte(s) to `sb`, return bytes read.
-# 3.2: numeric references (&#233; &#xE9;) decode as well as the five named ones
+# 3.1.3: numeric references (&#233; &#xE9;) decode as well as the five named ones
 # (the Rust decoded only the five).
 fn _shbdk_xml_decode_at(s, i, sb): i64 {
     var cpb[8];
@@ -291,7 +291,7 @@ fn shbdk_parse_cmudict(input): i64 {
         if (found == 0) { return _shbdk_fail_line(line, "missing two-space separator", 0, 0, 0, 0); }
 
         # the word: trimmed, its "(n)" variant marker cut, trimmed again, lowercased.
-        # 3.2: the second trim is new ("read (1)" stored "read "), and an empty word
+        # 3.1.3: the second trim is new ("read (1)" stored "read "), and an empty word
         # is an error (it stored the key "").
         ws = s;
         we = _shbdk_fmt_trim_end(input, ws, sep);
@@ -380,7 +380,7 @@ fn _shbdk_write_entry_cmudict(sb, word, entry): i64 {
         hasf = shbdk_pronunciation_has_frequency(pron);
         hasr = shbdk_pronunciation_has_region(pron);
         if (hasf == 1) {
-            # 3.2: the shortest text that reads back as the same value (was a fixed
+            # 3.1.3: the shortest text that reads back as the same value (was a fixed
             # 6 decimals, so 1/3 came back as 0.333333 and 1e-9 as 0).
             str_builder_add_cstr(sb, ";;; @freq=");
             shbdk_frequency_text(shbdk_pronunciation_frequency(pron), fbuf);
@@ -522,7 +522,7 @@ fn shbdk_parse_ipa(input): i64 {
             istart = _shbdk_fmt_skip_ws(input, wend, e);
             iend = e;
         }
-        # 3.2: "/kæt/" with no word stored the key "" (the Rust too).
+        # 3.1.3: "/kæt/" with no word stored the key "" (the Rust too).
         if (wend <= s) { return _shbdk_fail_line(line, "empty word", 0, 0, 0, 0); }
         phon = shbdk_parse_ipa_word(_shbdk_fmt_dup(input, istart, iend));
         if (vec_len(phon) == 0) {
@@ -594,7 +594,7 @@ fn shbdk_to_ipa(dict): cstring {
 # Load + parse a CMUdict file, or 0 on read / parse error (shbdk_last_error() says which).
 #must_use
 fn shbdk_load_cmudict_file(path): i64 {
-    # 3.2: no 8 MB ceiling (it refused files the saver wrote); sized to the file.
+    # 3.1.3: no 8 MB ceiling (it refused files the saver wrote); sized to the file.
     shbdk_clear_error();
     var data = _shbdk_read_file_str(path);
     if (data == 0) { return 0; }

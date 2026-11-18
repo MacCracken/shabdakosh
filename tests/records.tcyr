@@ -1,6 +1,6 @@
 # records.tcyr — tests for src/dictionary/format/records.cyr: a JSON round trip
 # and equality for every record type the Rust derived Serialize / Deserialize /
-# PartialEq on (3.2). Carries the Rust serde tests the port had no counterpart for:
+# PartialEq on (3.1.3). Carries the Rust serde tests the port had no counterpart for:
 # entry.rs (pronunciation, dict_entry, region), morphology.rs (morpheme,
 # decomposition, kind), syllable.rs (syllable, stress), coverage.rs, trie.rs,
 # heteronym.rs, g2p.rs (result, lookup source, fst model, fst notation) and

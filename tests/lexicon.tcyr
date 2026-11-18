@@ -20,7 +20,7 @@ alloc_init();
 # ================================================================
 # spanish(): seeded from varna's Swadesh list — language-tagged, non-empty. A
 # Swadesh entry has a concept number, not a frequency rank, so it carries no
-# frequency (3.2: the Swadesh index was misread as a rank and invented one).
+# frequency (3.1.3: the Swadesh index was misread as a rank and invented one).
 test_group("spanish Swadesh seed dict");
 var es = shbdk_dict_spanish();
 assert_streq(shbdk_dict_language(es), "es", "language es");
@@ -53,7 +53,7 @@ assert_eq(shbdk_dict_len(direct), shbdk_dict_len(es), "same entry count as spani
 
 # ================================================================
 # 3.1.2 / varna 2.6.0: varna spells nasal vowels with a combining tilde (U+0303), so
-# नहीं is "nəɦĩː" with ĩ as i + U+0303. 3.2: the IPA bridge has ɦ (the breathy
+# नहीं is "nəɦĩː" with ĩ as i + U+0303. 3.1.3: the IPA bridge has ɦ (the breathy
 # glottal fricative, svara FRIC_GLOTTAL_H), so it is no longer skipped: [n ə ɦ i]
 # (the tilde and the length mark have no svara phoneme of their own).
 test_group("hindi: नहीं keeps its ɦ and its vowel");
@@ -65,7 +65,7 @@ assert_eq(vec_get(nahi, 1), SVARA_PH_VOWEL_SCHWA, "ə");
 assert_eq(vec_get(nahi, 2), SVARA_PH_FRIC_GLOTTAL_H, "ɦ");
 assert_eq(vec_get(nahi, 3), SVARA_PH_VOWEL_I, "i (from i + U+0303)");
 
-# 3.2: a ranked entry's frequency is 1/(1+rank); an entry with no rank has none
+# 3.1.3: a ranked entry's frequency is 1/(1+rank); an entry with no rank has none
 # (it was 1/(1+swadesh index), which is +inf for an unindexed entry).
 test_group("from_lexicon: frequency from the frequency rank");
 var lx = _lexicon_new("xx");

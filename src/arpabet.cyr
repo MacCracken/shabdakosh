@@ -10,7 +10,7 @@
 # generated data and the runtime share one mapping (the Rust duplicated it in
 # build.rs).
 #
-# 3.2: IY is the FLEECE vowel /iː/ (SVARA_PH_VOWEL_LONG_I). The Rust mapped it to
+# 3.1.3: IY is the FLEECE vowel /iː/ (SVARA_PH_VOWEL_LONG_I). The Rust mapped it to
 # SVARA_PH_VOWEL_E, /e/, which svara synthesises with /e/ formants ("see" said as
 # "say") and which varna's English inventory does not have. In the other direction
 # /iː/ and /i/ both write IY1 (ARPABET marks no length), and /e/ writes nothing:
@@ -46,7 +46,7 @@ fn _shbdk_arpabet_lookup(sym, len): i64 {
     if (_shbdk_arp_eq(sym, len, "ER")) { return SVARA_PH_VOWEL_BIRD; }
     if (_shbdk_arp_eq(sym, len, "EY")) { return SVARA_PH_DIPH_EI; }
     if (_shbdk_arp_eq(sym, len, "IH")) { return SVARA_PH_VOWEL_NEAR_I; }
-    if (_shbdk_arp_eq(sym, len, "IY")) { return SVARA_PH_VOWEL_LONG_I; }   # FLEECE /iː/ (3.2; was /e/)
+    if (_shbdk_arp_eq(sym, len, "IY")) { return SVARA_PH_VOWEL_LONG_I; }   # FLEECE /iː/ (3.1.3; was /e/)
     if (_shbdk_arp_eq(sym, len, "OW")) { return SVARA_PH_DIPH_OU; }
     if (_shbdk_arp_eq(sym, len, "OY")) { return SVARA_PH_DIPH_OI; }
     if (_shbdk_arp_eq(sym, len, "UH")) { return SVARA_PH_VOWEL_NEAR_U; }

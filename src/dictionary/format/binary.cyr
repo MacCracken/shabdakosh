@@ -161,7 +161,7 @@ fn _shbdk_bin_put_map(buf, off, map): i64 {
 # SECURITY: size the output buffer to the dict instead of a fixed 2 MB alloc, so a
 # large dict (many/long user entries) can never overflow the write buffer.
 #
-# 3.2: the sizing pass also checks that the dictionary FITS the format, and
+# 3.1.3: the sizing pass also checks that the dictionary FITS the format, and
 # returns -1 (with the reason recorded) if it does not: a u16 field over 65535 (a
 # word, a phoneme list, a variant count, the language code), or a word / language
 # that is not well-formed UTF-8 or holds a NUL. (A phoneme outside svara's 0..100
@@ -295,7 +295,7 @@ fn shbdk_to_binary(dict): i64 {
 # would run past the blob end (`len`); the get helpers return -1 on any overrun,
 # which propagates up to shbdk_from_binary -> 0.
 #
-# 3.2: every VALUE is checked as well as every length, and a failure says what it
+# 3.1.3: every VALUE is checked as well as every length, and a failure says what it
 # was. An option flag must be 0 or 1, a phoneme 0..100, a region GA or RP, a
 # frequency 0.0-1.0, a word or language well-formed UTF-8 with no NUL, an entry
 # must have a pronunciation, and nothing may follow the user map. A region byte of
@@ -464,7 +464,7 @@ fn shbdk_save_binary_file(dict, path): i64 {
 }
 
 # Load a dict from a binary file, or 0 on read / decode error (shbdk_last_error()
-# says why). 3.2: no 8 MB ceiling; the buffer is sized to the file.
+# says why). 3.1.3: no 8 MB ceiling; the buffer is sized to the file.
 #must_use
 fn shbdk_load_binary_file(path): i64 {
     shbdk_clear_error();

@@ -1,9 +1,9 @@
 # records.cyr — JSON codecs and equality for every record type the Rust derived
 # Serialize / Deserialize / PartialEq on, beyond PronunciationDict itself.
 #
-# 3.2: the Rust's serde derives made each of these types serializable on its own,
+# 3.1.3: the Rust's serde derives made each of these types serializable on its own,
 # and CLAUDE.md's invariant is "every type Serialize+Deserialize with roundtrip
-# tests", but through 3.1 the port serialized only the dictionary (json.cyr), the
+# tests", but through 3.1.2 the port serialized only the dictionary (json.cyr), the
 # two validation reports (validate.cyr) and nothing else. This module closes it:
 # Region, Pronunciation, DictEntry, DictDiff, MorphemeKind / Morpheme /
 # Decomposition, StressLevel / Syllable, CoverageReport, PrefixTrie,

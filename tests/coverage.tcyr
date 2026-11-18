@@ -66,7 +66,7 @@ assert_streq(_shbdk_normalize_token("(test)", 0, strlen("(test)")), "test", "(te
 assert_eq(load8(_shbdk_normalize_token("...", 0, strlen("..."))), 0, "... -> empty");
 
 # ================================================================
-# 3.2: Unicode whitespace splits tokens; Unicode punctuation and symbols strip from
+# 3.1.3: Unicode whitespace splits tokens; Unicode punctuation and symbols strip from
 # the edges; a typographic apostrophe reads as '; tokens lowercase with Unicode.
 test_group("coverage: Unicode text");
 var ucd = shbdk_dict_new();

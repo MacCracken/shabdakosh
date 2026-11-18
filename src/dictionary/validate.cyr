@@ -178,7 +178,7 @@ fn _shbdk_add_tie(ipa): cstring {
 }
 
 # Membership with length-mark normalization: exact, then +ː, then strip trailing
-# ː (U+02D0 = bytes 0xCB 0x90), as Rust's inventory_has_normalized; then (3.2) the
+# ː (U+02D0 = bytes 0xCB 0x90), as Rust's inventory_has_normalized; then (3.1.3) the
 # affricate tie bar either way, so t͡ʃ and tʃ are one phoneme. The port wrote bare
 # tʃ / dʒ while varna lists t͡ʃ / d͡ʒ, which flagged 1,070 English entries.
 fn _shbdk_inventory_has_normalized(inv, ipa): i64 {
@@ -285,7 +285,7 @@ fn shbdk_validate_inventory(dict, inventory): i64 {
 }
 
 # ---- phonotactics validation -------------------------------------------------
-# 3.2: rewritten for accuracy; the Rust and the port through 3.1 both
+# 3.1.3: rewritten for accuracy; the Rust and the port through 3.1.2 both
 # (a) checked every ADJACENT PAIR of the word against the onset constraints, so
 #     the English ban on onset /tl/ and /dl/ fired mid-word — all 182 violations
 #     the built-in English dictionary produced ("abruptly", "deadline") were false;
@@ -379,7 +379,7 @@ fn _shbdk_check_size(word, v, i, j, limit, what, violations): i64 {
 }
 
 # Check one pronunciation's phonemes against a phonotactics profile, pushing any
-# violations. (Rust check_pronunciation, made syllable-aware in 3.2.)
+# violations. (Rust check_pronunciation, made syllable-aware in 3.1.3.)
 fn _shbdk_check_pronunciation(word, phonemes, phonotactics, violations): i64 {
     # silence is not a segment
     var v = vec_new();
@@ -481,7 +481,7 @@ fn _shbdk_lang_primary(code): cstring {
 
 # Validate against the dict's language inventory (registry_phonemes), or 0 (None)
 # if the dict has no language or varna has no inventory for it. A regional code
-# ("pt-BR") uses its own inventory when varna has one, else its language's (3.2).
+# ("pt-BR") uses its own inventory when varna has one, else its language's (3.1.3).
 # (Rust PronunciationDict::validate)
 #must_use
 fn shbdk_dict_validate(dict): i64 {
@@ -497,7 +497,7 @@ fn shbdk_dict_validate(dict): i64 {
 }
 
 # Validate against the dict language's phonotactics profile, or 0 (None) when
-# varna has none for it. 3.2: every language varna profiles (en ar zh hi ja es fr
+# varna has none for it. 3.1.3: every language varna profiles (en ar zh hi ja es fr
 # de ru ko pt sa) — the Rust's (and the port's) only knew en / sa / ja. A regional
 # code uses its language's profile. (Rust PronunciationDict::validate_phonotactics)
 #must_use
@@ -529,7 +529,7 @@ fn _shbdk_invalid_entry_to_jsonv(e): i64 {
     return obj;
 }
 
-# 3.2: the report readers check the schema, as serde did, instead of defaulting a
+# 3.1.3: the report readers check the schema, as serde did, instead of defaulting a
 # missing or wrong-typed field ("Bogus" read as phoneme 0, a missing word as "").
 # A failure returns 0 with the reason in shbdk_last_error().
 

@@ -361,7 +361,7 @@ assert_neq(shbdk_dict_lookup(pt, "Portuguese"), 0, "Portuguese");
 assert_neq(shbdk_dict_lookup(pt, "PORTUGUESE"), 0, "PORTUGUESE");
 
 # ================================================================
-# 3.2 accuracy fixes in the keystone.
+# 3.1.3 accuracy fixes in the keystone.
 test_group("insert copies the caller's phonemes; the language is owned");
 var cbuf = vec_new();
 vec_push(cbuf, SVARA_PH_PLOSIVE_K); vec_push(cbuf, SVARA_PH_VOWEL_ASH); vec_push(cbuf, SVARA_PH_PLOSIVE_T);

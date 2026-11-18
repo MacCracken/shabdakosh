@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [3.1.3] — 2026-11-17
 
 Roadmap M3, the final sweep against `rust-old/`, run on a new footing: **`rust-old/` is the list
 of capabilities the port must have, and accuracy — not "matches what Rust did" — decides whether a
@@ -12,7 +12,8 @@ behaved the same way.
 
 **1,426 assertions / 28 suites** (997 / 26 in 3.1.2). The new suites are `integration.tcyr`, all 53
 Rust integration tests one for one, and `records.tcyr`. Several outputs change, deliberately and
-for accuracy (see *Changed*). This is a minor-version change.
+for accuracy (see *Changed*); consumers that parse IPA text or rely on `IY` should read that
+section before upgrading.
 
 ### Changed (output differs from 3.1.2, deliberately)
 

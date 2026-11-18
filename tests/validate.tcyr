@@ -149,7 +149,7 @@ assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_SCHWA), 0, "schwa vowel");
 
 # ================================================================
 # SECURITY regression (audit 2026-07-05): malformed JSON must not null-deref on a
-# missing/mistyped required field. 3.2: such a document is refused, as serde did
+# missing/mistyped required field. 3.1.3: such a document is refused, as serde did
 # (it used to default the field: a missing language read as "", "Bogus" as 0).
 test_group("malformed report JSON: refused, no null deref");
 assert_eq(shbdk_validation_report_from_json("{}"), 0, "missing language refused");
@@ -184,7 +184,7 @@ assert_eq(shbdk_validation_report_eq(vr2, shbdk_validation_report_from_json(shbd
 assert_eq(shbdk_phonotactic_report_eq(pr, prt), 1, "PhonotacticReport equality after a round trip");
 
 # ================================================================
-# 3.2: is_consonant asks svara's class, so /iː/ and the extended vowels are vowels
+# 3.1.3: is_consonant asks svara's class, so /iː/ and the extended vowels are vowels
 # (the Rust's list omitted them and called them consonants).
 test_group("is_consonant: every svara vowel is a vowel");
 assert_eq(_shbdk_is_consonant(SVARA_PH_VOWEL_LONG_I), 0, "iː is a vowel (was a consonant)");
@@ -194,7 +194,7 @@ assert_eq(_shbdk_is_consonant(SVARA_PH_SILENCE), 0, "silence is not a consonant"
 assert_eq(_shbdk_is_consonant(SVARA_PH_TRILL_ALVEOLAR), 1, "r is a consonant");
 
 # ================================================================
-# 3.2: phonotactics is syllable-aware. Constraints apply to onsets, codas, nuclei
+# 3.1.3: phonotactics is syllable-aware. Constraints apply to onsets, codas, nuclei
 # and syllable boundaries, every run inside them is checked (so one- and
 # three-segment constraints fire), and onset / coda sizes are held to the profile.
 test_group("phonotactics: positions, not adjacent pairs");

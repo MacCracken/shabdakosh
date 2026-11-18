@@ -46,7 +46,7 @@ from ~8.7 ms to ~33 µs.
 Shipped alongside: `fuzz/parsers.fcyr`, a real fuzz harness over every untrusted-input parser (it
 replaced the scaffold stub and runs in CI), which found and fixed one round-trip defect.
 
-### M3 — Retire `rust-old/` — sweep done; removal awaits the go-ahead
+### M3 — Retire `rust-old/` — sweep shipped in 3.1.3; removal follows the release
 
 The bar changed for this milestone: **`rust-old/` is the list of capabilities the port must have;
 accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over-rust-parity.md)).
@@ -55,7 +55,7 @@ accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over
    through a built copy of the Rust crate and through the port: the full English dump, every
    export, the formats' edge cases, the API surface, and the Rust's 178 unit, 53 integration and
    27 doc tests. Every missing capability was ported, every port defect fixed, and every Rust
-   inaccuracy corrected (the CHANGELOG's *Unreleased* entry lists them). The 53 Rust integration tests are
+   inaccuracy corrected (the CHANGELOG's 3.1.3 entry lists them). The 53 Rust integration tests are
    `tests/integration.tcyr`, one test group each.
 2. ✅ **The open decisions are settled**, each by what is accurate:
    - `validate()` affricates and `IY` are fixed; the rest is varna's inventory (see below).
@@ -87,7 +87,7 @@ accuracy decides whether a result is right** ([ADR 005](../adr/005-accuracy-over
   - **bayan**: shabdakosh folds the 995 KB `bayan` monolith (with 353 KB of unicode tables at
     cyrius 6.7.18), where `dist/bayan-json.cyr` would do. shabda folds the monolith too, and a
     consumer must not hold both, so it is a stack decision, not a pin bump. varna 2.6.0's
-    optional JSON support already uses `bayan-json`. (Since 3.2 the text layer uses the unicode
+    optional JSON support already uses `bayan-json`. (Since 3.1.3 the text layer uses the unicode
     casefold and category tables the monolith carries, so a lighter bundle would need those too.)
   - **svara**: shabdakosh uses only svara's `SVARA_PH_*` ordinals and its phoneme classes, but folds
     the whole synthesis bundle. A phoneme-only svara sub-bundle would be svara's to ship.

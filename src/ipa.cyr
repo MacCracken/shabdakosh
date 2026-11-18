@@ -21,8 +21,8 @@ fn _shbdk_ipa_starts_with(ipa, pos, lit): i64 {
 }
 
 # ---- The symbol table --------------------------------------------------------
-# 3.2: the bridge covers every svara phoneme that has an IPA symbol (0..99; 100 is
-# silence). The Rust's, and the port's through 3.1, covered 46: the extended vowels
+# 3.1.3: the bridge covers every svara phoneme that has an IPA symbol (0..99; 100 is
+# silence). The Rust's, and the port's through 3.1.2, covered 46: the extended vowels
 # (y ø œ ɯ ɤ ɨ ʉ), the uvular / retroflex / pharyngeal / lateral consonants, the
 # trills, clicks, ejectives and implosives were dropped on export and skipped on
 # parse, so German ç, Hindi ɦ or a Spanish trill vanished from a lexicon.
@@ -31,7 +31,7 @@ fn _shbdk_ipa_starts_with(ipa, pos, lit): i64 {
 # (t͡ʃ, d͡ʒ — the unambiguous IPA, and varna's spelling), and `r` is the alveolar
 # TRILL, as IPA defines it (it read as the English approximant ɹ). The parser
 # still reads a bare tʃ / dʒ as the affricate (the common broad spelling, and what
-# 3.1 wrote), but a bare ts / dz / pf is a cluster ("cats" is t + s): only the tie
+# 3.1.2 wrote), but a bare ts / dz / pf is a cluster ("cats" is t + s): only the tie
 # bar or a ligature (ʦ ʣ ʧ ʤ) makes those an affricate.
 
 # Canonical IPA for a svara phoneme ordinal, or 0 (null cstr) for silence / an
@@ -449,9 +449,9 @@ fn shbdk_parse_ipa_word(ipa): i64 {
 
 # Convert a vec of svara phoneme ordinals to an IPA cstr. (Rust phonemes_to_ipa.)
 #
-# 3.2: where two adjacent symbols would read back as ONE longer symbol — [a, ɪ] as
+# 3.1.3: where two adjacent symbols would read back as ONE longer symbol — [a, ɪ] as
 # the diphthong aɪ, [t, ʃ] as the affricate (a bare tʃ still reads as one, the
-# common broad spelling and what 3.1 wrote) — a syllable break "." goes between
+# common broad spelling and what 3.1.2 wrote) — a syllable break "." goes between
 # them, so the transcription reads back as the same phonemes. Two vowels that do
 # not form a diphthong are in hiatus, and an English t + ʃ that is not the
 # affricate spans a syllable boundary, so the "." is also the right IPA there.

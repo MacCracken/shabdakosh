@@ -17,7 +17,7 @@ var SHBDK_MORPH_SUFFIX = 2;
 var SHBDK_MORPH_INFIX  = 3;
 
 # ---- Morpheme ----------------------------------------------------------------
-# new(text, kind, phonemes). The text is copied, as the Rust's String was (3.2:
+# new(text, kind, phonemes). The text is copied, as the Rust's String was (3.1.3:
 # it was stored by reference, so a caller reusing its buffer rewrote the morpheme).
 #must_use
 fn shbdk_morpheme_new(text, kind, phonemes): i64 {

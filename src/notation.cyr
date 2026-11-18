@@ -16,7 +16,7 @@ var SHBDK_NOTATION_IPA     = 1;
 var SHBDK_NOTATION_XSAMPA  = 2;
 
 # ---- X-SAMPA table (was: private xsampa_to_phoneme / phoneme_to_xsampa) -------
-# 3.2: covers every svara phoneme with an X-SAMPA symbol (0..99; the Rust's
+# 3.1.3: covers every svara phoneme with an X-SAMPA symbol (0..99; the Rust's
 # covered 46), and `r` is the alveolar trill as X-SAMPA defines it — the English
 # approximant is `r\` (it read `r` as the approximant). Also accepts the rhotic
 # 3` and @`, and the t_S / d_Z affricate spellings.
@@ -252,7 +252,7 @@ fn shbdk_notation_name(n): cstring {
 # may carry its stress digit (`OW1`, `AH0`), as render writes it and CMUdict
 # text spells it.
 #
-# 3.2: ARPABET went through shbdk_arpabet_to_phoneme, which takes no stress
+# 3.1.3: ARPABET went through shbdk_arpabet_to_phoneme, which takes no stress
 # digit (the Rust's Arpabet::str_to_phoneme did the same), so `parse(render(v))`
 # kept only the consonants and every `AH0` / `AH1` was lost.
 #must_use
@@ -287,7 +287,7 @@ fn _shbdk_notation_parse_ws(n, trans): i64 {
     var w = 0;
     var ph = 0;
     while (i < len) {
-        w = shbdk_ws_len(trans, i, len);   # 3.2: Unicode White_Space, as split_whitespace
+        w = shbdk_ws_len(trans, i, len);   # 3.1.3: Unicode White_Space, as split_whitespace
         if (w > 0) {
             if (in_tok == 1) {
                 ph = shbdk_notation_str_to_phoneme(n, _shbdk_substr_cstr(trans, start, i));

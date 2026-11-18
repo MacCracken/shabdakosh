@@ -15,7 +15,7 @@
 # ipa, a missing ph, no phonemes in it, markup inside the word, a missing
 # </phoneme>, or anything but white space after it.
 #
-# 3.2: on the shared XML reader (pls.cyr). Attributes may come in any order and
+# 3.1.3: on the shared XML reader (pls.cyr). Attributes may come in any order and
 # either quote style (ph='kæt' was refused), the word's entities, numeric
 # references and CDATA decode, and a malformed tag is refused — `ph="</phoneme>kæt"`
 # returned the word `kæt">cat` with ten junk phonemes, and the Rust panicked.

@@ -99,7 +99,7 @@ fn shbdk_cstrcmp(a, b): i64 {
 # ================================================================
 # Shared L0 text primitives: UTF-8, Unicode whitespace / punctuation, lowercase.
 #
-# 3.2: the tokenizers (notation parse, coverage, the CMUdict / IPA readers) split
+# 3.1.3: the tokenizers (notation parse, coverage, the CMUdict / IPA readers) split
 # and trimmed on ASCII whitespace only, coverage stripped ASCII punctuation only,
 # and lookups lowercased ASCII only, so "hello<NBSP>world" was one token, a
 # curly-quoted word never matched, and "ÉCOLE" never found "école". These give
@@ -364,7 +364,7 @@ fn _shbdk_is_lower_tail(s, i): i64 {
 }
 
 # ================================================================
-# Diagnostics (3.2) — the detail the Rust carried in DictParseError(String).
+# Diagnostics (3.1.3) — the detail the Rust carried in DictParseError(String).
 #
 # A parser that fails still returns 0 (or a packed error); the reason is now kept
 # here, as the Rust's message was: "line 3: unknown ARPABET symbol 'XX1'". Each
@@ -435,12 +435,12 @@ fn shbdk_utf8_valid(p, n): i64 {
 
 # ================================================================
 # CMUdict text rules shared by the runtime reader (format/mod.cyr) and the data
-# generator (programs/gen_cmudict.cyr), so the two read a file the same way (3.2).
+# generator (programs/gen_cmudict.cyr), so the two read a file the same way (3.1.3).
 # ================================================================
 # 1 if input[vs..ve) is a decimal number as Rust's f32::from_str reads one:
 # [+-] then digits[.digits] | .digits, then an optional [eE][+-]digits.
 #
-# 3.2: the old check only looked at the character set, so `1.2.3`, `1e`, `.`,
+# 3.1.3: the old check only looked at the character set, so `1.2.3`, `1e`, `.`,
 # `1-2`, `1e+` and `.e5` loaded as the numeric prefix f64_parse_ok took.
 fn shbdk_decimal_syntax(input, vs, ve): i64 {
     var i = vs;
@@ -477,7 +477,7 @@ fn shbdk_decimal_syntax(input, vs, ve): i64 {
 # is cut, or e if there is none. Only a marker AFTER at least one character counts,
 # so the real CMUdict words "(PAREN" and ")CLOSE-PAREN" stay whole.
 #
-# 3.2: the word was everything before the first '(' (as in the Rust), so
+# 3.1.3: the word was everything before the first '(' (as in the Rust), so
 # "(PAREN" stored the empty word and "a(b" stored "a".
 fn shbdk_cmudict_word_end(input, s, e): i64 {
     if (e - s < 4) { return e; }
@@ -542,6 +542,6 @@ fn shbdk_err_name(err): cstring {
     if (code == SHBDK_ERR_UNKNOWN_SYMBOL)     { return "unknown ARPABET symbol"; }
     if (code == SHBDK_ERR_PHONEME_NOT_IN_INV) { return "phoneme not in inventory"; }
     if (code == SHBDK_ERR_UNKNOWN_LANGUAGE)   { return "unknown language"; }
-    if (sakshi_is_err(err) == 0)               { return "ok"; }   # 3.2: was `code == 0`, which
+    if (sakshi_is_err(err) == 0)               { return "ok"; }   # 3.1.3: was `code == 0`, which
     return "unknown error";                    # named a category-only error "ok"
 }

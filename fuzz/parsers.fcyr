@@ -470,7 +470,7 @@ fn run_text_dict(t, k, input): i64 {
     if (t == T_JSON) { d = shbdk_from_json(input); }
     if (t == T_PLS) { d = shbdk_parse_pls(input); }
     if (d == 0) { return 0; }
-    # 3.2: no tolerated keys. The word is trimmed after its (n) marker is cut and an
+    # 3.1.3: no tolerated keys. The word is trimmed after its (n) marker is cut and an
     # empty word is refused, so every key a reader accepts is one its writer can
     # write back (the 3.1.2 harness skipped "" and "read " keys here).
     var o1 = 0;
@@ -546,7 +546,7 @@ fn run_notation(k, input): i64 {
     var v = shbdk_notation_parse(n, input);
     if (v == 0) { return 0; }
     var s1 = shbdk_notation_render(n, v);
-    # 3.2: ARPABET is checked like the others: its parse reads the stress digits its
+    # 3.1.3: ARPABET is checked like the others: its parse reads the stress digits its
     # render writes (the 3.1.2 harness checked it for faults only).
     var v2 = shbdk_notation_parse(n, s1);
     if (v2 == 0) { return fail(T_NOTATION, k, "its own rendering is refused"); }
@@ -662,7 +662,7 @@ fn main(): i64 {
     if (cyr_mprotect(_guard + 3 * PAGE, PAGE, PROT_NONE) != 0) { say("fuzz: mprotect failed"); return 1; }
     build_seeds();
 
-    # replay one case: <binary> <target> <case>. (3.2: args_init() was never called,
+    # replay one case: <binary> <target> <case>. (3.1.3: args_init() was never called,
     # so argc() was 0 and the replay this documents never ran.)
     args_init();
     if (argc() >= 3) {

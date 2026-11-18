@@ -80,7 +80,7 @@ fn _shbdk_cmudict_decode_entry(piece, wsep, e): i64 {
 
         var pron = shbdk_pronunciation_new(phon);
         # generator-checked data: gen_cmudict refuses an invalid @freq and writes only
-        # GA / RP, so the stores skip the builders' validation (3.2)
+        # GA / RP, so the stores skip the builders' validation (3.1.3)
         if (freq != SHBDK_FREQ_NONE) { store64(pron + 8, freq); }
         if (region != SHBDK_REGION_NONE) { store64(pron + 16, region); }
         vec_push(prons, pron);
@@ -116,7 +116,7 @@ fn shbdk_cmudict_load(m): i64 {
         piece = _shbdk_cmudict_piece(pi);
         len = strlen(piece);
         # An entry is word|pron|...; — find the word's '|' first, then the ';' after
-        # it, so a word may itself hold ';' (CMUdict's ;SEMI-COLON). 3.2: every ';'
+        # it, so a word may itself hold ';' (CMUdict's ;SEMI-COLON). 3.1.3: every ';'
         # was taken as an entry boundary.
         s = 0;
         while (s < len) {
