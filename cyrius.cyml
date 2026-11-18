@@ -31,6 +31,8 @@ modules = [
     "src/dictionary/trie.cyr",
     "src/dictionary/heteronym.cyr",
     "src/dictionary/g2p.cyr",
+    "src/dictionary/phf.cyr",
+    "src/dictionary/_static_phf_data.cyr",
     "src/dictionary/static_dict.cyr",
     "src/dictionary/format/mod.cyr",
     "src/dictionary/format/json.cyr",
@@ -60,7 +62,7 @@ stdlib = ["syscalls", "string", "alloc", "str", "fmt", "vec", "io", "args", "ass
 # manifest brings the matched set: hisab 3.4.1, naad 2.3.3, goonj 2.3.1.
 [deps.svara]
 git = "https://github.com/MacCracken/svara.git"
-tag = "3.6.3"
+tag = "3.14.0"
 modules = ["dist/svara.cyr"]
 
 # varna — phoneme inventories + phonotactics + script/registry metadata, consumed
@@ -72,5 +74,5 @@ modules = ["dist/svara.cyr"]
 # strings via shabda_phoneme_to_ipa.
 [deps.varna]
 git = "https://github.com/MacCracken/varna.git"
-tag = "2.5.2"
+tag = "2.6.0"
 modules = ["dist/varna.cyr"]

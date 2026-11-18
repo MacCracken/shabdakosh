@@ -20,8 +20,8 @@ ARPABET/IPA/X-SAMPA notation bridges and CMUdict/PLS/SSML/JSON I/O.
 - **Pronunciation lookup** — 10k+ entry base English dictionary (ARPABET/IPA ↔ svara phonemes), a user overlay, O(1) hashmap lookup (~135 ns/hit), plus `merge`/`diff`, coverage analysis, streaming lookup, a prefix trie, heteronym context, and a G2P fallback chain.
 - **I/O formats** — CMUdict / IPA / PLS / SSML text codecs (hand-written), JSON via the bayan DOM, and a compact hand-rolled binary format. `LazyDict` gives mmap-backed loading (with a `file_read_all` fallback).
 - **Validation & detection** — varna-backed phoneme-inventory and phonotactics validation, plus script/language detection over a UTF-8 code-point decoder.
-- **WASM + static dict** — a `WasmDict` binding surface and a lazily-cached static dictionary singleton.
-- **Generated data** — the base CMUdict is checked-in as a single `.cyr` module (`src/dictionary/_cmudict_data.cyr`, from `gen_cmudict.cyr`, the port of the Rust `build.rs`); it fits under the distlib 1 MB per-module cap (toolchain 6.4.10).
+- **WASM + static dict** — a `WasmDict` binding surface and a static English dictionary over a compile-time perfect hash (no load; ~124 ns/hit, allocation-free on a miss).
+- **Generated data** — the base CMUdict is checked-in as a single `.cyr` module (`src/dictionary/_cmudict_data.cyr`, from `gen_cmudict.cyr`, the port of the Rust `build.rs`); it fits under the distlib 1 MB per-module cap (toolchain 6.4.10). The same generator writes the static dictionary's perfect hash (`_static_phf_data.cyr`).
 - **Sakshi errors** — no panics; fallible functions return a sakshi packed-i64 code (`0 == ok`, test with `shbdk_is_err`) or a payload pointer (`0` == none).
 
 ## Quick Start
@@ -103,7 +103,9 @@ src/
     ├── trie.cyr                 O(k) prefix search / autocomplete
     ├── heteronym.cyr            context-aware heteronym resolution
     ├── g2p.cyr                  FallbackDict + FstModel G2P chain (fnptr dispatch)
-    ├── static_dict.cyr          lazily-cached static dictionary singleton
+    ├── phf.cyr                  the perfect hash's hash, slot math and codec
+    ├── _static_phf_data.cyr     generated perfect-hash table over the base dictionary
+    ├── static_dict.cyr          static dictionary lookups through the perfect hash
     ├── lazy.cyr                 LazyDict — mmap-backed binary loading
     ├── detect.cyr              script / language detection
     ├── validate.cyr            varna inventory + phonotactics validation

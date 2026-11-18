@@ -9,16 +9,10 @@
 #
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
-# Parse one packed entry piece[s..e) and insert it into map `m`.
-fn _shbdk_cmudict_parse_entry(m, piece, s, e): i64 {
-    # word = [s .. wsep), wsep at the first '|'
-    var wsep = s;
-    while (wsep < e) {
-        if (load8(piece + wsep) == 124) { break; }   # '|'
-        wsep = wsep + 1;
-    }
-    var wkey = str_new(piece + s, wsep - s);
-
+# Decode the pronunciations of one packed entry into a ShbdkDictEntry. The word
+# ends at `wsep` (its first '|') and the entry at `e` (its ';'). Shared by the map
+# loader below and by static_dict.cyr, which decodes one entry per looked-up word.
+fn _shbdk_cmudict_decode_entry(piece, wsep, e): i64 {
     var prons = vec_new();
     var p = wsep;
     while (p < e) {
@@ -91,13 +85,20 @@ fn _shbdk_cmudict_parse_entry(m, piece, s, e): i64 {
     }
 
     # 1 pron -> DictEntry::new; >1 -> from_pronunciations (sorts by freq), as build.rs did.
-    var entry = 0;
-    if (vec_len(prons) == 1) {
-        entry = shbdk_dict_entry_new(vec_get(prons, 0));
-    } else {
-        entry = shbdk_dict_entry_from_pronunciations(prons);
+    if (vec_len(prons) == 1) { return shbdk_dict_entry_new(vec_get(prons, 0)); }
+    return shbdk_dict_entry_from_pronunciations(prons);
+}
+
+# Parse one packed entry piece[s..e) and insert it into map `m`.
+fn _shbdk_cmudict_parse_entry(m, piece, s, e): i64 {
+    # word = [s .. wsep), wsep at the first '|'
+    var wsep = s;
+    while (wsep < e) {
+        if (load8(piece + wsep) == 124) { break; }   # '|'
+        wsep = wsep + 1;
     }
-    map_set(m, wkey, entry);
+    var wkey = str_new(piece + s, wsep - s);
+    map_set(m, wkey, _shbdk_cmudict_decode_entry(piece, wsep, e));
     return 0;
 }
 

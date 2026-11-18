@@ -1,0 +1,730 @@
+# parsers.fcyr — fuzz harness for shabdakosh's untrusted-input paths (3.1.2).
+#
+# Both security passes (docs/audit/2026-07-05-audit.md, 2026-09-01-p1-sweep.md) found their
+# defects in the parsers a file or a peer feeds: the binary decoder's unchecked counts, the UTF-8
+# decoder reading past a truncated lead byte, JSON fields of the wrong type. Those got
+# regression tests; this harness looks for the next one.
+#
+#   SEEDS    real exports of a small dictionary that has a user entry, a heteronym with
+#            frequencies and regions, and a word with an affricate and a diphthong, in each text
+#            format and the binary format; hand-written CMUdict annotations, SSML tags, IPA words,
+#            words in several scripts.
+#   MUTANTS  each case is a seed after 1..4 seeded mutations: a truncation; a byte replaced,
+#            inserted or deleted; a span repeated elsewhere; a token of the format spliced in
+#            (`@freq=`, `&amp;`, `"`, `1e999`, `ː`, a tie bar...); for binary, a u32 overwritten
+#            with a boundary value (0, 1, 2^31 - 1, 2^32 - 1).
+#
+# Properties. A failure prints the target and the case and exits non-zero:
+#   (a) no fault. Every input is placed flush against a PROT_NONE page: a cstr input's NUL is
+#       the last byte before it, a binary input's last byte is. A read past the input is a
+#       SIGSEGV, which ends the run with the case unprinted, so `<binary> <target> <case>`
+#       replays that one case and prints it first.
+#   (b) an accepted input is stable after one round: when parse(input) accepts, emit gives o1,
+#       parse(o1) must accept, and emit of that must be o1 again. (One round, not zero: the
+#       emitters normalize, e.g. six-decimal frequencies and greedy IPA affricates.)
+#
+# xorshift64, each case seeded from its target and index, so every case replays alone. The
+# parser targets rewind the heap (alloc_reset) before every case; the seeds live in an mmap'd
+# store the rewind does not touch. The static-lookup and script-detection targets touch caches
+# that hold heap pointers (static_dict's entry cache, varna's), so they run without rewinds.
+
+include "lib/hisab.cyr"
+include "lib/goonj.cyr"
+include "lib/naad.cyr"
+include "lib/svara.cyr"
+include "lib/varna.cyr"
+include "src/error.cyr"
+include "src/arpabet.cyr"
+include "src/ipa.cyr"
+include "src/dictionary/entry.cyr"
+include "src/dictionary/morphology.cyr"
+include "src/dictionary/syllable.cyr"
+include "src/notation.cyr"
+include "src/dictionary/_cmudict_data.cyr"
+include "src/dictionary/cmudict.cyr"
+include "src/dictionary/mod.cyr"
+include "src/dictionary/phf.cyr"
+include "src/dictionary/_static_phf_data.cyr"
+include "src/dictionary/static_dict.cyr"
+include "src/dictionary/format/mod.cyr"
+include "src/dictionary/format/json.cyr"
+include "src/dictionary/format/pls.cyr"
+include "src/dictionary/format/ssml.cyr"
+include "src/dictionary/format/binary.cyr"
+include "src/dictionary/detect.cyr"
+include "src/dictionary/validate.cyr"
+
+var ITERS = 3000;        # cases per parser target
+var ITERS_NORESET = 20000;   # cases per no-rewind target (they allocate little)
+var CAP = 8192;          # the largest mutant; one past it is cut
+var PAGE = 4096;
+
+var T_CMUDICT = 1;
+var T_IPA = 2;
+var T_JSON = 3;
+var T_BINARY = 4;
+var T_PLS = 5;
+var T_SSML = 6;
+var T_IPA_WORD = 7;
+var T_NOTATION = 8;
+var T_REPORT = 9;
+var T_STATIC = 10;
+var T_DETECT = 11;
+var T_LAST = 11;
+
+var _x = 1;          # xorshift64 state
+var _guard = 0;      # 4 pages: 3 for the input, the 4th PROT_NONE
+var _mut = 0;        # the mutant under construction (CAP + slack)
+var _store = 0;      # seed bytes (mmap'd: alloc_reset does not reach them)
+var _store_off = 0;
+var _seeds = 0;      # per target: up to 16 (ptr, len) pairs, mmap'd
+var _nseeds = 0;     # per target: seed count, mmap'd
+var _toks = 0;       # splice tokens: cstrs, mmap'd table of 64 pointers
+var _ntoks = 0;
+var _digest = 0;
+var _replay = 0;     # 1: print each case before running it
+
+# println for a cstring.
+fn say(s: cstring): i64 { return println(s); }
+
+# ---- randomness --------------------------------------------------------------
+fn srnd(seed): i64 {
+    _x = seed * 0x9E3779B97F4A7C15 + 0x632BE59BD9B4E019;
+    if (_x == 0) { _x = 1; }
+    return 0;
+}
+
+# The next xorshift64 draw, non-negative.
+fn rnd(): i64 {
+    _x = _x ^ (_x << 13);
+    _x = _x ^ (_x >> 7);
+    _x = _x ^ (_x << 17);
+    return _x >> 1;
+}
+
+# A draw in [0, n); 0 when n <= 0.
+fn below(n): i64 {
+    if (n <= 0) { return 0; }
+    return rnd() % n;
+}
+
+# Fold a value's eight bytes into the run's digest (FNV-1a).
+fn mix(v): i64 {
+    var i = 0;
+    while (i < 8) {
+        _digest = (_digest ^ ((v >> (i * 8)) & 255)) * 0x100000001B3;
+        i = i + 1;
+    }
+    return 0;
+}
+
+# ---- seed store --------------------------------------------------------------
+fn store_bytes(p, n): i64 {
+    var dst = _store + _store_off;
+    memcpy(dst, p, n);
+    _store_off = _store_off + n + 8;
+    return dst;
+}
+
+# Add n bytes at p as a seed of target t (up to 16 a target, each cut to CAP).
+fn add_seed(t, p, n): i64 {
+    if (n <= 0) { return 0; }
+    if (n > CAP) { n = CAP; }
+    var k = load64(_nseeds + t * 8);
+    if (k >= 16) { return 0; }
+    var dst = store_bytes(p, n);
+    store64(_seeds + (t * 16 + k) * 16, dst);
+    store64(_seeds + (t * 16 + k) * 16 + 8, n);
+    store64(_nseeds + t * 8, k + 1);
+    return 0;
+}
+
+# Add a cstr as a seed of target t (0 is skipped).
+fn add_seed_cstr(t, s): i64 {
+    if (s == 0) { return 0; }
+    return add_seed(t, s, strlen(s));
+}
+
+# Add a cstr to the splice tokens.
+fn add_tok(s): i64 {
+    if (_ntoks >= 64) { return 0; }
+    store64(_toks + _ntoks * 8, store_bytes(s, strlen(s) + 1));
+    _ntoks = _ntoks + 1;
+    return 0;
+}
+
+# A vec of one to three phonemes (a negative b or c is left out).
+fn phon(a, b, c): i64 {
+    var v = vec_new();
+    vec_push(v, a);
+    if (b >= 0) { vec_push(v, b); }
+    if (c >= 0) { vec_push(v, c); }
+    return v;
+}
+
+# Export the seed dictionary in every format and fill the seed store and the tokens.
+fn build_seeds(): i64 {
+    var d = shbdk_dict_english_minimal();
+    shbdk_dict_insert_user(d, "tomato", phon(SVARA_PH_PLOSIVE_T, SVARA_PH_VOWEL_SCHWA, SVARA_PH_NASAL_M));
+    shbdk_dict_insert(d, "church", phon(SVARA_PH_AFFR_CH, SVARA_PH_VOWEL_BIRD, SVARA_PH_AFFR_CH));
+    shbdk_dict_insert(d, "bait", phon(SVARA_PH_PLOSIVE_B, SVARA_PH_DIPH_EI, SVARA_PH_PLOSIVE_T));
+    var hc = "bass  B AE1 S\n;;; @freq=0.3 @region=RP\nbass(1)  B EY1 S\n;;; comment\nread  R IY1 D\n";
+    var het = shbdk_parse_cmudict(hc);
+    if (het != 0) { shbdk_dict_merge(d, het); }
+
+    add_seed_cstr(T_CMUDICT, shbdk_to_cmudict(d));
+    add_seed_cstr(T_CMUDICT, shbdk_to_cmudict_with_user(d));
+    add_seed_cstr(T_CMUDICT, hc);
+    add_seed_cstr(T_CMUDICT, ";;; @freq=1e999\nx  AA0\n;;; @region=ZZ\ny(2)  AH0 AH1 AH2\n");
+    add_seed_cstr(T_IPA, shbdk_to_ipa(d));
+    add_seed_cstr(T_IPA, "hello\thɛˈloʊ\nchurch\tt͡ʃɜːt͡ʃ\n# c\n\nbait\tbeɪt\n");
+    add_seed_cstr(T_JSON, shbdk_to_json(d));
+    add_seed_cstr(T_JSON, shbdk_to_json(shbdk_dict_with_language(shbdk_dict_new(), "en")));
+    var bin = shbdk_to_binary(d);
+    add_seed(T_BINARY, str_data(bin), str_len(bin));
+    var bin2 = shbdk_to_binary(shbdk_dict_new());
+    add_seed(T_BINARY, str_data(bin2), str_len(bin2));
+    add_seed_cstr(T_PLS, shbdk_to_pls(d, "en-US"));
+    add_seed_cstr(T_PLS, shbdk_to_pls_with_user(d, "en-GB"));
+    add_seed_cstr(T_SSML, shbdk_to_ssml_phoneme("hello", shbdk_dict_lookup(d, "hello")));
+    add_seed_cstr(T_SSML, "<phoneme alphabet=\"ipa\" ph=\"t&amp;ʃ\">a&lt;b</phoneme>");
+    add_seed_cstr(T_SSML, "<phoneme ph='bæs' alphabet='ipa'>bass</phoneme>");
+    add_seed_cstr(T_IPA_WORD, "hɛˈloʊ");
+    add_seed_cstr(T_IPA_WORD, "t͡ʃɜːt͡ʃ");
+    add_seed_cstr(T_IPA_WORD, "nəɦĩː");
+    add_seed_cstr(T_IPA_WORD, "ˈaɪ.ˌoʊ");
+    add_seed_cstr(T_NOTATION, "HH AH0 L OW1");
+    add_seed_cstr(T_NOTATION, "h E l oU");
+    add_seed_cstr(T_NOTATION, "hɛloʊ");
+    var rep = shbdk_validation_report_new("es", vec_new());
+    var bad = shbdk_invalid_entry_new("hola", phon(SVARA_PH_NASAL_NG, 0 - 1, 0 - 1));
+    vec_push(shbdk_validation_report_invalid_entries(rep), bad);
+    add_seed_cstr(T_REPORT, shbdk_validation_report_to_json(rep));
+    add_seed_cstr(T_STATIC, "hello");
+    add_seed_cstr(T_STATIC, "read");
+    add_seed_cstr(T_STATIC, "computer");
+    add_seed_cstr(T_STATIC, "The");
+    add_seed_cstr(T_STATIC, "abandon");
+    add_seed_cstr(T_DETECT, "hello");
+    add_seed_cstr(T_DETECT, "नमस्ते");
+    add_seed_cstr(T_DETECT, "привет");
+    add_seed_cstr(T_DETECT, "こんにちは");
+    add_seed_cstr(T_DETECT, "ⰀⰁㄋㄧˇ");
+
+    add_tok("@freq=");
+    add_tok("@region=");
+    add_tok("@region=GA");
+    add_tok(";;; ");
+    add_tok("  ");
+    add_tok("(1)");
+    add_tok("(");
+    add_tok("\t");
+    add_tok("\n");
+    add_tok("\"");
+    add_tok("\\");
+    add_tok("\\u0000");
+    add_tok("\\ud800");
+    add_tok("1e999");
+    add_tok("-0");
+    add_tok("0.1234567");
+    add_tok("NaN");
+    add_tok("{");
+    add_tok("}");
+    add_tok("[");
+    add_tok("]");
+    add_tok(":");
+    add_tok(",");
+    add_tok("null");
+    add_tok("true");
+    add_tok("&amp;");
+    add_tok("&lt;");
+    add_tok("&#x10FFFF;");
+    add_tok("&");
+    add_tok("<");
+    add_tok(">");
+    add_tok("</phoneme>");
+    add_tok("<lexeme>");
+    add_tok("</lexeme>");
+    add_tok("<grapheme>");
+    add_tok("<phoneme>");
+    add_tok("ph=\"");
+    add_tok("alphabet=\"x-sampa\"");
+    add_tok("ː");
+    add_tok("ˈ");
+    add_tok("ˌ");
+    add_tok("͡");
+    add_tok("̃");
+    add_tok("ʃ");
+    add_tok("\xff");
+    add_tok("\xc3");
+    add_tok("\xe2\x82");
+    add_tok("\xf0\x9f");
+    add_tok("AH0");
+    add_tok("ZZ9");
+    return 0;
+}
+
+# ---- mutation ----------------------------------------------------------------
+var _mlen = 0;
+
+# Insert n bytes at p into the mutant at pos (skipped past CAP).
+fn m_insert(pos, p, n): i64 {
+    if (_mlen + n > CAP) { return 0; }
+    var i = _mlen - 1;
+    while (i >= pos) {
+        store8(_mut + i + n, load8(_mut + i));
+        i = i - 1;
+    }
+    memcpy(_mut + pos, p, n);
+    _mlen = _mlen + n;
+    return 0;
+}
+
+# Delete up to n bytes of the mutant at pos.
+fn m_delete(pos, n): i64 {
+    if (pos + n > _mlen) { n = _mlen - pos; }
+    var i = pos;
+    while (i + n < _mlen) {
+        store8(_mut + i, load8(_mut + i + n));
+        i = i + 1;
+    }
+    _mlen = _mlen - n;
+    return 0;
+}
+
+# The u32 values a length or count field is overwritten with.
+fn boundary(i): i64 {
+    if (i == 0) { return 0; }
+    if (i == 1) { return 1; }
+    if (i == 2) { return 0x7FFFFFFF; }
+    if (i == 3) { return 0xFFFFFFFF; }
+    if (i == 4) { return 0x10000; }
+    return 0xFFFF;
+}
+
+# Apply one seeded mutation to the mutant; binary picks the u32 overwrite for op 5.
+fn mutate_once(binary): i64 {
+    var op = below(8);
+    var pos = below(_mlen + 1);
+    var b = 0;
+    var tmp = 0;
+    var n = 0;
+    if (op == 0) {                       # truncate
+        _mlen = pos;
+        return 0;
+    }
+    if (op == 1) {                       # replace a byte
+        if (pos < _mlen) { store8(_mut + pos, below(256)); }
+        return 0;
+    }
+    if (op == 2) {                       # insert a byte
+        b = alloc(1);
+        store8(b, below(256));
+        return m_insert(pos, b, 1);
+    }
+    if (op == 3) {                       # delete a span
+        return m_delete(pos, 1 + below(8));
+    }
+    if (op == 4) {                       # repeat a span elsewhere
+        if (_mlen == 0) { return 0; }
+        var s = below(_mlen);
+        n = 1 + below(64);
+        if (s + n > _mlen) { n = _mlen - s; }
+        tmp = alloc(n);
+        memcpy(tmp, _mut + s, n);
+        return m_insert(pos, tmp, n);
+    }
+    if (op == 5) {
+        if (binary == 1) {               # overwrite a u32 with a boundary value
+            if (pos + 4 > _mlen) { return 0; }
+            var v = boundary(below(6));
+            store8(_mut + pos, v & 255);
+            store8(_mut + pos + 1, (v >> 8) & 255);
+            store8(_mut + pos + 2, (v >> 16) & 255);
+            store8(_mut + pos + 3, (v >> 24) & 255);
+            return 0;
+        }
+    }
+    # 5 (text), 6, 7: splice a format token in
+    var t = load64(_toks + below(_ntoks) * 8);
+    return m_insert(pos, t, strlen(t));
+}
+
+# Build case k of target t into _mut / _mlen.
+fn make_case(t, k): i64 {
+    srnd(t * 1000003 + k);
+    var ns = load64(_nseeds + t * 8);
+    var si = below(ns);
+    var sp = load64(_seeds + (t * 16 + si) * 16);
+    _mlen = load64(_seeds + (t * 16 + si) * 16 + 8);
+    memcpy(_mut, sp, _mlen);
+    var binary = 0;
+    if (t == T_BINARY) { binary = 1; }
+    var nm = 1 + below(4);
+    if (k == 0) { nm = 0; }              # case 0 is the seed itself
+    var i = 0;
+    while (i < nm) {
+        mutate_once(binary);
+        i = i + 1;
+    }
+    if (_mlen > CAP) { _mlen = CAP; }
+    return 0;
+}
+
+# Place the mutant flush against the guard page as a cstr (an embedded NUL becomes 0x01, so
+# the parser sees every byte). Returns the cstr.
+fn place_cstr(): i64 {
+    var top = _guard + 3 * PAGE;
+    var dst = top - (_mlen + 1);
+    var i = 0;
+    var c = 0;
+    while (i < _mlen) {
+        c = load8(_mut + i);
+        if (c == 0) { c = 1; }
+        store8(dst + i, c);
+        i = i + 1;
+    }
+    store8(dst + _mlen, 0);
+    return dst;
+}
+
+# Place the mutant flush against the guard page as a Str (its last byte is the page's last).
+fn place_bytes(): i64 {
+    var top = _guard + 3 * PAGE;
+    var dst = top - _mlen;
+    memcpy(dst, _mut, _mlen);
+    return str_new(dst, _mlen);
+}
+
+# Append \xNN for byte c.
+fn add_hex2(sb, c): i64 {
+    var hx = "0123456789abcdef";
+    str_builder_add_cstr(sb, "\\x");
+    str_builder_add_byte(sb, load8(hx + (c >> 4)));
+    str_builder_add_byte(sb, load8(hx + (c & 15)));
+    return 0;
+}
+
+# Print case k of target t, escaping bytes outside printable ASCII.
+fn show_case(t, k): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "case target ");
+    str_builder_add_int(sb, t);
+    str_builder_add_cstr(sb, " #");
+    str_builder_add_int(sb, k);
+    str_builder_add_cstr(sb, " len ");
+    str_builder_add_int(sb, _mlen);
+    str_builder_add_cstr(sb, ":\n");
+    var i = 0;
+    var c = 0;
+    while (i < _mlen) {
+        c = load8(_mut + i);
+        if (c >= 32) {
+            if (c < 127) { str_builder_add_byte(sb, c); } else { add_hex2(sb, c); }
+        } else {
+            if (c == 10) { str_builder_add_cstr(sb, "\\n"); } else { add_hex2(sb, c); }
+        }
+        i = i + 1;
+    }
+    say(str_cstr(str_builder_build(sb)));
+    return 0;
+}
+
+# Print the case and why it failed, and exit 1.
+fn fail(t, k, why): i64 {
+    show_case(t, k);
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "FAIL: ");
+    str_builder_add_cstr(sb, why);
+    say(str_cstr(str_builder_build(sb)));
+    syscall(60, 1);
+    return 1;
+}
+
+# 1 if two cstrs are equal (both 0 counts as equal).
+fn same_str(a, b): i64 {
+    if (a == 0) { return b == 0; }
+    if (b == 0) { return 0; }
+    return streq(a, b);
+}
+
+# 1 if two vecs hold the same values in the same order.
+fn same_vec(a, b): i64 {
+    if (vec_len(a) != vec_len(b)) { return 0; }
+    var i = 0;
+    while (i < vec_len(a)) {
+        if (vec_get(a, i) != vec_get(b, i)) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# 1 if a key of d is empty or starts or ends with a byte the parsers trim.
+fn has_untrimmed_key(d): i64 {
+    var ks = map_keys(shbdk_dict_entries(d));
+    var i = 0;
+    var k = 0;
+    var n = 0;
+    while (i < vec_len(ks)) {
+        k = vec_get(ks, i);
+        n = str_len(k);
+        if (n == 0) { return 1; }
+        if (_shbdk_fmt_is_ws(load8(str_data(k))) == 1) { return 1; }
+        if (_shbdk_fmt_is_ws(load8(str_data(k) + n - 1)) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# ---- targets -----------------------------------------------------------------
+# Each answers 1 when the input was accepted, 0 when refused; a broken property fails the run.
+
+# A text dictionary format: parse, and if accepted, check export -> parse -> export.
+fn run_text_dict(t, k, input): i64 {
+    var d = 0;
+    if (t == T_CMUDICT) { d = shbdk_parse_cmudict(input); }
+    if (t == T_IPA) { d = shbdk_parse_ipa(input); }
+    if (t == T_JSON) { d = shbdk_from_json(input); }
+    if (t == T_PLS) { d = shbdk_parse_pls(input); }
+    if (d == 0) { return 0; }
+    # Known, and the Rust's too: the word is what comes before '(' AFTER the line is
+    # trimmed, so "(x  AH0" gives the word "" and "read (1)  R EH1 D" gives "read ".
+    # The text formats write such a key as a line whose word is gone or re-trimmed,
+    # so the export reads back different. Rust's parse_cmudict keeps both keys the
+    # same way; refusing them would be a divergence (roadmap, "Open decisions").
+    if (has_untrimmed_key(d) == 1) { return 1; }
+    var o1 = 0;
+    if (t == T_CMUDICT) { o1 = shbdk_to_cmudict(d); }
+    if (t == T_IPA) { o1 = shbdk_to_ipa(d); }
+    if (t == T_JSON) { o1 = shbdk_to_json(d); }
+    if (t == T_PLS) { o1 = shbdk_to_pls_with_user(d, "en-US"); }
+    var d2 = 0;
+    if (t == T_CMUDICT) { d2 = shbdk_parse_cmudict(o1); }
+    if (t == T_IPA) { d2 = shbdk_parse_ipa(o1); }
+    if (t == T_JSON) { d2 = shbdk_from_json(o1); }
+    if (t == T_PLS) { d2 = shbdk_parse_pls(o1); }
+    if (d2 == 0) { return fail(t, k, "its own export is refused"); }
+    var o2 = 0;
+    if (t == T_CMUDICT) { o2 = shbdk_to_cmudict(d2); }
+    if (t == T_IPA) { o2 = shbdk_to_ipa(d2); }
+    if (t == T_JSON) { o2 = shbdk_to_json(d2); }
+    if (t == T_PLS) { o2 = shbdk_to_pls_with_user(d2, "en-US"); }
+    if (same_str(o1, o2) == 0) { return fail(t, k, "export -> parse -> export changed"); }
+    mix(shbdk_dict_len(d));
+    mix(strlen(o1));
+    return 1;
+}
+
+# The binary format: decode, and if accepted, check encode -> decode -> encode bytes.
+fn run_binary(k, input): i64 {
+    var d = shbdk_from_binary(input);
+    if (d == 0) { return 0; }
+    var o1 = shbdk_to_binary(d);
+    var d2 = shbdk_from_binary(o1);
+    if (d2 == 0) { return fail(T_BINARY, k, "its own export is refused"); }
+    var o2 = shbdk_to_binary(d2);
+    if (str_len(o1) != str_len(o2)) { return fail(T_BINARY, k, "export -> parse -> export changed length"); }
+    if (memeq(str_data(o1), str_data(o2), str_len(o1)) == 0) {
+        return fail(T_BINARY, k, "export -> parse -> export changed bytes");
+    }
+    mix(shbdk_dict_len(d));
+    mix(str_len(o1));
+    return 1;
+}
+
+# One SSML phoneme tag: parse, and if accepted, check tag -> parse -> tag.
+fn run_ssml(k, input): i64 {
+    var r = shbdk_parse_ssml_phoneme(input);
+    if (r == 0) { return 0; }
+    var t1 = shbdk_to_ssml_phoneme(shbdk_ssml_result_word(r), shbdk_ssml_result_phonemes(r));
+    var r2 = shbdk_parse_ssml_phoneme(t1);
+    if (r2 == 0) { return fail(T_SSML, k, "its own tag is refused"); }
+    var t2 = shbdk_to_ssml_phoneme(shbdk_ssml_result_word(r2), shbdk_ssml_result_phonemes(r2));
+    if (same_str(t1, t2) == 0) { return fail(T_SSML, k, "tag -> parse -> tag changed"); }
+    mix(strlen(t1));
+    return 1;
+}
+
+# An IPA word: render -> parse -> render must be stable after one round.
+fn run_ipa_word(k, input): i64 {
+    var s1 = shbdk_phonemes_to_ipa(shbdk_parse_ipa_word(input));
+    var v2 = shbdk_parse_ipa_word(s1);
+    var s2 = shbdk_phonemes_to_ipa(v2);
+    if (same_str(s1, s2) == 0) { return fail(T_IPA_WORD, k, "render -> parse -> render changed"); }
+    if (same_vec(v2, shbdk_parse_ipa_word(s2)) == 0) { return fail(T_IPA_WORD, k, "parse of a rendering is unstable"); }
+    mix(vec_len(v2));
+    return vec_len(v2) > 0;
+}
+
+# A transcription in one of the three notations, chosen by k.
+fn run_notation(k, input): i64 {
+    var n = SHBDK_NOTATION_ARPABET;
+    var sel = k % 3;
+    if (sel == 1) { n = SHBDK_NOTATION_IPA; }
+    if (sel == 2) { n = SHBDK_NOTATION_XSAMPA; }
+    var v = shbdk_notation_parse(n, input);
+    if (v == 0) { return 0; }
+    var s1 = shbdk_notation_render(n, v);
+    # Known, and the Rust's too: ARPABET's render writes stress digits ("OW1",
+    # "AH0") that its parse does not read (Rust's Arpabet::str_to_phoneme is
+    # arpabet_to_phoneme, not _with_stress), so a round trip drops every vowel.
+    # Checked for faults only until that is decided (roadmap, "Open decisions").
+    if (n == SHBDK_NOTATION_ARPABET) {
+        mix(vec_len(v));
+        return 1;
+    }
+    var v2 = shbdk_notation_parse(n, s1);
+    if (v2 == 0) { return fail(T_NOTATION, k, "its own rendering is refused"); }
+    var s2 = shbdk_notation_render(n, v2);
+    if (same_str(s1, s2) == 0) { return fail(T_NOTATION, k, "render -> parse -> render changed"); }
+    mix(vec_len(v2));
+    return 1;
+}
+
+# The validation and phonotactic report JSON codecs.
+fn run_report(k, input): i64 {
+    var r = shbdk_validation_report_from_json(input);
+    var p = shbdk_phonotactic_report_from_json(input);
+    if (p != 0) {
+        var pj = shbdk_phonotactic_report_to_json(p);
+        var p2 = shbdk_phonotactic_report_from_json(pj);
+        if (p2 == 0) { return fail(T_REPORT, k, "its own phonotactic report is refused"); }
+        if (same_str(pj, shbdk_phonotactic_report_to_json(p2)) == 0) {
+            return fail(T_REPORT, k, "phonotactic report changed");
+        }
+    }
+    if (r == 0) { return 0; }
+    var j1 = shbdk_validation_report_to_json(r);
+    var r2 = shbdk_validation_report_from_json(j1);
+    if (r2 == 0) { return fail(T_REPORT, k, "its own report is refused"); }
+    if (same_str(j1, shbdk_validation_report_to_json(r2)) == 0) {
+        return fail(T_REPORT, k, "report -> parse -> report changed");
+    }
+    mix(strlen(j1));
+    return 1;
+}
+
+# A static-dictionary lookup; a hit must equal the dictionary lookup.
+fn run_static(k, input): i64 {
+    var e = shbdk_static_lookup_entry(input);
+    if (e == 0) { return 0; }
+    # a hit: the key folds to the input, so the dictionary lookup must agree
+    if (_shbdk_dict_entry_eq(e, shbdk_dict_lookup_entry(shbdk_static_dict(), input)) == 0) {
+        return fail(T_STATIC, k, "static and dictionary lookups disagree");
+    }
+    mix(shbdk_dict_entry_len(e));
+    return 1;
+}
+
+# Script detection; detect_script and detect_script_name must agree.
+fn run_detect(k, input): i64 {
+    var sc = shbdk_detect_script(input);
+    var code = 0;
+    var name = 0;
+    var ok = shbdk_detect_script_name(input, &code, &name);
+    mix(vec_len(shbdk_detect_language_hint(input)));
+    if (sc == 0) {
+        if (ok != 0) { return fail(T_DETECT, k, "detect_script_name found a script detect_script did not"); }
+        return 0;
+    }
+    mix(strlen(sc));
+    return 1;
+}
+
+# Build case k of target t, place it against the guard page, and run it.
+fn run_case(t, k): i64 {
+    make_case(t, k);
+    if (_replay == 1) { show_case(t, k); }
+    if (t == T_BINARY) { return run_binary(k, place_bytes()); }
+    var input = place_cstr();
+    if (t == T_SSML) { return run_ssml(k, input); }
+    if (t == T_IPA_WORD) { return run_ipa_word(k, input); }
+    if (t == T_NOTATION) { return run_notation(k, input); }
+    if (t == T_REPORT) { return run_report(k, input); }
+    if (t == T_STATIC) { return run_static(k, input); }
+    if (t == T_DETECT) { return run_detect(k, input); }
+    return run_text_dict(t, k, input);
+}
+
+# A target's name for the report.
+fn target_name(t): cstring {
+    if (t == T_CMUDICT) { return "cmudict"; }
+    if (t == T_IPA) { return "ipa text"; }
+    if (t == T_JSON) { return "json"; }
+    if (t == T_BINARY) { return "binary"; }
+    if (t == T_PLS) { return "pls"; }
+    if (t == T_SSML) { return "ssml"; }
+    if (t == T_IPA_WORD) { return "ipa word"; }
+    if (t == T_NOTATION) { return "notation"; }
+    if (t == T_REPORT) { return "report json"; }
+    if (t == T_STATIC) { return "static lookup"; }
+    return "detect";
+}
+
+# Print a target's case and acceptance counts.
+fn report(t, n, accepted): i64 {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, target_name(t));
+    str_builder_add_cstr(sb, ": ");
+    str_builder_add_int(sb, n);
+    str_builder_add_cstr(sb, " cases, ");
+    str_builder_add_int(sb, accepted);
+    str_builder_add_cstr(sb, " accepted");
+    say(str_cstr(str_builder_build(sb)));
+    return 0;
+}
+
+# Map the guard page and stores, build the seeds, and run every target (or replay one case).
+fn main(): i64 {
+    alloc_init();
+    _guard = mmap_anon(4 * PAGE);
+    _mut = mmap_anon(CAP + 4 * PAGE);
+    _store = mmap_anon(1048576);
+    _seeds = mmap_anon(PAGE * 8);
+    _nseeds = mmap_anon(PAGE);
+    _toks = mmap_anon(PAGE);
+    if (_guard == 0) { say("fuzz: mmap failed"); return 1; }
+    if (cyr_mprotect(_guard + 3 * PAGE, PAGE, PROT_NONE) != 0) { say("fuzz: mprotect failed"); return 1; }
+    build_seeds();
+
+    # replay one case: <binary> <target> <case>
+    if (argc() >= 3) {
+        _replay = 1;
+        var rt = atoi(argv(1));
+        var rk = atoi(argv(2));
+        run_case(rt, rk);
+        say("replayed");
+        return 0;
+    }
+
+    var t = 1;
+    var k = 0;
+    var acc = 0;
+    while (t <= T_LAST) {
+        k = 0;
+        acc = 0;
+        if (t < T_STATIC) {
+            while (k < ITERS) {
+                alloc_reset();
+                acc = acc + run_case(t, k);
+                k = k + 1;
+            }
+        } else {
+            alloc_reset();
+            while (k < ITERS_NORESET) {
+                acc = acc + run_case(t, k);
+                k = k + 1;
+            }
+        }
+        report(t, k, acc);
+        t = t + 1;
+    }
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "fuzz: ok, digest ");
+    str_builder_add_int(sb, _digest);
+    say(str_cstr(str_builder_build(sb)));
+    return 0;
+}
+
+var r = main();
+syscall(60, r);

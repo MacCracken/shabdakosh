@@ -32,7 +32,7 @@ fn head(s): i64 {
     var sb = str_builder_new();
     str_builder_add_cstr(sb, "\n== ");
     str_builder_add_cstr(sb, s);
-    return say(str_data(str_builder_build(sb)));
+    return say(str_cstr(str_builder_build(sb)));
 }
 
 # Print "label = <int>".
@@ -41,7 +41,7 @@ fn say_n(label, n): i64 {
     str_builder_add_cstr(sb, label);
     str_builder_add_cstr(sb, " = ");
     str_builder_add_int(sb, n);
-    return say(str_data(str_builder_build(sb)));
+    return say(str_cstr(str_builder_build(sb)));
 }
 
 # Print "label: <cstr>".
@@ -50,7 +50,7 @@ fn say_s(label, v): i64 {
     str_builder_add_cstr(sb, label);
     str_builder_add_cstr(sb, ": ");
     str_builder_add_cstr(sb, v);
-    return say(str_data(str_builder_build(sb)));
+    return say(str_cstr(str_builder_build(sb)));
 }
 
 fn phon3(a, b, c): i64 {

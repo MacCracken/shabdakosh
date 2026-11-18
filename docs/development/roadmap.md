@@ -1,17 +1,16 @@
 # shabdakosh — Roadmap
 
-> Milestone plan through v1.0. State lives in [`state.md`](state.md);
-> this file is the sequencing — what ships, in what order, against
-> what dependency gates.
+> What ships next, in what order, against which gates. Live state is in [`state.md`](state.md).
+> **Every open item lives here.** There is no separate backlog: `backlog.md` was folded into this
+> file in 3.1.2, and an item leaves this file when it ships (its record is the CHANGELOG).
 
-The port shipped straight to **v3.0.0** (full parity with the Rust 2.x surface), so the
-original v0.x/v1.0 sequencing collapsed into a single parity milestone.
+The port shipped straight to **v3.0.0** (full parity with the Rust 2.x surface), so the original
+v0.x/v1.0 sequencing collapsed into a single parity milestone.
 
 ## Release criteria (v3.0.0)
 
 - [x] Rust → Cyrius surface parity verified (function-level against `rust-old/`; every module ✅ or consciously dropped)
-- [x] Test coverage adequate for the surface area (873 assertions / 26 suites, all green — 689 at
-      the 3.0.0 release gate, +132 regressions from the 3.0.4 P1 sweep, +52 from the 3.0.5 backlog sweep)
+- [x] Test coverage adequate for the surface area (689 assertions at the 3.0.0 gate; 997 / 26 suites at 3.1.2)
 - [x] Benchmarks captured in [`docs/benchmarks.md`](../benchmarks.md)
 - [x] At least one downstream consumer green (`dist/shabdakosh.cyr` linked + exercised by a consumer smoke)
 - [x] CHANGELOG complete (3.0.0 entry)
@@ -33,57 +32,98 @@ trie/heteronym/g2p/static_dict, all format codecs (CMUdict/IPA/PLS/SSML/JSON/bin
 detect + validate (varna), and the WASM surface. Base CMUdict data generated as a single `.cyr` module (`_cmudict_data.cyr`).
 distlib bundle built + consumer-verified. See [`state.md`](state.md) for the per-module ledger.
 
-## Out of scope (v3.0.0)
+### M2 — The perfect-hash static dictionary (v3.1.2) — ✅ shipped 2026-11-17
+
+The one feature the port had left below the Rust's fidelity. `static_dict` was a lazily built
+singleton over `shbdk_dict_english()` because CYRIUS had no const-eval to bake a `phf` table. The
+gate turned out to be answered upstream: cyrius archived the const-eval proposal at 6.7.2, when
+`const fn` landed, and its roadmap keeps a `#phf` builtin only "if a filed need remains that
+`const fn` + the generated-`.cyr` idiom do not cover". The generated-`.cyr` idiom covers it, exactly
+as `build.rs` + `phf_codegen` did for the Rust: `programs/gen_cmudict.cyr` now also writes a CHD
+perfect hash (`_static_phf_data.cyr`, scheme in `src/dictionary/phf.cyr`). The first lookup went
+from ~8.7 ms to ~33 µs.
+
+Shipped alongside: `fuzz/parsers.fcyr`, a real fuzz harness over every untrusted-input parser (it
+replaced the scaffold stub and runs in CI), which found and fixed one round-trip defect.
+
+### M3 — Retire `rust-old/` — next
+
+Unblocked by M2: the perfect hash was the last gate the old backlog put in front of this.
+
+1. **A final function-for-function parity sweep** of every ported module against `rust-old/`.
+   Anything that diverges either gets fixed or joins *Open decisions* below.
+2. **Settle the open decisions** below. Each one is a place the oracle itself is wrong or
+   limited; once `rust-old/` is gone, the ADR is the only record of why the port differs.
+3. **Remove `rust-old/`.** It needs the maintainer's go-ahead: CLAUDE.md protects it as the
+   parity oracle. CLAUDE.md, ADR 004, `state.md` and many test comments cite `rust-old/` paths;
+   re-point them at a tag of this repository that still has it.
+
+## Open decisions
+
+Each would be a deliberate divergence from `rust-old/`, so each needs an ADR before code changes.
+The fuzz harness tolerates the two it can reach (2 and 3), with a comment pointing here.
+
+1. **`dict.validate()` reports 5,468 of 10,617 built-in English entries as invalid.** Measured and
+   written up in [architecture note 001](../architecture/001-phoneme-ipa-bridge-and-validation.md);
+   `rust-old/` behaves identically, and the count is unchanged on varna 2.6.0 (measured in 3.1.2).
+   Three causes: varna spells affricates with the tie bar (`t͡ʃ`) while the port emits bare `tʃ`
+   (1,070 entries); ARPABET `IY` maps to `SVARA_PH_VOWEL_E` → IPA `e` rather than `iː` (2,306);
+   and varna's `en` inventory has no NURSE vowel and only two of five English diphthongs (3,358).
+   Only the first is this crate's to fix. Decide before any consumer relies on `validate()`.
+2. **The ARPABET notation drops every vowel on a round trip** (found by the 3.1.2 fuzz harness).
+   `shbdk_notation_render(ARPABET, …)` writes stress digits (`OW1`, `AH0`) and
+   `shbdk_notation_parse(ARPABET, …)` reads through `arpabet_to_phoneme`, which takes none, so
+   `parse(render(v))` keeps only the consonants. The Rust's `Arpabet::str_to_phoneme` does the
+   same. The fix is to parse through `shbdk_arpabet_to_phoneme_with_stress`, as CMUdict text does.
+3. **Some CMUdict words do not survive a round trip** (found by the 3.1.2 fuzz harness). The word
+   is what comes before `(` after the line is trimmed, so `(x  AH0` stores the word `""` and
+   `read (1)  R EH1 D` stores `"read "`. Their export is a line whose word is gone or re-trimmed,
+   so it reads back as a different dictionary. The Rust stores both the same way. The fix is to
+   trim after stripping the `(n)` suffix and refuse an empty word.
+4. **Phonotactic validation covers English, Sanskrit and Japanese only**, the Rust's three
+   profiles. varna 2.6.0 has `phonotactics_by_code` for twelve languages and more than one
+   inventory per language (`registry_inventories`, e.g. Brazilian Portuguese as `pt-BR`).
+   Extending `shbdk_dict_validate_phonotactics` would be additive, but still a divergence.
+5. **A frequency of exactly -1.0 reads back as no frequency.** `SHBDK_FREQ_NONE` is the f64 -1.0
+   bit pattern, chosen because the Rust sorts a missing frequency as `unwrap_or(-1.0)`. -1.0 is
+   outside the documented 0.0–1.0 contract. Moving the sentinel to a NaN payload would change what
+   `shbdk_pronunciation_frequency` returns for an unset frequency, which a consumer may sort on,
+   so it is not a patch-release change.
+
+## Gated on something outside this repository
+
+- **`@freq` precision.** A value needing more than six decimals is written rounded to six
+  (`1/3` → `0.333333`, and `1e-9` → `0`), where the Rust writes the shortest f32 form
+  (`0.33333334`). Closing it needs an f32 shortest-round-trip formatter, which neither the stdlib
+  (`fmt_float_buf` is fixed-decimal) nor bayan (Grisu2 is shortest-or-*near*-shortest, and pairs
+  badly with `f64_parse`'s 1-ULP error) provides. Out of contract in practice.
+- **`lazy_open`'s blob fallback is not exercised on Linux**, where mmap always succeeds. Opening a
+  directory bails earlier (`xlseek` gives EINVAL), so reaching the branch needs an AGNOS run. The
+  contract it must keep (`lazy_open` and `load_binary_file` decode a file to the same dictionary)
+  is tested.
+- **Lighter bundles for dictionary-only consumers.** A cross-crate question with two parts:
+  - **bayan**: shabdakosh folds the 995 KB `bayan` monolith (with 353 KB of unicode tables at
+    cyrius 6.7.18), where `dist/bayan-json.cyr` would do. shabda folds the monolith too, and a
+    consumer must not hold both, so it is a stack decision, not a pin bump. varna 2.6.0's
+    optional JSON support already uses `bayan-json`.
+  - **svara**: shabdakosh uses only svara's `SVARA_PH_*` ordinals, but folds the whole synthesis
+    bundle. A phoneme-only svara sub-bundle would be svara's to ship.
+
+## By design (not gaps)
+
+- **JSON is bayan, and phonemes serialize as `SVARA_PH_*` ints**, not the Rust crate's enum
+  strings. Valid, standard JSON in the CYRIUS-native schema; no AGNOS consumer wants the old one.
+  ([ADR 004](../adr/004-cyrius-port-decisions.md))
+- **Binary is the CYRIUS format** (hand-rolled, replacing postcard), reusing the `SHBD` magic and
+  version 1. There are no Rust `.bin` blobs in the AGNOS world; the decoder is bounds-checked
+  either way. (ADR 004)
+- **`detect.cyr` keeps its own insertion sort** rather than the keystone's `_shbdk_msort`: it sorts
+  a handful of language codes, and the module is self-contained so its suite links without the
+  dictionary tier.
+- **`bench` is in `[deps].stdlib`**: `cyrius bench` resolves `bench_*` from the project stdlib list.
+  It does not reach the shipped bundle, which is built from `[lib].modules`.
+
+## Out of scope
 
 - **C FFI** (`ffi.rs`) — dropped as redundant: CYRIUS interops with C directly, so a dedicated FFI
   shim buys nothing, and there are no C-ABI consumers today. A backdoor exists to add one if needed.
-- **Compile-time `phf` perfect hash** — CYRIUS has no const-eval; `static_dict` ships as a lazy
-  cached singleton instead (surface preserved). Tracked upstream in the cyrius proposal
-  `2026-07-05-const-eval-comptime.md`.
-- **(all release gates met)** — the security audit is complete; every criterion above is ✅.
-
----
-
-## Moving the cyrius pin to 6.6.6
-
-**Current pin:** `cyrius = "6.6.3"` (`cyrius.cyml`).
-
-No source change needed. One latent item is worth writing down.
-
-**shabdakosh does write files, via the stdlib helpers rather than raw flags:** 5
-`file_write_all` call sites and 7 `file_exists` / `file_read_all` sites (dictionary
-load and cache paths, plus `programs/gen_cmudict.cyr`). There is no raw
-`sys_open`, no `O_APPEND` and no `O_TRUNC` in shabdakosh's own source. But
-`file_write_all` opens `O_WRONLY|O_CREAT|O_TRUNC` under the hood
-(`lib/io.cyr:546`), so **if shabdakosh is ever built for Windows** those five
-sites carried the pre-6.6.6 PE bug where `O_TRUNC` did not truncate — a rewritten
-dictionary cache that is shorter than the previous one kept the old tail, which
-for a parsed dictionary format is a silent corruption rather than a parse error.
-
-That is latent, not live: shabdakosh has **zero `CYRIUS_TARGET_WIN` guards**, CI
-is `ubuntu-latest` only, and nothing in the repo claims a PE target. So this is a
-"good to have fixed before anyone tries" item, not a blocker. The companion fix
-helps here too — `file_exists` and `file_read_all` open read-only, and 6.6.6
-stops PE requesting write access for a read, so on Windows they would begin
-succeeding against a read-only dictionary file or volume.
-
-**Everything 6.6.6 turns into a compile error was checked and is absent:** 0
-structs (no different-struct-copy site, no by-value deep-copy site), 0 `async fn`,
-0 `operator` fns, 0 `ret2` / `rethi`, no SIMD intrinsics. The 46 `: cstring`
-annotations are all **return** types (`shbdk_phoneme_to_ipa`,
-`shbdk_notation_render`, the `src/wasm.cyr` surface) — 6.6.6's rule is about a
-literal int passed into a `: cstring` **param**, and there are none. No `var`
-inside a top-level block (the `tests/json.tcyr` and `tests/notation.tcyr`
-candidates are all bodies of `fn`s whose signatures wrap across two lines). No own
-`vec_*` definitions, so `assert.cyr`'s new transitive `vec.cyr` include cannot
-collide with the 26 assert call sites. No raw `SYS_STATFS`. `lib/regression.cyr`
-is not vendored, so its new exec deadline and `PR_SET_PDEATHSIG` behaviour does
-not reach here. `lib/` holds no symlinks and `cyrius.lock` is writable, so 6.6.6's
-fail-hard `cyrius deps` / `publish` is a no-op.
-
-The `r` global appears at both `src/main.cyr:130` and
-`programs/gen_cmudict.cyr:367`, but those are two separate entry points that are
-never co-linked, so 6.6.6's "a later redeclaration now wins everywhere" flip and
-the new different-type-co-linked-global error do not apply.
-
-After bumping: `cyrius test` and regenerate `dist/`.

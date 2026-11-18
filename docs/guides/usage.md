@@ -460,16 +460,23 @@ var empty   = shbdk_dict_diff_is_empty(dd);    # 1 if identical
 
 ---
 
-## Static Cached Dictionary
+## Static Dictionary
 
-A lazily-initialized singleton over `shbdk_dict_english()` (the Cyrius stand-in for the
-Rust `phf` static). First access pays a one-time load; subsequent calls are free:
+The built-in English dictionary behind a compile-time perfect hash, the port of the Rust
+`phf` static. Nothing is loaded: the first lookup in a process costs ~35 µs rather than
+the ~8 ms `shbdk_dict_english()` takes to build a dictionary, and a lookup is ~124 ns.
+A miss, a repeated hit and a capitalised word (`"Hello"`) allocate nothing:
 
 ```
 var e   = shbdk_static_lookup_entry("hello");   # entry handle, or 0
-var ph  = shbdk_static_lookup("hello");         # phoneme vec, or 0
-var n   = shbdk_static_len();                    # >10k
+var ph  = shbdk_static_lookup("Hello");         # phoneme vec, or 0 (A-Z folded)
+var n   = shbdk_static_len();                    # 10617, a generated constant
 ```
+
+The entry a hit returns is the static dictionary's own and the same pointer every time,
+so treat it as read-only. For a full `PronunciationDict` handle over the same data (prefix
+search, export, merge), `shbdk_static_dict()` builds one on first use and caches it; its
+entries are separate objects with the same content.
 
 ---
 

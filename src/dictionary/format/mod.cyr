@@ -143,6 +143,49 @@ fn _shbdk_fmt_all_float_chars(input, vs, ve): i64 {
     return 1;
 }
 
+# 1 if input[i..i+n) is the ASCII word w, ignoring case (w is lowercase).
+fn _shbdk_fmt_word_ci(input, i, n, w): i64 {
+    if (strlen(w) != n) { return 0; }
+    var k = 0;
+    var c = 0;
+    while (k < n) {
+        c = load8(input + i + k);
+        if (c >= 65) { if (c <= 90) { c = c + 32; } }
+        if (c != load8(w + k)) { return 0; }
+        k = k + 1;
+    }
+    return 1;
+}
+
+# The non-finite spellings Rust's f32::from_str accepts, as the WHOLE token
+# [vs, ve): an optional sign, then inf / infinity / nan in any case. Writes the
+# f64 bits to *out and returns 1, or returns 0. (3.1.2: `@freq=1e999` parsed to
+# infinity and to_cmudict wrote `@freq=inf`, which the float-character check below
+# then refused, so a dictionary this parser accepted could not be loaded back.)
+fn _shbdk_fmt_nonfinite(input, vs, ve, out): i64 {
+    var i = vs;
+    var neg = 0;
+    if (i < ve) {
+        if (load8(input + i) == 45) {
+            neg = 1;
+            i = i + 1;
+        } else {
+            if (load8(input + i) == 43) { i = i + 1; }
+        }
+    }
+    var n = ve - i;
+    if (_shbdk_fmt_word_ci(input, i, n, "nan") == 1) {
+        store64(out, 0x7FF8000000000000);
+        return 1;
+    }
+    var inf = 0;
+    if (_shbdk_fmt_word_ci(input, i, n, "inf") == 1) { inf = 1; }
+    if (_shbdk_fmt_word_ci(input, i, n, "infinity") == 1) { inf = 1; }
+    if (inf == 0) { return 0; }
+    if (neg == 1) { store64(out, 0xFFF0000000000000); } else { store64(out, 0x7FF0000000000000); }
+    return 1;
+}
+
 # ---- CMUdict parse -----------------------------------------------------------
 # Parse extended CMUdict text into a PronunciationDict, or 0 on parse error
 # (missing two-space separator, unknown ARPABET symbol, or empty phonemes).
@@ -213,8 +256,10 @@ fn shbdk_parse_cmudict(input): i64 {
                     # Rust returns Err on a malformed @freq. Parse a bounded,
                     # NUL-terminated copy of exactly [vs,ve) (so f64_parse can't
                     # read past the token) and reject any trailing non-float junk.
-                    if (f64_parse_ok(_shbdk_fmt_dup(input, vs, ve), fc) == 0) { return 0; }
-                    if (_shbdk_fmt_all_float_chars(input, vs, ve) == 0) { return 0; }
+                    if (_shbdk_fmt_nonfinite(input, vs, ve, fc) == 0) {
+                        if (f64_parse_ok(_shbdk_fmt_dup(input, vs, ve), fc) == 0) { return 0; }
+                        if (_shbdk_fmt_all_float_chars(input, vs, ve) == 0) { return 0; }
+                    }
                     pending_freq = load64(fc);
                 } else {
                     if (_shbdk_starts_at(input, ti, "@region=") == 1) {
@@ -352,6 +397,11 @@ fn _shbdk_write_entry_cmudict(sb, word, entry): i64 {
                 if (load8(fbuf + flen - 1) == 46) { flen = flen - 1; }   # bare '.'
             }
             store8(fbuf + flen, 0);
+            # Rust's Display writes NaN as "NaN" (fmt_float_buf writes "nan");
+            # infinities are "inf" / "-inf" in both.
+            if (f64_ge(shbdk_pronunciation_frequency(pron), shbdk_pronunciation_frequency(pron)) == 0) {
+                fbuf = "NaN";
+            }
             str_builder_add_cstr(sb, fbuf);
             if (hasr == 1) {
                 str_builder_add_cstr(sb, " @region=");

@@ -1,50 +1,156 @@
-# static_dict.cyr — zero-construction static English dictionary
+# static_dict.cyr — static English dictionary over a compile-time perfect hash
 # (ports rust-old/src/dictionary/static_dict.rs).
 #
-# The Rust used a compile-time phf::Map (a perfect hash baked into the binary by
-# build.rs). CYRIUS has no phf / const-eval, so the "static" dict is a LAZILY
-# built, cached singleton over the same generated data (shbdk_dict_english()):
-# built once on first use, then every lookup/len/is_empty hits the cached dict
-# with no per-call construction. Observable surface + semantics match Rust; the
-# one property we cannot match is phf's zero-runtime-load (we do a single lazy
-# load instead of a compile-time-baked table). StaticEntry / StaticPronunciation
-# collapse onto the existing ShbdkDictEntry / ShbdkPronunciation — their accessors
-# (shbdk_dict_entry_primary_phonemes / _all / _len) already provide the surface.
+# The Rust baked the dictionary into a phf::Map with build.rs + phf_codegen. Since
+# 3.1.2 this is the same thing: programs/gen_cmudict.cyr computes a CHD perfect
+# hash over the base dictionary's keys and writes it to _static_phf_data.cyr (the
+# scheme is in phf.cyr). Each of its slots points at one entry in the packed
+# _cmudict_data.cyr pieces, so the data is shared with shbdk_dict_english(), not
+# written twice.
 #
-# Requires: dictionary/mod.cyr + the cmudict loader (shbdk_dict_english).
+# What a lookup costs:
+#   - no dictionary load. Through 3.1.1 the first lookup built the whole
+#     10,617-entry dictionary (about 10 ms); now nothing is built up front.
+#   - one hash, one displacement, one key compare against the packed bytes. A miss
+#     allocates nothing, and neither does a word with capitals (the hash and the
+#     compare fold A-Z themselves, where the dictionary lookup copies).
+#   - the first hit on a word decodes that one entry and caches it by slot, so the
+#     same word returns the same entry pointer every time after, as Rust's
+#     &'static StaticEntry does, and allocates nothing more. The slot cache
+#     (8 bytes a slot, 85 KB) is allocated by the first hit.
+#
+# StaticEntry / StaticPronunciation collapse onto ShbdkDictEntry / ShbdkPronunciation:
+# their accessors (shbdk_dict_entry_primary_phonemes / _all / _len) give the
+# surface. An entry returned here is the static dictionary's own; mutating it
+# changes what later lookups return, which Rust's &'static could not do.
+#
+# Requires: dictionary/entry.cyr, _cmudict_data.cyr + cmudict.cyr (the pieces and
+# _shbdk_cmudict_decode_entry), phf.cyr + _static_phf_data.cyr (the table), and
+# dictionary/mod.cyr for shbdk_static_dict().
 # NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
 
-var _SHBDK_STATIC_DICT = 0;   # cached singleton (0 = unbuilt; built on first use)
+var _SHBDK_STATIC_CACHE = 0;   # slot -> decoded ShbdkDictEntry* (0 = not decoded yet)
+var _SHBDK_STATIC_DICT = 0;    # shbdk_static_dict()'s handle (0 = unbuilt)
 
-# The cached static English dictionary — built once, reused thereafter.
+# The packed-entry locator of `slot`: piece << SHBDK_PHF_OFF_BITS | byte offset.
+fn _shbdk_static_loc(slot): i64 {
+    var chunk = _shbdk_phf_loc_piece(slot / SHBDK_PHF_LOC_CHUNK);
+    return _shbdk_phf_read(chunk, (slot % SHBDK_PHF_LOC_CHUNK) * SHBDK_PHF_LOC_W, SHBDK_PHF_LOC_W);
+}
+
+# The slot the perfect hash sends bytes [word, word + n) to. Every input has one,
+# key or not; _shbdk_static_slot decides whether the key there is this word.
+fn _shbdk_static_probe(word, n): i64 {
+    var h = _shbdk_phf_hash(word, n, _SHBDK_PHF_SEED);
+    var g = _shbdk_phf_bucket(h, _SHBDK_PHF_BUCKETS);
+    var dw = SHBDK_PHF_DISP_W;
+    var d1 = _shbdk_phf_read(_SHBDK_PHF_DISP, g * 2 * dw, dw);
+    var d2 = _shbdk_phf_read(_SHBDK_PHF_DISP, g * 2 * dw + dw, dw);
+    return _shbdk_phf_index(h, d1, d2, _SHBDK_PHF_LEN);
+}
+
+# The slot holding `word` (a cstr, A-Z folded), or -1 when the word is absent. The
+# key in the probed slot must equal the folded word byte for byte and end ('|')
+# where the word ends.
+fn _shbdk_static_slot(word): i64 {
+    if (word == 0) { return 0 - 1; }
+    if (_SHBDK_PHF_LEN == 0) { return 0 - 1; }
+    var n = strlen(word);
+    var slot = _shbdk_static_probe(word, n);
+    var loc = _shbdk_static_loc(slot);
+    var key = _shbdk_cmudict_piece(loc >> SHBDK_PHF_OFF_BITS) + (loc & ((1 << SHBDK_PHF_OFF_BITS) - 1));
+    if (_shbdk_static_key_is(key, word, n) == 0) { return 0 - 1; }
+    return slot;
+}
+
+# 1 if the packed entry at `key` ("word|pron|...;") has exactly the n-byte `word`
+# (A-Z folded) as its key, else 0.
+fn _shbdk_static_key_is(key, word, n): i64 {
+    var i = 0;
+    var c = 0;
+    var k = 0;
+    while (i < n) {
+        k = load8(key + i);
+        # A key holds no '|', so meeting the separator first means the key is
+        # shorter. Without this stop, "read|43,1,23~0.7" would match through the
+        # first pronunciation and end at the second one's '|'. It also keeps the
+        # read inside the entry.
+        if (k == 124) { return 0; }
+        c = load8(word + i);
+        if (c >= 65) { if (c <= 90) { c = c + 32; } }
+        if (k != c) { return 0; }
+        i = i + 1;
+    }
+    if (load8(key + n) != 124) { return 0; }   # the key is longer than the word
+    return 1;
+}
+
+# Decode the entry in `slot` from its packed piece (uncached).
+fn _shbdk_static_decode(slot): i64 {
+    var loc = _shbdk_static_loc(slot);
+    var piece = _shbdk_cmudict_piece(loc >> SHBDK_PHF_OFF_BITS);
+    var s = loc & ((1 << SHBDK_PHF_OFF_BITS) - 1);
+    var wsep = s;
+    while (load8(piece + wsep) != 124) { wsep = wsep + 1; }   # '|' ends the word
+    var e = wsep;
+    while (load8(piece + e) != 59) { e = e + 1; }             # ';' ends the entry
+    return _shbdk_cmudict_decode_entry(piece, wsep, e);
+}
+
+# Look up a word's full static entry, or 0 (None). (Rust static_dict::lookup_entry)
+#must_use
+fn shbdk_static_lookup_entry(word): i64 {
+    var slot = _shbdk_static_slot(word);
+    if (slot < 0) { return 0; }
+    if (_SHBDK_STATIC_CACHE == 0) {
+        var cache = alloc(_SHBDK_PHF_LEN * 8);
+        # without a cache the entry is still right, only decoded on every lookup
+        if (cache == 0) { return _shbdk_static_decode(slot); }
+        # one store a slot: the stdlib memset is a byte loop, 8x the stores
+        var ci = 0;
+        while (ci < _SHBDK_PHF_LEN) {
+            store64(cache + ci * 8, 0);
+            ci = ci + 1;
+        }
+        _SHBDK_STATIC_CACHE = cache;
+    }
+    var e = load64(_SHBDK_STATIC_CACHE + slot * 8);
+    if (e == 0) {
+        e = _shbdk_static_decode(slot);
+        store64(_SHBDK_STATIC_CACHE + slot * 8, e);
+    }
+    return e;
+}
+
+# Look up a word's primary pronunciation phonemes, or 0 (None). (Rust static_dict::lookup)
+#must_use
+fn shbdk_static_lookup(word): i64 {
+    var e = shbdk_static_lookup_entry(word);
+    if (e == 0) { return 0; }
+    return shbdk_dict_entry_primary_phonemes(e);
+}
+
+# Number of entries in the static dictionary: a generated constant. (Rust static_dict::len)
+#must_use
+fn shbdk_static_len(): i64 {
+    return _SHBDK_PHF_LEN;
+}
+
+# Whether the static dictionary is empty. (Rust static_dict::is_empty)
+#must_use
+fn shbdk_static_is_empty(): i64 {
+    if (_SHBDK_PHF_LEN == 0) { return 1; }
+    return 0;
+}
+
+# The base English dictionary as a PronunciationDict handle, built on first use and
+# cached. Not in the Rust; kept from 3.0.0 for callers that want a dict handle (for
+# prefix search, export, or merging). The lookups above do not use it, so they do
+# not pay for building it, and the entries they return are not this dict's.
 #must_use
 fn shbdk_static_dict(): i64 {
     if (_SHBDK_STATIC_DICT == 0) {
         _SHBDK_STATIC_DICT = shbdk_dict_english();
     }
     return _SHBDK_STATIC_DICT;
-}
-
-# Look up a word's primary pronunciation phonemes, or 0 (None). (Rust static_dict::lookup)
-#must_use
-fn shbdk_static_lookup(word): i64 {
-    return shbdk_dict_lookup(shbdk_static_dict(), word);
-}
-
-# Look up a word's full static entry, or 0 (None). (Rust static_dict::lookup_entry)
-#must_use
-fn shbdk_static_lookup_entry(word): i64 {
-    return shbdk_dict_lookup_entry(shbdk_static_dict(), word);
-}
-
-# Number of entries in the static dictionary. (Rust static_dict::len)
-#must_use
-fn shbdk_static_len(): i64 {
-    return shbdk_dict_len(shbdk_static_dict());
-}
-
-# Whether the static dictionary is empty. (Rust static_dict::is_empty)
-#must_use
-fn shbdk_static_is_empty(): i64 {
-    return shbdk_dict_is_empty(shbdk_static_dict());
 }

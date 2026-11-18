@@ -1,5 +1,116 @@
 # Changelog
 
+## [3.1.2] — 2026-11-17
+
+Dependency refresh, the perfect-hash static dictionary, and a fuzz harness. `svara` 3.6.3 ->
+**3.14.0**, `varna` 2.5.2 -> **2.6.0**, and transitively `hisab` 3.4.1 -> **3.5.0**, `naad` 2.3.3 ->
+**2.3.5**, `goonj` 2.3.1 -> **2.3.2**. Each is its dep's newest tag, and all pin cyrius **6.7.18**,
+which stays the pin (it is still the newest release). sakshi stays 2.5.10, now as the stdlib leaf:
+svara 3.6.4 dropped its package, so `cyrius.lock` commit-pins 5 deps, not 6. `lib/` and
+`cyrius.lock` were regenerated from scratch; `cyrius deps --verify` and `--locked` pass.
+
+No API removed, no signature changed. **997 assertions / 26 suites** (934 in 3.1.1).
+
+### Added
+
+- **`static_dict` is a compile-time perfect hash.** The Rust baked the dictionary into a
+  `phf::Map` with `build.rs` + `phf_codegen`; the port had a lazily built singleton instead,
+  because CYRIUS had no const-eval. cyrius answered that gate at 6.7.2 with `const fn` and the
+  generated-`.cyr` idiom, and this uses the idiom:
+  - `programs/gen_cmudict.cyr` also writes **`src/dictionary/_static_phf_data.cyr`** (56 KB): a CHD
+    "hash and displace" table, the scheme `phf` uses, over the 10,617 keys. Its slots point into
+    the existing `_cmudict_data.cyr` pieces, so no entry data is written twice. Seed 0 succeeds
+    in 0.07 s, the generator checks every key before writing, and both files regenerate byte for
+    byte.
+  - **`src/dictionary/phf.cyr`** holds the hash (FNV-1a with an A-Z fold, then fmix64), the bucket
+    and slot math and the base-32 codec. The generator and the runtime both include it.
+  - A lookup is one hash, one displacement, and one key compare against the packed bytes. Nothing
+    is built up front. A hit decodes its one entry and caches it by slot, so the same word returns
+    the same entry pointer afterwards, as Rust's `&'static StaticEntry` does.
+  - Measured against 3.1.1 on the same machine:
+
+    | | 3.1.1 | 3.1.2 |
+    |---|---:|---:|
+    | first static lookup in a process | 8.4–9.0 ms | 31–36 µs |
+    | static lookup hit | 152 ns | 124 ns |
+    | static lookup miss | 184–262 ns | 125–139 ns |
+    | static lookup with capitals | 184 ns | 124 ns |
+
+    A miss, a repeated hit and a capitalised word allocate nothing; the dictionary lookup copies a
+    capitalised word to lowercase. The first hit allocates the 85 KB slot cache.
+  - Both modules are in `[lib].modules`, ahead of `static_dict.cyr`, so the bundle carries them.
+- **`fuzz/parsers.fcyr`**, a fuzz harness over every untrusted-input path: CMUdict, IPA text,
+  JSON, binary, PLS and SSML parsing, IPA words, the three notations, the report JSON codecs, the
+  static lookup and script detection. Each case is a seed (real exports, hand-written annotations,
+  words in six scripts) after 1–4 seeded mutations. It is placed flush against a PROT_NONE page,
+  so a read past the input faults. An accepted input must survive export -> parse -> export.
+  Deterministic, about 10 s for 3,000 cases a parser target. It passes plain, under `--poison`
+  (same digest) and `--bounds`, and a 10x soak (670,000 cases) passes. `<binary> <target> <case>`
+  replays one case. It replaces the scaffold stub `tests/shabdakosh.fcyr`, and CI now runs
+  `cyrius fuzz`.
+- **Tests** (+63): the static dictionary's whole key set against `shbdk_dict_english()`, entry
+  for entry, plus no-load, no-allocation, same-pointer, near-miss and key-compare groups. The
+  compare tests search for queries that land in the very slot of the key they imitate. Seven
+  mutants of the new code each fail a test: no `'|'` stop, no end check, no case fold in the
+  compare, no fold in the hash, no compare at all, no cache, and a wrong locator width. Also regression checks for the fix below, and pins on
+  the varna 2.6.0 outputs listed under *Changed*.
+
+### Fixed
+
+- **A CMUdict file with a non-finite `@freq` could not be loaded back.** `@freq=1e999` parsed to
+  infinity, and `to_cmudict` wrote `@freq=inf`, which the parser refused: the 2026-07-05 junk
+  check allowed only digits, `.`, `+`, `-` and `e`. Found by the new fuzz harness. The parser now
+  takes what Rust's `f32::from_str` takes: an optional sign, then `inf`, `infinity` or `nan` in any
+  case, as the whole token. Junk such as `infx` or `nan0` is still refused, and NaN is written as
+  `NaN`, as Rust's `Display` writes it. The six new checks that read a non-finite value or load
+  one back fail on 3.1.1.
+- **`docs/examples/roundtrip.cyr` built with three warnings** (a `Str` passed where a `cstring`
+  is expected). It uses `str_cstr` now.
+
+### Changed
+
+- **varna 2.6.0 changes four outputs.** None comes from shabdakosh code, and each is now pinned by
+  a test:
+  - `dict.validate()` on the Spanish Swadesh dictionary reports 3 invalid entries, not 10. The
+    inventory gained the tap ɾ and dropped the allophones β ð ɣ, so `todo` (ð) is now invalid.
+  - The Portuguese inventory is European Portuguese, so `w` and `j` are no longer phonemes.
+  - Hindi `नहीं` parses to [n ə i], not [n ə]. varna now spells ĩ as i + U+0303, and the IPA
+    parser keeps the i and skips the mark, as Rust's `parse_ipa_word` does.
+  - Glagolitic and Bopomofo words are detected (`Glag`, `Bopo`), and `script_all_codes` has 21
+    scripts, not 19.
+
+  English validation is unchanged (5,468 of 10,617), and every export of the English dictionary
+  is byte-identical to 3.1.1.
+- **The static dictionary's entries are its own.** Through 3.1.1,
+  `shbdk_static_lookup_entry(w)` returned the same pointer as a lookup in `shbdk_static_dict()`.
+  Now they are separate objects with equal content. `shbdk_static_dict()` itself is unchanged.
+- **`build/shabdakosh` grew from 4.70 MB to 5.33 MB** (1.21 -> 1.35 MB with `CYRIUS_DCE=1`).
+  Most of it is varna 2.6.0 (+252 KB of source: transliteration tables, sources, allophone sets)
+  and svara 3.14.0 (+67 KB); the perfect-hash table is 56 KB. `dist/shabdakosh.cyr` grew from
+  483 KB to 549 KB.
+- **`_shbdk_cmudict_decode_entry`** is split out of the loader so the static dictionary decodes
+  one entry with the same code. Construction time is the same (alternating runs, ~7.8 ms both).
+- **The backlog moved into the roadmap.** `docs/development/backlog.md` is gone. Its open items
+  are in `roadmap.md` under *M3 — Retire `rust-old/`*, *Open decisions* (five, two of them found
+  by the fuzz harness and the same in the Rust), *Gated* and *By design*. The completed items it
+  still listed were dropped; their record is this file.
+
+### Verified
+
+- **Output**: a differential program (all 101 phoneme ordinals, every English export, validation
+  and phonotactics for six dictionaries, the four lexicon dictionaries, script detection) differs
+  from 3.1.1 only in the varna outputs above.
+- **Deps**: the 23 varna functions shabdakosh calls keep their 2.5.2 signatures, and the 101
+  `SVARA_PH_*` ordinals are unchanged. svara 3.9.0–3.14.0 changed synthesis output only.
+- **Consumer build**: a local-mode consumer folds the 3.1.2 bundle with svara 3.14.0 and varna
+  2.6.0. It runs static lookups before any dictionary exists, then a lookup, Glagolitic
+  detection, JSON and binary round trips, a lazy mmap reopen and the `portuguese` lookup.
+- **Audit and warnings**: `cyrius audit` exits 0 (its scope now includes `fuzz/`), and the build,
+  suites, examples and harness emit no compiler warnings.
+- **Benchmarks**: every row that existed in 3.1.1 is within its noise. Construction read 8.2–8.4
+  ms in today's full runs, against 7.8 ms recorded for 3.1.1; alternating runs of the 3.1.1 and
+  3.1.2 loaders give ~7.8 ms for both. `docs/benchmarks.md` has the new rows.
+
 ## [3.1.1] — 2026-11-07
 
 Toolchain and dependency release. `cyrius` 6.7.9 -> **6.7.18**, `svara` 3.6.0 -> **3.6.3**, `varna`

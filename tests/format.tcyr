@@ -238,5 +238,35 @@ var vtrim = shbdk_parse_cmudict("\x0bcat  K AE1 T\x0c\n");
 assert_neq(vtrim, 0, "leading VT / trailing FF are trimmed off the line");
 assert_neq(shbdk_dict_lookup(vtrim, "cat"), 0, "word key has no VT glued to it");
 
+# ================================================================
+# 3.1.2 (found by fuzz/parsers.fcyr): `@freq=1e999` parsed to infinity and to_cmudict
+# wrote `@freq=inf`, which the parser then refused: a dictionary it accepted could not
+# be loaded back. Rust's f32::from_str takes an optional sign and inf / infinity / nan
+# in any case, and its Display writes inf, -inf and NaN; both sides now do the same.
+test_group("non-finite @freq: Rust's spellings, and the export loads back");
+# As _freq_dump, but a refused input gives "" rather than a null dict to export.
+fn _freq_dump_or_empty(txt): cstring {
+    var d = shbdk_parse_cmudict(txt);
+    if (d == 0) { return ""; }
+    return shbdk_to_cmudict(d);
+}
+var fbig = _freq_dump_or_empty(";;; @freq=1e999\ncat  K AE1 T\n");
+assert_eq(_find(fbig, ";;; @freq=inf\n"), 1, "1e999 -> inf");
+assert_neq(shbdk_parse_cmudict(fbig), 0, "the 1e999 export loads back");
+var finf = _freq_dump_or_empty(";;; @freq=inf\ncat  K AE1 T\n");
+assert_eq(_find(finf, ";;; @freq=inf\n"), 1, "inf is accepted, written as inf");
+var fninf = _freq_dump_or_empty(";;; @freq=-Infinity\ncat  K AE1 T\n");
+assert_eq(_find(fninf, ";;; @freq=-inf\n"), 1, "-Infinity -> -inf");
+assert_eq(_find(_freq_dump_or_empty(";;; @freq=+INF\ncat  K AE1 T\n"), ";;; @freq=inf\n"), 1, "+INF -> inf");
+var fnan = _freq_dump_or_empty(";;; @freq=nan\ncat  K AE1 T\n");
+assert_eq(_find(fnan, ";;; @freq=NaN\n"), 1, "nan is written as NaN, as Rust's Display does");
+assert_neq(shbdk_parse_cmudict(fnan), 0, "the NaN export loads back");
+assert_eq(_find(_freq_dump_or_empty(";;; @freq=-NaN\ncat  K AE1 T\n"), ";;; @freq=NaN\n"), 1, "-NaN -> NaN");
+assert_eq(shbdk_parse_cmudict(";;; @freq=infx\ncat  K AE1 T\n"), 0, "infx is junk");
+assert_eq(shbdk_parse_cmudict(";;; @freq=in\ncat  K AE1 T\n"), 0, "in is junk");
+assert_eq(shbdk_parse_cmudict(";;; @freq=nan0\ncat  K AE1 T\n"), 0, "nan0 is junk");
+assert_eq(shbdk_parse_cmudict(";;; @freq=inf.5\ncat  K AE1 T\n"), 0, "inf.5 is junk");
+assert_eq(shbdk_parse_cmudict(";;; @freq=\ncat  K AE1 T\n"), 0, "empty value is refused");
+
 var rc = assert_summary();
 syscall(60, rc);

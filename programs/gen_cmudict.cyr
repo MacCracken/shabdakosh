@@ -13,6 +13,12 @@
 # Packed format (one entry): word|o,o,o[~freq][^RR];  (o = svara phoneme ordinal;
 # freq = decimal; RR = GA/RP). Entries concatenated into ~24KB string pieces.
 #
+# 3.1.2: it also writes src/dictionary/_static_phf_data.cyr, the perfect hash over
+# the same keys that static_dict.cyr looks words up through — the port of build.rs's
+# generate_phf_dict (phf_codegen). The hash and the slot math come from
+# src/dictionary/phf.cyr, which the runtime includes too. The table points INTO the
+# pieces above (piece, byte offset), so the entry data is not written twice.
+#
 # Run from the project root:
 #   cyrius build programs/gen_cmudict.cyr build/gen_cmudict
 #   ./build/gen_cmudict
@@ -23,6 +29,7 @@ include "lib/naad.cyr"
 include "lib/svara.cyr"
 include "src/error.cyr"
 include "src/arpabet.cyr"
+include "src/dictionary/phf.cyr"
 
 # Pron accumulator (24 bytes): [0]=phonemes(vec) [8]=freq(cstr or 0) [16]=region(cstr or 0).
 
@@ -85,6 +92,196 @@ fn _gc_emit_dec(buf, off, n): i64 {
         i = i - 1;
     }
     return digits;
+}
+
+# ---- perfect hash (the build.rs generate_phf_dict port) -----------------------
+# Try one seed. Fills disp (2 i64 per bucket) and slots (slot -> key index).
+# Returns 1 if every bucket found a displacement, 0 if one did not.
+fn _gc_phf_try(order, n, nb, seed, hashes, disp, slots): i64 {
+    var i = 0;
+    var k = 0;
+    while (i < n) {
+        k = vec_get(order, i);
+        store64(hashes + i * 8, _shbdk_phf_hash(str_data(k), str_len(k), seed));
+        i = i + 1;
+    }
+
+    # group key indices by bucket: count, prefix sums, fill
+    var cnt = alloc(nb * 8);
+    var start = alloc((nb + 1) * 8);
+    var fill = alloc(nb * 8);
+    var members = alloc(n * 8);
+    i = 0;
+    while (i < nb) { store64(cnt + i * 8, 0); store64(fill + i * 8, 0); i = i + 1; }
+    var b = 0;
+    i = 0;
+    while (i < n) {
+        b = _shbdk_phf_bucket(load64(hashes + i * 8), nb);
+        store64(cnt + b * 8, load64(cnt + b * 8) + 1);
+        i = i + 1;
+    }
+    var maxsz = 0;
+    store64(start, 0);
+    i = 0;
+    while (i < nb) {
+        store64(start + (i + 1) * 8, load64(start + i * 8) + load64(cnt + i * 8));
+        if (load64(cnt + i * 8) > maxsz) { maxsz = load64(cnt + i * 8); }
+        i = i + 1;
+    }
+    i = 0;
+    while (i < n) {
+        b = _shbdk_phf_bucket(load64(hashes + i * 8), nb);
+        store64(members + (load64(start + b * 8) + load64(fill + b * 8)) * 8, i);
+        store64(fill + b * 8, load64(fill + b * 8) + 1);
+        i = i + 1;
+    }
+
+    var stamp = alloc(n * 8);   # stamp[slot] == gen: taken by this attempt already
+    i = 0;
+    while (i < n) { store64(slots + i * 8, 0 - 1); store64(stamp + i * 8, 0); i = i + 1; }
+    i = 0;
+    while (i < nb) { store64(disp + i * 16, 0); store64(disp + i * 16 + 8, 0); i = i + 1; }
+
+    var lim = n;
+    if (lim > (1 << (5 * SHBDK_PHF_DISP_W))) { lim = 1 << (5 * SHBDK_PHF_DISP_W); }
+    var tmp = alloc((maxsz + 1) * 8);
+    var gen = 0;
+    var sz = maxsz;
+    var m0 = 0;
+    var d1 = 0;
+    var d2 = 0;
+    var j = 0;
+    var idx = 0;
+    var ok = 0;
+    var placed = 0;
+    # largest buckets first, as phf does: they are the hard ones to place
+    while (sz >= 1) {
+        b = 0;
+        while (b < nb) {
+            if (load64(cnt + b * 8) == sz) {
+                m0 = load64(start + b * 8);
+                placed = 0;
+                d1 = 0;
+                while (d1 < lim) {
+                    d2 = 0;
+                    while (d2 < lim) {
+                        gen = gen + 1;
+                        ok = 1;
+                        j = 0;
+                        while (j < sz) {
+                            idx = _shbdk_phf_index(load64(hashes + load64(members + (m0 + j) * 8) * 8), d1, d2, n);
+                            if (load64(slots + idx * 8) != (0 - 1)) { ok = 0; break; }
+                            if (load64(stamp + idx * 8) == gen) { ok = 0; break; }
+                            store64(stamp + idx * 8, gen);
+                            store64(tmp + j * 8, idx);
+                            j = j + 1;
+                        }
+                        if (ok == 1) {
+                            j = 0;
+                            while (j < sz) {
+                                store64(slots + load64(tmp + j * 8) * 8, load64(members + (m0 + j) * 8));
+                                j = j + 1;
+                            }
+                            store64(disp + b * 16, d1);
+                            store64(disp + b * 16 + 8, d2);
+                            placed = 1;
+                            break;
+                        }
+                        d2 = d2 + 1;
+                    }
+                    if (placed == 1) { break; }
+                    d1 = d1 + 1;
+                }
+                if (placed == 0) { return 0; }
+            }
+            b = b + 1;
+        }
+        sz = sz - 1;
+    }
+    return 1;
+}
+
+# Build the perfect hash over `order` and write src/dictionary/_static_phf_data.cyr.
+# Returns the bytes written, or 0 on failure.
+fn _gc_emit_phf(order, locs): i64 {
+    var n = vec_len(order);
+    if (n == 0) { return 0; }
+    var nb = (n + SHBDK_PHF_LAMBDA - 1) / SHBDK_PHF_LAMBDA;
+    var hashes = alloc(n * 8);
+    var disp = alloc(nb * 16);
+    var slots = alloc(n * 8);
+    var seed = 0;
+    while (_gc_phf_try(order, n, nb, seed, hashes, disp, slots) == 0) {
+        seed = seed + 1;
+        if (seed > 1000) { return 0; }
+    }
+
+    # self-check: every key reaches its own slot through the stored displacements
+    var i = 0;
+    var h = 0;
+    var g = 0;
+    var sl = 0;
+    while (i < n) {
+        h = load64(hashes + i * 8);
+        g = _shbdk_phf_bucket(h, nb);
+        sl = _shbdk_phf_index(h, load64(disp + g * 16), load64(disp + g * 16 + 8), n);
+        if (load64(slots + sl * 8) != i) { return 0; }
+        i = i + 1;
+    }
+
+    var cap = nb * 2 * SHBDK_PHF_DISP_W + n * SHBDK_PHF_LOC_W + 8192;
+    var out = alloc(cap);
+    var oo = 0;
+    oo = oo + _gc_emit_cstr(out, oo, "# _static_phf_data.cyr - AUTO-GENERATED by programs/gen_cmudict.cyr from\n");
+    oo = oo + _gc_emit_cstr(out, oo, "# data/cmudict-5k.txt. Do NOT edit by hand; regeneration overwrites.\n");
+    oo = oo + _gc_emit_cstr(out, oo, "# The perfect hash over _cmudict_data.cyr's keys; ");
+    oo = oo + _gc_emit_cstr(out, oo, "src/dictionary/phf.cyr has the scheme.\n\n");
+    oo = oo + _gc_emit_cstr(out, oo, "var _SHBDK_PHF_SEED = ");
+    oo = oo + _gc_emit_dec(out, oo, seed);
+    oo = oo + _gc_emit_cstr(out, oo, ";\nvar _SHBDK_PHF_LEN = ");
+    oo = oo + _gc_emit_dec(out, oo, n);
+    oo = oo + _gc_emit_cstr(out, oo, ";\nvar _SHBDK_PHF_BUCKETS = ");
+    oo = oo + _gc_emit_dec(out, oo, nb);
+    oo = oo + _gc_emit_cstr(out, oo, ";\n\n# Per bucket: d1 then d2, SHBDK_PHF_DISP_W base-32 characters each.\n");
+    oo = oo + _gc_emit_cstr(out, oo, "var _SHBDK_PHF_DISP = \"");
+    i = 0;
+    while (i < nb) {
+        oo = oo + _shbdk_phf_write(out, oo, load64(disp + i * 16), SHBDK_PHF_DISP_W);
+        oo = oo + _shbdk_phf_write(out, oo, load64(disp + i * 16 + 8), SHBDK_PHF_DISP_W);
+        i = i + 1;
+    }
+    oo = oo + _gc_emit_cstr(out, oo, "\";\n\n# Per slot: piece << 15 | byte offset of its entry, ");
+    oo = oo + _gc_emit_cstr(out, oo, "SHBDK_PHF_LOC_W base-32\n");
+    oo = oo + _gc_emit_cstr(out, oo, "# characters each, SHBDK_PHF_LOC_CHUNK slots per literal.\n");
+    var chunks = 0;
+    i = 0;
+    while (i < n) {
+        if (i % SHBDK_PHF_LOC_CHUNK == 0) {
+            if (i > 0) { oo = oo + _gc_emit_cstr(out, oo, "\";\n"); }
+            oo = oo + _gc_emit_cstr(out, oo, "var _SHBDK_PHF_LOC_");
+            oo = oo + _gc_emit_dec(out, oo, chunks);
+            oo = oo + _gc_emit_cstr(out, oo, " = \"");
+            chunks = chunks + 1;
+        }
+        oo = oo + _shbdk_phf_write(out, oo, vec_get(locs, load64(slots + i * 8)), SHBDK_PHF_LOC_W);
+        i = i + 1;
+    }
+    oo = oo + _gc_emit_cstr(out, oo, "\";\n\nvar _SHBDK_PHF_LOC_COUNT = ");
+    oo = oo + _gc_emit_dec(out, oo, chunks);
+    oo = oo + _gc_emit_cstr(out, oo, ";\n\nfn _shbdk_phf_loc_piece(i): cstring {\n");
+    var ci = 0;
+    while (ci < chunks) {
+        oo = oo + _gc_emit_cstr(out, oo, "    if (i == ");
+        oo = oo + _gc_emit_dec(out, oo, ci);
+        oo = oo + _gc_emit_cstr(out, oo, ") { return _SHBDK_PHF_LOC_");
+        oo = oo + _gc_emit_dec(out, oo, ci);
+        oo = oo + _gc_emit_cstr(out, oo, "; }\n");
+        ci = ci + 1;
+    }
+    oo = oo + _gc_emit_cstr(out, oo, "    return 0;\n}\n");
+    print_num(seed); println(" perfect-hash seed");
+    print_num(nb); println(" perfect-hash buckets");
+    return file_write_all("src/dictionary/_static_phf_data.cyr", out, oo);
 }
 
 # ---- main --------------------------------------------------------------------
@@ -270,6 +467,8 @@ fn main() {
     var phi = 0;
     var fq = 0;
     var rg = 0;
+    var locs = vec_new();     # per word, in `order`: piece << 15 | offset
+    var loc_overflow = 0;
     while (wi < nwords) {
         # open a new piece if needed
         if (piece_open == 0) {
@@ -282,6 +481,9 @@ fn main() {
 
         wk = vec_get(order, wi);
         acc2 = map_get(word_map, wk);
+        # where this entry starts: (piece, byte offset), for the perfect hash
+        vec_push(locs, (piece_count << SHBDK_PHF_OFF_BITS) | piece_bytes);
+        if (piece_bytes >= (1 << SHBDK_PHF_OFF_BITS)) { loc_overflow = 1; }
 
         # word (the base word bytes, then |pron|pron...;)
         var wdata = str_data(wk);
@@ -362,6 +564,23 @@ fn main() {
     print_num(piece_count); println(" pieces");
     print_num(nw); println(" bytes written");
     print_num(unknown); println(" unknown symbols");
+
+    # ---- emit src/dictionary/_static_phf_data.cyr ----
+    # A locator holds the piece in its top 5 bits and the offset in 15.
+    if (loc_overflow == 1) {
+        println("gen_cmudict: a piece outgrew the 15-bit locator offset; lower piece_target");
+        return 1;
+    }
+    if (piece_count > 31) {
+        println("gen_cmudict: more than 32 pieces do not fit the 5-bit locator piece");
+        return 1;
+    }
+    var pw = _gc_emit_phf(order, locs);
+    if (pw <= 0) {
+        println("gen_cmudict: perfect hash generation failed");
+        return 1;
+    }
+    print_num(pw); println(" perfect-hash bytes written");
     return 0;
 }
 

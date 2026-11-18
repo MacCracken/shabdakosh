@@ -84,7 +84,8 @@ cyrius test tests                              # run all .tcyr
 
 `programs/gen_cmudict.cyr` reads it and emits the checked-in
 `src/dictionary/_cmudict_data.cyr` (packed-string pieces; the Cyrius replacement for the Rust
-`build.rs`). One module — `cyrius distlib`'s per-module read cap is 1 MB since toolchain 6.4.10,
+`build.rs`) and `src/dictionary/_static_phf_data.cyr` (the static dictionary's perfect hash, which
+points into those pieces; scheme in `src/dictionary/phf.cyr`). One module — `cyrius distlib`'s per-module read cap is 1 MB since toolchain 6.4.10,
 so the ~283 KB data no longer needs sharding. It `include`s `src/arpabet.cyr` and reuses that
 mapping — one source of truth (no Rust-style table duplication). `src/dictionary/cmudict.cyr`
 loads the pieces into a `lib/hashmap` at runtime. **Regenerate after editing the data:**

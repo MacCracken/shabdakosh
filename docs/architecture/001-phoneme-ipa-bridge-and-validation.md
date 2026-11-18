@@ -1,8 +1,9 @@
 # 001 — The phoneme↔IPA bridge, and why `dict.validate()` reports so much
 
-**Status**: current as of 3.0.5 (measured 2026-09-01). Describes how the world
-is; the open decision it implies is tracked in
-[`../development/backlog.md`](../development/backlog.md).
+**Status**: current as of 3.0.5 (measured 2026-09-01); re-measured on varna 2.6.0
+for 3.1.2, still 5,468 of 10,617. Describes how the world is; the open decision it
+implies is tracked in the roadmap's
+[*Open decisions*](../development/roadmap.md#open-decisions).
 
 ## The bridge has three parties, and they do not share a spelling
 

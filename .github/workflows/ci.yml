@@ -48,3 +48,8 @@ jobs:
         # stub didn't exist (Issue 1) and also wouldn't ever exercise
         # tests/${proj}.tcyr.
         run: cyrius test
+
+      - name: Fuzz
+        # 3.1.2: fuzz/parsers.fcyr — every untrusted-input parser over seeded
+        # mutants, inputs flush against a PROT_NONE page. Deterministic (~10 s).
+        run: cyrius fuzz

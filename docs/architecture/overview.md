@@ -53,7 +53,9 @@ shabdakosh/
 │       ├── trie.cyr                — PrefixTrie: O(k) prefix search / autocomplete
 │       ├── heteronym.cyr           — HeteronymContext + fn-pointer resolver
 │       ├── g2p.cyr                 — FallbackDict (fn-pointer model), FstModel stub, promote*
-│       ├── static_dict.cyr         — lazy cached singleton (phf replacement)
+│       ├── phf.cyr                 — the perfect hash: hash, bucket/slot math, base-32 codec
+│       ├── _static_phf_data.cyr    — GENERATED CHD table over the base dictionary's keys
+│       ├── static_dict.cyr         — static lookups through the perfect hash (phf port)
 │       │
 │       │  ── L5 formats ──
 │       └── format/
@@ -78,7 +80,9 @@ shabdakosh/
 
 `ffi.rs` is **not** ported — C FFI is dead in the CYRIUS/AGNOS stack (no C-ABI
 consumers). `wasm.rs` and `static_dict.rs` (phf) are ported as ordinary `.cyr`
-modules.
+modules. Since 3.1.2 `static_dict` is a real compile-time perfect hash, generated
+the way `build.rs` + `phf_codegen` generated the Rust's: `gen_cmudict.cyr` writes
+`_static_phf_data.cyr`, whose slots point into the `_cmudict_data.cyr` pieces.
 
 ## Data Flow
 

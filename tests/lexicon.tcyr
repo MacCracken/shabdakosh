@@ -50,5 +50,18 @@ var direct = shbdk_from_lexicon(swadesh_by_code("es"));
 assert_streq(shbdk_dict_language(direct), "es", "from_lexicon sets language");
 assert_eq(shbdk_dict_len(direct), shbdk_dict_len(es), "same entry count as spanish()");
 
+# ================================================================
+# 3.1.2 / varna 2.6.0: varna spells nasal vowels with a combining tilde (U+0303), so
+# नहीं is "nəɦĩː" with ĩ as i + U+0303 (it was the precomposed U+0129). The parser
+# reads the i and skips the mark and ɦ, as Rust's parse_ipa_word does: [n ə i].
+# Through varna 2.5.2 the precomposed ĩ was skipped whole: [n ə].
+test_group("hindi: a combining tilde leaves its vowel");
+var nahi = shbdk_dict_lookup(shbdk_dict_hindi(), "नहीं");
+assert_neq(nahi, 0, "नहीं present");
+assert_eq(vec_len(nahi), 3, "three phonemes");
+assert_eq(vec_get(nahi, 0), SVARA_PH_NASAL_N, "n");
+assert_eq(vec_get(nahi, 1), SVARA_PH_VOWEL_SCHWA, "ə");
+assert_eq(vec_get(nahi, 2), SVARA_PH_VOWEL_I, "i (from i + U+0303)");
+
 var rc = assert_summary();
 syscall(60, rc);

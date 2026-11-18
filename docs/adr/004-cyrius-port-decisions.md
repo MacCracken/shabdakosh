@@ -34,6 +34,12 @@ port against `rust-old/`; the correctness bar is "matches what Rust did."
 5. **Static dict: `phf` compile-time perfect hash → lazy cached singleton.** CYRIUS has no
    const-eval to bake a perfect hash, so `static_dict` is a lazily-built cached singleton over
    `shabda_dict_english()` (one-time ~9.6 ms load; surface + lookup preserved).
+   **Amended 3.1.2 (2026-11-17): superseded by a generated perfect hash.** cyrius archived the
+   const-eval proposal at 6.7.2, when `const fn` landed, and keeps a `#phf` builtin only if
+   `const fn` plus the generated-`.cyr` idiom of decision 3 cannot cover a need. They cover this
+   one the way `build.rs` + `phf_codegen` did: `gen_cmudict.cyr` writes a CHD table
+   (`_static_phf_data.cyr`) whose slots point into the decision-3 pieces, and `static_dict`
+   looks words up through it with no load (first lookup ~35 µs).
 6. **WASM: `wasm-bindgen` → plain `.cyr` surface.** `WasmDict` is ported as a normal `.cyr` module
    (`shabda_wasm_dict_*`) with JSON at the boundary. Browser delivery is a toolchain concern, not
    this crate's — the binding is just another `.cyr` surface.
@@ -50,9 +56,10 @@ port against `rust-old/`; the correctness bar is "matches what Rust did."
   while fitting CYRIUS's constraints; `dist/shabdakosh.cyr` links flat into AGNOS consumers.
 - **Negative / owned**: hand-written codecs and error plumbing we now maintain (no serde/thiserror
   to lean on); the binary + JSON formats are CYRIUS-native and **not wire-compatible** with the
-  Rust crate's output; `static_dict` pays a one-time load that `phf` avoided.
-- **Neutral**: the phf gap is tracked upstream in the cyrius proposal
-  `2026-07-05-const-eval-comptime.md`. The distlib per-module read cap was raised 256 KB → 1 MB
+  Rust crate's output; `static_dict` paid a one-time load that `phf` avoided, until 3.1.2
+  (decision 5's amendment).
+- **Neutral**: the phf gap was tracked upstream in the cyrius proposal
+  `2026-07-05-const-eval-comptime.md`, which cyrius answered at 6.7.2. The distlib per-module read cap was raised 256 KB → 1 MB
   in toolchain 6.4.10 (our proposal `2026-07-05-distlib-per-module-read-cap.md`), retiring the sharding.
 
 ## Alternatives considered

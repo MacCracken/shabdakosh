@@ -1,0 +1,95 @@
+# phf.cyr — the compile-time perfect hash behind static_dict.cyr.
+#
+# The Rust crate's `phf` feature baked the English dictionary into a phf::Map at build
+# time (build.rs + phf_codegen). This is the same scheme, CHD "hash and displace":
+#
+#   h      = _shbdk_phf_hash(key, seed)            one 64-bit hash per key
+#   bucket = (h >> 44) % buckets                   about 5 keys per bucket
+#   slot   = (f2 + f1 * d1 + d2) % len             f1 = h bits 22..43, f2 = bits 0..21
+#
+# where (d1, d2) is the displacement the generator found for that bucket, so that
+# every key lands in its own slot and every slot holds exactly one key (len slots
+# for len keys, as phf does). A lookup is one hash, one displacement read, one key
+# compare: no probing, so no input is slower than any other, whatever the keys.
+#
+# programs/gen_cmudict.cyr searches the seed and the displacements and writes them
+# to src/dictionary/_static_phf_data.cyr. The generator and the runtime both
+# include THIS file, so the hash and the slot math have one definition.
+#
+# The tables are text in string literals: each value is fixed-width base-32
+# ("0"-"9", "a"-"v", 5 bits a character), which keeps `"` and `\` out of them.
+#
+# Self-contained: load8 / store8 only. NAMING: shbdk_/SHBDK_ prefixes (flat namespace).
+
+var SHBDK_PHF_LAMBDA = 5;       # keys per bucket the generator aims for
+var SHBDK_PHF_DISP_W = 3;       # base-32 characters per displacement value (15 bits)
+var SHBDK_PHF_LOC_W = 4;        # base-32 characters per slot locator (20 bits)
+var SHBDK_PHF_OFF_BITS = 15;    # locator = piece << 15 | byte offset in that piece
+var SHBDK_PHF_LOC_CHUNK = 4096; # slots per locator string literal (16 KB of text)
+
+# MurmurHash3's fmix64 finalizer: every input bit reaches every output bit.
+# `>>` is logical in Cyrius, which the finalizer needs.
+fn _shbdk_phf_fmix(h): i64 {
+    h = h ^ (h >> 33);
+    h = h * 0xFF51AFD7ED558CCD;
+    h = h ^ (h >> 33);
+    h = h * 0xC4CEB9FE1A85EC53;
+    h = h ^ (h >> 33);
+    return h;
+}
+
+# Hash bytes [p, p + n) with `seed`: FNV-1a over the ASCII-lowercased bytes, then
+# fmix64. Folding A-Z here lets a lookup of "Hello" hash as "hello" without a copy,
+# the same ASCII-only fold shbdk_dict_lookup_entry applies.
+fn _shbdk_phf_hash(p, n, seed): i64 {
+    var h = 0xCBF29CE484222325 ^ _shbdk_phf_fmix(seed + 1);
+    var i = 0;
+    var c = 0;
+    while (i < n) {
+        c = load8(p + i);
+        if (c >= 65) { if (c <= 90) { c = c + 32; } }
+        h = (h ^ c) * 0x100000001B3;
+        i = i + 1;
+    }
+    return _shbdk_phf_fmix(h);
+}
+
+# The bucket a hash falls in (its top 20 bits, so it is independent of f1 and f2).
+fn _shbdk_phf_bucket(h, buckets): i64 {
+    return (h >> 44) % buckets;
+}
+
+# The slot a hash lands in under displacement (d1, d2). Every term is non-negative
+# and below 2^38, so the sum cannot overflow and `%` stays non-negative.
+fn _shbdk_phf_index(h, d1, d2, len): i64 {
+    var f1 = (h >> 22) & 0x3FFFFF;
+    var f2 = h & 0x3FFFFF;
+    return (f2 + f1 * d1 + d2) % len;
+}
+
+# Read a k-character base-32 value at s[off].
+fn _shbdk_phf_read(s, off, k): i64 {
+    var v = 0;
+    var i = 0;
+    var c = 0;
+    while (i < k) {
+        c = load8(s + off + i);
+        if (c <= 57) { c = c - 48; } else { c = c - 87; }   # '0'-'9' -> 0-9, 'a'-'v' -> 10-31
+        v = (v << 5) | c;
+        i = i + 1;
+    }
+    return v;
+}
+
+# Write v as k base-32 characters at buf[off] (most significant first). Returns k.
+fn _shbdk_phf_write(buf, off, v, k): i64 {
+    var i = k - 1;
+    var d = 0;
+    while (i >= 0) {
+        d = v & 31;
+        if (d < 10) { store8(buf + off + i, 48 + d); } else { store8(buf + off + i, 87 + d); }
+        v = v >> 5;
+        i = i - 1;
+    }
+    return k;
+}

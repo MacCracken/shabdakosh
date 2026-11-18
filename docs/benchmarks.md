@@ -11,30 +11,42 @@ cyrius bench            # auto-discovers benches/
 
 ## Latest results
 
-- **Date**: 2026-11-07
+- **Date**: 2026-11-17
 - **Toolchain**: cyrius 6.7.18
-- **Revision**: 3.1.1 working tree (on `88cea94`)
-- **Platform**: Linux 7.2.14-arch1-1, x86_64
+- **Revision**: 3.1.2 working tree (on `7642b9b`)
+- **Platform**: Linux 7.3.4-arch1-2, x86_64
 - **Dictionary**: base English (`_cmudict_data.cyr`), ~10,617 entries
 
 | Benchmark | Avg | Min | Max | Iters |
 |---|---:|---:|---:|---:|
-| dict english construction | 7.783 ms | 7.783 ms | 7.783 ms | 10 |
-| **dict lookup hit** | **146 ns** | 146 ns | 146 ns | 200,000 |
-| **dict lookup miss** | **168 ns** | 168 ns | 168 ns | 200,000 |
-| trie construction | 6.443 ms | 6.443 ms | 6.443 ms | 10 |
-| trie prefix search `'pre'` | 6.411 ms | 6.048 ms | 10.354 ms | 500 |
-| binary serialize | 6.409 ms | 6.196 ms | 6.435 ms | 20 |
-| binary deserialize | 7.129 ms | 7.034 ms | 7.141 ms | 20 |
-| to_cmudict | 11.986 ms | 11.986 ms | 11.986 ms | 10 |
-| to_ipa | 10.942 ms | 10.942 ms | 10.942 ms | 10 |
-| to_json | 33.969 ms | 33.969 ms | 33.969 ms | 10 |
+| **static first lookup** (3.1.2) | **34.9 µs** | 34.9 µs | 34.9 µs | 1 |
+| dict english construction | 8.184 ms | 8.184 ms | 8.184 ms | 10 |
+| **dict lookup hit** | **144 ns** | 144 ns | 144 ns | 200,000 |
+| **dict lookup miss** | **182 ns** | 182 ns | 182 ns | 200,000 |
+| dict lookup hit, capitals (3.1.2) | 186 ns | 186 ns | 186 ns | 2,000 |
+| **static lookup hit** (3.1.2) | **124 ns** | 124 ns | 124 ns | 200,000 |
+| **static lookup miss** (3.1.2) | **125 ns** | 125 ns | 125 ns | 200,000 |
+| static lookup hit, capitals (3.1.2) | 127 ns | 127 ns | 127 ns | 200,000 |
+| trie construction | 7.347 ms | 7.347 ms | 7.347 ms | 10 |
+| trie prefix search `'pre'` | 6.263 ms | 5.891 ms | 9.579 ms | 500 |
+| binary serialize | 6.196 ms | 6.118 ms | 6.240 ms | 20 |
+| binary deserialize | 6.859 ms | 6.828 ms | 6.884 ms | 20 |
+| to_cmudict | 11.835 ms | 11.835 ms | 11.835 ms | 10 |
+| to_ipa | 10.750 ms | 10.750 ms | 10.750 ms | 10 |
+| to_json | 33.140 ms | 33.140 ms | 33.140 ms | 10 |
 
 Rows whose min and max equal the average were timed by `lib/bench` as a single window.
 
-Against 3.1.0 on cyrius 6.7.9, five alternating runs of each build put every row within a few
-percent. `dict lookup miss` is the noisiest row: it ranged 176-355 ns on 6.7.9 and 177-237 ns on
-6.7.18 across those runs, so a single reading of it is not a regression signal.
+`static first lookup` runs first in the process, before any fixture is built, and is timed once:
+it is the cost the perfect hash removed. Run against the 3.1.1 `static_dict.cyr` on the same
+machine, that row read 8.4–9.0 ms (it built the whole dictionary), and the static hit, miss and
+capitals rows read 152, 184–262 and 184 ns.
+
+Against 3.1.1, every row that existed then is within its usual spread. Construction read
+8.2–8.4 ms across today's full runs (7.8 ms recorded for 3.1.1), but alternating runs of the
+3.1.1 and 3.1.2 loaders on their own give ~7.8 ms for both, so it is the session, not the
+loader. `dict lookup miss` stays the noisiest row (182–298 ns today), so a single reading of it
+is not a regression signal.
 
 ## Reading the numbers
 
@@ -43,11 +55,14 @@ percent. `dict lookup miss` is the noisiest row: it ranged 176-355 ns on 6.7.9 a
   lowercase fast-path, `_shbdk_is_lower_cstr`, skips the lowercase copy for already-lowercase
   words). shabdakosh is dictionary-first: this is the path that matters.
 - **Construction is a one-time ~8 ms** (load the ~10.6k entries into a fresh hashmap).
-  `dictionary/static_dict.cyr` amortizes this to once-per-process via a cached singleton.
-  Note: the Rust `phf` feature baked this table at compile time (near-zero construction); CYRIUS
-  has no const-eval to reproduce that — see the filed cyrius proposal
-  `2026-07-05-const-eval-comptime.md`. The static dict's *surface* and *lookup* match; only the
-  construction cost differs.
+- **The static dictionary skips construction** (3.1.2). Like the Rust `phf` feature, it looks
+  words up through a perfect hash baked at build time (`gen_cmudict` writes it), so nothing is
+  loaded: the first lookup in a process costs ~35 µs, in which it allocates and clears the 85 KB
+  slot cache and decodes one entry. (Clearing it with the stdlib's byte-wise `memset` made that
+  ~160 µs; one 8-byte store a slot brought it here.) A hit is ~124 ns, faster than the hashmap's ~145 ns, because it is
+  one hash, one table read and one compare with no probing. A miss is the same cost as a hit
+  (~125 ns, against ~180 ns), and a capitalised word costs nothing extra: the hash and the compare
+  fold A-Z themselves, where the dictionary lookup copies the word to lowercase first (~185 ns).
 - **Every export sorts its keys** (since 3.1.0 for binary and JSON), so the same dictionary gives
   the same bytes in any process. The sort has its own merge sort, about 2.4 ms for the 10,617
   keys (9.5 ms through the generic one it replaced). That is most of the gap between
